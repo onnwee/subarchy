@@ -25,8 +25,9 @@ build() {
   root=$(_root)
   cd "$root"
   export CGO_ENABLED=0 GOFLAGS="-trimpath -mod=readonly"
+  mkdir -p "$srcdir/bin"
   go build -ldflags "-X git.subcult.tv/subculture-collective/subarchy/internal/dispatch.Version=${pkgver}" \
-    -o "$srcdir/subcult" ./cmd/subcult
+    -o "$srcdir/bin/" ./cmd/...
 }
 
 check() {
@@ -40,7 +41,10 @@ package() {
   local root f
   root=$(_root)
 
-  install -Dm755 "$srcdir/subcult" "$pkgdir/usr/bin/subcult"
+  # Compiled commands (subcult, subcult-app, ...), then script commands.
+  for f in "$srcdir"/bin/subcult*; do
+    install -Dm755 "$f" "$pkgdir/usr/bin/$(basename "$f")"
+  done
   ln -s subcult "$pkgdir/usr/bin/sub"
 
   for f in "$root"/bin/subcult-*; do
@@ -53,8 +57,8 @@ package() {
   sed "s/@VERSION@/${pkgver}/" "$root/branding/os-release.in" |
     install -Dm644 /dev/stdin "$pkgdir/etc/os-release"
 
-  # System defaults live here (ADR 0048); populated as components land.
-  install -dm755 "$pkgdir/usr/share/subcult/default"
+  # System defaults (ADR 0048): the app catalogue (ADR 0044) so far.
+  install -Dm644 "$root/default/apps.toml" "$pkgdir/usr/share/subcult/default/apps.toml"
 
   install -Dm644 "$root/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
 }

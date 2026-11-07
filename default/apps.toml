@@ -1,0 +1,487 @@
+# Subarchy app catalogue (ADR 0044). Installed to /usr/share/subcult/default/apps.toml.
+# Users add or change entries in ~/.config/subcult/apps.toml: an entry with the
+# same id replaces this one; `remove = true` hides it.
+#
+# source: repo (Arch), aur (rebuilt in Subarchy's repository), mise, flatpak,
+#         webapp (Chromium app window), build (not packaged yet)
+# default_for: roles this app is the default for; one default per role.
+# desktop: desktop file ID, used when setting it as a default.
+# Desktop IDs marked "unverified" were not installed on sputnik when written.
+
+schema = 1
+
+# --- Core ---------------------------------------------------------------
+[[app]]
+id = "kitty"
+name = "kitty"
+roles = ["terminal"]
+default_for = ["terminal"]
+preinstalled = true
+source = "repo"
+packages = ["kitty"]
+desktop = "kitty.desktop"
+
+[[app]]
+id = "wezterm"
+name = "WezTerm"
+roles = ["terminal"]
+source = "repo"
+packages = ["wezterm"]
+desktop = "org.wezfurlong.wezterm.desktop"
+
+[[app]]
+id = "dolphin"
+name = "Dolphin"
+roles = ["file-manager"]
+default_for = ["file-manager"]
+preinstalled = true
+source = "repo"
+packages = ["dolphin", "kio-extras", "ffmpegthumbs", "kdegraphics-thumbnailers"]
+desktop = "org.kde.dolphin.desktop" # unverified
+
+[[app]]
+id = "yazi"
+name = "yazi"
+roles = ["terminal-file-manager"]
+default_for = ["terminal-file-manager"]
+preinstalled = true
+source = "repo"
+packages = ["yazi"]
+desktop = "yazi.desktop"
+
+[[app]]
+id = "ark"
+name = "Ark"
+roles = ["archive"]
+default_for = ["archive"]
+preinstalled = true
+source = "repo"
+packages = ["ark"]
+desktop = "org.kde.ark.desktop"
+
+# --- Browsers -----------------------------------------------------------
+[[app]]
+id = "zen"
+name = "Zen"
+roles = ["browser"]
+default_for = ["browser"]
+preinstalled = true
+source = "aur"
+packages = ["zen-browser-bin"]
+desktop = "zen.desktop"
+notes = "Firefox add-ons installed by policy (ADR 0042)"
+
+[[app]]
+id = "chromium"
+name = "Chromium"
+roles = ["browser"]
+preinstalled = true
+source = "repo"
+packages = ["chromium"]
+desktop = "chromium.desktop"
+notes = "Web apps and agent browser control (ADR 0042)"
+
+# --- Communication ------------------------------------------------------
+[[app]]
+id = "signal"
+name = "Signal"
+roles = ["messenger"]
+default_for = ["messenger"]
+preinstalled = true
+source = "repo"
+packages = ["signal-desktop"]
+
+[[app]]
+id = "discord"
+name = "Discord"
+roles = ["chat"]
+default_for = ["chat"]
+preinstalled = true
+source = "webapp"
+url = "https://discord.com/channels/@me"
+notes = "Chromium app window with the Vencord Web extension"
+
+[[app]]
+id = "vesktop"
+name = "Vesktop"
+roles = ["chat"]
+source = "aur"
+packages = ["vesktop"]
+
+[[app]]
+id = "halloy"
+name = "Halloy"
+roles = ["irc"]
+default_for = ["irc"]
+preinstalled = true
+source = "repo"
+packages = ["halloy"]
+
+[[app]]
+id = "proton-mail"
+name = "Proton Mail"
+roles = ["mail", "calendar"]
+default_for = ["mail"]
+preinstalled = true
+source = "aur"
+packages = ["proton-mail-bin"]
+desktop = "proton-mail.desktop"
+
+# --- Proton -------------------------------------------------------------
+[[app]]
+id = "proton-pass"
+name = "Proton Pass"
+roles = ["password-manager"]
+preinstalled = true
+source = "aur"
+packages = ["proton-pass-bin", "proton-pass-cli"]
+
+[[app]]
+id = "proton-vpn"
+name = "Proton VPN"
+roles = ["vpn"]
+default_for = ["vpn"]
+preinstalled = true
+source = "repo"
+packages = ["proton-vpn-gtk-app", "proton-vpn-cli"]
+
+[[app]]
+id = "proton-authenticator"
+name = "Proton Authenticator"
+roles = ["authenticator"]
+default_for = ["authenticator"]
+preinstalled = true
+source = "aur"
+packages = ["proton-authenticator-bin"]
+
+[[app]]
+id = "proton-drive-cli"
+name = "Proton Drive CLI"
+roles = ["cloud-storage"]
+default_for = ["cloud-storage"]
+preinstalled = true
+source = "aur"
+packages = ["proton-drive-cli-bin"]
+
+# --- AI and development -------------------------------------------------
+[[app]]
+id = "claude-code"
+name = "Claude Code"
+roles = ["agent"]
+default_for = ["agent"]
+preinstalled = true
+source = "aur"
+packages = ["claude-code"]
+
+[[app]]
+id = "codex"
+name = "Codex"
+roles = ["agent"]
+preinstalled = true
+source = "repo"
+packages = ["openai-codex"]
+
+[[app]]
+id = "opencode"
+name = "OpenCode"
+roles = ["agent"]
+preinstalled = true
+source = "repo"
+packages = ["opencode"]
+
+[[app]]
+id = "t3code"
+name = "T3 Code Nightly"
+roles = ["agent-gui"]
+default_for = ["agent-gui"]
+preinstalled = true
+source = "aur"
+packages = ["t3code-nightly-bin"]
+
+[[app]]
+id = "neovim"
+name = "Neovim"
+roles = ["editor"]
+default_for = ["editor"]
+preinstalled = true
+source = "repo"
+packages = ["neovim"]
+desktop = "nvim.desktop"
+notes = "With Subarchy's LazyVim config package (ADR 0045)"
+
+[[app]]
+id = "vscode"
+name = "VS Code"
+roles = ["editor"]
+preinstalled = true
+source = "aur"
+packages = ["visual-studio-code-bin"]
+desktop = "com.microsoft.VSCode.desktop"
+
+[[app]]
+id = "obsidian"
+name = "Obsidian"
+roles = ["notes"]
+default_for = ["notes"]
+preinstalled = true
+source = "repo"
+packages = ["obsidian"]
+desktop = "obsidian.desktop"
+
+# --- Utilities ----------------------------------------------------------
+[[app]]
+id = "bitwarden-cli"
+name = "Bitwarden CLI"
+roles = ["password-manager"]
+default_for = ["password-manager"]
+preinstalled = true
+source = "repo"
+packages = ["bitwarden-cli"]
+
+[[app]]
+id = "pipewire-control-center"
+name = "PipeWire Control Center"
+roles = ["audio-routing"]
+default_for = ["audio-routing"]
+preinstalled = true
+source = "aur"
+packages = ["pipewire-control-center"]
+
+[[app]]
+id = "print-settings"
+name = "Print Settings"
+roles = ["printer-setup"]
+default_for = ["printer-setup"]
+preinstalled = true
+source = "repo"
+packages = ["system-config-printer"]
+
+[[app]]
+id = "voxtype"
+name = "Voxtype"
+roles = ["dictation"]
+default_for = ["dictation"]
+preinstalled = true
+source = "aur"
+packages = ["voxtype-bin"]
+
+[[app]]
+id = "popsicle"
+name = "Popsicle"
+roles = ["usb-flasher"]
+source = "aur"
+packages = ["popsicle"]
+
+[[app]]
+id = "solaar"
+name = "Solaar"
+roles = ["device-manager"]
+source = "repo"
+packages = ["solaar"]
+notes = "Installed when a Logitech receiver is detected (ADR 0050)"
+
+[[app]]
+id = "librepods"
+name = "LibrePods"
+roles = ["device-manager"]
+source = "aur"
+packages = ["librepods"]
+notes = "AirPods"
+
+[[app]]
+id = "disktree"
+name = "disktree"
+roles = ["disk-usage"]
+default_for = ["disk-usage"]
+preinstalled = true
+source = "aur"
+packages = ["disktree-bin"]
+
+[[app]]
+id = "btop"
+name = "btop"
+roles = ["system-monitor"]
+default_for = ["system-monitor"]
+preinstalled = true
+source = "repo"
+packages = ["btop"]
+desktop = "btop.desktop"
+
+[[app]]
+id = "qalculate"
+name = "Qalculate!"
+roles = ["calculator"]
+default_for = ["calculator"]
+preinstalled = true
+source = "repo"
+packages = ["qalculate-qt", "libqalculate"]
+
+[[app]]
+id = "theme-tender"
+name = "Theme Tender"
+roles = ["theme-manager"]
+default_for = ["theme-manager"]
+preinstalled = true
+source = "build"
+packages = ["theme-tender"]
+notes = "Not released as a package yet (ADR 0037)"
+
+# --- Viewers and capture -------------------------------------------------
+[[app]]
+id = "okular"
+name = "Okular"
+roles = ["pdf-viewer"]
+default_for = ["pdf-viewer"]
+preinstalled = true
+source = "repo"
+packages = ["okular"]
+desktop = "org.kde.okular.desktop" # unverified
+
+[[app]]
+id = "swayimg"
+name = "swayimg"
+roles = ["image-viewer"]
+default_for = ["image-viewer"]
+preinstalled = true
+source = "repo"
+packages = ["swayimg"]
+desktop = "swayimg.desktop" # unverified
+
+[[app]]
+id = "screenshot"
+name = "grim + slurp + satty"
+roles = ["screenshot"]
+default_for = ["screenshot"]
+preinstalled = true
+source = "repo"
+packages = ["grim", "slurp", "satty"]
+
+[[app]]
+id = "gpu-screen-recorder"
+name = "gpu-screen-recorder"
+roles = ["screen-recorder"]
+default_for = ["screen-recorder"]
+preinstalled = true
+source = "repo"
+packages = ["gpu-screen-recorder"]
+
+# --- Music and video -----------------------------------------------------
+[[app]]
+id = "vlc"
+name = "VLC"
+roles = ["media-player"]
+default_for = ["media-player"]
+preinstalled = true
+source = "repo"
+packages = ["vlc", "vlc-plugin-ffmpeg", "vlc-plugin-freetype", "vlc-plugin-ass"]
+desktop = "vlc.desktop"
+
+[[app]]
+id = "cliamp"
+name = "cliamp"
+roles = ["music-player"]
+default_for = ["music-player"]
+preinstalled = true
+source = "aur"
+packages = ["cliamp"]
+
+[[app]]
+id = "obs"
+name = "OBS Studio"
+roles = ["recorder"]
+default_for = ["recorder"]
+preinstalled = true
+source = "repo"
+packages = ["obs-studio"]
+
+[[app]]
+id = "kdenlive"
+name = "Kdenlive"
+roles = ["video-editor"]
+default_for = ["video-editor"]
+preinstalled = true
+source = "repo"
+packages = ["kdenlive"]
+
+[[app]]
+id = "tuxguitar"
+name = "TuxGuitar"
+roles = ["guitar-tab"]
+default_for = ["guitar-tab"]
+preinstalled = true
+source = "aur"
+packages = ["tuxguitar"]
+
+# --- Graphics and 3D -----------------------------------------------------
+[[app]]
+id = "gimp"
+name = "GIMP"
+roles = ["image-editor"]
+default_for = ["image-editor"]
+preinstalled = true
+source = "repo"
+packages = ["gimp"]
+
+[[app]]
+id = "pinta"
+name = "Pinta"
+roles = ["image-editor"]
+source = "repo"
+packages = ["pinta"]
+
+[[app]]
+id = "inkscape"
+name = "Inkscape"
+roles = ["vector-editor"]
+default_for = ["vector-editor"]
+preinstalled = true
+source = "repo"
+packages = ["inkscape"]
+
+[[app]]
+id = "glaxnimate"
+name = "Glaxnimate"
+roles = ["animation"]
+default_for = ["animation"]
+preinstalled = true
+source = "repo"
+packages = ["glaxnimate"]
+
+[[app]]
+id = "freecad"
+name = "FreeCAD"
+roles = ["cad"]
+source = "repo"
+packages = ["freecad"]
+
+[[app]]
+id = "prusa-slicer"
+name = "PrusaSlicer"
+roles = ["slicer"]
+source = "repo"
+packages = ["prusa-slicer"]
+
+# --- Games and downloads -------------------------------------------------
+[[app]]
+id = "steam"
+name = "Steam"
+roles = ["game-store"]
+source = "repo"
+packages = ["steam"]
+notes = "Brings the 32-bit graphics libraries (ADR 0006)"
+
+[[app]]
+id = "lutris"
+name = "Lutris"
+roles = ["game-launcher"]
+source = "repo"
+packages = ["lutris"]
+
+[[app]]
+id = "qbittorrent"
+name = "qBittorrent"
+roles = ["torrent"]
+default_for = ["torrent"]
+preinstalled = true
+source = "repo"
+packages = ["qbittorrent"]

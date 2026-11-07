@@ -1,12 +1,29 @@
 package dispatch
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 )
+
+// MetadataFlag asks a compiled command to describe its subcommands as JSON.
+const MetadataFlag = "--subcult-metadata"
+
+// probeTimeout bounds how long a compiled command may take to describe itself.
+const probeTimeout = 2 * time.Second
+
+// Described is one subcommand as reported by a compiled command.
+type Described struct {
+	Words []string `json:"words"`
+	Metadata
+}
 
 // Prefix is the executable name prefix every subcult command carries.
 const Prefix = "subcult-"
@@ -23,6 +40,10 @@ type Command struct {
 	Binary string `json:"binary"`
 	// Path is the resolved executable path.
 	Path string `json:"path"`
+	// ArgPrefix is prepended to the user's arguments when one compiled
+	// binary serves several routes, e.g. ["list"] for "subcult app list"
+	// served by subcult-app.
+	ArgPrefix []string `json:"-"`
 	Metadata
 }
 
@@ -56,11 +77,35 @@ func Discover(dirs []string) (*Registry, error) {
 			if err != nil || info.IsDir() || info.Mode()&0o111 == 0 {
 				continue
 			}
+			words := strings.Split(strings.TrimPrefix(name, Prefix), "-")
+			bin, err := isBinary(path)
+			if err != nil {
+				return nil, err
+			}
+			if bin {
+				if described := probe(path, words); len(described) > 0 {
+					for _, d := range described {
+						key := Prefix + strings.Join(d.Words, "-")
+						if _, seen := reg.byBinary[key]; seen {
+							continue
+						}
+						reg.byBinary[key] = Command{
+							Words:     d.Words,
+							Route:     "subcult " + strings.Join(d.Words, " "),
+							Group:     d.Words[0],
+							Binary:    name,
+							Path:      path,
+							ArgPrefix: d.Words[len(words):],
+							Metadata:  d.Metadata,
+						}
+					}
+					continue
+				}
+			}
 			meta, err := ReadMetadata(path)
 			if err != nil {
 				return nil, fmt.Errorf("metadata for %s: %w", name, err)
 			}
-			words := strings.Split(strings.TrimPrefix(name, Prefix), "-")
 			reg.byBinary[name] = Command{
 				Words:    words,
 				Route:    "subcult " + strings.Join(words, " "),
@@ -173,4 +218,53 @@ func levenshtein(a, b string) int {
 		prev = cur
 	}
 	return prev[len(b)]
+}
+
+// isBinary reports whether the file at path is not a text script.
+func isBinary(path string) (bool, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return false, fmt.Errorf("open %s: %w", path, err)
+	}
+	defer f.Close()
+	head := make([]byte, 512)
+	n, err := f.Read(head)
+	if err != nil && n == 0 {
+		return false, nil
+	}
+	return bytes.IndexByte(head[:n], 0) >= 0, nil
+}
+
+// probe runs a compiled command with MetadataFlag and returns the
+// subcommands it reports. Only routes under the binary's own words are kept,
+// so subcult-app cannot claim "subcult theme set". Failures yield nothing;
+// the binary is then listed as a single command without metadata.
+func probe(path string, words []string) []Described {
+	ctx, cancel := context.WithTimeout(context.Background(), probeTimeout)
+	defer cancel()
+	out, err := exec.CommandContext(ctx, path, MetadataFlag).Output()
+	if err != nil {
+		return nil
+	}
+	var described []Described
+	if err := json.Unmarshal(out, &described); err != nil {
+		return nil
+	}
+	var kept []Described
+	for _, d := range described {
+		if len(d.Words) < len(words) {
+			continue
+		}
+		ok := true
+		for i, w := range words {
+			if d.Words[i] != w {
+				ok = false
+				break
+			}
+		}
+		if ok {
+			kept = append(kept, d)
+		}
+	}
+	return kept
 }

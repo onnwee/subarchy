@@ -20,3 +20,12 @@ the launcher and the user manual read:
 
 Only comment lines before the first line of code are read. The dispatcher is
 `cmd/subcult` and `internal/dispatch`.
+
+## Compiled commands
+
+A compiled command can serve several routes. The dispatcher runs it with
+`--subcult-metadata` (2 s limit) and reads a JSON array of
+`{"words": [...], "summary": ..., "args": ..., "examples": [...], ...}`,
+keeping only routes under the binary's own name. `subcult-app` reports
+`app list`, `app install` and so on; `subcult app install steam` then runs
+`subcult-app install steam`. The Go commands live in `cmd/`.
