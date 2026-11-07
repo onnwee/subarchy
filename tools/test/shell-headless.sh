@@ -68,6 +68,14 @@ mkdir -p "$home1"
 start_shell "$home1" "$work/qs1.log"
 check_log "$work/qs1.log"
 [[ $(top_colour HEADLESS-1) == "#100B19" ]] || fail "the bar is not base #100B19 (got $(top_colour HEADLESS-1))"
+# The widgets draw: the bar strip holds more than its background and line.
+others=$(magick "$work/shot.png" -crop "x24+0+0" +repage -format %c histogram:info:- |
+  grep -vcE '#100B19|#1F1830' || true)
+[[ $others -gt 0 ]] || fail "the bar draws nothing but its background"
+loaded=$(ipc_status "$home1" | python3 -c 'import json,sys; print(" ".join(json.load(sys.stdin)["loaded"]["HEADLESS-1"]))')
+[[ " $loaded " == *" subcult.menu "* ]] || fail "the full bar did not load the menu (loaded: $loaded)"
+# SHELL_HEADLESS_SHOT=file keeps the screenshot for a look.
+if [[ -n ${SHELL_HEADLESS_SHOT:-} ]]; then cp "$work/shot.png" "$SHELL_HEADLESS_SHOT"; fi
 
 # 2. An output appears: it gets a bar.
 swaymsg -q create_output

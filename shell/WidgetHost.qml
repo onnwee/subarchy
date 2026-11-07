@@ -27,7 +27,7 @@ Item {
 
   implicitWidth: widgetItem ? widgetItem.implicitWidth : 0
   implicitHeight: Style.barHeight
-  visible: widgetItem ? widgetItem.visible : false
+  visible: widgetItem !== null && !widgetItem.hidden
 
   property bool warned: false
   onEntryChanged: {
