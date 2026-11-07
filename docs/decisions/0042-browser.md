@@ -53,10 +53,49 @@ make it optional. Checked on addons.mozilla.org 2026-11-07:
 | HyperChat | Kento Nishi | `{14a15c41-13f4-498e-986c-7f00435c4d00}` | `hyperchat` |
 | Karakeep | Mohamed Bassem | `addon@karakeep.app` | `karakeep` |
 | Shodan | Shodan | `firefox-extension@shodan.io` | `shodan-addon` |
+| Windowed | Michiel Dral | `{477dbe5e-1742-4641-a2c3-b6113bb5cf6e}` | `windowed` |
+| Song Identifier (replaces Music Identifier) | losnappas | `song-id@losnappas` | `song-identifier` |
+| SoundFixer (replaces Volume Master: per-tab gain, mono) | Val Packett | `soundfixer@unrelenting.technology` | `soundfixer` |
 
-No Firefox version from the same publisher was found for Volume Master,
-Windowed, Threads Video Controls or Music Identifier; see Open below.
-Firefox's built-in picture-in-picture covers Windowed's main use.
+Threads Video Controls has no Firefox version and is dropped.
+
+**Baseline: the owner's Zen profile on `sputnik`** (2026-11-07, profile
+`9ysr1yvg.Default (release)`, 48 add-ons). Windowed, Song Identifier and
+SoundFixer above come from it. Proposed additions from it, pending the owner:
+
+| Add-on | Publisher | Add-on ID | AMO slug |
+|---|---|---|---|
+| Firefox Multi-Account Containers | Mozilla | `@testpilot-containers` | `multi-account-containers` |
+| SingleFile | gildas | `{531906d3-e22f-4a6c-a102-8057b88a1a63}` | `single-file` |
+| Search by Image | Armin Sebastian | `{2e5ff8c8-32fe-46d0-9fc8-6b8986621f3c}` | `search_by_image` |
+| Stylus | Stylus Team | `{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}` | `styl-us` |
+| Control Panel for Twitter | Jonny Buchanan | `{5cce4ab5-3d47-41b9-af5e-8203eea05245}` | `control-panel-for-twitter` |
+| PocketTube | Dima Nabok | `danabok16@gmail.com` | `youtube-subscription-groups` |
+| Sink It for Reddit | SpecterAscendant | `{09acf9ff-55d4-4366-a1a9-c9b3c8877c09}` | `sink-it-for-reddit` |
+| Better Videos for Instagram | Emir Kabal | `7f5862eb-3ab3-424c-aa6b-cf9311fba52f@emirkabal.com` | `better-videos-for-instagram` |
+
+Not carried over from the profile: AdGuard, Ghostery, Privacy Badger,
+DuckDuckGo Privacy Essentials and Decentraleyes (overlap uBlock Origin);
+Greasemonkey (Tampermonkey chosen); Easy Youtube Video Downloader Express,
+Instagram Downloader and Redditsave (yt-dlp covers them); Firefox
+Translations, Read Aloud, Tranquility Reader and JSON Viewer Pro (Zen has
+built-in translation, narration in Reader View, Reader View and a JSON
+viewer); Remove Paywall; and the disabled Chatterino Native Host, Knockoff
+and Wappalyzer.
+
+**Zen mods** from the profile, seeded into new profiles on first run (mods
+are not installable by policy): Floating History, Hide Extension Name, Pimp
+your PiP, Better Find Bar, No pinned tab reset button, Better Unloaded Tabs,
+Tab Text Size, Disable Rounded Corners, Better Tab Indicators, Tidy Popup,
+SuperPins. Check each mod's licence before redistributing.
+
+**Zen settings** from the profile, shipped as defaults through
+`distribution/distribution.ini` (`[Preferences]`), since Firefox's
+`Preferences` policy does not cover `zen.*` keys: tabs on the right
+(`zen.tabs.vertical.right-side`), compact mode at startup
+(`zen.view.compact.enable-at-startup`), workspace indicator at the bottom and
+centred, continue where left off, Ctrl+Tab skips essential tabs, inactive
+windows not greyed out.
 
 ### Chromium extensions
 
@@ -81,10 +120,7 @@ or `normal_installed`), and unpacked extensions loaded with
 
 ### Open
 
-- Volume Master (Firefox listings exist only from other publishers), Windowed,
-  Threads Video Controls and Music Identifier (no same-publisher Firefox
-  version; `song-identifier` by losnappas is an alternative): drop or
-  substitute.
+- The proposed additions from the `sputnik` Zen profile, above.
 
 ## Options considered
 

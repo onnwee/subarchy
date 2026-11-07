@@ -64,6 +64,7 @@ hardware-specific apps install on detection.
 |---|---|---|---|---|---|---|
 | Claude Code (TUI) | agent | yes | yes | aur | `claude-code` | Preinstalled as a system package so every user has it; per-user mise installs still work ([[0047-ai-agents\|ADR 0047]]) |
 | Codex (TUI) | agent | yes |  | repo | `openai-codex` | Preinstalled from Arch's `extra`; per-user mise installs still work |
+| OpenCode (TUI) | agent | yes |  | repo | `opencode` | Preinstalled from Arch's `extra` (2.1.2 on 2026-11-07; `sputnik` runs 2.2.5 through mise) |
 | T3 Code Nightly | agent-gui | yes | yes | aur | `t3code-nightly-bin` | AUR (0.1.8 nightly on 2026-11-07); stable is `t3code-bin`. Replaces the hand-installed AppImage on `sputnik` |
 | VS Code | editor | yes |  | aur | `visual-studio-code-bin` | Microsoft build, as on `sputnik`; Code-OSS is `code` in `extra` |
 | Neovim | editor | yes | yes | repo | `neovim` | With Subarchy's LazyVim config package ([[0045-editor\|ADR 0045]]) |
