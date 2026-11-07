@@ -26,13 +26,15 @@ smoke: build
 	tools/test/dispatcher-smoke.sh $(BUILD)/subcult
 	tools/test/power-auto-test.sh
 	tools/test/gpu-test.sh
+	tools/test/cursor-test.sh $(BUILD)/subcult-cursor
 
 shellcheck:
 	@if [ -n "$(SHELL_SCRIPTS)" ]; then shellcheck -x $(SHELL_SCRIPTS); fi
 
 docs-check:
 	python3 tools/obsidian/check-vault.py
-	python3 -m py_compile tools/inventory/collect.py tools/obsidian/check-vault.py tools/obsidian/install-plugins.py tools/iso/boot-test.py tools/iso/install-test.py tools/iso/vmlib.py
+	python3 tools/test/palette-test.py
+	python3 -m py_compile tools/inventory/collect.py tools/obsidian/check-vault.py tools/obsidian/install-plugins.py tools/iso/boot-test.py tools/iso/install-test.py tools/iso/vmlib.py tools/test/palette-test.py
 
 # Checks the Hyprland Lua defaults where Hyprland is installed (not in CI).
 hypr-check:
