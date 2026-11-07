@@ -120,15 +120,17 @@ make_filesystems() {
 write_boot_config() {
   step "writing boot configuration"
   local cmdline="rd.luks.name=$luks_uuid=root rd.luks.options=discard root=/dev/mapper/root rootflags=subvol=@ rw"
+  # AppArmor (ADR 0063) and the Plymouth splash (ADR 0013).
+  cmdline+=" lsm=landlock,lockdown,yama,integrity,apparmor,bpf quiet splash"
   [[ -n ${conf[KERNEL_CMDLINE_EXTRA]} ]] && cmdline+=" ${conf[KERNEL_CMDLINE_EXTRA]}"
   install -d "$target"/etc/{kernel,mkinitcpio.conf.d,default}
   echo "$cmdline" >"$target/etc/kernel/cmdline"
   printf "KEYMAP=%s\nXKBLAYOUT=%s\n" "${conf[KEYMAP]}" "${conf[XKB_LAYOUT]}" >"$target/etc/vconsole.conf"
   cat >"$target/etc/mkinitcpio.conf.d/subarchy.conf" <<'EOF'
 # Subarchy (ADR 0008): systemd-based initramfs; sd-btrfs-overlayfs makes
-# read-only snapshots bootable (ADR 0011). Plymouth joins with the
-# boot splash.
-HOOKS=(base systemd autodetect microcode modconf kms keyboard sd-vconsole block sd-encrypt filesystems fsck sd-btrfs-overlayfs)
+# read-only snapshots bootable (ADR 0011); plymouth draws the splash and the
+# LUKS prompt (ADR 0013).
+HOOKS=(base systemd plymouth autodetect microcode modconf kms keyboard sd-vconsole block sd-encrypt filesystems fsck sd-btrfs-overlayfs)
 EOF
   # limine-mkinitcpio-hook builds one UKI per kernel and writes the Limine
   # entries; limine-snapper-sync adds the snapshot entries (ADR 0007, 0011).
@@ -191,7 +193,18 @@ zram-size = ram / 2
 compression-algorithm = zstd
 EOF
 
-  arch-chroot "$target" systemctl enable --quiet NetworkManager systemd-timesyncd sddm
+  arch-chroot "$target" systemctl enable --quiet NetworkManager systemd-timesyncd sddm \
+    systemd-resolved ufw apparmor avahi-daemon bluetooth power-profiles-daemon
+  if grep -q GenuineIntel /proc/cpuinfo; then
+    arch-chroot "$target" pacman -S --noconfirm --needed thermald >/dev/null
+    arch-chroot "$target" systemctl enable --quiet thermald
+  fi
+  # DNS through resolved's stub (ADR 0020); .local through Avahi.
+  ln -sf ../run/systemd/resolve/stub-resolv.conf "$target/etc/resolv.conf"
+  sed -i 's/^hosts: mymachines resolve/hosts: mymachines mdns_minimal [NOTFOUND=return] resolve/' \
+    "$target/etc/nsswitch.conf"
+  # ufw: deny incoming, allow outgoing (its defaults), on at boot (ADR 0019).
+  sed -i 's/^ENABLED=no/ENABLED=yes/' "$target/etc/ufw/ufw.conf"
 
   local user=${conf[USERNAME]}
   arch-chroot "$target" useradd --create-home --groups wheel,realtime --shell /usr/bin/zsh "$user"

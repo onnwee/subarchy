@@ -21,6 +21,18 @@ btrfs-progs
 dosfstools
 snapper
 
+# Boot splash (ADR 0013)
+plymouth
+
+# Security, firewall, DNS, power, Bluetooth (ADR 0018-0021, 0063)
+apparmor
+ufw
+avahi
+nss-mdns
+power-profiles-daemon
+bluez
+bluez-utils
+
 # System (ADR 0014, 0016, 0024)
 zram-generator
 networkmanager

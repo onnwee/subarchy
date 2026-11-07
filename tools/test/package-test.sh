@@ -27,7 +27,9 @@ list=$(bsdtar -tf "$pkg")
 for path in usr/bin/subcult usr/bin/sub usr/bin/subcult-app usr/bin/subcult-update etc/os-release \
   usr/share/subcult/default/apps.toml usr/share/subcult/migrations/ usr/share/licenses/subarchy/LICENSE \
   usr/share/subcult/default/hypr/subcult.lua usr/share/subcult/default/hypr/user-hyprland.lua \
-  usr/share/wayland-sessions/subarchy.desktop usr/lib/sddm/sddm.conf.d/subarchy.conf; do
+  usr/share/wayland-sessions/subarchy.desktop usr/lib/sddm/sddm.conf.d/subarchy.conf \
+  usr/lib/sysctl.d/90-subarchy-hardening.conf usr/lib/systemd/resolved.conf.d/50-subarchy.conf \
+  usr/lib/NetworkManager/conf.d/50-subarchy-dns.conf usr/lib/systemd/coredump.conf.d/50-subarchy.conf; do
   grep -qx "$path" <<<"$list" || fail "missing $path"
 done
 
