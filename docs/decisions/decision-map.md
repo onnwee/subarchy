@@ -63,10 +63,10 @@ NVMe.
 
 | # | Decision | Omarchy 4.5 choice | Status |
 |---|---|---|---|
-| P1 | Package repository and signing | `[omarchy]` repo with its own keyring | open |
-| P2 | Third-party software policy (AUR, Flatpak, AppImage) | Rebuilt AUR packages in its repo; `yay` installed | open |
-| P3 | Update model and migrations | Rolling `omarchy update` plus timestamped migrations | open |
-| P4 | Developer toolchains | mise | open |
+| P1 | Package repository and signing | `[omarchy]` repo with its own keyring | [[0025-package-repository\|ADR 0025]]: own signed repo, CI-built, AUR rebuilds |
+| P2 | Third-party software policy (AUR, Flatpak, AppImage) | Rebuilt AUR packages in its repo; `yay` installed | [[0027-third-party-software\|ADR 0027]]: yay + Flathub |
+| P3 | Update model and migrations | Staged stable mirror, rc and edge channels; `omarchy update` plus timestamped migrations | [[0026-update-model\|ADR 0026]]: staged stable + edge, one update command |
+| P4 | Developer toolchains | mise | [[0028-developer-toolchains\|ADR 0028]]: mise |
 
 ## Session
 

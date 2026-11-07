@@ -49,5 +49,9 @@ order.
 | [[0022-printing\|0022]] | Printing and device discovery |
 | [[0023-authentication\|0023]] | Secrets and login factors |
 | [[0024-time-locale-input\|0024]] | Time zone, locale and input methods |
+| [[0025-package-repository\|0025]] | Package repository and signing |
+| [[0026-update-model\|0026]] | Update model and migrations |
+| [[0027-third-party-software\|0027]] | Third-party software |
+| [[0028-developer-toolchains\|0028]] | Developer toolchains |
 
 Related: [[home|Docs home]]
