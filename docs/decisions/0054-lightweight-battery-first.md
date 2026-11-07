@@ -38,20 +38,9 @@ owner keeps the earlier choice explicitly.
   session binding ([[0031-session-manager|ADR 0031]]).
 - Visual effects (blur, shadows, animations, video wallpaper) are reduced or
   off on battery.
-- CI tracks budgets for idle memory and package count; targets are set after
-  the first measurement.
-
-## Baseline on `sputnik` (2026-11-06, Omarchy 4.5, on AC)
-
-- The Quickshell shell process used about 390 MB resident memory, with 86
-  user plugin directories installed.
-- 708 processes were running in the owner's full working session (browsers,
-  T3 Code, agents), so this is not an idle baseline.
-- Battery discharge could not be measured: the machine was on AC.
-
-An idle, on-battery baseline (power draw from `upower` and `powertop`, idle
-memory, wakeups) is the first measurement to take, on Omarchy now and on
-Subarchy later.
+- CI tracks budgets for idle memory and package count. The limits are set
+  from Subarchy's first working build and tightened from there; there is no
+  comparison baseline against Omarchy (owner, 2026-11-06).
 
 ## Earlier decisions rechecked (2026-11-06)
 
@@ -62,7 +51,7 @@ Subarchy later.
 | [[0038-wallpaper\|ADR 0038]] wallpaper | Still image by default; video opt-in, paused on battery |
 | [[0040-terminal\|ADR 0040]] terminals | kitty only; WezTerm offered in the installer |
 | [[0043-file-manager\|ADR 0043]] Dolphin | Kept; its KDE Frameworks cost counts against the budget |
-| [[0004-kernel\|ADR 0004]] `linux-zen` | Kept; measure power against stock `linux` once a baseline exists |
+| [[0004-kernel\|ADR 0004]] `linux-zen` | Kept |
 
 The rice features kept under this principle are in
 [[rice-port-review|the rice port review]].

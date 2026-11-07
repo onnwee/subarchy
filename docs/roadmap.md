@@ -34,9 +34,6 @@ runs and is checked in CI.
 - [ ] CI runner with KVM for package builds and VM boot tests
 - [ ] Choose how the stable Arch snapshot is served
       ([[0026-update-model|ADR 0026]])
-- [ ] Measure an idle, on-battery baseline on `sputnik` (power draw, idle
-      memory, wakeups) and set the CI budgets
-      ([[0054-lightweight-battery-first|ADR 0054]])
 
 ## Phase 2: base system boots
 
@@ -46,6 +43,8 @@ Plymouth, NetworkManager with the DNS trust policy, PipeWire, ufw.
 
 - [ ] ISO builds in CI ([[0049-installer|ADR 0049]])
 - [ ] Installs in a VM to an encrypted, bootable system with snapshot entries
+- [ ] Set the CI memory and package budgets from this first build
+      ([[0054-lightweight-battery-first|ADR 0054]])
 - [ ] Update command: snapshot, upgrade, DKMS check, migrations
 
 ## Phase 3: session and shell
