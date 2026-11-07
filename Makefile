@@ -5,7 +5,7 @@ VERSION ?= 0.0.0
 LDFLAGS := -X git.subcult.tv/subculture-collective/subarchy/internal/dispatch.Version=$(VERSION)
 SHELL_SCRIPTS := $(shell git ls-files '*.sh' 'bin/subcult-*' 2>/dev/null)
 
-.PHONY: verify fmt-check vet test build smoke shellcheck docs-check
+.PHONY: verify fmt-check vet test build smoke shellcheck docs-check package
 
 verify: fmt-check vet test build smoke shellcheck docs-check
 
@@ -31,3 +31,7 @@ shellcheck:
 docs-check:
 	python3 tools/obsidian/check-vault.py
 	python3 -m py_compile tools/inventory/collect.py tools/obsidian/check-vault.py tools/obsidian/install-plugins.py
+
+# Builds the subarchy pacman package and checks its contents (Arch only).
+package:
+	tools/test/package-test.sh
