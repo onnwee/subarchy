@@ -22,5 +22,6 @@
     "shell/",
     "themes/",
     "tools/"
-  ]
+  ],
+  "settingsPopoutWindow": false
 }

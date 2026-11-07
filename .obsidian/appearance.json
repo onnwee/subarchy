@@ -1,0 +1,8 @@
+{
+  "showRibbon": true,
+  "cssTheme": "Dracula + LYT",
+  "interfaceFontFamily": "Atkinson Hyperlegible Next,Alegreya Sans",
+  "textFontFamily": "Atkinson Hyperlegible Next",
+  "monospaceFontFamily": "AtkynsonMono Nerd Font Mono",
+  "baseFontSizeAction": true
+}

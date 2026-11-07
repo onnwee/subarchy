@@ -9,8 +9,11 @@ tags: [plan]
 
 # Roadmap
 
-Phases assume [[0001-fork-strategy|ADR 0001]] option B is
-accepted. If it is not, phases 2 to 4 change.
+>[!warning] Out of date
+>Phases 2 to 4 assumed a tracking fork. [[0001-fork-strategy|ADR 0001]]
+>chose to build from scratch instead (2026-11-06). The
+>[[decision-map|decision map]] now sets the order of work; this roadmap will
+>be rewritten once the foundation decisions are taken.
 
 ## Phase 0: inventory (this commit)
 

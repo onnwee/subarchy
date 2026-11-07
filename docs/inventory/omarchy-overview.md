@@ -20,17 +20,17 @@ Observed on `sputnik` with Omarchy `4.5.0-3`. Upstream source:
 
 Omarchy 4.x is a set of pacman packages, not a dotfiles script:
 
-| Package | Contents |
-|---|---|
-| `omarchy` | `/usr/share/omarchy` (config templates, defaults, shell, themes, install scripts, migrations) and the `omarchy-*` commands in `/usr/bin`. Depends on Hyprland, Quickshell, uwsm, SDDM, Limine, snapper and others. |
-| `omarchy-settings` | `/etc/skel` content, fonts, the Plymouth theme and support helpers. Built from the same repository. |
-| `omarchy-keyring` | Signing keys for the `[omarchy]` repository. |
-| `omarchy-themes-intros` | Background intro videos for stock themes. |
-| `linux-omarchy`, `linux-omarchy-headers` | Kernel with the BORE CPU scheduler and ADIOS I/O scheduler. |
-| `omarchy-nvim` | Prebuilt LazyVim configuration with cached plugins. |
-| `omarchy-hyprland-titlebars` | Titlebars for floating workspaces. |
-| `omarchy-power-profiles-daemon` | power-profiles-daemon with extra CPU profiles. |
-| `omarchy-speedtest` | Network speed test client. |
+| Package                                  | Contents                                                                                                                                                                                                           |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `omarchy`                                | `/usr/share/omarchy` (config templates, defaults, shell, themes, install scripts, migrations) and the `omarchy-*` commands in `/usr/bin`. Depends on Hyprland, Quickshell, uwsm, SDDM, Limine, snapper and others. |
+| `omarchy-settings`                       | `/etc/skel` content, fonts, the Plymouth theme and support helpers. Built from the same repository.                                                                                                                |
+| `omarchy-keyring`                        | Signing keys for the `[omarchy]` repository.                                                                                                                                                                       |
+| `omarchy-themes-intros`                  | Background intro videos for stock themes.                                                                                                                                                                          |
+| `linux-omarchy`, `linux-omarchy-headers` | Kernel with the BORE CPU scheduler and ADIOS I/O scheduler.                                                                                                                                                        |
+| `omarchy-nvim`                           | Prebuilt LazyVim configuration with cached plugins.                                                                                                                                                                |
+| `omarchy-hyprland-titlebars`             | Titlebars for floating workspaces.                                                                                                                                                                                 |
+| `omarchy-power-profiles-daemon`          | power-profiles-daemon with extra CPU profiles.                                                                                                                                                                     |
+| `omarchy-speedtest`                      | Network speed test client.                                                                                                                                                                                         |
 
 The `[omarchy]` repository at `https://pkgs.omarchy.org/stable/$arch` carries
 256 packages. Most are AUR or third-party packages rebuilt so users never need an

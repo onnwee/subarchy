@@ -1,7 +1,7 @@
 ---
 title: "ADR 0001: How Subcarchy relates to Omarchy"
 type: decision
-status: proposed
+status: accepted
 adr: 1
 created: 2026-11-06
 updated: 2026-11-06
@@ -11,7 +11,7 @@ aliases: [ADR 0001, Fork strategy]
 
 # ADR 0001: How Subcarchy relates to Omarchy
 
-- Status: **proposed**, awaiting owner review
+- Status: **accepted** 2026-11-06: option D, build from scratch
 - Date: 2026-11-06
 - Inputs: [[omarchy-overview|component map]],
   [[branding-surfaces|branding surfaces]],
@@ -41,55 +41,38 @@ the choice:
 | A. Overlay (current rice) | Stock Omarchy plus Subcarchy packages and user config | User-level only; boot, login and OS name stay Omarchy | Low, but re-applies after every update | Full |
 | **B. Tracking fork, internal names kept** | Fork `omacom/omarchy`; change branding, defaults and package selection; keep `omarchy-*` commands, `~/.config/omarchy` and `$OMARCHY_PATH` | Full | Medium: regular merges of a small diff | Full |
 | C. Hard fork with full rename | Rename commands, paths and packages to `subcarchy` | Full | High: every upstream merge conflicts with the rename | Breaks community plugins until they are ported |
-| D. From scratch | Arch, Hyprland and Quickshell with original code | Full | None, but everything is rebuilt | None; plugins target the Omarchy shell API |
+| **D. From scratch** | Own distribution assembled from upstream projects; each layer chosen in its own decision; Omarchy code borrowed where it fits | Full | No merges; borrowed code is copied and then owned | Only if a later decision keeps the Omarchy shell plugin API |
 
-## Proposed decision
+## Decision
 
-Option **B**, in stages:
+Option **D**. Subcarchy is its own distribution, built layer by layer from
+the kernel up. Every layer gets its own decision record, listed in order in the
+[[decision-map|decision map]].
 
-1. Fork `omacom/omarchy` to `git.subcult.tv` and track upstream `main` (or the
-   release tags) on a schedule. This repository becomes that fork, or the fork
-   is imported into it; see the open question below.
-2. Build `subcarchy` and `subcarchy-settings` packages that declare
-   `provides=(omarchy=<version> omarchy-settings=<version>)` and
-   `conflicts=(omarchy omarchy-settings)`, so anything depending on `omarchy`
-   still installs.
-3. Keep the diff to branding (`etc-overrides/os-release`, Plymouth, SDDM,
-   Limine, logos, fastfetch, menu text), default package and web-app selection,
-   and fixes such as the shell overlay patch.
-4. Ship SUBCULT features as separate packages in a Subcarchy pacman repository
-   listed before `[omarchy]`: the theme and brand kit, the rice's commands and
-   plugins, own plugins, and a curated set of community plugins.
-5. Keep using `[omarchy]` for the kernel, Omarchy's own apps and its rebuilt AUR
-   packages.
-6. Defer renaming `omarchy-*` commands and paths. Revisit only if the fork's
-   diff stays small for several upstream releases, and then as wrappers rather
-   than a rename.
+Omarchy stays a source to borrow from, not an upstream to track:
+
+- Omarchy's code is MIT-licensed. Copying a script, config, plugin or install
+  step is allowed with the licence notice kept. Each decision record names what
+  it borrows and from which Omarchy version.
+- Borrowed code becomes Subcarchy code. There is no merge from Omarchy; a later
+  Omarchy fix is pulled in by hand when it is wanted.
+- The Omarchy name, logos and artwork are not borrowed.
+
+Option B (a tracking fork) was the earlier proposal. It was set aside because
+the owner wants to choose every part, including those Omarchy fixes in place.
 
 ## Consequences
 
-- Subcarchy can replace every visible Omarchy brand, which an overlay cannot.
-- Community and rice plugins keep working unchanged.
-- The rice's restore hook and the `~/.local/bin` shell overlay go away, because
-  their changes move into the fork's packages.
-- Someone must merge upstream regularly. With 157 migrations in 90 days,
-  falling behind by a month means a large merge. The merge cadence and who
-  does it are open.
-- Users see `omarchy` in command names and config paths. That is a visible
-  seam until a later decision removes it.
-- Subcarchy needs its own signing key, repository host and build pipeline for
-  a handful of packages, plus a choice about the ISO.
+- Every layer needs a decision, an implementation and tests. That is far more
+  work than a fork; the decision map makes the scope visible.
+- No upstream merge burden. With 157 Omarchy migrations in 90 days, that is a
+  real saving, paid for by maintaining everything Subcarchy ships.
+- Compatibility with the 39 community Omarchy plugins and the 38 rice plugins
+  is no longer automatic. Whether Subcarchy keeps the Omarchy shell plugin API
+  is its own decision in the map.
+- The SUBCULT rice, the inventory and the triage stay useful as a catalogue of
+  parts to borrow or rebuild.
+- Subcarchy needs its own package repository, signing key, build pipeline,
+  installer and update mechanism; each is a decision in the map.
 
-## Open questions for this decision
-
-- Should this repository *be* the fork (import Omarchy's history and add the
-  `docs/` and `tools/` folders), or stay a separate build repository that
-  vendors the fork as a submodule or package source? The current layout mirrors
-  Omarchy's tree so either works.
-- Track upstream `main` or tagged releases only?
-- Does the ISO reuse Omarchy's builder with Subcarchy package lists, or is the
-  first target "install Omarchy, then convert"?
-- Does the old `PatrickFanella/omarchy-subcult-theme` repository, which also
-  installs as `subcult`, need retiring to avoid name clashes?
-
-Related: [[omarchy-overview|Omarchy component map]] · [[branding-surfaces|Branding surfaces]] · [[subcult-rice|SUBCULT rice]] · [[roadmap|Roadmap]]
+Related: [[omarchy-overview|Omarchy component map]] · [[branding-surfaces|Branding surfaces]] · [[subcult-rice|SUBCULT rice]] · [[decision-map|Decision map]] · [[roadmap|Roadmap]]

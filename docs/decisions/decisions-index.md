@@ -20,6 +20,9 @@ Each record's `status` property holds its state. Create a new record from
 
 ![[decisions.base]]
 
+The [[decision-map|decision map]] lists every decision still to take, in
+order.
+
 | ADR | Title |
 |---|---|
 | [[0001-fork-strategy\|0001]] | How Subcarchy relates to Omarchy |
