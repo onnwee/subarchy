@@ -126,7 +126,7 @@ change.
 | Launcher calculator | calculator | yes | yes | repo | `libqalculate` | Sums typed in the shell launcher |
 | Qalculate! | calculator | yes |  | repo | `qalculate-qt` | Same engine: units, history, graphs |
 | btop | system-monitor | yes | yes | repo | `btop` | Opens in kitty; themed from the palette |
-| disktree | disk-usage | yes | yes | aur | `disktree-bin` | Treemap of what fills the disk, with removal; Rust and GPUI, by Tobi Lütke for Omarchy. `disktree` (source build) also in the AUR |
+| disktree | disk-usage | yes | yes | aur | `disktree-bin` | Treemap of what fills the disk, with removal; Rust and GPUI, made for Omarchy (`github.com/tobi/disktree`). `disktree` (source build) also in the AUR |
 | Theme Tender | theme-manager | yes | yes | build | `theme-tender` (planned AUR name) | Applies themes to every app ([[0037-theming\|ADR 0037]]); planning stage on 2026-11-07, no release yet |
 | gpu-screen-recorder | screen-recorder | yes | yes | repo | `gpu-screen-recorder` | Hardware-encoded; started and stopped from a keybinding or the shell |
 
