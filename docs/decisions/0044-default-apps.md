@@ -17,14 +17,15 @@ owner review.
 
 ## Decision
 
-Subarchy preinstalls a **full set** of applications, as Omarchy does, rather
-than a lean core with a catalogue. The set covers office, writing, notes,
-media, graphics, communication and utilities, using the defaults already
-decided:
+Subarchy preinstalls a **lean core**; everything else is one step away in the
+**app installer**. Revised 2026-11-06 under
+[[0054-lightweight-battery-first|ADR 0054]]; the owner had first chosen an
+Omarchy-style full preinstalled set. The full list still exists, as the
+installer's catalogue. The core uses the defaults already decided:
 
 | Role | App |
 |---|---|
-| Terminal | kitty, WezTerm ([[0040-terminal\|ADR 0040]]) |
+| Terminal | kitty ([[0040-terminal\|ADR 0040]]) |
 | Editor | Neovim with Subarchy's LazyVim config ([[0045-editor\|ADR 0045]]) |
 | Browser | Zen ([[0042-browser\|ADR 0042]]) |
 | Files | Dolphin, yazi ([[0043-file-manager\|ADR 0043]]) |
@@ -50,7 +51,7 @@ installer means adding a row and, when needed, an integration script.
 
 | Option | Why not chosen |
 |---|---|
-| Lean core with an app catalogue | The owner wants installs ready for everything. |
+| Full preinstalled set (Omarchy) | First choice; reversed for ADR 0054 because of install size and update volume. |
 | The owner's whole `sputnik` set | Too heavy and personal for every install. |
 
 ## Borrowed from Omarchy
@@ -77,7 +78,12 @@ Subarchy reads them from the list instead.
 
 ## Consequences
 
-Install size and update volume grow with the list; every preinstalled app
-needs theming and must survive staged updates.
+- The app list marks each app **preinstalled** (core) or **offered**
+  (installer only); the core should stay small enough to meet the CI memory
+  and package budgets (ADR 0054).
+- Every app, preinstalled or offered, needs theming and must survive staged
+  updates.
+- Apps that pull in heavy dependencies (32-bit libraries, KDE Frameworks)
+  install them only with the app.
 
 Related: [[decision-map|Decision map]] · [[app-list|App list]] · [[sputnik-apps|Apps on sputnik]] · [[0042-browser|ADR 0042]]

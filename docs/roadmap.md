@@ -34,6 +34,9 @@ runs and is checked in CI.
 - [ ] CI runner with KVM for package builds and VM boot tests
 - [ ] Choose how the stable Arch snapshot is served
       ([[0026-update-model|ADR 0026]])
+- [ ] Measure an idle, on-battery baseline on `sputnik` (power draw, idle
+      memory, wakeups) and set the CI budgets
+      ([[0054-lightweight-battery-first|ADR 0054]])
 
 ## Phase 2: base system boots
 
@@ -52,6 +55,10 @@ Plymouth, NetworkManager with the DNS trust policy, PipeWire, ufw.
 - [ ] Plugin API design record ([[0035-plugin-api|ADR 0035]])
 - [ ] Quickshell shell: bar, launcher, notifications, OSD, polkit
 - [ ] hyprlock and hypridle
+- [ ] Ported rice features ([[rice-port-review|rice port review]]): dock and
+      monitor profiles, reduced motion on battery, battery and thermal alerts,
+      privacy indicator, settings panel, destructive-action confirmation,
+      workspace names, media controls
 
 ## Phase 4: apps and theming
 

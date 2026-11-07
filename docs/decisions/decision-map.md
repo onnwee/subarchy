@@ -32,7 +32,7 @@ NVMe.
 | F2 | CPU architectures supported | x86_64 plus several aarch64 platforms | [[0003-cpu-architectures\|ADR 0003]]: x86_64 only |
 | F3 | Kernel | `linux-omarchy` (BORE CPU scheduler, ADIOS I/O scheduler), no fallback kernel | [[0004-kernel\|ADR 0004]]: `linux-zen`, `linux-lts` fallback |
 | F4 | Firmware and microcode | `linux-firmware` split packages, Intel and AMD microcode | [[0005-firmware\|ADR 0005]]: detected vendors, fwupd |
-| F5 | GPU driver policy (Intel, AMD, NVIDIA, hybrid) | Per-vendor install scripts, NVIDIA open DKMS | [[0006-gpu-drivers\|ADR 0006]]: open DKMS + 580xx legacy, iGPU with on-demand NVIDIA, 32-bit libraries always |
+| F5 | GPU driver policy (Intel, AMD, NVIDIA, hybrid) | Per-vendor install scripts, NVIDIA open DKMS | [[0006-gpu-drivers\|ADR 0006]]: open DKMS + 580xx legacy, iGPU with on-demand NVIDIA, 32-bit libraries on demand |
 
 ## Boot and storage
 
@@ -90,19 +90,19 @@ NVMe.
 | D3 | Bar, launcher and menus | Shell plugins | [[0036-shell-components\|ADR 0036]]: in the shell |
 | D4 | Notifications, OSD, lock screen, idle | Shell plugins | [[0036-shell-components\|ADR 0036]]: notifications and OSD in shell; hyprlock, hypridle |
 | D5 | Theming system | `colors.toml` per theme rendered into per-app templates | [[0037-theming\|ADR 0037]]: palette + templates; SUBCULT + classics; owner's switcher tool (repo to be shared) |
-| D6 | Wallpaper engine | `owe` | [[0038-wallpaper\|ADR 0038]]: shell-drawn, stills and video |
+| D6 | Wallpaper engine | `owe` | [[0038-wallpaper\|ADR 0038]]: shell-drawn, still by default, video opt-in |
 | D7 | Fonts and icon theme | JetBrains Mono Nerd, Yaru icons | [[0039-fonts-icons\|ADR 0039]]: JetBrains Mono, Space Grotesk, Oswald, Papirus |
 
 ## Applications and tooling
 
 | # | Decision | Omarchy 4.5 choice | Status |
 |---|---|---|---|
-| A1 | Terminal emulator | Foot default; Alacritty, Ghostty, Kitty supported | [[0040-terminal\|ADR 0040]]: kitty default, WezTerm |
+| A1 | Terminal emulator | Foot default; Alacritty, Ghostty, Kitty supported | [[0040-terminal\|ADR 0040]]: kitty; WezTerm in installer |
 | A2 | Login shell and prompt | bash, starship | [[0041-shell-prompt\|ADR 0041]]: bash login, zsh + starship + atuin |
 | A3 | Editor | Neovim with LazyVim | [[0045-editor\|ADR 0045]]: stock LazyVim, forked starter + branding layer, prebuilt |
 | A4 | Browser | Chromium | [[0042-browser\|ADR 0042]]: Zen |
 | A5 | File manager | Nautilus | [[0043-file-manager\|ADR 0043]]: Dolphin, yazi |
-| A6 | Default app set and web apps | `omarchy-base.packages` apps, 11 web apps | [[0044-default-apps\|ADR 0044]]: full set, installer and default picker; owner writes the list |
+| A6 | Default app set and web apps | `omarchy-base.packages` apps, 11 web apps | [[0044-default-apps\|ADR 0044]]: lean core, installer and default picker; owner writes the list |
 | A7 | Command-line interface for the distribution | `omarchy <group> <action>` over 556 commands | [[0046-distribution-cli\|ADR 0046]]: one dispatcher; Bash glue, Go for complex parts |
 | A8 | AI agent integration | `omarchy agent`, agents bar widget | [[0047-ai-agents\|ADR 0047]]: default agent, usage widget, skills; no account manager |
 

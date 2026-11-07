@@ -15,15 +15,13 @@ Decision map item A1. Accepted 2026-11-06.
 
 ## Decision
 
-- **kitty** is the default terminal.
-- **WezTerm** is also installed and themed.
-- `xdg-terminal-exec` prefers kitty, then WezTerm. `sputnik`'s preference
-  list has the same order, but on 2026-11-06 WezTerm was not installed there:
-  only a leftover launcher remained ([[sputnik-apps|Apps on sputnik]]).
-
-The owner answered "kitty and wezterm"; kitty is the default because it heads
-the owner's current preference list. Swap the order here if WezTerm should
-lead.
+- **kitty** is the default and only preinstalled terminal.
+- **WezTerm** is offered in the app installer ([[0044-default-apps|ADR 0044]])
+  and keeps a theme template. Revised 2026-11-06 under
+  [[0054-lightweight-battery-first|ADR 0054]]; it was first preinstalled.
+- `xdg-terminal-exec` lists kitty first, then WezTerm if the user installs
+  it. On 2026-11-06 WezTerm was not installed on `sputnik`; only a leftover
+  launcher remained ([[sputnik-apps|Apps on sputnik]]).
 
 ## Options considered
 
@@ -39,7 +37,7 @@ preference list mechanism (`default/xdg-terminal-exec/`).
 
 ## Consequences
 
-- Two terminals need theme templates ([[0037-theming|ADR 0037]]) and live
+- Both terminals keep theme templates ([[0037-theming|ADR 0037]]) and live
   reload: kitty through remote control, WezTerm through its config watcher.
 - Omarchy has no WezTerm template; that one is new.
 

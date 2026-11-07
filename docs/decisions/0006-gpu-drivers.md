@@ -29,10 +29,12 @@ Decision map item F5. Accepted 2026-11-06.
   - a session-wide toggle (from `~/.local/bin/gpu-mode`) that writes the same
     variables into the compositor environment for newly launched apps.
 - **32-bit graphics libraries** (`lib32-mesa`, `lib32-vulkan-*`,
-  `lib32-nvidia-utils`) are installed on every machine, with the `multilib`
-  repository enabled, so Steam and Wine work without extra downloads. The
-  owner confirmed this after the corrected size: about 58 packages and 990 MB
-  for the full Intel, AMD and NVIDIA set (2026-11-06).
+  `lib32-nvidia-utils`) install **on demand**, when Steam, Wine or Lutris is
+  installed. The `multilib` repository stays enabled. The full Intel, AMD and
+  NVIDIA set is about 58 packages and 990 MB.
+
+  Revised 2026-11-06 under [[0054-lightweight-battery-first|ADR 0054]]; the
+  owner had first chosen to install them on every machine.
 
 ## Options considered
 
@@ -42,7 +44,7 @@ Decision map item F5. Accepted 2026-11-06.
 | Nouveau and NVK only | No CUDA or NVENC, much worse laptop power use. |
 | NVIDIA renders everything on hybrid laptops | Keeps the discrete GPU powered: shorter battery life, more heat. |
 | iGPU only on hybrid laptops | The NVIDIA GPU is unusable until changed. |
-| 32-bit libraries only with gaming apps | Would save about 1 GB per machine; the owner preferred games working out of the box. |
+| 32-bit libraries on every install | First choice; reversed for ADR 0054 because it adds about 1 GB to every machine. |
 
 ## Borrowed
 

@@ -15,8 +15,11 @@ Decision map item D6. Accepted 2026-11-06.
 
 ## Decision
 
-The **shell draws the background**: still images with transitions, and video
-or animated images through Qt Multimedia. No separate wallpaper daemon.
+The **shell draws the background**. The default is a **still image**. Video
+and animated wallpapers are **opt-in** through Qt Multimedia and **pause on
+battery**, showing a still frame. No separate wallpaper daemon.
+
+Revised 2026-11-06 under [[0054-lightweight-battery-first|ADR 0054]].
 
 ## Options considered
 

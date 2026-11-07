@@ -53,18 +53,18 @@ An idle, on-battery baseline (power draw from `upower` and `powertop`, idle
 memory, wakeups) is the first measurement to take, on Omarchy now and on
 Subarchy later.
 
-## Earlier decisions to recheck against this
+## Earlier decisions rechecked (2026-11-06)
 
-| Decision | Conflict |
+| Decision | Outcome |
 |---|---|
-| [[0006-gpu-drivers\|ADR 0006]] 32-bit graphics libraries always | About 58 packages and 990 MB on every install |
-| [[0044-default-apps\|ADR 0044]] full preinstalled app set | Large install and update volume |
-| [[0038-wallpaper\|ADR 0038]] video wallpapers | GPU and battery cost |
-| [[0040-terminal\|ADR 0040]] two terminals | Second terminal preinstalled |
-| [[0043-file-manager\|ADR 0043]] Dolphin | Pulls in KDE Frameworks and KIO |
-| [[0004-kernel\|ADR 0004]] `linux-zen` | Tuned for responsiveness rather than power; measure before changing |
+| [[0006-gpu-drivers\|ADR 0006]] 32-bit graphics libraries | Now on demand with gaming apps |
+| [[0044-default-apps\|ADR 0044]] app set | Now a lean core; the full list is the installer's catalogue |
+| [[0038-wallpaper\|ADR 0038]] wallpaper | Still image by default; video opt-in, paused on battery |
+| [[0040-terminal\|ADR 0040]] terminals | kitty only; WezTerm offered in the installer |
+| [[0043-file-manager\|ADR 0043]] Dolphin | Kept; its KDE Frameworks cost counts against the budget |
+| [[0004-kernel\|ADR 0004]] `linux-zen` | Kept; measure power against stock `linux` once a baseline exists |
 
-The owner decides each; see [[rice-port-review|the rice port review]] and the
-questions that follow this ADR.
+The rice features kept under this principle are in
+[[rice-port-review|the rice port review]].
 
 Related: [[decision-map|Decision map]] · [[0021-power|ADR 0021]] · [[rice-port-review|Rice port review]]

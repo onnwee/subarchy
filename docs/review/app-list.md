@@ -21,7 +21,7 @@ picker read it ([[0044-default-apps|ADR 0044]]). Source material:
 |---|---|
 | App | Display name |
 | Role | Role it can fill, if any (see below); blank for apps without a role |
-| Preinstalled | `yes` if every install gets it |
+| Preinstalled | `yes` for the lean core; otherwise the app is only offered in the installer ([[0054-lightweight-battery-first\|ADR 0054]]) |
 | Default | `yes` if it is the role's default; one per role |
 | Source | `repo`, `aur` (rebuilt in Subarchy's repo) or `flatpak` |
 | Package | Package or Flatpak ID |
