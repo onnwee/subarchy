@@ -86,7 +86,7 @@ NVMe.
 | D2 | Plugin API and Omarchy plugin compatibility | Omarchy shell manifest API | [[0035-plugin-api\|ADR 0035]]: own API, port what we keep |
 | D3 | Bar, launcher and menus | Shell plugins | [[0036-shell-components\|ADR 0036]]: in the shell |
 | D4 | Notifications, OSD, lock screen, idle | Shell plugins | [[0036-shell-components\|ADR 0036]]: notifications and OSD in shell; hyprlock, hypridle |
-| D5 | Theming system | `colors.toml` per theme rendered into per-app templates | [[0037-theming\|ADR 0037]]: palette + templates; SUBCULT + classics; owner's switcher tool |
+| D5 | Theming system | `colors.toml` per theme rendered into per-app templates | [[0037-theming\|ADR 0037]]: palette + templates; SUBCULT + classics; owner's switcher tool (repo to be shared) |
 | D6 | Wallpaper engine | `owe` | [[0038-wallpaper\|ADR 0038]]: shell-drawn, stills and video |
 | D7 | Fonts and icon theme | JetBrains Mono Nerd, Yaru icons | [[0039-fonts-icons\|ADR 0039]]: JetBrains Mono, Space Grotesk, Oswald, Papirus |
 
@@ -94,8 +94,8 @@ NVMe.
 
 | # | Decision | Omarchy 4.5 choice | Status |
 |---|---|---|---|
-| A1 | Terminal emulator | Foot default; Alacritty, Ghostty, Kitty supported | open |
-| A2 | Login shell and prompt | bash, starship | open |
+| A1 | Terminal emulator | Foot default; Alacritty, Ghostty, Kitty supported | [[0040-terminal\|ADR 0040]]: kitty default, WezTerm |
+| A2 | Login shell and prompt | bash, starship | [[0041-shell-prompt\|ADR 0041]]: bash login, zsh + starship + atuin |
 | A3 | Editor | Neovim with LazyVim | open |
 | A4 | Browser | Chromium | open |
 | A5 | File manager | Nautilus | open |

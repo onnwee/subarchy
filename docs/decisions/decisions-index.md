@@ -64,5 +64,7 @@ order.
 | [[0037-theming\|0037]] | Theming system |
 | [[0038-wallpaper\|0038]] | Wallpaper |
 | [[0039-fonts-icons\|0039]] | Fonts and icons |
+| [[0040-terminal\|0040]] | Terminal emulator |
+| [[0041-shell-prompt\|0041]] | Interactive shell and prompt |
 
 Related: [[home|Docs home]]

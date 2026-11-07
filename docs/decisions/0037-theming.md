@@ -55,7 +55,8 @@ with that tool.
 ## Open
 
 - Where the owner's theme tool lives and what format it reads and writes.
-  The theme format should not be fixed before that is known.
+  The owner will share the repository later (2026-11-06). The theme format
+  should not be fixed before then.
 
 ## Consequences
 
