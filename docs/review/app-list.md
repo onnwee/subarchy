@@ -105,6 +105,7 @@ hardware-specific apps install on detection.
 | cliamp | music-player | yes | yes | aur | `cliamp` | Terminal music player |
 | OBS Studio | recorder | yes | yes | repo | `obs-studio` |  |
 | Kdenlive | video-editor | yes | yes | repo | `kdenlive` |  |
+| TuxGuitar | guitar-tab | yes | yes | aur | `tuxguitar` | Guitar tablature editor and player; the only music-production app preinstalled (owner, 2026-11-07) |
 
 ### Graphics and 3D
 
@@ -185,7 +186,7 @@ here as they come up.
 
 Apps on `sputnik` that this list leaves out (from
 [[sputnik-apps|Apps on sputnik]]): 1Password, Typora, Xournal++, Ardour,
-Guitarix, TuxGuitar, qpwgraph, Feishin, Streamlink Twitch GUI, Chatterino,
+Guitarix, qpwgraph, Feishin, Streamlink Twitch GUI, Chatterino,
 Vivaldi, Zen, Helix, Podman Desktop, Unity Hub, GeForce NOW, Moonlight,
 ProtonUp-Qt, JDownloader, TigerVNC, scrcpy, Raspberry Pi Imager, Filelight,
 File Roller, Tailscale tray, BlueFerry, LibreOffice, Thunderbird.
