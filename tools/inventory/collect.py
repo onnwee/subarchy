@@ -16,6 +16,7 @@ import datetime as dt
 import json
 import os
 import re
+import shlex
 import socket
 import subprocess
 from collections import Counter, defaultdict
@@ -399,6 +400,108 @@ def local_packages(local: dict, repos: dict) -> str:
     return "\n\n".join(out) + "\n"
 
 
+# Freedesktop main categories, in the order used to file each app.
+APP_CATEGORIES = [
+    ("Development", "Development"), ("Game", "Games"), ("AudioVideo", "Audio and video"),
+    ("Audio", "Audio and video"), ("Video", "Audio and video"), ("Graphics", "Graphics"),
+    ("Office", "Office"), ("Network", "Internet and communication"), ("Education", "Education"),
+    ("Science", "Science"), ("Settings", "Settings"), ("System", "System"), ("Utility", "Utilities"),
+]
+
+
+def desktop_entry(path: Path) -> dict:
+    entry, in_main = {}, False
+    try:
+        lines = path.read_text(errors="replace").splitlines()
+    except OSError:
+        return {}
+    for line in lines:
+        if line.startswith("["):
+            in_main = line.strip() == "[Desktop Entry]"
+            continue
+        if in_main and "=" in line:
+            key, _, value = line.partition("=")
+            entry.setdefault(key.strip(), value.strip())
+    return entry
+
+
+WRAPPERS = {"env", "/usr/bin/env", "xdg-terminal-exec", "uwsm-app", "uwsm", "app", "setsid", "--"}
+
+
+def exec_command(exec_: str) -> str:
+    """The program a desktop entry's Exec= line runs, skipping wrappers and their options."""
+    words = shlex.split(exec_.replace("%", "%%"), posix=True) if exec_ else []
+    skip_next = False
+    for w in words:
+        if skip_next:
+            skip_next = False
+            continue
+        if w in ("-u", "-e", "--app-id"):
+            skip_next = w == "-u"
+            continue
+        if w.startswith(("-", "%")) or w in WRAPPERS or ("=" in w and not w.startswith("/")):
+            continue
+        if w.startswith("omarchy-launch-") and w.endswith("-tui"):
+            return w
+        return w
+    return ""
+
+
+def local_apps(home: Path, local: dict, repos: dict) -> str:
+    """Visible desktop applications with owning package and origin."""
+    out = [header("Desktop applications", "`.desktop` entries in `/usr/share/applications` and `~/.local/share/applications`, pacman database")]
+    base = set(package_list(OMARCHY / "install/omarchy-base.packages"))
+    other = set(package_list(OMARCHY / "install/omarchy-other.packages"))
+    omarchy_apps = {p.name for p in (OMARCHY / "applications").glob("*.desktop")}
+    entries: dict[str, Path] = {}
+    for d in (Path("/usr/share/applications"), home / ".local/share/applications"):
+        for f in sorted(d.glob("*.desktop")):
+            entries[f.name] = f  # user entries override system ones
+    rows = []
+    for name, path in sorted(entries.items()):
+        e = desktop_entry(path)
+        if e.get("Type", "Application") != "Application" or e.get("NoDisplay") == "true" or e.get("Hidden") == "true":
+            continue
+        cats = e.get("Categories", "").split(";")
+        category = next((label for key, label in APP_CATEGORIES if key in cats), "Other")
+        exec_ = e.get("Exec", "")
+        pkg = ""
+        if "omarchy-launch-webapp" in exec_ or "--app=" in exec_:
+            kind = "web app"
+        else:
+            target = path if path.is_relative_to(Path("/usr")) else None
+            binary = ""
+            if target is None:
+                binary = exec_command(exec_)
+                found = binary if binary.startswith("/") else (run("sh", "-c", f"command -v {binary}").strip() if binary else "")
+                target = Path(found) if found and Path(found).exists() else None
+            owner = run("pacman", "-Qqo", str(target)).strip() if target else ""
+            pkg = owner.splitlines()[0] if owner else ""
+            if not pkg and binary and Path(binary).name in local:
+                pkg = Path(binary).name  # a ~/.local/bin wrapper named after its package
+            if target is None and not pkg:
+                kind = "stale: not installed"
+            elif pkg in base:
+                kind = "Omarchy base"
+            elif pkg in other:
+                kind = "Omarchy optional"
+            elif pkg:
+                kind = "added: " + ("AUR/local" if pkg not in repos else repos[pkg])
+            elif kind != "stale: not installed":
+                kind = "added: manual install"
+        if pkg == "omarchy" or (name in omarchy_apps and not kind.startswith("stale")):
+            kind = "Omarchy web app" if kind == "web app" else "Omarchy default"
+        where = "user" if path.is_relative_to(home) else "system"
+        rows.append([category, e.get("Name", name), f"`{pkg}`" if pkg else "", kind, where, f"`{name}`"])
+    rows.sort(key=lambda r: (r[0], r[1].lower()))
+    kinds = Counter(r[3].split(":")[0] for r in rows)
+    out.append(f"{len(rows)} visible applications: " + ", ".join(f"{n} {k}" for k, n in sorted(kinds.items())) +
+               ". Hidden entries (`NoDisplay`) are left out. *Omarchy base* and *Omarchy optional* mean the owning "
+               "package is in that Omarchy package list; *added* apps came from the owner. Flatpak had no apps installed.")
+    out.append(table(["Category", "App", "Package", "Origin", "Entry", "Desktop file"], rows))
+    return "\n\n".join(out) + "\n"
+
+
 # Wikilink targets for the closing "Related" line of each generated note.
 RELATED = {
     "omarchy": "[[inventory-index|Inventory]] · [[omarchy-overview|Omarchy component map]]",
@@ -447,6 +550,7 @@ def main() -> None:
         "local-config.md": local_hooks_and_extensions(args.home),
         "local-scripts-and-services.md": local_scripts_and_services(args.home),
         "local-packages.md": local_packages(local, repos),
+        "local-apps.md": local_apps(args.home, local, repos),
     }
     args.out.mkdir(parents=True, exist_ok=True)
     for name, text in files.items():

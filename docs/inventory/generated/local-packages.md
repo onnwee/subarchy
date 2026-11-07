@@ -15,7 +15,7 @@ tags: [inventory, generated, local]
 > Source: pacman database compared with Omarchy package lists. Do not edit by hand; rerun the script.
 
 
-179 explicitly installed packages are neither in an Omarchy package list nor a dependency of the `omarchy` package. Some are still installed by Omarchy's optional `omarchy install` commands; check before treating them as personal additions.
+182 explicitly installed packages are neither in an Omarchy package list nor a dependency of the `omarchy` package. Some are still installed by Omarchy's optional `omarchy install` commands; check before treating them as personal additions.
 
 ## core (3)
 
@@ -25,7 +25,7 @@ tags: [inventory, generated, local]
 | `net-tools` | 2.10-3 | Configuration tools for Linux networking |
 | `nfs-utils` | 3.1.1-1 | Support programs for Network File Systems |
 
-## extra (131)
+## extra (134)
 
 | Package | Version | Description |
 |---|---|---|
@@ -39,6 +39,7 @@ tags: [inventory, generated, local]
 | `bitwarden` | 2026.3.1-2 | A secure and free password manager for all of your devices |
 | `bitwarden-cli` | 2026.2.0-1 | The command line vault |
 | `broot` | 1.61.0-1 | Fuzzy Search + tree + cd |
+| `cage` | 0.3.1-1 | A kiosk compositor for Wayland |
 | `cava` | 1.0.0-1 | Console-based Audio Visualizer with support for multiple backends |
 | `clang` | 23.1.3-4 | C language family frontend for LLVM |
 | `cpio` | 2.15-3 | A tool to copy files into or out of a cpio or tar archive |
@@ -57,6 +58,7 @@ tags: [inventory, generated, local]
 | `git-lfs` | 3.8.0-1 | Git extension for versioning large files |
 | `glaxnimate` | 0.6.0-2 | Vector animation and motion design application |
 | `go-task` | 3.54.0-1 | A task runner written in Go |
+| `gst-plugins-good` | 1.28.8-1 | Multimedia graph framework - good plugins |
 | `guitarix` | 0.47.0-5 | A simple mono guitar amplifier and FX for JACK using Faust |
 | `gvfs-gphoto2` | 1.62.0-3 | Virtual filesystem implementation for GIO - gphoto2 backend (PTP camera, MTP media player) |
 | `halloy` | 2026.9-1 | An open-source IRC client |
@@ -152,6 +154,7 @@ tags: [inventory, generated, local]
 | `vlc-plugin-x264` | 3.0.24-1 | Free and open source cross-platform multimedia player and framework - H264/AVC encoding |
 | `vlc-plugin-x265` | 3.0.24-1 | Free and open source cross-platform multimedia player and framework - H265/HEVC encoding |
 | `vlc-plugins-all` | 3.0.24-1 | Free and open source cross-platform multimedia player and framework - all plugins |
+| `webkitgtk-6.0` | 2.54.1-1 | Web content engine for GTK |
 | `wine-staging` | 11.20-1 | A compatibility layer for running Windows programs - Staging branch |
 | `wlr-randr` | 0.5.0-1 | Utility to manage outputs of a Wayland compositor |
 | `xmlstarlet` | 1.7.0-1 | A set of tools to transform, query, validate, and edit XML documents |
@@ -231,7 +234,7 @@ Includes other-architecture and optional packages.
 
 | Tool | Version |
 |---|---|
-| `amp` | 0.0.1793995239-gedfe82 |
+| `amp` | 0.0.1794009661-g88d32b |
 | `antigravity-cli` | 1.5.2 |
 | `atuin` | 18.24.5 |
 | `basecamp` | 0.24.0 |
@@ -256,7 +259,7 @@ Includes other-architecture and optional packages.
 | `go:gitea.dev/tea` | 0.16.0 |
 | `grok` | 1.0.77 |
 | `hey-cli` | 1.11.0 |
-| `http:devin` | 3000.11.234 |
+| `http:devin` | 3000.12.17 |
 | `http:kiro-cli` | 3.1.0 |
 | `hunk` | 0.24.1 |
 | `hyperfine` | 2.0.0 |
@@ -276,7 +279,7 @@ Includes other-architecture and optional packages.
 | `npm:ocx` | 2.0.15 |
 | `npm:opencode-tasks` | 1.0.0 |
 | `oh-my-pi` | 18.17.0 |
-| `opencode` | 2.2.5 |
+| `opencode` | 2.2.6 |
 | `opencode-v1` | 2.2.5 |
 | `ori` | 0.16.3-f483c10 |
 | `pi` | 1.5.0 |

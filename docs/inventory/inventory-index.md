@@ -31,6 +31,7 @@ Snapshot: `sputnik`, 2026-11-06, Omarchy `4.5.0-3`, kernel `7.2.15-1-omarchy`.
 - [[local-additions|Local additions]]: what was added beyond Omarchy, grouped by purpose.
 - [[subcult-rice|SUBCULT rice]]: the existing 2.0.0 overlay that supplies the `subcult.*` plugins and `subcult-*` commands.
 - [[branding-surfaces|Branding surfaces]]: where the Omarchy name, logo and URLs appear.
+- [[sputnik-apps|Apps on sputnik]]: the 113 desktop apps grouped by use, with overlaps and stale launchers.
 
 ## Generated documents
 
@@ -50,6 +51,7 @@ them by hand.
 | [[local-config]] | Hooks, menu extensions, Omarchy and Hyprland config file names |
 | [[local-scripts-and-services]] | `~/.local/bin`, user systemd units, desktop entries |
 | [[local-packages]] | Explicit packages outside Omarchy's lists, mise tools |
+| [[local-apps]] | Visible desktop apps with owning package and origin |
 
 Their properties (`scope`, `observed`, `source`) feed this view:
 

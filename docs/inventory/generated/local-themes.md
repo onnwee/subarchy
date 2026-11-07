@@ -28,6 +28,6 @@ tags: [inventory, generated, local]
 | `omarchy` | custom | 0 |  | https://github.com/oldjobobo/omarchy.git | 11 |
 | `saga` | custom | 5 | yes | https://github.com/HANCORE-linux/omarchy-saga-theme.git | 23 |
 | `subcult` | custom | 7 | yes |  | 16 |
-| `subcult-minimal` | custom | 7 | yes |  | 5 |
+| `subcult-minimal` | custom | 109 | yes |  | 5 |
 
 Related: [[inventory-index|Inventory]] · [[local-additions|Local additions]] · [[triage|Triage]]

@@ -17,7 +17,9 @@ Decision map item A1. Accepted 2026-11-06.
 
 - **kitty** is the default terminal.
 - **WezTerm** is also installed and themed.
-- `xdg-terminal-exec` prefers kitty, then WezTerm, as on `sputnik`.
+- `xdg-terminal-exec` prefers kitty, then WezTerm. `sputnik`'s preference
+  list has the same order, but on 2026-11-06 WezTerm was not installed there:
+  only a leftover launcher remained ([[sputnik-apps|Apps on sputnik]]).
 
 The owner answered "kitty and wezterm"; kitty is the default because it heads
 the owner's current preference list. Swap the order here if WezTerm should

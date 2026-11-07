@@ -66,5 +66,8 @@ order.
 | [[0039-fonts-icons\|0039]] | Fonts and icons |
 | [[0040-terminal\|0040]] | Terminal emulator |
 | [[0041-shell-prompt\|0041]] | Interactive shell and prompt |
+| [[0042-browser\|0042]] | Browser |
+| [[0043-file-manager\|0043]] | File manager |
+| [[0044-default-apps\|0044]] | Default app set |
 
 Related: [[home|Docs home]]

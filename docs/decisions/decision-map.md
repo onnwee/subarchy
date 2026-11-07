@@ -96,10 +96,10 @@ NVMe.
 |---|---|---|---|
 | A1 | Terminal emulator | Foot default; Alacritty, Ghostty, Kitty supported | [[0040-terminal\|ADR 0040]]: kitty default, WezTerm |
 | A2 | Login shell and prompt | bash, starship | [[0041-shell-prompt\|ADR 0041]]: bash login, zsh + starship + atuin |
-| A3 | Editor | Neovim with LazyVim | open |
-| A4 | Browser | Chromium | open |
-| A5 | File manager | Nautilus | open |
-| A6 | Default app set and web apps | `omarchy-base.packages` apps, 11 web apps | open |
+| A3 | Editor | Neovim with LazyVim | in discussion: maintain a Subcarchy fork of LazyVim |
+| A4 | Browser | Chromium | [[0042-browser\|ADR 0042]]: Zen |
+| A5 | File manager | Nautilus | [[0043-file-manager\|ADR 0043]]: Dolphin, yazi |
+| A6 | Default app set and web apps | `omarchy-base.packages` apps, 11 web apps | [[0044-default-apps\|ADR 0044]]: full set; list pending review |
 | A7 | Command-line interface for the distribution | `omarchy <group> <action>` over 556 commands | open |
 | A8 | AI agent integration | `omarchy agent`, agents bar widget | open |
 
