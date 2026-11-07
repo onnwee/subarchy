@@ -66,10 +66,11 @@ func newUpdater(t *testing.T, f *fake, yes bool) (*Updater, *bytes.Buffer) {
 		Migrations: Migrations{Dir: t.TempDir(), StateDir: filepath.Join(t.TempDir(), "state")},
 		Stdin:      strings.NewReader(""),
 		Stdout:     out,
+		Privileged: []string{"sudo", "/usr/bin/subcult-update", "privileged"},
 	}}, out
 }
 
-const snapshotCmd = "sudo snapper -c root create --cleanup-algorithm number --print-number --description subcult update 0.0.0"
+const snapshotCmd = "sudo /usr/bin/subcult-update privileged snapshot"
 
 func TestRunOrder(t *testing.T) {
 	f := &fake{
@@ -81,7 +82,8 @@ func TestRunOrder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"sudo pacman -Syu --noconfirm", "mise upgrade", "sudo paccache -rk2"}
+	want := []string{"sudo /usr/bin/subcult-update privileged upgrade --noconfirm", "mise upgrade",
+		"sudo /usr/bin/subcult-update privileged prune"}
 	if !slices.Equal(f.ran, want) {
 		t.Errorf("ran %q, want %q", f.ran, want)
 	}
@@ -105,7 +107,7 @@ func TestSnapshotFailureStops(t *testing.T) {
 }
 
 func TestNoSnapshotAndPackageFailure(t *testing.T) {
-	f := &fake{tools: map[string]bool{"snapper": true}, fail: map[string]bool{"sudo pacman -Syu": true}}
+	f := &fake{tools: map[string]bool{"snapper": true}, fail: map[string]bool{"sudo /usr/bin/subcult-update privileged upgrade": true}}
 	u, _ := newUpdater(t, f, false)
 	u.O.NoSnapshot = true
 	_, err := u.Run(context.Background())
@@ -216,5 +218,17 @@ func TestDryRunner(t *testing.T) {
 	}
 	if out.String() != "would run: sudo pacman -Syu\n" {
 		t.Errorf("out = %q", out)
+	}
+}
+
+func TestPrivilegedSteps(t *testing.T) {
+	steps := PrivilegedSteps("1.2.3")
+	if got := strings.Join(steps["snapshot"], " "); !strings.HasSuffix(got, "--description subcult update 1.2.3") {
+		t.Errorf("snapshot = %q", got)
+	}
+	for step, argv := range steps {
+		if strings.HasPrefix(argv[0], "/") || argv[0] == "sudo" || argv[0] == "sh" || argv[0] == "bash" {
+			t.Errorf("%s runs %q", step, argv[0])
+		}
 	}
 }

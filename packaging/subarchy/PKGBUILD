@@ -11,7 +11,7 @@ pkgdesc="Subarchy: SUBCULT's Arch Linux desktop (subcult CLI, defaults and OS id
 arch=('x86_64')
 url="https://git.subcult.tv/subculture-collective/subarchy"
 license=('GPL-3.0-or-later')
-depends=('bash' 'glibc' 'pacman-contrib')
+depends=('bash' 'glibc' 'pacman-contrib' 'fakeroot')
 makedepends=('go' 'git')
 options=('!debug')
 backup=()
@@ -74,6 +74,15 @@ package() {
   install -Dm644 "$sys/resolved-dns.conf" "$pkgdir/usr/lib/systemd/resolved.conf.d/50-subarchy.conf"
   install -Dm644 "$sys/networkmanager-dns.conf" "$pkgdir/usr/lib/NetworkManager/conf.d/50-subarchy-dns.conf"
   install -Dm644 "$sys/coredump.conf" "$pkgdir/usr/lib/systemd/coredump.conf.d/50-subarchy.conf"
+  # Passwordless update steps (ADR 0062), the daily update check (ADR 0026)
+  # and the power profile by power source (ADR 0021).
+  install -Dm440 "$sys/sudoers-update" "$pkgdir/etc/sudoers.d/50-subarchy-update"
+  install -Dm644 "$sys/subcult-update-check.service" "$pkgdir/usr/lib/systemd/user/subcult-update-check.service"
+  install -Dm644 "$sys/subcult-update-check.timer" "$pkgdir/usr/lib/systemd/user/subcult-update-check.timer"
+  install -dm755 "$pkgdir/usr/lib/systemd/user/timers.target.wants"
+  ln -s ../subcult-update-check.timer "$pkgdir/usr/lib/systemd/user/timers.target.wants/subcult-update-check.timer"
+  install -Dm644 "$sys/power-profile.rules" "$pkgdir/usr/lib/udev/rules.d/90-subarchy-power.rules"
+  install -Dm644 "$sys/subcult-power-auto.service" "$pkgdir/usr/lib/systemd/system/subcult-power-auto.service"
 
   # Migrations run once per user by `subcult update` (ADR 0026).
   install -dm755 "$pkgdir/usr/share/subcult/migrations"

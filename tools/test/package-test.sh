@@ -29,9 +29,14 @@ for path in usr/bin/subcult usr/bin/sub usr/bin/subcult-app usr/bin/subcult-upda
   usr/share/subcult/default/hypr/subcult.lua usr/share/subcult/default/hypr/user-hyprland.lua \
   usr/share/wayland-sessions/subarchy.desktop usr/lib/sddm/sddm.conf.d/subarchy.conf \
   usr/lib/sysctl.d/90-subarchy-hardening.conf usr/lib/systemd/resolved.conf.d/50-subarchy.conf \
-  usr/lib/NetworkManager/conf.d/50-subarchy-dns.conf usr/lib/systemd/coredump.conf.d/50-subarchy.conf; do
+  usr/lib/NetworkManager/conf.d/50-subarchy-dns.conf usr/lib/systemd/coredump.conf.d/50-subarchy.conf \
+  etc/sudoers.d/50-subarchy-update usr/lib/systemd/user/timers.target.wants/subcult-update-check.timer \
+  usr/lib/udev/rules.d/90-subarchy-power.rules usr/bin/subcult-power-auto; do
   grep -qx "$path" <<<"$list" || fail "missing $path"
 done
+
+perm=$(bsdtar -tvf "$pkg" etc/sudoers.d/50-subarchy-update | cut -c1-10)
+[[ $perm == -r--r----- ]] || fail "sudoers drop-in mode $perm, want 0440"
 
 osr=$(bsdtar -xOf "$pkg" etc/os-release)
 for want in 'NAME="Subarchy"' 'ID=subarchy' 'ID_LIKE=arch' 'VERSION_ID=0.0.0'; do

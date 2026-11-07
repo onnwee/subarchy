@@ -21,6 +21,26 @@ type Options struct {
 	Migrations Migrations
 	Stdin      io.Reader
 	Stdout     io.Writer
+	// Privileged runs a fixed root step, e.g. ["sudo",
+	// "/usr/bin/subcult-update", "privileged"]; sudoers lets wheel run those
+	// exact command lines without a password (ADR 0062).
+	Privileged []string
+}
+
+// PrivilegedSteps are the root steps `subcult-update privileged` accepts,
+// mapped to the commands they run. Nothing in them comes from the caller.
+func PrivilegedSteps(version string) map[string][]string {
+	return map[string][]string{
+		"snapshot": {"snapper", "-c", "root", "create", "--cleanup-algorithm", "number",
+			"--print-number", "--description", "subcult update " + version},
+		"upgrade":             {"pacman", "-Syu"},
+		"upgrade --noconfirm": {"pacman", "-Syu", "--noconfirm"},
+		"prune":               {"paccache", "-rk2"},
+	}
+}
+
+func (u *Updater) priv(step ...string) []string {
+	return append(append([]string{}, u.O.Privileged...), step...)
 }
 
 // Updater runs the update steps in the order ADR 0026 sets.
@@ -46,8 +66,7 @@ func (u *Updater) Run(ctx context.Context) (Report, error) {
 
 	if !u.O.NoSnapshot && u.R.Has("snapper") {
 		say("taking a snapshot")
-		num, err := u.R.Output(ctx, "sudo", "snapper", "-c", "root", "create", "--cleanup-algorithm", "number",
-			"--print-number", "--description", "subcult update "+u.O.Version)
+		num, err := u.R.Output(ctx, u.priv("snapshot")...)
 		if err != nil {
 			return rep, fmt.Errorf("snapshot: %w (use --no-snapshot to update without one)", err)
 		}
@@ -55,7 +74,7 @@ func (u *Updater) Run(ctx context.Context) (Report, error) {
 	}
 
 	say("upgrading packages")
-	args := []string{"sudo", "pacman", "-Syu"}
+	args := u.priv("upgrade")
 	if u.O.Yes {
 		args = append(args, "--noconfirm")
 	}
@@ -135,7 +154,7 @@ func (u *Updater) cleanup(ctx context.Context) error {
 	}
 	if u.R.Has("paccache") {
 		fmt.Fprintln(u.O.Stdout, ">> pruning the package cache (keeping 2 versions)")
-		return u.R.Run(ctx, "sudo", "paccache", "-rk2")
+		return u.R.Run(ctx, u.priv("prune")...)
 	}
 	return nil
 }

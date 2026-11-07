@@ -24,6 +24,7 @@ build:
 
 smoke: build
 	tools/test/dispatcher-smoke.sh $(BUILD)/subcult
+	tools/test/power-auto-test.sh
 
 shellcheck:
 	@if [ -n "$(SHELL_SCRIPTS)" ]; then shellcheck -x $(SHELL_SCRIPTS); fi

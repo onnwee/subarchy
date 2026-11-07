@@ -1,0 +1,13 @@
+[Unit]
+Description=Set the power profile for the power source at boot (ADR 0021)
+After=power-profiles-daemon.service
+Wants=power-profiles-daemon.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/subcult-power-auto
+
+# power-profiles-daemon orders itself after multi-user.target, so this
+# joins it under graphical.target to avoid an ordering cycle.
+[Install]
+WantedBy=graphical.target

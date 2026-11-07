@@ -1,0 +1,7 @@
+# Subarchy (ADR 0062): the root steps of `subcult update` run without a
+# password for wheel. Each line names one exact command line; nothing else
+# is allowed. Installed to /etc/sudoers.d/50-subarchy-update (0440).
+%wheel ALL=(root) NOPASSWD: /usr/bin/subcult-update privileged snapshot
+%wheel ALL=(root) NOPASSWD: /usr/bin/subcult-update privileged upgrade
+%wheel ALL=(root) NOPASSWD: /usr/bin/subcult-update privileged upgrade --noconfirm
+%wheel ALL=(root) NOPASSWD: /usr/bin/subcult-update privileged prune

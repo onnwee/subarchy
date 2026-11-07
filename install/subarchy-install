@@ -194,7 +194,7 @@ compression-algorithm = zstd
 EOF
 
   arch-chroot "$target" systemctl enable --quiet NetworkManager systemd-timesyncd sddm \
-    systemd-resolved ufw apparmor avahi-daemon bluetooth power-profiles-daemon
+    systemd-resolved ufw apparmor avahi-daemon bluetooth power-profiles-daemon subcult-power-auto
   if grep -q GenuineIntel /proc/cpuinfo; then
     arch-chroot "$target" pacman -S --noconfirm --needed thermald >/dev/null
     arch-chroot "$target" systemctl enable --quiet thermald

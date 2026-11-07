@@ -94,5 +94,11 @@ How the stable snapshot is served:
   `checkupdates`. The VM install test runs it on a fresh install. Not yet:
   the channels, the daily check timer and bar indicator, and service restart
   detection.
+- 2026-11-07, later: the daily check is a user timer
+  (`subcult-update-check.timer`, enabled for every user by the package) that
+  writes the count to `~/.local/state/subcult/update-count` for the bar to
+  read. The root steps run through `subcult-update privileged`, which sudo
+  allows without a password (ADR 0062). The bar indicator, channels and
+  restart detection remain.
 
 Related: [[decision-map|Decision map]] · [[0025-package-repository|ADR 0025]] · [[0011-snapshots|ADR 0011]]
