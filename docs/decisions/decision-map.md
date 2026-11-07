@@ -72,11 +72,11 @@ NVMe.
 
 | # | Decision | Omarchy 4.5 choice | Status |
 |---|---|---|---|
-| L1 | Display server protocol | Wayland only, Xwayland for legacy apps | open |
-| L2 | Login manager | SDDM with an Omarchy theme | open |
-| L3 | Session manager | uwsm | open |
-| L4 | Compositor | Hyprland, configured in Lua | open |
-| L5 | XDG portals, screen sharing | `xdg-desktop-portal-hyprland`, GTK portal | open |
+| L1 | Display server protocol | Wayland only, Xwayland for legacy apps | [[0029-display-protocol\|ADR 0029]]: Wayland, Xwayland |
+| L2 | Login manager | SDDM with an Omarchy theme | [[0030-login-manager\|ADR 0030]]: SDDM, themed |
+| L3 | Session manager | uwsm | [[0031-session-manager\|ADR 0031]]: uwsm |
+| L4 | Compositor | Hyprland, configured in Lua | [[0032-compositor\|ADR 0032]]: Hyprland, Lua |
+| L5 | XDG portals, screen sharing | `xdg-desktop-portal-hyprland`, GTK portal | [[0033-portals\|ADR 0033]]: Hyprland and GTK portals |
 
 ## Desktop shell
 

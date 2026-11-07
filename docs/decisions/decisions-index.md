@@ -53,5 +53,10 @@ order.
 | [[0026-update-model\|0026]] | Update model and migrations |
 | [[0027-third-party-software\|0027]] | Third-party software |
 | [[0028-developer-toolchains\|0028]] | Developer toolchains |
+| [[0029-display-protocol\|0029]] | Display protocol |
+| [[0030-login-manager\|0030]] | Login manager |
+| [[0031-session-manager\|0031]] | Session manager |
+| [[0032-compositor\|0032]] | Compositor |
+| [[0033-portals\|0033]] | XDG portals |
 
 Related: [[home|Docs home]]
