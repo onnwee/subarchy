@@ -61,5 +61,8 @@ order.
 | [[0034-shell-toolkit\|0034]] | Shell toolkit |
 | [[0035-plugin-api\|0035]] | Shell plugin API |
 | [[0036-shell-components\|0036]] | Shell components, lock and idle |
+| [[0037-theming\|0037]] | Theming system |
+| [[0038-wallpaper\|0038]] | Wallpaper |
+| [[0039-fonts-icons\|0039]] | Fonts and icons |
 
 Related: [[home|Docs home]]
