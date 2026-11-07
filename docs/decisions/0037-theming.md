@@ -19,8 +19,7 @@ Decision map item D5. Accepted 2026-11-06.
 **backgrounds**. Applying a theme renders **templates** into matching configs
 for every themed program: terminals, Hyprland, hyprlock, the shell, SDDM,
 Plymouth colours, btop, editors, GTK and Qt, the browser and Flatpak apps.
-Whether themes support variants (Standard, OLED, Daylight, High Contrast, as
-the SUBCULT rice does) is open in [[rice-port-review|the rice port review]].
+Themes have no variants mechanism; the owner declined the rice's (2026-11-06).
 
 **Shipped themes.**
 
@@ -51,8 +50,7 @@ with that tool.
 - Omarchy's `colors.toml` and `default/themed/*.tpl` templates (Alacritty,
   Foot, Ghostty, Kitty, btop, Chromium, Hyprland, Neovim, Helix, VS Code,
   Obsidian, fcitx5, keyboard RGB, shell and others).
-- Nothing from the rice's theme. Its variant mechanism is listed under
-  "decide later" in [[rice-port-review|the rice port review]].
+- Nothing from the rice's theme or its variant mechanism.
 
 ## Open
 

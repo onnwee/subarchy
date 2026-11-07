@@ -78,5 +78,6 @@ order.
 | [[0051-hosting-ci\|0051]] | Source hosting and CI |
 | [[0052-name-identity\|0052]] | Name and identity |
 | [[0053-licence\|0053]] | Licence |
+| [[0054-lightweight-battery-first\|0054]] | Lightweight and battery-first defaults |
 
 Related: [[home|Docs home]]

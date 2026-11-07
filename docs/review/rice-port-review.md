@@ -23,7 +23,9 @@ The command name overlap (`subcult-*` in both) is accepted; the rice is
 removed from a machine before Subarchy is installed
 ([[0052-name-identity|ADR 0052]]).
 
-Change any verdict you disagree with.
+Change any verdict you disagree with. Lightweight, battery-first defaults
+([[0054-lightweight-battery-first|ADR 0054]]) decide what stays on the port
+list.
 
 ## Port
 
@@ -59,19 +61,11 @@ Patterns worth keeping where Subarchy builds the equivalent itself.
 | Health report a user can attach to a bug | `subcult-rice-health`, `beta-report.sh`, `COMMUNITY_REPORT_TRIAGE.md` | `subcult doctor` style diagnostics |
 | Privacy-bounded event history | `subcult.operations-log`, `OPERATIONS_LOG.md` | Notification history: decide whether it needs more than the notification centre |
 
-## Decide later
+## Declined by the owner (2026-11-06)
 
-Useful but large or overlapping; each needs a yes or no from the owner.
-
-| Feature | Rice source | Question |
-|---|---|---|
-| Activity modes: Work, Focus, Gaming, Presentation, Travel, Quiet | `subcult-activity-mode`, `ACTIVITY_MODES.md` | Wanted as one-step bundles of settings? |
-| Focus timer and "closed door" indicator | `subcult.mission`, `subcult.closed-door`, `subcult-focus` | Overlaps Super Productivity and Tadooer focus features. |
-| Context layer: explainable recommendations from power, thermal, display and network facts | `subcult.context`, `subcult-context*`, `CONTEXT.md` | Large; worth it in the first release? |
-| Sound cues with quiet hours and a kill switch | `subcult-sound`, `SOUND.md` | Wanted at all? |
-| Communications summary: network, VPN, Bluetooth, Tailscale | `subcult.communications` | Could fold into the network panel with the DNS trust policy ([[0020-dns\|ADR 0020]]). |
-| Device and dock overlay | `subcult.device-osd`, `subcult-device-monitor` | Overlaps topology profiles. |
-| Theme variants mechanism (OLED, Daylight, High Contrast) | `subcult-theme-variant`, `THEME_VARIANTS.md` | The mechanism is theme-independent; High Contrast matters for accessibility. Keep for [[0037-theming\|ADR 0037]]? |
+Activity modes, the focus timer and "closed door" indicator, the context
+layer, sound cues, the communications summary, the device and dock overlay,
+and the theme variants mechanism. None is ported.
 
 ## Skip
 

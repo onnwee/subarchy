@@ -17,6 +17,9 @@ inside a layer than across layers.
 Each decision becomes an ADR when it is taken. The **Omarchy 4.5 choice**
 column is the default to borrow from; it is not a recommendation.
 
+Cross-cutting principle: [[0054-lightweight-battery-first|ADR 0054]],
+lightweight and battery-first defaults with no loss as a desktop.
+
 Reference machine: `sputnik`, Dell XPS 15 9520, Intel Iris Xe with NVIDIA RTX
 3050 Ti Mobile (hybrid graphics), UEFI with Secure Boot off, LUKS2 and btrfs on
 NVMe.
