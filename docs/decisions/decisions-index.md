@@ -39,5 +39,10 @@ order.
 | [[0012-secure-boot\|0012]] | Secure Boot |
 | [[0013-boot-splash\|0013]] | Boot splash |
 | [[0014-swap-hibernation\|0014]] | Swap and hibernation |
+| [[0015-init-system\|0015]] | Init and service manager |
+| [[0016-networking\|0016]] | Networking and Wi-Fi |
+| [[0017-audio\|0017]] | Audio |
+| [[0018-bluetooth\|0018]] | Bluetooth |
+| [[0019-firewall\|0019]] | Firewall |
 
 Related: [[home|Docs home]]

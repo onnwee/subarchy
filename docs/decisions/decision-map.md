@@ -48,12 +48,12 @@ NVMe.
 
 | # | Decision | Omarchy 4.5 choice | Status |
 |---|---|---|---|
-| S1 | Init and service manager | systemd | open |
-| S2 | Networking and Wi-Fi | NetworkManager | open |
-| S3 | DNS and name resolution | systemd-resolved (stub resolver), Avahi for mDNS | open |
-| S4 | Audio | PipeWire with WirePlumber | open |
-| S5 | Bluetooth | BlueZ | open |
-| S6 | Firewall | ufw with `ufw-docker` | open |
+| S1 | Init and service manager | systemd | [[0015-init-system\|ADR 0015]]: systemd |
+| S2 | Networking and Wi-Fi | NetworkManager | [[0016-networking\|ADR 0016]]: NetworkManager, wpa_supplicant |
+| S3 | DNS and name resolution | systemd-resolved (stub resolver), Avahi for mDNS | in discussion: resolved with encrypted DNS and home DNS |
+| S4 | Audio | PipeWire with WirePlumber | [[0017-audio\|ADR 0017]]: PipeWire, JACK, realtime |
+| S5 | Bluetooth | BlueZ | [[0018-bluetooth\|ADR 0018]]: BlueZ |
+| S6 | Firewall | ufw with `ufw-docker` | [[0019-firewall\|ADR 0019]]: ufw, ufw-docker |
 | S7 | Power and thermal management | `omarchy-power-profiles-daemon`, thermald | open |
 | S8 | Printing and device discovery | CUPS, Avahi | open |
 | S9 | Authentication: PAM, polkit, keyring, fingerprint, FIDO | gnome-keyring, shell polkit agent, optional fprintd | open |
