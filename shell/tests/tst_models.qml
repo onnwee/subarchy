@@ -81,6 +81,17 @@ TestCase {
     compare(LayoutModel.modeFor("DP-3", {}), "minimal")
   }
 
+  function test_modeForWithoutPrimaryOrLaptop() {
+    // A desktop with no laptop panel and no primary set: the first output
+    // gets the full bar, the rest minimal.
+    compare(LayoutModel.modeFor("DP-1", { primary: "", full: [] }, ["DP-1", "HDMI-A-1"]), "full")
+    compare(LayoutModel.modeFor("HDMI-A-1", { primary: "", full: [] }, ["DP-1", "HDMI-A-1"]), "minimal")
+    // With a laptop panel present, the externals stay minimal.
+    compare(LayoutModel.modeFor("DP-1", { primary: "", full: [] }, ["eDP-1", "DP-1"]), "minimal")
+    // A primary that is not connected falls back the same way.
+    compare(LayoutModel.modeFor("DP-1", { primary: "DP-9", full: [] }, ["DP-1"]), "full")
+  }
+
   function test_widgetsFull() {
     const layout = { left: ["a", "b"], center: ["c"], right: ["d"], minimal: ["b"] }
     const w = LayoutModel.widgetsFor(layout, "full")

@@ -14,7 +14,7 @@ PanelWindow { // qmllint disable uncreatable-type
   required property var modelData
   screen: modelData
 
-  readonly property string mode: LayoutModel.modeFor(modelData.name, Config.bar)
+  readonly property string mode: LayoutModel.modeFor(modelData.name, Config.bar, Quickshell.screens.map(s => s.name))
   readonly property var sections: LayoutModel.widgetsFor(Config.bar.layout, mode)
 
   WlrLayershell.namespace: "subcult-bar"
@@ -34,11 +34,25 @@ PanelWindow { // qmllint disable uncreatable-type
     color: Theme.borderInactive
   }
 
+  // The widgets that actually loaded on this bar (used by the tests).
+  function loadedIds() {
+    const ids = []
+    for (const section of [left, center, right])
+      for (let i = 0; i < section.hosts.count; i++) {
+        const h = section.hosts.itemAt(i) as WidgetHost
+        if (h && h.widgetItem)
+          ids.push(h.widgetId)
+      }
+    return ids
+  }
+
   component Section: Row {
     property var ids: []
+    property alias hosts: repeater
     spacing: Style.spacing
     height: Style.barHeight
     Repeater {
+      id: repeater
       model: parent.ids
       delegate: WidgetHost {
         required property string modelData
@@ -50,17 +64,20 @@ PanelWindow { // qmllint disable uncreatable-type
   }
 
   Section {
+    id: left
     ids: bar.sections.left
     anchors.left: parent.left
     anchors.leftMargin: Style.padding
   }
 
   Section {
+    id: center
     ids: bar.sections.center
     anchors.horizontalCenter: parent.horizontalCenter
   }
 
   Section {
+    id: right
     ids: bar.sections.right
     anchors.right: parent.right
     anchors.rightMargin: Style.padding

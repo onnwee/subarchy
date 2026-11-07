@@ -34,6 +34,8 @@ ShellRoot {
       }
       return JSON.stringify({
         bars: bars.instances.map(b => b.screen.name),
+        widgets: Object.keys(WidgetIndex.widgets).length,
+        loaded: bars.instances.reduce((acc, b) => { acc[b.screen.name] = (b as Bar).loadedIds(); return acc }, {}),
         onBattery: Power.onBattery,
         intervals: intervals
       })
