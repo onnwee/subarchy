@@ -46,7 +46,7 @@ NVMe.
 | B6 | Secure Boot | Not configured | [[0012-secure-boot\|ADR 0012]]: opt-in with sbctl |
 | B7 | Boot splash | Plymouth | [[0013-boot-splash\|ADR 0013]]: Plymouth, themed |
 | B8 | Swap and hibernation | zram; hibernation optional | [[0014-swap-hibernation\|ADR 0014]]: zram, hibernation opt-in |
-| B9 | Backups of user files | Not covered | [[0060-backups\|ADR 0060]]: borg (borgmatic) to the homelab |
+| B9 | Backups of user files | Not covered | [[0060-backups\|ADR 0060]]: restic to the homelab (Dozor proposed) |
 
 ## System services
 
@@ -95,9 +95,9 @@ NVMe.
 | D2 | Plugin API and Omarchy plugin compatibility | Omarchy shell manifest API | [[0035-plugin-api\|ADR 0035]]: own API, port what we keep |
 | D3 | Bar, launcher and menus | Shell plugins | [[0036-shell-components\|ADR 0036]]: in the shell; launcher in [[0057-launcher\|ADR 0057]] (Raycast-style) |
 | D4 | Notifications, OSD, lock screen, idle | Shell plugins | [[0036-shell-components\|ADR 0036]]: notifications and OSD in shell; separate QML lock with screensaver until input; hypridle |
-| D5 | Theming system | `colors.toml` per theme rendered into per-app templates | [[0037-theming\|ADR 0037]]: Theme Tender (palette, templates, catalog, apply); SUBCULT default |
+| D5 | Theming system | `colors.toml` per theme rendered into per-app templates | [[0037-theming\|ADR 0037]]: Theme Tender; `subcult-minimal` as base and default |
 | D6 | Wallpaper engine | `owe` | [[0038-wallpaper\|ADR 0038]]: shell-drawn, still by default, video opt-in |
-| D7 | Fonts and icon theme | JetBrains Mono Nerd, Yaru icons | [[0039-fonts-icons\|ADR 0039]]: JetBrains Mono, Space Grotesk, Oswald, Papirus |
+| D7 | Fonts and icon theme | JetBrains Mono Nerd, Yaru icons | [[0039-fonts-icons\|ADR 0039]]: JetBrains Mono, Space Grotesk, Oswald, Yaru purple-dark icons |
 | D8 | Quality-of-life conveniences and keybindings | Omarchy's bindings, toggles, capture tools | [[0056-quality-of-life\|ADR 0056]]: Omarchy's set, 16 extras, 4 additions |
 | D9 | Default bar and calendar | Stock bar | [[0061-default-bar-calendar\|ADR 0061]]: the owner's current bar; Google and CalDAV calendar |
 

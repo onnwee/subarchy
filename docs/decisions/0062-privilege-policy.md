@@ -31,8 +31,8 @@ Accepted 2026-11-07.
   removed by a systemd timer when the time runs out, on lock, and on logout.
   The bar shows a countdown while it is active.
 
-The owner asked for "some actions" to skip the prompt; the list above is the
-agent's proposal. Adjust it here.
+The owner asked for "some actions" to skip the prompt and left the starting
+list to the agent (2026-11-07); the list above is that starting list.
 
 ## Borrowed from Omarchy
 

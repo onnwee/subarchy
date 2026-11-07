@@ -22,13 +22,15 @@ Decision map item D7. Accepted 2026-11-06.
 | Display headings, splash, login | **Oswald** |
 | Fallback, CJK, emoji | **Noto** (Sans, CJK, Color Emoji) |
 
-Icons: **Papirus**, with folder colours set from the active theme.
+Icons: **Yaru purple-dark** (`Yaru-purple-dark`), as the default
+`subcult-minimal` theme sets (revised 2026-11-07; Papirus was the first
+choice). Other themes may name another icon theme.
 
 ## Options considered
 
 | Option | Why not chosen |
 |---|---|
-| Yaru icons (Omarchy) | Ubuntu's look, less recolouring. |
+| Papirus, recoloured per theme (first choice) | Replaced by the default theme's own icon set on 2026-11-07. |
 | Custom SUBCULT icon set | Most design work; can come later for the shell's own icons. |
 
 ## Evidence
@@ -42,6 +44,7 @@ the same three fonts.
 
 - fontconfig defaults set Space Grotesk as sans-serif and JetBrains Mono as
   monospace.
-- Papirus folder colours need a mapping from each palette's accent.
+- The icon theme follows the active theme's `icons.theme`; `subcult-minimal`
+  names `Yaru-purple-dark`, so `yaru-icon-theme` is preinstalled.
 
 Related: [[decision-map|Decision map]] · [[0037-theming|ADR 0037]] · [[brand-identity|Brand identity]]

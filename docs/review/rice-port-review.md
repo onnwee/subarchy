@@ -46,7 +46,7 @@ after checking `ASSETS_LICENSE.md`.
 
 | Part | Reason |
 |---|---|
-| The theme: palette, wallpapers, affinity palettes, scenes, terminal profiles, theme variants | Owner declined the theme. |
+| The theme's extras: the gradient `subcult` variant, affinity palettes, scenes, terminal profiles, theme variants | Owner declined. The `subcult-minimal` theme itself became the default on 2026-11-07 ([[0037-theming\|ADR 0037]]). |
 | Activity modes, focus timer and closed-door indicator, context layer, sound cues, communications summary, device and dock overlay | Owner declined. |
 | Translation system, update phase feedback, offline-resilience layer, demo scenarios and visual regression, capability detection, health report, operations log, performance diagnostics overlay | Not selected; not needed for a lightweight first release. |
 | Ambient, boot sequence, screensaver mode, idle overlay, intrusion demo, Neon Overdrive, Cava, clocks | Presentation extras. |

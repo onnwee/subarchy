@@ -43,11 +43,10 @@ The SUBCULT brand colours, as the rice's artwork notes record them
 | Violet | `#8B5CF6` |
 | Acid | `#00FF88` |
 
-Subarchy's SUBCULT theme starts from these four. The rice's full `subcult`
-palette, its `subcult-minimal` variant and its affinity palettes are not
-ported ([[rice-port-review|rice port review]]); the new theme's ANSI colours,
-greys and borders are designed fresh as a Theme Tender palette
-([[0037-theming|ADR 0037]]).
+The default theme is `subcult-minimal`, which builds on these four (owner,
+2026-11-07; [[0037-theming|ADR 0037]]). Its full palette, including greys,
+ANSI colours and borders, is in the rice's `theme/colors.toml` with solid
+borders instead of the gradient.
 
 ## Marks and type
 

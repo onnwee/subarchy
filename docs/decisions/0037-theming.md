@@ -35,10 +35,20 @@ not build its own palette format, template renderer or theme switcher.
 - **Catalog**: Theme Tender's catalog (iTerm2 Color Schemes, Tinted Theming,
   Catppuccin, Dracula, Gogh), with its licence rules. This replaces the
   earlier "SUBCULT plus a few classics" list.
-- **Default theme**: a **SUBCULT** palette in Theme Tender's format, built
-  from the brand colours (Ink `#100B19`, Paper `#F0ECE4`, Violet `#8B5CF6`,
-  Acid `#00FF88`; [[brand-identity|Brand identity]]). The SUBCULT rice's
-  themes are not ported.
+- **Default theme: `subcult-minimal`**, the theme `sputnik` runs today,
+  converted to Theme Tender's format and used as the base for Subarchy's look
+  (owner, 2026-11-07). Revised from an earlier plan to design a new palette;
+  the rest of the SUBCULT rice's theme (the gradient `subcult` variant,
+  affinity palettes, scenes) stays out.
+
+  What `subcult-minimal` is (read on `sputnik` 2026-11-07): the SUBCULT
+  palette from the rice's `colors.toml` (ink `#100B19`, paper `#F0ECE4`, acid
+  accent `#00FF88`, violet selection `#3B2470`) with solid 1 px violet borders
+  (`rgb(8F4BC8)` active, `rgb(1F1830)` inactive); a `hyprland.lua` that turns
+  off gaps, rounding, blur, shadows, dimming and animations and keeps windows
+  opaque, which suits [[0054-lightweight-battery-first|ADR 0054]]; icon theme
+  `Yaru-purple-dark`; keyboard RGB `#8B5CF6`; wallpapers in
+  [[0038-wallpaper|ADR 0038]].
 - No variants mechanism; the owner declined the rice's (2026-11-06).
 
 ## How it fits other decisions
@@ -71,7 +81,6 @@ writes the registry entries and templates (MIT) and contributes them upstream:
 | Neovim, VS Code, Obsidian | user config | Editor and notes |
 | Chromium | policy | Chromium theme colour is a managed policy (Omarchy's `color.json`) |
 | fzf, bat, git-delta, eza, fastfetch, swayimg | user config | CLI set from [[app-list\|App list]] |
-| Papirus folder colours | user command | [[0039-fonts-icons\|ADR 0039]] |
 | SDDM, Plymouth, Limine | **system**, root-owned | Theme Tender runs as the user. Subarchy's CLI applies these through polkit from a palette Theme Tender exports |
 
 Raised in Theme Tender on 2026-11-07 (owner's request), unlabelled so the

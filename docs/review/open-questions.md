@@ -86,6 +86,11 @@ Answer inline and move answered items to the bottom with the date.
 - **8. Signing key**: held by the owner, on `soyuz`.
 - **15. Old theme repository**: left as it is.
 
-Still open: 16 (`.bak` cleanup on `sputnik`) and 17 (OmaSSH and Fleetbar).
+- **16. `.bak` files**: 17 backup files and folders from `~/.config/hypr`
+  and `~/.config/omarchy` moved to
+  `~/.local/state/omarchy/bak-cleanup-20261107/` on `sputnik` (2026-11-07).
+- **17. OmaSSH and Fleetbar**: removed on purpose.
+
+All open questions are answered.
 
 Related: [[0001-fork-strategy|ADR 0001]] · [[brand-identity|Brand identity]] · [[roadmap|Roadmap]]
