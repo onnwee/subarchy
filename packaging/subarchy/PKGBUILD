@@ -83,6 +83,9 @@ package() {
   ln -s ../subcult-update-check.timer "$pkgdir/usr/lib/systemd/user/timers.target.wants/subcult-update-check.timer"
   install -Dm644 "$sys/power-profile.rules" "$pkgdir/usr/lib/udev/rules.d/90-subarchy-power.rules"
   install -Dm644 "$sys/subcult-power-auto.service" "$pkgdir/usr/lib/systemd/system/subcult-power-auto.service"
+  # GPU modes on hybrid laptops (ADR 0006).
+  install -Dm644 "$sys/gpu.rules" "$pkgdir/usr/lib/udev/rules.d/70-subarchy-gpu.rules"
+  install -Dm644 "$sys/uwsm-gpu-env" "$pkgdir/usr/share/uwsm/env-hyprland.d/50-subarchy-gpu"
 
   # Migrations run once per user by `subcult update` (ADR 0026).
   install -dm755 "$pkgdir/usr/share/subcult/migrations"

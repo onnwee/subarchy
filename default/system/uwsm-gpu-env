@@ -1,0 +1,7 @@
+# Subarchy (ADR 0006, 0031): GPU mode for the Hyprland session, sourced by
+# uwsm before the compositor starts. Installed to
+# /usr/share/uwsm/env-hyprland.d/50-subarchy-gpu; user files in
+# ~/.config/uwsm/ load after it and can override.
+if command -v subcult-gpu-env >/dev/null 2>&1; then
+  eval "$(subcult-gpu-env)"
+fi

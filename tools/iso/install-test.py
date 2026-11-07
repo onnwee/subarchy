@@ -194,6 +194,10 @@ def boot(disk: Path, vars_file: Path) -> bool:
             "dns": serial.run("resolvectl status | grep -i -m1 dnsovertls; resolvectl query archlinux.org", timeout=60),
             "services": serial.run("systemctl is-active avahi-daemon power-profiles-daemon; systemctl is-enabled bluetooth"),
             "cmdline": serial.run("cat /proc/cmdline"),
+            # GPU modes (ADR 0006): a VM has no hybrid graphics, so the uwsm
+            # hook must stay silent and the session start in its default.
+            "gpu": serial.run("test -r /usr/share/uwsm/env-hyprland.d/50-subarchy-gpu && echo HOOK;"
+                              " subcult-gpu-env | wc -l; subcult gpu mode"),
             # Hardware detection (ADR 0005): an Intel host CPU, emulated devices.
             "hw": serial.run("pacman -Qq | grep -E '^(linux-firmware.*|intel-ucode|amd-ucode|thermald)$'; subcult hw info"),
             "update_timer": serial.run(
@@ -280,6 +284,8 @@ def boot(disk: Path, vars_file: Path) -> bool:
         "system running or degraded": state in ("running", "degraded"),
         "hardware packages: microcode, no firmware in a VM": "intel-ucode" in r["hw"].split()
         and "thermald" in r["hw"].split() and "linux-firmware" not in r["hw"] and "VM:        QEMU" in r["hw"],
+        "GPU hook installed, silent without hybrid graphics": r["gpu"].split()[:2] == ["HOOK", "0"]
+        and "chosen:  intel" in r["gpu"],
         "ufw active, incoming denied": "Status: active" in r["ufw"] and "deny (incoming)" in r["ufw"],
         "AppArmor enabled": "apparmor" in r["lsm"] and r["lsm"].strip().endswith("Y"),
         "sysctl hardening": r["sysctl"].split() == ["2", "1", "1"],
