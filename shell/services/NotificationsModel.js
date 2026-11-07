@@ -28,3 +28,13 @@ function restore(text, cap) {
     return []
   }
 }
+
+// The action run when the notification itself is clicked.
+function defaultAction(actions) {
+  return (actions || []).find(a => a.identifier === "default") || null
+}
+
+// The actions shown as buttons.
+function buttonActions(actions) {
+  return (actions || []).filter(a => a.identifier !== "default")
+}

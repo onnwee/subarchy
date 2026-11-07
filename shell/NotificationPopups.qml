@@ -6,6 +6,7 @@ import Quickshell.Hyprland
 import Quickshell.Services.Notifications
 import qs.Commons
 import qs.services
+import "services/NotificationsModel.js" as Model
 
 // Popups at the top right of the focused output, under the bar. They go
 // after five seconds; critical ones stay until dismissed. The window
@@ -35,7 +36,11 @@ PanelWindow { // qmllint disable uncreatable-type
     spacing: Style.spacing
 
     Repeater {
-      model: Notifications.popups
+      // ScriptModel keeps existing cards (and their timers) when one is
+      // added or removed; a plain array would rebuild them all.
+      model: ScriptModel {
+        values: Notifications.popups
+      }
       delegate: Rectangle {
         id: card
         required property var modelData
@@ -57,6 +62,7 @@ PanelWindow { // qmllint disable uncreatable-type
           Text {
             width: parent.width
             text: card.modelData.summary
+            textFormat: Text.PlainText
             color: Theme.text
             elide: Text.ElideRight
             font.family: Style.uiFontFamily
@@ -67,7 +73,7 @@ PanelWindow { // qmllint disable uncreatable-type
             width: parent.width
             visible: text !== ""
             text: card.modelData.body
-            textFormat: Text.StyledText
+            textFormat: Text.PlainText
             color: Theme.subtext
             wrapMode: Text.Wrap
             maximumLineCount: 4
@@ -75,8 +81,38 @@ PanelWindow { // qmllint disable uncreatable-type
             font.family: Style.uiFontFamily
             font.pixelSize: Style.fontSize
           }
+          Row {
+            spacing: Style.spacing
+            visible: Model.buttonActions(card.modelData.actions).length > 0
+            Repeater {
+              model: Model.buttonActions(card.modelData.actions)
+              delegate: Rectangle {
+                id: action
+                required property var modelData
+                width: label.implicitWidth + 2 * Style.padding
+                height: label.implicitHeight + Style.padding
+                color: Theme.base
+                border.width: 1
+                border.color: Theme.surface
+                Text {
+                  id: label
+                  anchors.centerIn: parent
+                  text: action.modelData.text
+                  textFormat: Text.PlainText
+                  color: Theme.text
+                  font.family: Style.uiFontFamily
+                  font.pixelSize: Style.fontSize
+                }
+                MouseArea {
+                  anchors.fill: parent
+                  onClicked: Notifications.invoke(card.modelData, action.modelData)
+                }
+              }
+            }
+          }
           Text {
             text: card.modelData.appName
+            textFormat: Text.PlainText
             color: Theme.muted
             font.family: Style.uiFontFamily
             font.pixelSize: Style.fontSize - 1
@@ -85,7 +121,8 @@ PanelWindow { // qmllint disable uncreatable-type
 
         MouseArea {
           anchors.fill: parent
-          onClicked: Notifications.dismiss(card.modelData)
+          z: -1 // under the action buttons
+          onClicked: Notifications.invoke(card.modelData, Model.defaultAction(card.modelData.actions))
         }
 
         Timer {

@@ -9,7 +9,8 @@ import "NotificationsModel.js" as Model
 // The notification daemon (org.freedesktop.Notifications). Live
 // notifications pop up; plain records go to a history of 100, saved to
 // ~/.local/state/subcult/notifications.json. Do-not-disturb holds back
-// popups except critical ones.
+// popups except critical ones. Text is shown as plain text only (no
+// markup, no images): bodies and summaries come from any app or web page.
 Singleton {
   id: root
 
@@ -27,12 +28,23 @@ Singleton {
 
   function dismiss(n) {
     root.popups = root.popups.filter(p => p !== n)
-    if (n)
+    if (n && n.tracked)
       n.dismiss()
   }
 
+  // Off screen: the app hears the notification expired, and it stops
+  // being tracked (its record stays in the history).
   function expire(n) {
+    const shown = root.popups.indexOf(n) >= 0
     root.popups = root.popups.filter(p => p !== n)
+    if (n && (shown || n.tracked))
+      n.expire()
+  }
+
+  function invoke(n, action) {
+    if (action)
+      action.invoke()
+    root.dismiss(n)
   }
 
   function markAllRead() {
@@ -52,8 +64,8 @@ Singleton {
   NotificationServer {
     keepOnReload: false
     actionsSupported: true
-    imageSupported: true
-    bodyMarkupSupported: true
+    imageSupported: false
+    bodyMarkupSupported: false
     bodySupported: true
 
     onNotification: (n) => {
@@ -64,9 +76,11 @@ Singleton {
       }
       root.history = Model.push(root.history, record, root.cap)
       root.save()
+      n.closed.connect(() => root.popups = root.popups.filter(p => p !== n))
       if (Model.shouldPopup(record, root.dnd))
         root.popups = root.popups.concat([n])
-      n.closed.connect(() => root.expire(n))
+      else
+        n.expire()
     }
   }
 
