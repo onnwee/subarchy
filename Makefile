@@ -5,7 +5,7 @@ VERSION ?= 0.0.0
 LDFLAGS := -X git.subcult.tv/subculture-collective/subarchy/internal/dispatch.Version=$(VERSION)
 SHELL_SCRIPTS := $(shell git ls-files '*.sh' 'bin/subcult-*' 2>/dev/null)
 
-.PHONY: verify fmt-check vet test build smoke shellcheck docs-check package iso iso-test
+.PHONY: verify fmt-check vet test build smoke shellcheck docs-check package iso iso-test install-test
 
 verify: fmt-check vet test build smoke shellcheck docs-check
 
@@ -30,7 +30,7 @@ shellcheck:
 
 docs-check:
 	python3 tools/obsidian/check-vault.py
-	python3 -m py_compile tools/inventory/collect.py tools/obsidian/check-vault.py tools/obsidian/install-plugins.py tools/iso/boot-test.py
+	python3 -m py_compile tools/inventory/collect.py tools/obsidian/check-vault.py tools/obsidian/install-plugins.py tools/iso/boot-test.py tools/iso/install-test.py tools/iso/vmlib.py
 
 # Builds the subarchy pacman package and checks its contents (Arch only).
 package:
@@ -43,3 +43,7 @@ iso:
 # Boots the newest ISO in QEMU and checks it over the serial console.
 iso-test:
 	python3 tools/iso/boot-test.py "$$(ls -t $(BUILD)/iso/subarchy-*.iso | head -1)"
+
+# Installs from the newest ISO into a VM disk, then boots and checks it.
+install-test:
+	python3 tools/iso/install-test.py "$$(ls -t $(BUILD)/iso/subarchy-*.iso | head -1)"

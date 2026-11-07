@@ -65,4 +65,14 @@ Decision map item R2. Accepted 2026-11-06.
 - ISO size grows with the full default app set
   ([[0044-default-apps|ADR 0044]]).
 
+## Progress
+
+- 2026-11-07: the live ISO builds with archiso (`make iso`) and boots in QEMU
+  (`make iso-test`). The scripted installer `install/subarchy-install`
+  installs the base system into a VM disk: LUKS2, btrfs subvolumes, UKIs for
+  both kernels, Limine, snapper, zram and NetworkManager. The disk boots,
+  takes the passphrase on the serial console and reaches `running`
+  (`make install-test`). Still to come: the TUI, snapshot boot entries,
+  Plymouth, the desktop and the offline package cache.
+
 Related: [[decision-map|Decision map]] · [[0050-hardware-support|ADR 0050]]

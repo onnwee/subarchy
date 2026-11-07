@@ -1,3 +1,39 @@
 # install
 
-Installer scripts and package lists. Omarchy counterpart: `/usr/share/omarchy/install/`, including `omarchy-base.packages` (what the ISO pacstraps) and `omarchy-other.packages` (optional and hardware packages). See [package lists](../docs/inventory/generated/omarchy-packages.md).
+The Subarchy installer ([ADR 0049](../docs/decisions/0049-installer.md)).
+Omarchy counterpart: `/usr/share/omarchy/install/`, including
+`omarchy-base.packages` (what the ISO pacstraps) and `omarchy-other.packages`
+(optional and hardware packages). See
+[package lists](../docs/inventory/generated/omarchy-packages.md).
+
+## `subarchy-install`
+
+The scripted stage. It runs as root on the live ISO, reads a `KEY=value`
+config file (keys listed in the script's header) and needs `--yes`, because
+it wipes the disk named by `DISK`. It refuses a disk that has mounted
+partitions or that holds the install medium. Other disks are left alone.
+
+What it builds:
+
+| Step | Result | ADR |
+|---|---|---|
+| Partition | GPT: 4 GiB FAT32 ESP at `/boot`, rest LUKS2 | 0009, 0010 |
+| Filesystems | btrfs `@ @home @log @pkg`, `compress=zstd:3,noatime` | 0009 |
+| Packages | `packages/base.txt` via pacstrap | 0002, 0004 |
+| initramfs | systemd hooks with `sd-encrypt`; one UKI per kernel in `/boot/EFI/Linux` | 0008 |
+| Boot | Limine (`EFI/limine` with its own firmware entry, plus `EFI/BOOT` fallback) | 0007 |
+| Snapshots | snapper config `root` for `@`, 5 numbered, no timeline | 0011 |
+| System | zram swap, NetworkManager, timesyncd, user in `wheel` with zsh, root locked | 0014, 0016 |
+| Factory reset | read-only `@factory` snapshot of the fresh `@` | 0049, 0056 |
+
+Not yet: the TUI that asks the questions and writes the config, Plymouth,
+SDDM and the desktop, snapshot boot entries (limine-snapper-sync is not
+packaged yet), hardware detection, and the offline package cache.
+
+## Testing
+
+`tools/iso/install-test.py ISO` (or `make install-test`) boots the live ISO
+in QEMU with an empty disk. It shares this checkout over 9p and runs the
+installer from it, so installer changes need no ISO rebuild. It then boots
+the installed disk, types the LUKS passphrase on the serial console, logs in
+and checks the result. Downloads are cached in `build/pkgcache`.

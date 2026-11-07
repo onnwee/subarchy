@@ -3,7 +3,7 @@ title: "Roadmap"
 type: plan
 status: draft
 created: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-07
 tags: [plan]
 aliases: []
 ---
@@ -25,7 +25,8 @@ runs and is checked in CI.
 
 ## Phase 1: infrastructure
 
-- [ ] Create the repository on `git.subcult.tv` with a GitHub mirror
+- [ ] Create the repository on `git.subcult.tv` with a GitHub mirror (repository
+      and CI exist since 2026-11-07; no mirror yet)
       ([[0051-hosting-ci|ADR 0051]])
 - [ ] Test the Gitea Arch registry with a Subarchy signing key, or set up a
       static repository ([[0025-package-repository|ADR 0025]])
@@ -63,9 +64,11 @@ Plymouth, NetworkManager with the DNS trust policy, PipeWire, ufw.
 
 - [ ] Theme Tender registry entries and templates for Subarchy's apps, the
       SUBCULT palette, and system-level apply for SDDM, Plymouth and Limine
-- [ ] App installer and default picker reading the app list
+- [x] App installer and default picker reading the app list (`subcult app`,
+      2026-11-07; web apps and per-app integration still to do)
 - [ ] LazyVim starter and branding layer ([[0045-editor|ADR 0045]])
-- [ ] Distribution CLI: dispatcher, Bash commands, Go binary
+- [ ] Distribution CLI: dispatcher, Bash commands, Go binary (dispatcher and
+      `subcult app` done 2026-11-07)
       ([[0046-distribution-cli|ADR 0046]])
 
 ## Phase 5: hardware and release
