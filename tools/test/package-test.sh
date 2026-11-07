@@ -41,7 +41,7 @@ done
 # Look layer (shell and look design): GTK, kitty and Neovim defaults.
 for path in usr/share/glib-2.0/schemas/90-subarchy.gschema.override etc/xdg/gtk-3.0/settings.ini \
   etc/xdg/gtk-4.0/settings.ini etc/xdg/kitty/kitty.conf etc/xdg/kitty/subcult-ink.conf \
-  usr/share/nvim/site/colors/subcult-ink.lua etc/xdg/nvim/sysinit.vim; do
+  usr/share/nvim/site/colors/subcult-ink.lua usr/share/nvim/site/plugin/subarchy-colors.lua; do
   mode=$(bsdtar -tvf "$pkg" "$path" 2>/dev/null | cut -c1-10) || true
   [[ $mode == -rw-r--r-- ]] || fail "missing $path or mode ${mode:-none}, want 0644"
 done
@@ -52,6 +52,11 @@ done
 grep -qx usr/share/fontconfig/conf.avail/50-subarchy-roles.conf <<<"$list" || fail "missing font roles conf"
 [[ $(bsdtar -tvf "$pkg" etc/fonts/conf.d/50-subarchy-roles.conf 2>/dev/null) == *"-> /usr/share/fontconfig/conf.avail/50-subarchy-roles.conf" ]] ||
   fail "font roles conf is not linked from /etc/fonts/conf.d"
+# Files other Arch packages own must not be in this package (neovim owns
+# /etc/xdg/nvim/sysinit.vim; default-cursors owns the default cursor theme).
+for path in etc/xdg/nvim/sysinit.vim usr/share/icons/default/index.theme; do
+  if grep -qx "$path" <<<"$list"; then fail "$path belongs to another Arch package"; fi
+done
 grep -qx "icon-theme='Papirus-Dark'" <(bsdtar -xOf "$pkg" usr/share/glib-2.0/schemas/90-subarchy.gschema.override) ||
   fail "GSettings override lacks Papirus-Dark"
 
@@ -70,5 +75,19 @@ bsdtar -xf "$pkg" -C "$work/root" usr
   fail "shipped app catalogue does not validate"
 
 "$root/tools/test/cursor-test.sh" "$work/root/usr/bin/subcult-cursor" || fail "cursor test"
+
+# Neovim: Subcult Ink when the user picked no scheme, the user's scheme otherwise.
+if command -v nvim >/dev/null; then
+  nv="$work/nvim"
+  mkdir -p "$nv/cfg/nvim" "$nv/home"
+  scheme() {
+    HOME=$nv/home XDG_CONFIG_HOME=$nv/cfg XDG_CONFIG_DIRS=$nv/none XDG_DATA_HOME=$nv/home/data \
+      XDG_STATE_HOME=$nv/home/state XDG_DATA_DIRS="$work/root/usr/share:/usr/share" \
+      nvim --headless +'lua io.write(vim.g.colors_name or "none")' +qa 2>/dev/null
+  }
+  [[ $(scheme) == subcult-ink ]] || fail "Neovim does not default to subcult-ink"
+  echo 'vim.cmd.colorscheme("habamax")' >"$nv/cfg/nvim/init.lua"
+  [[ $(scheme) == habamax ]] || fail "Neovim overrides the user's colour scheme"
+fi
 
 echo "package-test: ok ($(basename "$pkg"), $(wc -l <<<"$list") entries)"

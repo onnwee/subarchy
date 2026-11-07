@@ -14,7 +14,7 @@ license=('GPL-3.0-or-later')
 depends=('bash' 'glibc' 'pacman-contrib' 'fakeroot')
 makedepends=('go' 'git' 'librsvg' 'xorg-xcursorgen' 'hyprcursor')
 options=('!debug')
-backup=(etc/xdg/gtk-3.0/settings.ini etc/xdg/gtk-4.0/settings.ini etc/xdg/kitty/kitty.conf etc/xdg/kitty/subcult-ink.conf etc/xdg/nvim/sysinit.vim)
+backup=(etc/xdg/gtk-3.0/settings.ini etc/xdg/gtk-4.0/settings.ini etc/xdg/kitty/kitty.conf etc/xdg/kitty/subcult-ink.conf)
 
 _root() {
   realpath "$startdir/../.."
@@ -97,7 +97,7 @@ package() {
   install -Dm644 "$root/default/kitty/kitty.conf" "$pkgdir/etc/xdg/kitty/kitty.conf"
   install -Dm644 "$root/default/kitty/subcult-ink.conf" "$pkgdir/etc/xdg/kitty/subcult-ink.conf"
   install -Dm644 "$root/default/nvim/colors/subcult-ink.lua" "$pkgdir/usr/share/nvim/site/colors/subcult-ink.lua"
-  install -Dm644 "$root/default/nvim/sysinit.vim" "$pkgdir/etc/xdg/nvim/sysinit.vim"
+  install -Dm644 "$root/default/nvim/plugin/subarchy-colors.lua" "$pkgdir/usr/share/nvim/site/plugin/subarchy-colors.lua"
 
   install -Dm644 "$root/default/fontconfig/50-subarchy-roles.conf" "$pkgdir/usr/share/fontconfig/conf.avail/50-subarchy-roles.conf"
   install -dm755 "$pkgdir/etc/fonts/conf.d"
