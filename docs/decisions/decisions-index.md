@@ -69,5 +69,6 @@ order.
 | [[0042-browser\|0042]] | Browser |
 | [[0043-file-manager\|0043]] | File manager |
 | [[0044-default-apps\|0044]] | Default app set |
+| [[0045-editor\|0045]] | Editor |
 
 Related: [[home|Docs home]]

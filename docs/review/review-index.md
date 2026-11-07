@@ -18,6 +18,7 @@ review can be a yes/no pass.
 | [[0001-fork-strategy\|ADR 0001]] | Fork, overlay or rebuild |
 | [[triage\|Plugin and add-on triage]] | What ships by default, as optional, or not at all |
 | [[open-questions\|Open questions]] | Name, licence, hosting, hardware targets, ISO |
+| [[app-list\|App list]] | Which apps ship, which are offered, default per role (owner writes) |
 
 ## How to review
 
