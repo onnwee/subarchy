@@ -90,7 +90,7 @@ NVMe.
 | D2 | Plugin API and Omarchy plugin compatibility | Omarchy shell manifest API | [[0035-plugin-api\|ADR 0035]]: own API, port what we keep |
 | D3 | Bar, launcher and menus | Shell plugins | [[0036-shell-components\|ADR 0036]]: in the shell |
 | D4 | Notifications, OSD, lock screen, idle | Shell plugins | [[0036-shell-components\|ADR 0036]]: notifications and OSD in shell; hyprlock, hypridle |
-| D5 | Theming system | `colors.toml` per theme rendered into per-app templates | [[0037-theming\|ADR 0037]]: palette + templates; SUBCULT + classics; owner's switcher tool (repo to be shared) |
+| D5 | Theming system | `colors.toml` per theme rendered into per-app templates | [[0037-theming\|ADR 0037]]: Theme Tender (palette, templates, catalog, apply); SUBCULT default |
 | D6 | Wallpaper engine | `owe` | [[0038-wallpaper\|ADR 0038]]: shell-drawn, still by default, video opt-in |
 | D7 | Fonts and icon theme | JetBrains Mono Nerd, Yaru icons | [[0039-fonts-icons\|ADR 0039]]: JetBrains Mono, Space Grotesk, Oswald, Papirus |
 

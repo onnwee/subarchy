@@ -32,9 +32,9 @@ Revised 2026-11-06 under [[0054-lightweight-battery-first|ADR 0054]].
 ## Borrowed from Omarchy
 
 The `omarchy.background` shell plugin (renderer with click handling and
-transitions) and `BackgroundMedia.qml` as references for the port. The SUBCULT
-rice's wallpaper-to-affinity-palette link ([[0037-theming|ADR 0037]]) hooks
-in here.
+transitions) and `BackgroundMedia.qml` as references for the port. Theme Tender
+themes carry colours only ([[0037-theming|ADR 0037]]), so wallpapers are
+chosen separately; SUBCULT wallpapers ship with the default theme.
 
 ## Consequences
 

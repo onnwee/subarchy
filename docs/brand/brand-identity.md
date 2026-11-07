@@ -46,7 +46,7 @@ The SUBCULT brand colours, as the rice's artwork notes record them
 Subarchy's SUBCULT theme starts from these four. The rice's full `subcult`
 palette, its `subcult-minimal` variant and its affinity palettes are not
 ported ([[rice-port-review|rice port review]]); the new theme's ANSI colours,
-greys and borders are designed fresh, ideally with the owner's theme tool
+greys and borders are designed fresh as a Theme Tender palette
 ([[0037-theming|ADR 0037]]).
 
 ## Marks and type

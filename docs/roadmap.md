@@ -21,8 +21,7 @@ runs and is checked in CI.
       decisions (ADRs 0002 to 0053)
 - [x] Product name: Subarchy, shown as SUBCULT ([[0052-name-identity|ADR 0052]])
 - [ ] Owner's app list ([[app-list|App list]])
-- [ ] Owner's theme tool repository, to fix the theme format
-      ([[0037-theming|ADR 0037]])
+- [x] Owner's theme tool: Theme Tender ([[0037-theming|ADR 0037]])
 
 ## Phase 1: infrastructure
 
@@ -61,7 +60,8 @@ Plymouth, NetworkManager with the DNS trust policy, PipeWire, ufw.
 
 ## Phase 4: apps and theming
 
-- [ ] Theme format, templates and the owner's switcher tool
+- [ ] Theme Tender registry entries and templates for Subarchy's apps, the
+      SUBCULT palette, and system-level apply for SDDM, Plymouth and Limine
 - [ ] App installer and default picker reading the app list
 - [ ] LazyVim starter and branding layer ([[0045-editor|ADR 0045]])
 - [ ] Distribution CLI: dispatcher, Bash commands, Go binary
