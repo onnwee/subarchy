@@ -68,6 +68,12 @@ package() {
   # Session and greeter (ADR 0030, 0031).
   install -Dm644 "$root/default/sddm/subarchy.desktop" "$pkgdir/usr/share/wayland-sessions/subarchy.desktop"
   install -Dm644 "$root/default/sddm/subarchy.conf" "$pkgdir/usr/lib/sddm/sddm.conf.d/subarchy.conf"
+  # System drop-ins (ADR 0016, 0020, 0063); /etc overrides each of them.
+  local sys="$root/default/system"
+  install -Dm644 "$sys/sysctl-hardening.conf" "$pkgdir/usr/lib/sysctl.d/90-subarchy-hardening.conf"
+  install -Dm644 "$sys/resolved-dns.conf" "$pkgdir/usr/lib/systemd/resolved.conf.d/50-subarchy.conf"
+  install -Dm644 "$sys/networkmanager-dns.conf" "$pkgdir/usr/lib/NetworkManager/conf.d/50-subarchy-dns.conf"
+  install -Dm644 "$sys/coredump.conf" "$pkgdir/usr/lib/systemd/coredump.conf.d/50-subarchy.conf"
 
   # Migrations run once per user by `subcult update` (ADR 0026).
   install -dm755 "$pkgdir/usr/share/subcult/migrations"

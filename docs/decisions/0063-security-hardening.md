@@ -43,4 +43,12 @@ recommendations.
   a documented override exists for development sessions.
 - The security fast path needs CI to watch the advisory feed.
 
+## Progress
+
+- 2026-11-07: AppArmor via `lsm=` with `apparmor.service`, the sysctl list
+  above (`/usr/lib/sysctl.d/90-subarchy-hardening.conf`), size-limited core
+  dumps, and ufw enabled with incoming denied. The VM test checks each. Not
+  yet: per-profile enforce/complain choices, kernel lockdown with Secure
+  Boot, the SSH wizard, and fast-tracked security updates.
+
 Related: [[decision-map|Decision map]] · [[0062-privilege-policy|ADR 0062]] · [[0012-secure-boot|ADR 0012]]

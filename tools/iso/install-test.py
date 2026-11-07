@@ -23,7 +23,7 @@ import sys
 import time
 from pathlib import Path
 
-from vmlib import OVMF_CODE, OVMF_VARS, Serial, distinct_colours, qemu_command, screendump
+from vmlib import ANSI, OVMF_CODE, OVMF_VARS, Serial, distinct_colours, qemu_command, screendump
 
 ROOT = Path(__file__).resolve().parents[2]
 VM = ROOT / "build" / "vm"
@@ -135,6 +135,8 @@ def boot(disk: Path, vars_file: Path) -> bool:
     try:
         serial.expect(re.compile(rb"assphrase for"), 180)
         print(f"install-test: LUKS prompt after {time.monotonic() - started:.0f}s")
+        time.sleep(2)
+        screendump(qmp, VM / "luks.png")  # Plymouth draws the prompt (ADR 0013)
         serial.send(PASSPHRASE + "\n")
         serial.expect(re.compile(rb"login: "), 180)
         print(f"install-test: login prompt after {time.monotonic() - started:.0f}s")
@@ -155,6 +157,13 @@ def boot(disk: Path, vars_file: Path) -> bool:
             "shell": serial.run("getent passwd " + USER),
             "uki": serial.run(f"{sudo} ls /boot/EFI/Linux"),
             "subvols": serial.run(f"{sudo} btrfs subvolume list /"),
+            # System services and hardening (ADR 0013, 0018-0021, 0063).
+            "ufw": serial.run(f"{sudo} ufw status verbose"),
+            "lsm": serial.run("cat /sys/kernel/security/lsm; echo; cat /sys/module/apparmor/parameters/enabled"),
+            "sysctl": serial.run("sysctl -n kernel.kptr_restrict kernel.dmesg_restrict net.ipv4.tcp_syncookies"),
+            "dns": serial.run("resolvectl status | grep -i -m1 dnsovertls; resolvectl query archlinux.org", timeout=60),
+            "services": serial.run("systemctl is-active avahi-daemon power-profiles-daemon; systemctl is-enabled bluetooth"),
+            "cmdline": serial.run("cat /proc/cmdline"),
             # subcult update: snapshot, pacman -Syu, migrations, report.
             "update": serial.run(
                 f"echo {PASSWORD} | sudo -S -p '' -v && subcult update --yes; echo UPDATE_EXIT=$?"
@@ -222,6 +231,15 @@ def boot(disk: Path, vars_file: Path) -> bool:
         "update took a snapshot": "subcult update" in r["update"].split("UPDATE_EXIT")[-1],
         "@factory snapshot": any(line.endswith(" path @factory") for line in r["subvols"].splitlines()),
         "system running or degraded": state in ("running", "degraded"),
+        "ufw active, incoming denied": "Status: active" in r["ufw"] and "deny (incoming)" in r["ufw"],
+        "AppArmor enabled": "apparmor" in r["lsm"] and r["lsm"].strip().endswith("Y"),
+        "sysctl hardening": r["sysctl"].split() == ["2", "1", "1"],
+        "DNS over TLS resolves": "+DNSOverTLS" in r["dns"] and "archlinux.org:" in r["dns"],
+        "avahi, power-profiles, bluetooth": r["services"].split() == ["active", "active", "enabled"],
+        # Graphical splash is not checked: with console=ttyS0 (needed to
+        # drive the test) Plymouth falls back to its text mode.
+        "Plymouth runs and takes the LUKS prompt": "splash" in r["cmdline"]
+        and "Started Show Plymouth Boot Screen" in ANSI.sub("", (VM / "boot-serial.log").read_text(errors="replace")),
         "SDDM greeter running": "sddm-greeter" in r["greeter"],
         "greeter drew something": r["greeter_colours"] > 1,
         "Hyprland session started": r["hyprland"].strip() != "",

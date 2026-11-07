@@ -24,10 +24,12 @@ What it builds:
 | Boot | Limine with its own firmware entry and the `EFI/BOOT` fallback; menu from `/etc/default/limine` | 0007 |
 | Snapshots | snapper config `root` for `@`, 5 numbered, no timeline; `limine-snapper-sync` adds a boot entry per snapshot | 0011 |
 | System | zram swap, NetworkManager, timesyncd, user in `wheel` with zsh, root locked | 0014, 0016 |
+| Services | ufw (incoming denied), AppArmor, systemd-resolved with Quad9 DoT, Avahi, power-profiles-daemon, thermald on Intel, BlueZ, Plymouth | 0013, 0018-0021, 0063 |
+| Desktop | `packages/desktop.txt`: SDDM, Hyprland under uwsm, portals, PipeWire, kitty, fonts; the user's `~/.config/hypr/hyprland.lua` | 0017, 0029-0033, 0040 |
 | Factory reset | read-only `@factory` snapshot of the fresh `@` | 0049, 0056 |
 
-Not yet: the TUI that asks the questions and writes the config, Plymouth,
-SDDM and the desktop, hardware detection, a Limine entry that chainloads
+Not yet: the TUI that asks the questions and writes the config, the
+Quickshell shell and themes, hardware detection, a Limine entry that chainloads
 another disk's bootloader, and the offline package cache.
 
 The two Limine tools are AUR packages rebuilt locally into `build/repo` by

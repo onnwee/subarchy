@@ -41,4 +41,12 @@ borrowed.
   file through its package instead.
 - Needs SUBCULT splash artwork: logo, progress elements, unlock prompt.
 
+## Progress
+
+- 2026-11-07: the installer adds the `plymouth` initramfs hook and `quiet
+  splash`; in the VM test Plymouth starts and takes the LUKS passphrase. The
+  test boots with `console=ttyS0`, which puts Plymouth in text mode, so the
+  graphical splash itself is untested. The theme is Arch's default until the
+  Subarchy theme exists.
+
 Related: [[decision-map|Decision map]] · [[0008-initramfs|ADR 0008]] · [[brand-identity|Brand identity]]
