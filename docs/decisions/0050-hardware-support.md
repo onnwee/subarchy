@@ -1,0 +1,63 @@
+---
+title: "ADR 0050: Hardware support policy"
+type: decision
+status: accepted
+adr: 50
+created: 2026-11-06
+updated: 2026-11-06
+tags: [decision, adr, delivery, hardware]
+aliases: [ADR 0050, R3, Hardware support]
+---
+
+# ADR 0050: Hardware support policy
+
+Decision map item R3. Accepted 2026-11-06.
+
+## Decision
+
+**Port all of Omarchy's x86_64 hardware fixes** from the start, applied by
+detection at install and re-checked by a hardware command afterwards.
+Fixes for aarch64 machines are not ported
+([[0003-cpu-architectures|ADR 0003]]).
+
+## Scope from Omarchy 4.5 `install/hardware/`
+
+| Vendor or area | Fixes |
+|---|---|
+| Apple (Intel, T2) | `fix-t2`, `fix-spi-keyboard`, `fix-suspend-nvme`, `fix-brcmfmac-supplicant` |
+| ASUS | ROG (`asus-rog.sh`), ProArt P14 speakers, ExpertBook B9406 display, touchpad and backlight, Z13 touchpad |
+| Dell | XPS 13 PTL speaker firmware, XPS 13 sidecar amps, XPS touchpad haptics |
+| Framework | Framework 16, QMK HID |
+| Intel | Wi-Fi 7 EHT, FRED, IPU7 camera, LPMD, SOF firmware, thermald, video acceleration |
+| Lenovo | Yoga Pro 7 bass speakers |
+| Microsoft | Surface, Surface keyboard |
+| Tuxedo | Keyboard backlight |
+| Peripherals | Elgato Cam Link 4K, Motorcomm YT6801 Ethernet, Broadcom BCM43xx, Synaptics touchpad, function keys |
+| General | Bluetooth, network, NVIDIA, Vulkan, speaker tuning, wireless regulatory domain |
+
+Not ported: `nvidia/dgx-spark-boot.sh`, `gb10/`, `n1x.sh`, `qualcomm/`, and
+the Lenovo Yoga Slim 7x scripts, which target aarch64 machines. Check each
+remaining script's target before porting; a few may also be aarch64-only.
+
+Omarchy's 42 `omarchy hw` detection and matching commands (`hw match`,
+`hw laptop`, `hw hybrid gpu`, `hw vm` and others) are the detection layer to
+port with them.
+
+## Options considered
+
+| Option | Why not chosen |
+|---|---|
+| Tested tier with best-effort ports | Narrower; the owner wants broad support from the start. |
+| Owner's machines only | Not a public distribution. |
+
+## Consequences
+
+- Most of these fixes cannot be tested without the hardware. Each port is
+  marked **untested** until someone runs it on the machine; release notes
+  list the tested set.
+- Each fix keeps a link to its Omarchy source and version so later Omarchy
+  fixes can be compared.
+- Vendor add-ons such as Dell power profiles
+  ([[0021-power|ADR 0021]]) follow the same detection.
+
+Related: [[decision-map|Decision map]] · [[0005-firmware|ADR 0005]] · [[0006-gpu-drivers|ADR 0006]] · [[0049-installer|ADR 0049]]

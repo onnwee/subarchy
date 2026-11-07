@@ -72,5 +72,9 @@ order.
 | [[0045-editor\|0045]] | Editor |
 | [[0046-distribution-cli\|0046]] | Distribution CLI |
 | [[0047-ai-agents\|0047]] | AI agent integration |
+| [[0048-config-ownership\|0048]] | Configuration ownership |
+| [[0049-installer\|0049]] | Installer and install image |
+| [[0050-hardware-support\|0050]] | Hardware support policy |
+| [[0051-hosting-ci\|0051]] | Source hosting and CI |
 
 Related: [[home|Docs home]]

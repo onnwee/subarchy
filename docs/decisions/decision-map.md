@@ -107,11 +107,11 @@ NVMe.
 
 | # | Decision | Omarchy 4.5 choice | Status |
 |---|---|---|---|
-| R1 | Configuration ownership: system defaults versus user files | `/usr/share/omarchy/default` sourced, `config/` copied to `~/.config` | open |
-| R2 | Installer and install image | Omarchy ISO and installer | open |
-| R3 | Hardware support policy | Per-vendor fix scripts | open |
+| R1 | Configuration ownership: system defaults versus user files | `/usr/share/omarchy/default` sourced, `config/` copied to `~/.config` | [[0048-config-ownership\|ADR 0048]]: layered defaults, overrides only in `~/.config` |
+| R2 | Installer and install image | Omarchy ISO and installer | [[0049-installer\|ADR 0049]]: own ISO, TUI installer, offline cache |
+| R3 | Hardware support policy | Per-vendor fix scripts | [[0050-hardware-support\|ADR 0050]]: port all Omarchy x86 fixes |
 | R4 | Name, `os-release` and brand | Omarchy | open |
 | R5 | Licence | MIT | open |
-| R6 | Source hosting and CI | GitHub | open |
+| R6 | Source hosting and CI | GitHub | [[0051-hosting-ci\|ADR 0051]]: Gitea primary, GitHub mirror |
 
 Related: [[0001-fork-strategy|ADR 0001]] · [[decisions-index|Decisions]] · [[omarchy-overview|Omarchy component map]]
