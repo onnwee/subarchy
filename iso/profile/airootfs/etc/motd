@@ -1,6 +1,9 @@
 
   SUBCULT // Subarchy install medium
 
-  This is a live system for installing Subarchy. The guided installer is
-  not ready yet. The scripted installer is: `subarchy-install --help`.
+  This is a live system for installing Subarchy. To install, run:
+
+      subarchy-setup
+
+  It asks a few questions, then erases the disk you choose.
 

@@ -49,6 +49,10 @@ lib="$profile/airootfs/usr/local/lib/subarchy-install"
 mkdir -p "$lib" "$profile/airootfs/usr/local/bin"
 cp -a --no-preserve=ownership "$root/install/subarchy-install" "$root/install/packages" "$lib/"
 ln -sfn ../lib/subarchy-install/subarchy-install "$profile/airootfs/usr/local/bin/subarchy-install"
+# Subarchy's own packages, so the image installs them without a network
+# repository (ADR 0049); subarchy-setup points SUBARCHY_REPO here.
+mkdir -p "$profile/airootfs/opt/subarchy/repo"
+cp -L "$repo"/*.pkg.tar.zst "$repo"/subarchy.db "$repo"/subarchy.files "$profile/airootfs/opt/subarchy/repo/"
 
 echo ">> running mkarchiso (work: $work, out: $out)"
 mkdir -p "$out"

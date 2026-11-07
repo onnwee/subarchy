@@ -41,8 +41,8 @@ package() {
   local root f
   root=$(_root)
 
-  # Compiled commands (subcult, subcult-app, ...), then script commands.
-  for f in "$srcdir"/bin/subcult*; do
+  # Compiled commands (subcult, subcult-*, subarchy-setup), then scripts.
+  for f in "$srcdir"/bin/*; do
     install -Dm755 "$f" "$pkgdir/usr/bin/$(basename "$f")"
   done
   ln -s subcult "$pkgdir/usr/bin/sub"

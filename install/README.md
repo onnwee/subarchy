@@ -6,6 +6,16 @@ Omarchy counterpart: `/usr/share/omarchy/install/`, including
 (optional and hardware packages). See
 [package lists](../docs/inventory/generated/omarchy-packages.md).
 
+## `subarchy-setup`
+
+The guided installer on the live ISO (`cmd/subarchy-setup`). It lists the
+disks of at least 20 GiB, leaving out the install medium, then asks for the
+computer name, user name and password, disk passphrase, time zone and
+keyboard layout. Each answer is checked as it is entered. The user confirms
+by typing the disk's name. It then writes the config and secret files (mode
+600) under `/run/subarchy-setup` and runs `subarchy-install`. Subarchy's own
+packages come from the repository on the image, `/opt/subarchy/repo`.
+
 ## `subarchy-install`
 
 The scripted stage. It runs as root on the live ISO, reads a `KEY=value`
@@ -28,7 +38,7 @@ What it builds:
 | Desktop | `packages/desktop.txt`: SDDM, Hyprland under uwsm, portals, PipeWire, kitty, fonts; the user's `~/.config/hypr/hyprland.lua` | 0017, 0029-0033, 0040 |
 | Factory reset | read-only `@factory` snapshot of the fresh `@` | 0049, 0056 |
 
-Not yet: the TUI that asks the questions and writes the config, the
+Not yet: the
 Quickshell shell and themes, hardware detection, a Limine entry that chainloads
 another disk's bootloader, and the offline package cache.
 
@@ -42,4 +52,6 @@ exists.
 in QEMU with an empty disk. It shares this checkout over 9p and runs the
 installer from it, so installer changes need no ISO rebuild. It then boots
 the installed disk, types the LUKS passphrase on the serial console, logs in
-and checks the result. Downloads are cached in `build/pkgcache`.
+and checks the result. Downloads are cached in `build/pkgcache`. With
+`--guided` it instead answers `subarchy-setup` on the serial console, which
+tests the setup command, installer and repository shipped on the image.

@@ -96,12 +96,23 @@ class Serial:
         self.proc.stdin.flush()
 
     def run(self, command: str, timeout: float = 30) -> str:
-        """Run a command at the claimed prompt and return its output."""
+        """Run a command at the claimed prompt and return its output.
+
+        Each command ends with a numbered marker, so a stray prompt left
+        over from an earlier retry cannot shift output to the next command.
+        The quoted halves keep the echoed command from matching the marker.
+        """
+        self.seq = getattr(self, "seq", 0) + 1
+        end = f"__END_{self.seq}__"
         self.buf = b""
-        self.send(command + "\n")
-        out = ANSI.sub("", self.expect(PROMPT, timeout).decode(errors="replace"))
+        self.send(f"{command}; printf '%s\\n' '__E''ND_{self.seq}__'\n")
+        out = ANSI.sub("", self.expect(re.compile(end.encode()), timeout).decode(errors="replace"))
         lines = out.splitlines()
-        return "\n".join(lines[1:-1])  # drop the echoed command and the prompt
+        # The tty can echo the command twice (type-ahead, then at the prompt);
+        # output starts after the last echo.
+        echoes = [i for i, line in enumerate(lines) if f"'__E''ND_{self.seq}__'" in line]
+        start = echoes[-1] + 1 if echoes else 0
+        return "\n".join(lines[start:-1])
 
     def claim_prompt(self, timeout: float) -> None:
         """Replace the login shell with a plain bash, retrying until its prompt shows.

@@ -1,0 +1,221 @@
+// Package setup holds the questions the guided installer asks (ADR 0049),
+// the rules their answers must meet, and the config file it writes for
+// install/subarchy-install. Rules borrowed from Omarchy's
+// install/provisioning/setup-form.sh (MIT).
+package setup
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+	"regexp"
+	"sort"
+	"strings"
+)
+
+// MinDiskBytes is the smallest disk offered: the 4 GiB ESP plus room for
+// the system (about 6 GiB with the desktop), snapshots and a home directory.
+const MinDiskBytes = 20 << 30
+
+var (
+	usernamePattern = regexp.MustCompile(`^[a-z_][a-z0-9_-]{0,31}$`)
+	reservedUsers   = map[string]bool{}
+	hostnamePattern = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$`)
+)
+
+func init() {
+	for _, u := range strings.Fields(`root bin daemon mail ftp http nobody dbus systemd-coredump
+		systemd-network systemd-oom systemd-journal-remote systemd-resolve systemd-timesync tss
+		uuidd alpm git avahi cups cups-browsed lp _talkd polkitd rtkit qemu brltty gluster rpc
+		libvirt-qemu pcscd nvidia-persistenced sddm`) {
+		reservedUsers[u] = true
+	}
+}
+
+// ValidUsername checks a login name.
+func ValidUsername(name string) error {
+	if !usernamePattern.MatchString(name) {
+		return errors.New("use lowercase letters, digits, - and _, starting with a letter or _ (at most 32)")
+	}
+	if reservedUsers[name] {
+		return fmt.Errorf("%q is a system account", name)
+	}
+	return nil
+}
+
+// ValidHostname checks a machine name.
+func ValidHostname(name string) error {
+	if !hostnamePattern.MatchString(name) {
+		return errors.New("use lowercase letters, digits and -, not at the start or end (at most 63)")
+	}
+	return nil
+}
+
+// ValidSecret checks a password or passphrase and its confirmation.
+func ValidSecret(secret, again string, min int) error {
+	if len(secret) < min {
+		return fmt.Errorf("use at least %d characters", min)
+	}
+	if strings.ContainsAny(secret, "\n\r") {
+		return errors.New("no line breaks")
+	}
+	if secret != again {
+		return errors.New("the two entries differ")
+	}
+	return nil
+}
+
+// ValidTimezone checks a zone name against the zoneinfo database at root.
+func ValidTimezone(zoneinfo, tz string) error {
+	if tz == "" || strings.Contains(tz, "..") || strings.HasPrefix(tz, "/") {
+		return errors.New("not a time zone name")
+	}
+	info, err := os.Stat(filepath.Join(zoneinfo, tz))
+	if err != nil || info.IsDir() {
+		return fmt.Errorf("unknown time zone %q (for example Europe/Berlin or America/Chicago)", tz)
+	}
+	return nil
+}
+
+// ValidKeymap checks a console keymap name against the kbd keymaps tree.
+func ValidKeymap(keymaps, name string) error {
+	if name == "" || strings.ContainsAny(name, "/.") {
+		return errors.New("not a keymap name")
+	}
+	found := false
+	_ = filepath.WalkDir(keymaps, func(path string, d os.DirEntry, err error) error {
+		if err == nil && !d.IsDir() && strings.TrimSuffix(d.Name(), ".map.gz") == name {
+			found = true
+			return filepath.SkipAll
+		}
+		return nil
+	})
+	if !found {
+		return fmt.Errorf("unknown keymap %q (for example us, de-latin1, uk)", name)
+	}
+	return nil
+}
+
+// Disk is an install target candidate.
+type Disk struct {
+	Path  string
+	Size  int64
+	Model string
+	Tran  string
+}
+
+// String renders the disk for the picker.
+func (d Disk) String() string {
+	model := d.Model
+	if model == "" {
+		model = "unknown model"
+	}
+	tran := ""
+	if d.Tran != "" {
+		tran = ", " + d.Tran
+	}
+	return fmt.Sprintf("%s  %s  %s%s", d.Path, HumanSize(d.Size), model, tran)
+}
+
+// HumanSize renders bytes in GB or TB as disk makers count them.
+func HumanSize(b int64) string {
+	if b >= 1e12 {
+		return fmt.Sprintf("%.1f TB", float64(b)/1e12)
+	}
+	return fmt.Sprintf("%.0f GB", float64(b)/1e9)
+}
+
+type lsblkOutput struct {
+	Blockdevices []struct {
+		Name  string  `json:"name"`
+		Path  string  `json:"path"`
+		Size  int64   `json:"size"`
+		Type  string  `json:"type"`
+		Model *string `json:"model"`
+		Tran  *string `json:"tran"`
+		RO    bool    `json:"ro"`
+	} `json:"blockdevices"`
+}
+
+// Disks parses `lsblk -J -d -b -o NAME,PATH,SIZE,TYPE,MODEL,TRAN,RO` and
+// returns whole, writable disks of at least MinDiskBytes, leaving out
+// zram, loop and optical devices and the install medium.
+func Disks(lsblkJSON []byte, installMedium string) ([]Disk, error) {
+	var out lsblkOutput
+	if err := json.Unmarshal(lsblkJSON, &out); err != nil {
+		return nil, fmt.Errorf("lsblk output: %w", err)
+	}
+	var disks []Disk
+	for _, d := range out.Blockdevices {
+		if d.Type != "disk" || d.RO || d.Size < MinDiskBytes || strings.HasPrefix(d.Name, "zram") {
+			continue
+		}
+		if installMedium != "" && d.Path == installMedium {
+			continue
+		}
+		disk := Disk{Path: d.Path, Size: d.Size}
+		if d.Model != nil {
+			disk.Model = strings.TrimSpace(*d.Model)
+		}
+		if d.Tran != nil {
+			disk.Tran = *d.Tran
+		}
+		disks = append(disks, disk)
+	}
+	sort.Slice(disks, func(i, j int) bool { return disks[i].Path < disks[j].Path })
+	return disks, nil
+}
+
+// Answers is everything the guided installer collects.
+type Answers struct {
+	Disk         string
+	Hostname     string
+	Username     string
+	Password     string
+	Passphrase   string
+	Timezone     string
+	Keymap       string
+	XKBLayout    string
+	Repo         string
+	CmdlineExtra string
+	PackageCache string
+}
+
+// WriteConfig writes the secrets into private files in dir and returns the
+// path of the subarchy-install config that references them.
+func (a Answers) WriteConfig(dir string) (string, error) {
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return "", fmt.Errorf("config: %w", err)
+	}
+	secrets := map[string]string{"user-password": a.Password, "luks-passphrase": a.Passphrase}
+	for name, value := range secrets {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(value+"\n"), 0o600); err != nil {
+			return "", fmt.Errorf("config: %w", err)
+		}
+	}
+	lines := []string{
+		"# Written by subarchy-setup.",
+		"DISK=" + a.Disk,
+		"HOSTNAME=" + a.Hostname,
+		"USERNAME=" + a.Username,
+		"USER_PASSWORD_FILE=" + filepath.Join(dir, "user-password"),
+		"LUKS_PASSPHRASE_FILE=" + filepath.Join(dir, "luks-passphrase"),
+		"TIMEZONE=" + a.Timezone,
+		"KEYMAP=" + a.Keymap,
+		"XKB_LAYOUT=" + a.XKBLayout,
+		"SUBARCHY_REPO=" + a.Repo,
+	}
+	if a.PackageCache != "" {
+		lines = append(lines, "PACKAGE_CACHE="+a.PackageCache)
+	}
+	if a.CmdlineExtra != "" {
+		lines = append(lines, "KERNEL_CMDLINE_EXTRA="+a.CmdlineExtra)
+	}
+	path := filepath.Join(dir, "install.conf")
+	if err := os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0o600); err != nil {
+		return "", fmt.Errorf("config: %w", err)
+	}
+	return path, nil
+}
