@@ -100,7 +100,7 @@ NVMe.
 | # | Decision | Omarchy 4.5 choice | Status |
 |---|---|---|---|
 | A1 | Terminal emulator | Foot default; Alacritty, Ghostty, Kitty supported | [[0040-terminal\|ADR 0040]]: kitty; WezTerm in installer |
-| A2 | Login shell and prompt | bash, starship | [[0041-shell-prompt\|ADR 0041]]: bash login, zsh + starship + atuin |
+| A2 | Login shell and prompt | bash, starship | [[0041-shell-prompt\|ADR 0041]]: zsh login shell, starship + atuin; session env independent of shell |
 | A3 | Editor | Neovim with LazyVim | [[0045-editor\|ADR 0045]]: stock LazyVim, forked starter + branding layer, prebuilt |
 | A4 | Browser | Chromium | [[0042-browser\|ADR 0042]]: Zen |
 | A5 | File manager | Nautilus | [[0043-file-manager\|ADR 0043]]: Dolphin, yazi |
