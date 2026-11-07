@@ -157,10 +157,14 @@ func apply(ctx context.Context, e env, p cursor.Palette, src string, s cursor.Se
 			return err
 		}
 	}
+	// GTK apps read the cursor from GSettings. A system without the GNOME
+	// interface schema still has the cursor (the theme and the session
+	// environment), so a failure here only warns.
 	if e.runner.Has("gsettings") {
 		for _, kv := range [][2]string{{"cursor-theme", cursor.ThemeName}, {"cursor-size", fmt.Sprint(s.Size)}} {
 			if err := e.runner.Run(ctx, "gsettings", "set", "org.gnome.desktop.interface", kv[0], kv[1]); err != nil {
-				return err
+				fmt.Fprintf(e.stderr, "subcult cursor: warning: could not tell GTK apps (%v)\n", err)
+				break
 			}
 		}
 	}

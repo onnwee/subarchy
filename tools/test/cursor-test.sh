@@ -94,4 +94,11 @@ grep -q '"HYPRCURSOR_SIZE", "32"' "$home2/.config/subcult/cursor-env.lua" 2>/dev
   fail "set --size does not persist the size for the next session"
 grep -q '"XCURSOR_SIZE", "32"' "$home2/.config/subcult/cursor-env.lua" || fail "XCURSOR_SIZE not persisted"
 
+# A system without the GNOME interface schemas (no gsettings-desktop-schemas)
+# still gets the cursor; the GSettings step only warns.
+mkdir -p "$work/noschemas"
+env -u DBUS_SESSION_BUS_ADDRESS -u HYPRLAND_INSTANCE_SIGNATURE GSETTINGS_BACKEND=memory HOME="$home2" SUBCULT_PATH="$root" \
+  XDG_DATA_DIRS="$work/noschemas" "$bin" set --size 24 --src "$root/default/cursor" >"$work/set2.log" 2>&1 ||
+  { tail -5 "$work/set2.log" >&2; fail "set fails when GSettings has no interface schema"; }
+
 echo "cursor-test: ok"
