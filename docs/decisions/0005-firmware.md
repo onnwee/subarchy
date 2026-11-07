@@ -40,4 +40,15 @@ Decision map item F4. Accepted 2026-11-06.
 - `linux-firmware-whence` and the licence files always install.
 - Microcode loads early through the initramfs or bootloader; B2 must keep that.
 
+## Progress
+
+- 2026-11-07: `subcult hw packages` (`internal/hw`) picks microcode from
+  the CPU vendor and `linux-firmware-*` packages from the network, wireless,
+  Bluetooth and display devices' vendors (by PCI class, so a chipset alone
+  pulls in nothing). Intel audio adds `sof-firmware`, Cirrus amplifiers
+  (ACPI `CSC3551`) add `linux-firmware-cirrus`. An unrecognised network or
+  display vendor falls back to the whole `linux-firmware`. The installer
+  adds the result to the base packages; `fwupd` is in the base set. On
+  `sputnik` it picks the Intel and NVIDIA firmware it actually uses.
+
 Related: [[decision-map|Decision map]] · [[0004-kernel|ADR 0004]]
