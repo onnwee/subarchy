@@ -698,6 +698,11 @@ recorded as a ruling during the run:
   Lua); the OSD's IPC call is `flash`, not `show`.
 - No Caps Lock binding and no global Escape binding (both would take the key
   from apps).
+- The VM test (Task 16) mocks UPower inline with `python-dbusmock` from the
+  mirror and restarts the shell to read it, asserts `onBattery` rather than
+  per-widget battery intervals (no plan-1 widget has a timer), checks the
+  bar's own line colour instead of the window border, matches errors rather
+  than every warning, and counts idle wake-ups over all the shell's threads.
 
 Not verified by the tests: the Alt release key binding with a real
 keyboard, the polkit retry flow, HiDPI at scale 1.6 and real tray apps; the

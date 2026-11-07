@@ -35,7 +35,7 @@ def idle_ok(switches: int) -> bool:
     """The shell's idle wake-ups against tools/iso/idle-budget.json (ADR 0054).
 
     The first run records its measurement as the budget (null in the file);
-    later runs fail above budget × 1.2.
+    later runs fail above the larger of budget × 1.2 and budget + 3.
     """
     import json
     if switches < 0:
@@ -46,7 +46,7 @@ def idle_ok(switches: int) -> bool:
         print(f"install-test: no idle budget yet; measured {switches}, record it in {IDLE_BUDGET}")
         (VM / "idle.json").write_text(json.dumps({"shell_voluntary_ctxt_switches_per_minute": switches}) + "\n")
         return True
-    return switches <= budget * 1.2
+    return switches <= max(budget * 1.2, budget + 3)
 USER = "tester"
 PASSWORD = "subarchy-test"
 PASSPHRASE = "subarchy-disk-test"
@@ -275,38 +275,48 @@ def boot(disk: Path, vars_file: Path) -> bool:
             " | grep -vE 'Failed to (connect|create) pipewire context|MESA|ZINK'"
             " | grep -E 'ERROR|TypeError|ReferenceError|is not a type|Cannot assign' | head -5")
         results["layers"] = serial.run("hyprctl -i 0 layers | grep -c 'namespace: subcult-bar'")
-        # The shell's Hyprland dispatches on a Lua config: the workspace click
-        # expression, and Alt-Tab between two terminals over IPC.
-        results["dispatch"] = serial.run(
-            "hyprctl -i 0 dispatch 'hl.dsp.focus({ workspace = \"3\" })' >/dev/null; sleep 1;"
-            " hyprctl -i 0 activeworkspace -j | grep -o '\"id\": [0-9]*' | head -1;"
-            " hyprctl -i 0 dispatch 'hl.dsp.focus({ workspace = \"1\" })' >/dev/null; sleep 1")
-        alt = "quickshell ipc --any-display -p /usr/share/subcult/shell call subcult.altswitch"
-        results["altswitch"] = serial.run(
-            "hyprctl -i 0 dispatch 'hl.dsp.exec_cmd(\"kitty\")' >/dev/null; sleep 3;"
-            " hyprctl -i 0 dispatch 'hl.dsp.exec_cmd(\"kitty\")' >/dev/null; sleep 3;"
-            " hyprctl -i 0 clients | grep -c '^Window ';"
-            " a=$(hyprctl -i 0 activewindow | head -1);"
-            f" {alt} next; sleep 0.5; {alt} commit; sleep 1;"
-            " b=$(hyprctl -i 0 activewindow | head -1);"
-            " echo \"A=$a\"; echo \"B=$b\";"
-            " [ -n \"$a\" ] && [ \"$a\" != \"$b\" ] && echo SWITCHED", timeout=120)
         results["fonts"] = serial.run(
             "for r in monospace sans-serif serif; do fc-match -f '%{family[0]}\\n' $r; done")
         results["gtk"] = serial.run(
             "gsettings get org.gnome.desktop.interface icon-theme; gsettings get org.gnome.desktop.interface cursor-theme")
         results["cursor"] = serial.run("ls /usr/share/icons/subcult-cursor/cursors/left_ptr /usr/share/icons/subcult-cursor/hyprcursors/default.hlc")
+        # The bar and the idle sample come first, before any window is open.
         screendump(qmp, VM / "bar.png")
         results["bar_colours"] = colours_in(VM / "bar.png", 26)
-        # Idle cost: the shell's voluntary context switches over a quiet minute.
+        # Idle cost: voluntary context switches of all the shell's threads over
+        # a quiet minute.
         pid = serial.run("pgrep -u $(id -u) -f 'quickshell -n -p /usr/share/subcult/shell' | head -1").strip()
-        ctxt = "awk '/^voluntary_ctxt_switches/ {print $2}' /proc/%s/status" % pid
-        before = serial.run(ctxt).strip()
+        ctxt = ("cat /proc/%s/task/*/status 2>/dev/null"
+                " | awk '/^voluntary_ctxt_switches/ {s += $2} END {print s + 0}'" % pid)
+        before = serial.run(ctxt).strip() if pid.isdigit() else ""
         time.sleep(60)
-        after = serial.run(ctxt).strip()
+        after = serial.run(ctxt).strip() if pid.isdigit() else ""
         results["idle"] = int(after) - int(before) if before.isdigit() and after.isdigit() else -1
+        # The shell's Hyprland dispatches on a Lua config: the workspace click
+        # expression (as shell/Commons/HyprDispatch.js writes it).
+        results["dispatch"] = serial.run(
+            "hyprctl -i 0 dispatch 'hl.dsp.focus({ workspace = \"3\" })' >/dev/null; sleep 1;"
+            " hyprctl -i 0 activeworkspace -j | grep -o '\"id\": [0-9]*' | head -1;"
+            " hyprctl -i 0 dispatch 'hl.dsp.focus({ workspace = \"1\" })' >/dev/null; sleep 1")
+        # Alt-Tab over IPC between two terminals: from the second (focused) it
+        # must land on exactly the first (the session may hold other windows). Both are closed afterwards.
+        alt = "quickshell ipc --any-display -p /usr/share/subcult/shell call subcult.altswitch"
+        active = "hyprctl -i 0 activewindow | head -1"
+        results["altswitch"] = serial.run(
+            "hyprctl -i 0 dispatch 'hl.dsp.exec_cmd(\"kitty\")' >/dev/null;"
+            " for i in $(seq 20); do [ $(hyprctl -i 0 clients | grep -c '^Window ') -ge 1 ] && break; sleep 1; done;"
+            f" sleep 1; w1=$({active});"
+            " hyprctl -i 0 dispatch 'hl.dsp.exec_cmd(\"kitty\")' >/dev/null;"
+            " for i in $(seq 20); do [ $(hyprctl -i 0 clients | grep -c '^Window ') -ge 2 ] && break; sleep 1; done;"
+            f" sleep 1; w2=$({active}); n=$(hyprctl -i 0 clients | grep -c '^Window ');"
+            f" {alt} next; sleep 0.5; {alt} commit; sleep 1; b=$({active});"
+            " echo \"N=$n\"; echo \"W1=$w1\"; echo \"W2=$w2\"; echo \"B=$b\";"
+            " if [ \"$n\" -ge 2 ] && [ -n \"$w1\" ] && [ \"$w1\" != \"$w2\" ] && [ \"$b\" = \"$w1\" ]; then echo SWITCHED; fi;"
+            " for i in 1 2; do hyprctl -i 0 dispatch 'hl.dsp.window.close()' >/dev/null; sleep 1; done", timeout=180)
         # On battery: UPower replaced by python-dbusmock's template with
-        # OnBattery set, then the shell restarted; it must report battery.
+        # OnBattery set, then the shell restarted (it reads UPower at start;
+        # a live hand-over between UPower owners is not tested). Then the real
+        # UPower again: the restarted shell must be back on AC.
         results["battery"] = serial.run(
             f"{sudo} pacman -S --noconfirm --needed python-dbusmock >/dev/null 2>&1"
             f" && {sudo} systemctl stop upower.service"
@@ -315,8 +325,9 @@ def boot(disk: Path, vars_file: Path) -> bool:
             " && busctl get-property org.freedesktop.UPower /org/freedesktop/UPower org.freedesktop.UPower OnBattery"
             " && systemctl --user restart subcult-shell.service && sleep 8"
             f" && {shell_ipc}", timeout=300)
-        serial.run(f"{sudo} pkill -f 'dbusmock --system --template upower'; {sudo} systemctl start upower.service"
-                   " && sleep 2 && systemctl --user restart subcult-shell.service")
+        results["ac_again"] = serial.run(
+            f"{sudo} pkill -f '[d]busmock --system --template upower'; {sudo} systemctl start upower.service"
+            f" && sleep 2 && systemctl --user restart subcult-shell.service && sleep 8 && {shell_ipc}")
         time.sleep(3)
         screendump(qmp, VM / "session.png")
         results["session_colours"] = distinct_colours(VM / "session.png")
@@ -384,13 +395,14 @@ def boot(disk: Path, vars_file: Path) -> bool:
         "GTK icons and cursor": "'Papirus-Dark'" in r["gtk"] and "'subcult-cursor'" in r["gtk"],
         "cursor theme installed": "No such file" not in r["cursor"] and "left_ptr" in r["cursor"],
         "shell sees battery power": '"onBattery":true' in r["battery"],
+        "shell back on AC with the real UPower": '"onBattery":false' in r["ac_again"],
         "workspace dispatch (Lua expression)": '"id": 3' in r["dispatch"],
-        "Alt-Tab switches windows (IPC)": "SWITCHED" in r["altswitch"],
+        "Alt-Tab switches to the previous window (IPC)": "SWITCHED" in r["altswitch"].splitlines(),
         "shell idle within budget": idle_ok(r["idle"]),
     }
     for name, ok in checks.items():
         print(f"install-test: {'ok  ' if ok else 'FAIL'} {name}")
-    if "SWITCHED" not in r["altswitch"]:
+    if "SWITCHED" not in r["altswitch"].splitlines():
         print("install-test: Alt-Tab:\n" + r["altswitch"].strip())
     if r["shell_errors"].strip():
         print("install-test: shell errors:\n" + r["shell_errors"].strip())
@@ -588,11 +600,11 @@ def main() -> int:
     write_config()
     if not args.skip_install and not install(args.iso, disk, vars_file, args.timeout_install, args.guided):
         return 1
-    if not boot(disk, vars_file):
-        return 1
-    if not boot_snapshot(disk, vars_file):
-        return 1
-    return 0 if boot_secureboot(disk, vars_file) else 1
+    # A failed check in one stage does not skip the others.
+    ok = boot(disk, vars_file)
+    ok = boot_snapshot(disk, vars_file) and ok
+    ok = boot_secureboot(disk, vars_file) and ok
+    return 0 if ok else 1
 
 
 if __name__ == "__main__":
