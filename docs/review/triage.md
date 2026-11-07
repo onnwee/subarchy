@@ -4,7 +4,7 @@ type: review
 status: draft
 review: pending
 created: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-07
 tags: [review, plugins]
 aliases: [Triage]
 ---
@@ -23,6 +23,12 @@ Placement values:
 - **host**: specific to `sputnik` hardware or the homelab; stays out.
 - **drop**: superseded or not worth carrying.
 - **evaluate**: needs a test on Omarchy 4.5 before deciding.
+
+> **Revised 2026-11-07.** The [[shell-and-look-design|Shell and look design]]
+> supersedes the placements below: Subarchy rebuilds the plugins active on
+> `sputnik` (minus Bitwarden, plus HT3 and n8n) as its own widgets, written
+> fresh, and ships Dell power, otoru, auto-wallpaper and agents usage off by
+> default. The tables stay as the record of the first triage.
 
 ## Own plugins
 

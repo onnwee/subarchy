@@ -54,8 +54,19 @@ Plymouth, NetworkManager with the DNS trust policy, PipeWire, ufw.
 - [ ] SDDM theme, uwsm session, Hyprland defaults with layered user overrides
       ([[0048-config-ownership|ADR 0048]]); session, greeter and layered
       defaults boot in the VM test since 2026-11-07, theme still to do
-- [ ] Plugin API design record ([[0035-plugin-api|ADR 0035]])
-- [ ] Quickshell shell: bar, launcher, notifications, OSD, polkit
+- [x] Plugin API design record: [[0068-shell-plugin-api-v0|ADR 0068]] (v0)
+- [ ] Quickshell shell, stage 1 ([[shell-and-look-design|Shell and look
+      design]]):
+  - [x] Plan 1 ([[shell-stage-1-core-plan|core plan]]): look layer, font
+        roles and `subcult font`, Subarchy cursor, shell core, event-driven
+        bar widgets, notifications, OSD, polkit dialog, Alt-Tab, VM checks
+        (2026-11-07)
+  - [ ] Plan 2: weather (with `linecast`), Soma, n8n, HT3
+  - [ ] Plan 3: calendar sync and widget
+- [ ] Shell stage 2: a panel per widget
+- [ ] Shell stage 3: plugins shipped off by default (Dell power, otoru,
+      auto-wallpaper, agents usage)
+- [ ] Launcher ([[0057-launcher|ADR 0057]])
 - [ ] Standalone QML lock program with the screensaver until input, and
       hypridle ([[0036-shell-components|ADR 0036]])
 - [ ] Ported rice features ([[rice-port-review|rice port review]]): dock and

@@ -4,7 +4,7 @@ type: decision
 status: accepted
 adr: 39
 created: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-07
 tags: [decision, adr, shell, brand]
 aliases: [ADR 0039, D7, Fonts, Icons]
 ---
@@ -46,5 +46,24 @@ the same three fonts.
   monospace.
 - The icon theme follows the active theme's `icons.theme`; `subcult-minimal`
   names `Yaru-purple-dark`, so `yaru-icon-theme` is preinstalled.
+
+## Revision, 2026-11-07
+
+Superseded in part by the owner's choices in
+[[shell-and-look-design|Shell and look design]]:
+
+- **Fonts are three switchable roles**, fontconfig's `monospace`,
+  `sans-serif` and `serif`, which GTK, Qt, the shell and kitty all follow.
+  Defaults: JetBrainsMono Nerd Font for monospace, its Propo build for
+  interface text (interface follows monospace until set on its own), and
+  Libertinus Mono for serif. Space Grotesk and Oswald are no longer
+  defaults. `subcult font` lists the owner's preinstalled and on-pick fonts,
+  installs any Nerd Font, imports owned fonts (icons from Symbols Nerd Font,
+  or an opt-in patched copy) and checks fonts. Implemented in
+  `default/fontconfig/44-subarchy-roles.conf` and `cmd/subcult-font`.
+- **Icons are Papirus-Dark** again (`papirus-icon-theme`), the owner's
+  original pick; Yaru is not used.
+- **The cursor is Subarchy's own** (`subcult-cursor`), coloured from a
+  palette role (default `lavender`); `subcult cursor` builds and applies it.
 
 Related: [[decision-map|Decision map]] · [[0037-theming|ADR 0037]] · [[brand-identity|Brand identity]]

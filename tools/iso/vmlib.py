@@ -51,6 +51,14 @@ def distinct_colours(png: Path) -> int:
     return int(out.stdout.strip())
 
 
+def colours_in(png: Path, rows: int) -> set[str]:
+    """Colours present in the top `rows` rows of an image, as RRGGBB."""
+    out = subprocess.run(
+        ["magick", str(png), "-crop", f"x{rows}+0+0", "+repage", "-format", "%c", "histogram:info:-"],
+        capture_output=True, text=True, check=True)
+    return {m.upper() for m in re.findall(r"#([0-9A-Fa-f]{6})", out.stdout)}
+
+
 def qemu_command(vars_file: Path, *extra: str, memory: str = "4096") -> list[str]:
     """Base QEMU command line: q35, OVMF, serial on stdio, user networking."""
     cmd = [

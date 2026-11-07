@@ -1,7 +1,7 @@
 ---
 title: "Shell stage 1, plan 1: look, fonts and core bar"
 type: plan
-status: proposed
+status: accepted
 created: 2026-11-07
 updated: 2026-11-07
 tags: [plan, shell, theme, fonts]
@@ -100,19 +100,19 @@ fontconfig, Python 3 for the VM test.
   runs `~/.config/subcult/theme/hyprland.lua` with `dofile` if it exists
   (the file Theme Tender will own).
 
-- [ ] **Step 1: Write the failing test** `tools/test/palette-test.py`:
+- [x] **Step 1: Write the failing test** `tools/test/palette-test.py`:
   asserts `colors` has all 47 keys, every value matches `^#[0-9A-F]{6}$`,
   `base == "#100B19"`, `mauve == "#8F4BC8"`, `green == "#00FF88"`, and that
   `default/hypr/theme.lua` contains `rgb(8F4BC8)` and `rgb(1F1830)`.
-- [ ] **Step 2: Run it:** `python3 tools/test/palette-test.py` → FAIL, file
+- [x] **Step 2: Run it:** `python3 tools/test/palette-test.py` → FAIL, file
   missing.
-- [ ] **Step 3: Write `palette.json`, `theme.lua`, and change
+- [x] **Step 3: Write `palette.json`, `theme.lua`, and change
   `looknfeel.lua`** to the compositor values in Global Constraints, with
   `require("default.hypr.theme")` at the end. Keep `resize_on_border`,
   `layout = "dwindle"` and the `misc` block.
-- [ ] **Step 4: Run** `python3 tools/test/palette-test.py && make hypr-check`
+- [x] **Step 4: Run** `python3 tools/test/palette-test.py && make hypr-check`
   → PASS, `hypr-check: ok`.
-- [ ] **Step 5: Commit** `feat: subcult-minimal palette and flat compositor`.
+- [x] **Step 5: Commit** `feat: subcult-minimal palette and flat compositor`.
 
 ### Task 2: GTK, icons, kitty and Neovim defaults
 
@@ -145,12 +145,12 @@ fontconfig, Python 3 for the VM test.
 - `desktop.txt` adds: `quickshell`, `papirus-icon-theme`,
   `brightnessctl`, `libsecret`, `mpv`.
 
-- [ ] **Step 1: Extend `package-test.sh`** to assert each install target
+- [x] **Step 1: Extend `package-test.sh`** to assert each install target
   above exists in the built package with mode 0644.
-- [ ] **Step 2: Run** `make package` → FAIL on the first missing path.
-- [ ] **Step 3: Add the files, PKGBUILD lines and package list.**
-- [ ] **Step 4: Run** `make package && make verify` → PASS.
-- [ ] **Step 5: Commit** `feat: GTK, Papirus, kitty and Neovim defaults`.
+- [x] **Step 2: Run** `make package` → FAIL on the first missing path.
+- [x] **Step 3: Add the files, PKGBUILD lines and package list.**
+- [x] **Step 4: Run** `make package && make verify` → PASS.
+- [x] **Step 5: Commit** `feat: GTK, Papirus, kitty and Neovim defaults`.
 
 ### Task 2b: Subarchy cursor
 
@@ -193,19 +193,19 @@ fontconfig, Python 3 for the VM test.
 - Task 7's `Theme` runs `subcult cursor apply` (detached, through
   `Process`) when the palette file changes; a change to `cursor.json` from
   `set` already applies.
-- [ ] **Step 1: Write `cursor-test.sh`**: builds into a temp dir with the
+- [x] **Step 1: Write `cursor-test.sh`**: builds into a temp dir with the
   system palette and asserts `cursors/left_ptr`, `cursors/text` and
   `cursors/pointer` exist and are Xcursor files (`head -c4` is `Xcur`), every
   name in `shapes.tsv` resolves, the hyprcursor archive for `left_ptr`
   exists, the 24 px arrow PNG's most common non-transparent colour is
   `#A78BFA`; then `set --role nonsense` fails with exit 2 and leaves
   `cursor.json` unchanged.
-- [ ] **Step 2:** `tools/test/cursor-test.sh` → FAIL.
-- [ ] **Step 3:** Draw the shapes, write `shapes.tsv` and the script.
-- [ ] **Step 4:** `tools/test/cursor-test.sh && make package && make
+- [x] **Step 2:** `tools/test/cursor-test.sh` → FAIL.
+- [x] **Step 3:** Draw the shapes, write `shapes.tsv` and the script.
+- [x] **Step 4:** `tools/test/cursor-test.sh && make package && make
   shellcheck` → PASS. Look at the 48 px PNGs and compare them with the
   arrow on `sputnik` before committing.
-- [ ] **Step 5: Commit** `feat: Subarchy cursor coloured from the palette`.
+- [x] **Step 5: Commit** `feat: Subarchy cursor coloured from the palette`.
 
 ### Task 3: Font roles and preinstalled fonts
 
@@ -227,13 +227,13 @@ fontconfig, Python 3 for the VM test.
   `ttf-nerd-fonts-symbols-mono`, `otf-libertinus`, `ttf-liberation`.
   The user font file written by Task 5 loads after this one (number 60).
 
-- [ ] **Step 1:** `package-test.sh` asserts the conf and its symlink.
-- [ ] **Step 2:** `make package` → FAIL.
-- [ ] **Step 3:** Add the file, symlink and packages.
-- [ ] **Step 4:** `make package` → PASS and `xmllint --noout
+- [x] **Step 1:** `package-test.sh` asserts the conf and its symlink.
+- [x] **Step 2:** `make package` → FAIL.
+- [x] **Step 3:** Add the file, symlink and packages.
+- [x] **Step 4:** `make package` → PASS and `xmllint --noout
   default/fontconfig/50-subarchy-roles.conf` → no output. The resolved
   families are asserted in the VM (Task 16).
-- [ ] **Step 5: Commit** `feat: font roles through fontconfig aliases`.
+- [x] **Step 5: Commit** `feat: font roles through fontconfig aliases`.
 
 Open the Phase A PR. Done when CI is green and it merges.
 
@@ -272,7 +272,7 @@ Open the Phase A PR. Done when CI is green and it merges.
     `func ParseUserConf(xml string) (map[Role]string, error)`: a fontconfig
     document with one `<alias binding="strong">` per role whose `<prefer>`
     holds the family.
-- [ ] **Step 1: Write failing tests**: `TestCatalogMatchesSpec` (7
+- [x] **Step 1: Write failing tests**: `TestCatalogMatchesSpec` (7
   preinstalled entries: the six monospace fonts and Libertinus Mono; 13
   monospace choices; 5 interface and serif choices; no duplicate families;
   Symbols and Liberation are support packages, not catalogue entries);
@@ -280,10 +280,10 @@ Open the Phase A PR. Done when CI is green and it merges.
   `sputnik`'s JetBrainsMono file and on a malformed line (error);
   `TestCheck` table: full Nerd, fallback, spacing 0 → interface only, no box
   drawing → breaks TUIs; `TestUserConfRoundTrip`; `TestParseUserConfBadXML`.
-- [ ] **Step 2:** `go test ./internal/font/` → FAIL (package missing).
-- [ ] **Step 3:** Implement.
-- [ ] **Step 4:** `go test -race ./internal/font/` → PASS.
-- [ ] **Step 5: Commit** `feat: font catalogue, check and role config`.
+- [x] **Step 2:** `go test ./internal/font/` → FAIL (package missing).
+- [x] **Step 3:** Implement.
+- [x] **Step 4:** `go test -race ./internal/font/` → PASS.
+- [x] **Step 5: Commit** `feat: font catalogue, check and role config`.
 
 ### Task 5: `cmd/subcult-font`
 
@@ -306,18 +306,18 @@ Open the Phase A PR. Done when CI is green and it merges.
 | `check <family>` | Prints the verdict for each face |
 | `patch <family>` | Prints the licence warning and asks `y/N`; installs `fontforge` with pacman if missing; downloads `FontPatcher.zip` for `NerdFontsVersion` and verifies it against a SHA-256 pinned in code; runs `fontforge -script font-patcher --complete --outputdir ~/.local/share/fonts/subcult-patched/ <file>` per face; never touches the original |
 
-- [ ] **Step 1: Write failing tests** with a fake `update.Runner` and a temp
+- [x] **Step 1: Write failing tests** with a fake `update.Runner` and a temp
   `HOME`: `set` writes the expected conf and calls `fc-cache`; `set` refuses
   an `InterfaceOnly` font without `--force`; `install` refuses `rm -rf` style
   and unknown names; a release download with a wrong checksum leaves no
   files behind (use `httptest.Server`, with the base URL injectable);
   `current` reports `mismatch`; `patch` exits without action on `n`.
-- [ ] **Step 2:** `go test ./cmd/subcult-font/` → FAIL.
-- [ ] **Step 3:** Implement. Pin the `FontPatcher.zip` SHA-256 by reading
+- [x] **Step 2:** `go test ./cmd/subcult-font/` → FAIL.
+- [x] **Step 3:** Implement. Pin the `FontPatcher.zip` SHA-256 by reading
   `SHA-256.txt` from the v3.5.1 release while implementing.
-- [ ] **Step 4:** `make verify` → PASS; `build/subcult font list` prints the
+- [x] **Step 4:** `make verify` → PASS; `build/subcult font list` prints the
   catalogue.
-- [ ] **Step 5: Commit** `feat: subcult font list, set, install, import, check, patch`.
+- [x] **Step 5: Commit** `feat: subcult font list, set, install, import, check, patch`.
 
 Open the Phase B PR; done when CI is green and it merges.
 
@@ -356,17 +356,17 @@ Open the Phase B PR; done when CI is green and it merges.
   `^subcult\.[a-z0-9-]+$`, a timer missing `ac` or `battery`, network host
   not a hostname.
 
-- [ ] **Step 1: Write `tst_models.qml`** with `TestCase` functions:
+- [x] **Step 1: Write `tst_models.qml`** with `TestCase` functions:
   `test_intervalBattery` (900/1800 → 1800000 on battery),
   `test_intervalMissing` (throws), `test_mergeNested`, `test_parseBadJson`
   (Review Focus 2), `test_withWidgetSettingIsolated`, `test_modeFor`
   (`eDP-1` full, `DP-3` minimal, primary `DP-3` full), `test_widgetsMinimal`,
   `test_tokensFallback` (palette with `base: "red"` and no `mauve` → both
   from fallback; Review Focus 1), `test_validate` (one case per error).
-- [ ] **Step 2:** `make shell-test` → FAIL.
-- [ ] **Step 3:** Implement the five files.
-- [ ] **Step 4:** `make shell-test shell-lint` → PASS.
-- [ ] **Step 5: Commit** `feat(shell): config, power, layout, theme and manifest models`.
+- [x] **Step 2:** `make shell-test` → FAIL.
+- [x] **Step 3:** Implement the five files.
+- [x] **Step 4:** `make shell-test shell-lint` → PASS.
+- [x] **Step 5: Commit** `feat(shell): config, power, layout, theme and manifest models`.
 
 ### Task 7: Commons singletons
 
@@ -400,13 +400,13 @@ Open the Phase B PR; done when CI is green and it merges.
   ["subcult.workspaces","subcult.display"] }, "widgets": {} }`. Plans 2 and
   3 insert their ids where `sputnik`'s bar has them.
 
-- [ ] **Step 1:** Implement the four singletons and `bar.json` (their
+- [x] **Step 1:** Implement the four singletons and `bar.json` (their
   logic is already tested through the Task 6 models).
-- [ ] **Step 2:** `make shell-lint` → PASS. Task 9's harness adds the
+- [x] **Step 2:** `make shell-lint` → PASS. Task 9's harness adds the
   behaviour check: with a temp `HOME` holding a broken palette and a broken
   `bar.json`, the bar still draws `#100B19` and the log has the one config
   warning (Review Focus 1 and 2).
-- [ ] **Step 5: Commit** `feat(shell): theme, power, config and style singletons`.
+- [x] **Step 5: Commit** `feat(shell): theme, power, config and style singletons`.
 
 ### Task 8: Widget index and loader
 
@@ -428,12 +428,12 @@ Open the Phase B PR; done when CI is green and it merges.
   `Panel.qml` only while `panelOpen`. An unknown id renders nothing and logs
   one warning.
 
-- [ ] **Step 1:** `test_gen_index.py`: a temp tree with one good and one bad
+- [x] **Step 1:** `test_gen_index.py`: a temp tree with one good and one bad
   manifest → exit 1 naming the bad one; a good tree → expected JSON.
-- [ ] **Step 2:** `python3 tools/shell/test_gen_index.py` → FAIL.
-- [ ] **Step 3:** Implement both files.
-- [ ] **Step 4:** Test passes; `make shell-index-check` passes.
-- [ ] **Step 5: Commit** `feat(shell): widget index and host`.
+- [x] **Step 2:** `python3 tools/shell/test_gen_index.py` → FAIL.
+- [x] **Step 3:** Implement both files.
+- [x] **Step 4:** Test passes; `make shell-index-check` passes.
+- [x] **Step 5: Commit** `feat(shell): widget index and host`.
 
 ### Task 9: Shell root, bar, service and headless harness
 
@@ -477,12 +477,12 @@ Open the Phase B PR; done when CI is green and it merges.
   second run with a temp `HOME` holding a broken `palette.json` and
   `bar.json` must still draw `#100B19` and log exactly one config warning.
 
-- [ ] **Step 1:** Write `shell-headless.sh` and run it → FAIL (no shell).
-- [ ] **Step 2:** Implement the root, bar, background and Ui files with no
+- [x] **Step 1:** Write `shell-headless.sh` and run it → FAIL (no shell).
+- [x] **Step 2:** Implement the root, bar, background and Ui files with no
   widgets yet (empty `widgets/`).
-- [ ] **Step 3:** `tools/test/shell-headless.sh shell` → PASS; `make package`
+- [x] **Step 3:** `tools/test/shell-headless.sh shell` → PASS; `make package`
   → PASS with the new paths.
-- [ ] **Step 4: Commit** `feat(shell): root, bar, background and user service`.
+- [x] **Step 4: Commit** `feat(shell): root, bar, background and user service`.
 
 Open the Phase C PR; done when the new `shell` CI job is green and it merges.
 
@@ -511,7 +511,7 @@ the headless harness.
   (another output's workspace is not active here), `test_layoutCode`
   (`"English (US)"` → `"US"`).
 
-- [ ] Write failing model tests → run (FAIL) → implement → `make shell-test
+- [x] Write failing model tests → run (FAIL) → implement → `make shell-test
   shell-lint shell-index-check` (PASS) → commit
   `feat(shell): workspaces, window, layout, display and menu widgets`.
 
@@ -534,7 +534,7 @@ the headless harness.
   `!= battery(95,false)`, charging differs), `test_batteryHiddenWithoutDevice`
   via `battery/Model.js visible(device)`.
 
-- [ ] Failing tests → FAIL → implement → PASS → commit
+- [x] Failing tests → FAIL → implement → PASS → commit
   `feat(shell): audio, microphone, network, Bluetooth, battery and tray`.
 
 ### Task 12: Time, updates and indicators
@@ -558,7 +558,7 @@ the headless harness.
 - Tests: `test_formatZone` (`"Asia/Tokyo"` on a fixed UTC date),
   `test_updatesHiddenAtZero`.
 
-- [ ] Failing tests → FAIL → implement → PASS → commit
+- [x] Failing tests → FAIL → implement → PASS → commit
   `feat(shell): clock, world clock, update count and indicators`.
 
 ### Task 13: Notifications
@@ -580,7 +580,7 @@ widget `subcult.notifications-daemon`), `shell/widgets/notifications/`
   clicking it turns `dnd` off.
 - Tests: `test_pushCaps`, `test_dndCriticalStillPopsUp`, `test_unread`.
 
-- [ ] Failing tests → FAIL → implement → PASS; in the headless harness,
+- [x] Failing tests → FAIL → implement → PASS; in the headless harness,
   `notify-send test` produces a popup layer (`swaymsg -t get_tree` shows it)
   → commit `feat(shell): notification daemon, popups and bar icon`.
 
@@ -604,7 +604,7 @@ widget `subcult.notifications-daemon`), `shell/widgets/notifications/`
 - Tests: `make hypr-check` passes with the new bindings; in the headless
   harness `qs ipc call subcult.osd show volume` creates the OSD layer.
 
-- [ ] Write the harness assertions → FAIL → implement → PASS → commit
+- [x] Write the harness assertions → FAIL → implement → PASS → commit
   `feat(shell): OSD, polkit dialog and media key bindings`.
 
 ### Task 15: AltSwitch
@@ -622,7 +622,7 @@ widget `subcult.notifications-daemon`), `shell/widgets/notifications/`
   only while open.
 - Tests: `test_orderRecentFirst`, `test_nextWraps`.
 
-- [ ] Failing tests → FAIL → implement → PASS → commit
+- [x] Failing tests → FAIL → implement → PASS → commit
   `feat(shell): Alt-Tab switcher`.
 
 Open the Phase D PR; done when CI is green and it merges.
@@ -671,5 +671,36 @@ accepted`, tasks ticked).
 
 Open the Phase E PR; done when CI is green and it merges. Then the owner
 checks the result on `sputnik` (scale 1.6, real tray apps, real battery).
+
+## Outcome (2026-11-07)
+
+Executed in one session, one PR per phase, each reviewed by a fresh
+reviewer before merge: #21 and #23 (look layer and its fixes), #22
+(`subcult font`), #24 (shell core), #25 (widgets and services), and the
+Phase E PR (VM checks and these docs). Deviations from this plan, each
+recorded as a ruling during the run:
+
+- The cursor builder is Go (`cmd/subcult-cursor`), not a bash script.
+- Font roles live in `44-subarchy-roles.conf` with `mode="prepend"`, and the
+  user's choices in `~/.config/subcult/fonts.conf`, included first; an
+  `alias`/`prefer` file at 50 let Noto's rules win and could not be
+  overridden, and `prepend_first` took over named families.
+- Neovim's default comes from a site plugin; `neovim` owns
+  `/etc/xdg/nvim/sysinit.vim`.
+- Widgets get `shell.power` and `shell.config` bound to themselves and are
+  created with initial properties; `WidgetTimer` is the only widget timer;
+  `WatchedFile` makes user files written after start apply live.
+- With no primary output and no laptop panel, the first output gets the
+  full bar.
+- Services that are not bar items (notifications, OSD, polkit, Alt-Tab) live
+  in the shell, not as `kind: service` widgets.
+- Hyprland dispatches are Lua expressions (Subarchy's Hyprland config is
+  Lua); the OSD's IPC call is `flash`, not `show`.
+- No Caps Lock binding and no global Escape binding (both would take the key
+  from apps).
+
+Not verified by the tests: the Alt release key binding with a real
+keyboard, the polkit retry flow, HiDPI at scale 1.6 and real tray apps; the
+owner checks those on `sputnik`.
 
 Related: [[shell-and-look-design|Shell and look design]] · [[0068-shell-plugin-api-v0|ADR 0068]] · [[roadmap|Roadmap]]

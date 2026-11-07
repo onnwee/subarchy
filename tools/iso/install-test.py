@@ -23,11 +23,30 @@ import sys
 import time
 from pathlib import Path
 
-from vmlib import ANSI, OVMF_CODE, OVMF_VARS, Serial, distinct_colours, qemu_command, screendump
+from vmlib import ANSI, OVMF_CODE, OVMF_VARS, Serial, colours_in, distinct_colours, qemu_command, screendump
 
 ROOT = Path(__file__).resolve().parents[2]
 VM = ROOT / "build" / "vm"
 CACHE = ROOT / "build" / "pkgcache"
+IDLE_BUDGET = ROOT / "tools" / "iso" / "idle-budget.json"
+
+
+def idle_ok(switches: int) -> bool:
+    """The shell's idle wake-ups against tools/iso/idle-budget.json (ADR 0054).
+
+    The first run records its measurement as the budget (null in the file);
+    later runs fail above budget × 1.2.
+    """
+    import json
+    if switches < 0:
+        return False
+    data = json.loads(IDLE_BUDGET.read_text())
+    budget = data.get("shell_voluntary_ctxt_switches_per_minute")
+    if budget is None:
+        print(f"install-test: no idle budget yet; measured {switches}, record it in {IDLE_BUDGET}")
+        (VM / "idle.json").write_text(json.dumps({"shell_voluntary_ctxt_switches_per_minute": switches}) + "\n")
+        return True
+    return switches <= budget * 1.2
 USER = "tester"
 PASSWORD = "subarchy-test"
 PASSPHRASE = "subarchy-disk-test"
@@ -244,6 +263,60 @@ def boot(disk: Path, vars_file: Path) -> bool:
             60,
         )
         results["uwsm"] = serial.run("systemctl --user list-units --plain --no-legend 'wayland-wm@*'")
+        # The desktop shell (shell and look design, Task 16).
+        results["shell_active"] = wait_for(
+            serial, "systemctl --user is-active subcult-shell.service | grep -qx active && echo ACTIVE", 90)
+        time.sleep(8)
+        # The serial login has no WAYLAND_DISPLAY; the shell runs on the session's.
+        shell_ipc = "quickshell ipc --any-display -p /usr/share/subcult/shell call subcult.shell status"
+        results["shell_status"] = serial.run(shell_ipc)
+        results["shell_errors"] = serial.run(
+            "journalctl --user -b -u subcult-shell.service --no-pager"
+            " | grep -vE 'Failed to (connect|create) pipewire context|MESA|ZINK'"
+            " | grep -E 'ERROR|TypeError|ReferenceError|is not a type|Cannot assign' | head -5")
+        results["layers"] = serial.run("hyprctl -i 0 layers | grep -c 'namespace: subcult-bar'")
+        # The shell's Hyprland dispatches on a Lua config: the workspace click
+        # expression, and Alt-Tab between two terminals over IPC.
+        results["dispatch"] = serial.run(
+            "hyprctl -i 0 dispatch 'hl.dsp.focus({ workspace = \"3\" })' >/dev/null; sleep 1;"
+            " hyprctl -i 0 activeworkspace -j | grep -o '\"id\": [0-9]*' | head -1;"
+            " hyprctl -i 0 dispatch 'hl.dsp.focus({ workspace = \"1\" })' >/dev/null; sleep 1")
+        alt = "quickshell ipc --any-display -p /usr/share/subcult/shell call subcult.altswitch"
+        results["altswitch"] = serial.run(
+            "hyprctl -i 0 dispatch 'hl.dsp.exec_cmd(\"kitty\")' >/dev/null; sleep 3;"
+            " hyprctl -i 0 dispatch 'hl.dsp.exec_cmd(\"kitty\")' >/dev/null; sleep 3;"
+            " hyprctl -i 0 clients | grep -c '^Window ';"
+            " a=$(hyprctl -i 0 activewindow | head -1);"
+            f" {alt} next; sleep 0.5; {alt} commit; sleep 1;"
+            " b=$(hyprctl -i 0 activewindow | head -1);"
+            " echo \"A=$a\"; echo \"B=$b\";"
+            " [ -n \"$a\" ] && [ \"$a\" != \"$b\" ] && echo SWITCHED", timeout=120)
+        results["fonts"] = serial.run(
+            "for r in monospace sans-serif serif; do fc-match -f '%{family[0]}\\n' $r; done")
+        results["gtk"] = serial.run(
+            "gsettings get org.gnome.desktop.interface icon-theme; gsettings get org.gnome.desktop.interface cursor-theme")
+        results["cursor"] = serial.run("ls /usr/share/icons/subcult-cursor/cursors/left_ptr /usr/share/icons/subcult-cursor/hyprcursors/default.hlc")
+        screendump(qmp, VM / "bar.png")
+        results["bar_colours"] = colours_in(VM / "bar.png", 26)
+        # Idle cost: the shell's voluntary context switches over a quiet minute.
+        pid = serial.run("pgrep -u $(id -u) -f 'quickshell -n -p /usr/share/subcult/shell' | head -1").strip()
+        ctxt = "awk '/^voluntary_ctxt_switches/ {print $2}' /proc/%s/status" % pid
+        before = serial.run(ctxt).strip()
+        time.sleep(60)
+        after = serial.run(ctxt).strip()
+        results["idle"] = int(after) - int(before) if before.isdigit() and after.isdigit() else -1
+        # On battery: UPower replaced by python-dbusmock's template with
+        # OnBattery set, then the shell restarted; it must report battery.
+        results["battery"] = serial.run(
+            f"{sudo} pacman -S --noconfirm --needed python-dbusmock >/dev/null 2>&1"
+            f" && {sudo} systemctl stop upower.service"
+            f" && ({sudo} python3 -m dbusmock --system --template upower -p '{{\"OnBattery\": true}}'"
+            " >/tmp/upower-mock.log 2>&1 &) && sleep 3"
+            " && busctl get-property org.freedesktop.UPower /org/freedesktop/UPower org.freedesktop.UPower OnBattery"
+            " && systemctl --user restart subcult-shell.service && sleep 8"
+            f" && {shell_ipc}", timeout=300)
+        serial.run(f"{sudo} pkill -f 'dbusmock --system --template upower'; {sudo} systemctl start upower.service"
+                   " && sleep 2 && systemctl --user restart subcult-shell.service")
         time.sleep(3)
         screendump(qmp, VM / "session.png")
         results["session_colours"] = distinct_colours(VM / "session.png")
@@ -299,13 +372,30 @@ def boot(disk: Path, vars_file: Path) -> bool:
         "greeter drew something": r["greeter_colours"] > 1,
         "Hyprland session started": r["hyprland"].strip() != "",
         "session runs under uwsm": "wayland-wm@" in r["uwsm"],
-        "Subarchy Hyprland defaults loaded": "gap data: 8 8 8 8" in r["hypr_opts"]
+        "Subarchy Hyprland defaults loaded (flat look)": "gap data: 0 0 0 0" in r["hypr_opts"]
         and "description: Terminal" in r["hypr_opts"],
         "session drew something": r["session_colours"] > 1,
+        "shell service active": "ACTIVE" in r["shell_active"],
+        "shell log has no QML errors": r["shell_errors"].strip() == "",
+        "one bar layer per monitor": r["layers"].strip() == "1",
+        "full bar with widgets": '"subcult.clock"' in r["shell_status"] and '"subcult.menu"' in r["shell_status"],
+        "bar colours (base, line, text)": {"100B19", "1F1830", "F0ECE4"} <= r["bar_colours"],
+        "font roles": r["fonts"].split("\n")[:3] == ["JetBrainsMono Nerd Font", "JetBrainsMono Nerd Font Propo", "Libertinus Mono"],
+        "GTK icons and cursor": "'Papirus-Dark'" in r["gtk"] and "'subcult-cursor'" in r["gtk"],
+        "cursor theme installed": "No such file" not in r["cursor"] and "left_ptr" in r["cursor"],
+        "shell sees battery power": '"onBattery":true' in r["battery"],
+        "workspace dispatch (Lua expression)": '"id": 3' in r["dispatch"],
+        "Alt-Tab switches windows (IPC)": "SWITCHED" in r["altswitch"],
+        "shell idle within budget": idle_ok(r["idle"]),
     }
     for name, ok in checks.items():
         print(f"install-test: {'ok  ' if ok else 'FAIL'} {name}")
-    print(f"install-test: screenshots {VM / 'greeter.png'}, {VM / 'session.png'}"
+    if "SWITCHED" not in r["altswitch"]:
+        print("install-test: Alt-Tab:\n" + r["altswitch"].strip())
+    if r["shell_errors"].strip():
+        print("install-test: shell errors:\n" + r["shell_errors"].strip())
+    print(f"install-test: shell idle: {r['idle']} voluntary context switches in 60 s (budget file {IDLE_BUDGET})")
+    print(f"install-test: screenshots {VM / 'greeter.png'}, {VM / 'session.png'}, {VM / 'bar.png'}"
           f" ({r['greeter_colours']} and {r['session_colours']} colours)")
     if r["failed"].strip():
         print("install-test: failed units: " + ", ".join(r["failed"].split()))
