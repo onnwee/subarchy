@@ -69,7 +69,7 @@ writes the registry entries and templates (MIT) and contributes them upstream:
 | Qt and KDE colour scheme | user config | Dolphin, Okular, Ark, VLC (Qt 5) through `kdeglobals` or a Kvantum theme |
 | GTK 3 and 4 | user config | Thunderbird, satty and other GTK apps |
 | Neovim, VS Code, Obsidian | user config | Editor and notes |
-| Zen and Chromium | user config or policy | Chromium theme colour is a managed policy (Omarchy's `color.json`) |
+| Chromium | policy | Chromium theme colour is a managed policy (Omarchy's `color.json`) |
 | fzf, bat, git-delta, eza, fastfetch, swayimg | user config | CLI set from [[app-list\|App list]] |
 | Papirus folder colours | user command | [[0039-fonts-icons\|ADR 0039]] |
 | SDDM, Plymouth, Limine | **system**, root-owned | Theme Tender runs as the user. Subarchy's CLI applies these through polkit from a palette Theme Tender exports |

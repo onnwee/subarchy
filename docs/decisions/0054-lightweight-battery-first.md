@@ -17,8 +17,11 @@ A cross-cutting principle, not a decision map item. Accepted 2026-11-06.
 
 Subarchy is **laptop-first**:
 
-1. **Lightweight by default.** Install, memory and background activity are
-   kept small. Anything heavy is on demand, not preinstalled or running.
+1. **Lightweight at runtime.** Memory and background activity are kept
+   small; anything heavy runs on demand. Install size is not a constraint:
+   since 2026-11-07 the owner preinstalls generously, because an installed app
+   that is not running costs no battery. Gaming's 32-bit libraries and
+   hardware-specific drivers stay on demand.
 2. **Battery efficiency by default.** On battery, defaults favour low power:
    no avoidable wakeups, timers, polling, animation or GPU use.
 3. **No degradation as a desktop.** On AC or a desktop machine, nothing is
@@ -47,7 +50,7 @@ owner keeps the earlier choice explicitly.
 | Decision | Outcome |
 |---|---|
 | [[0006-gpu-drivers\|ADR 0006]] 32-bit graphics libraries | Now on demand with gaming apps |
-| [[0044-default-apps\|ADR 0044]] app set | Now a lean core; the full list is the installer's catalogue |
+| [[0044-default-apps\|ADR 0044]] app set | Lean core on 2026-11-06; generous preinstalls again from 2026-11-07, since install size does not affect battery |
 | [[0038-wallpaper\|ADR 0038]] wallpaper | Still image by default; video opt-in, paused on battery |
 | [[0040-terminal\|ADR 0040]] terminals | kitty only; WezTerm offered in the installer |
 | [[0043-file-manager\|ADR 0043]] Dolphin | Kept; its KDE Frameworks cost counts against the budget |

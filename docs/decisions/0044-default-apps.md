@@ -17,17 +17,19 @@ owner review.
 
 ## Decision
 
-Subarchy preinstalls a **lean core**; everything else is one step away in the
-**app installer**. Revised 2026-11-06 under
-[[0054-lightweight-battery-first|ADR 0054]]; the owner had first chosen an
-Omarchy-style full preinstalled set. The full list still exists, as the
-installer's catalogue. The core uses the defaults already decided:
+Subarchy **preinstalls generously**: most of the owner's app list ships
+installed, and the **app installer** covers the rest. Revised twice: the
+owner first chose an Omarchy-style full set, then a lean core under
+[[0054-lightweight-battery-first|ADR 0054]] (2026-11-06), then generous
+preinstalls again once Subarchy was mainly for the owner (2026-11-07). Gaming
+stays on demand and hardware-specific apps install on detection. The defaults
+already decided:
 
 | Role | App |
 |---|---|
 | Terminal | kitty ([[0040-terminal\|ADR 0040]]) |
 | Editor | Neovim with Subarchy's LazyVim config ([[0045-editor\|ADR 0045]]) |
-| Browser | Zen ([[0042-browser\|ADR 0042]]) |
+| Browser | Chromium ([[0042-browser\|ADR 0042]]) |
 | Files | Dolphin, yazi ([[0043-file-manager\|ADR 0043]]) |
 
 **The owner writes the app list** in [[app-list|App list]]. It says which apps

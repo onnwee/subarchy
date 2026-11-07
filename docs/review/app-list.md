@@ -15,10 +15,11 @@ The owner's list of apps for Subarchy, first draft 2026-11-06. The installer
 and the default-app picker read it ([[0044-default-apps|ADR 0044]]). It is not
 complete: gaps get filled and better picks replace these as work goes on.
 
-Every app here is **offered** in the installer. A small **preinstalled** core
-keeps installs light ([[0054-lightweight-battery-first|ADR 0054]]); the
-"Preinstalled" and "Default" values below are proposals for the owner to
-change.
+Every app here is **offered** in the installer. Since 2026-11-07 the owner
+preinstalls generously: install size is no longer a constraint, but anything
+that runs in the background still is
+([[0054-lightweight-battery-first|ADR 0054]]). Gaming stays on demand and
+hardware-specific apps install on detection.
 
 ## Columns
 
@@ -46,17 +47,15 @@ change.
 
 | App | Role | Preinstalled | Default | Source | Package | Notes |
 |---|---|---|---|---|---|---|
-| Zen | browser | yes | yes | aur | `zen-browser-bin` | [[0042-browser\|ADR 0042]] |
-| Chromium | browser | yes |  | repo | `chromium` | Preinstalled (owner, 2026-11-06), with extensions set by policy ([[0042-browser\|ADR 0042]]); also a candidate for running web apps |
+| Chromium | browser | yes | yes | repo | `chromium` | The only browser (owner, 2026-11-07); runs web apps; extensions in [[0042-browser\|ADR 0042]] |
 
 ### Communication
 
 | App | Role | Preinstalled | Default | Source | Package | Notes |
 |---|---|---|---|---|---|---|
-| Signal | messenger |  |  | repo | `signal-desktop` |  |
-| Vesktop | chat |  |  | aur | `vesktop` | Discord client; `vesktop-bin` also exists |
-| Halloy | irc |  |  | repo | `halloy` |  |
-| Proton Mail Bridge | mail-bridge |  |  | repo | `protonmail-bridge` | Pairs with Thunderbird |
+| Signal | messenger | yes | yes | repo | `signal-desktop` |  |
+| Discord (web app) | chat | yes | yes | web app | Chromium app window | `https://discord.com/channels/@me`, with the Vencord Web extension active in the app window; replaces Vesktop |
+| Halloy | irc | yes | yes | repo | `halloy` |  |
 
 ### AI and development
 
@@ -67,6 +66,17 @@ change.
 | T3 Code Nightly | agent-gui | yes | yes | aur | `t3code-nightly-bin` | AUR (0.1.8 nightly on 2026-11-07); stable is `t3code-bin`. Replaces the hand-installed AppImage on `sputnik` |
 | VS Code | editor | yes |  | aur | `visual-studio-code-bin` | Microsoft build, as on `sputnik`; Code-OSS is `code` in `extra` |
 | Neovim | editor | yes | yes | repo | `neovim` | With Subarchy's LazyVim config package ([[0045-editor\|ADR 0045]]) |
+
+### Proton (owner, 2026-11-07: preinstall everything from Proton)
+
+| App | Role | Preinstalled | Default | Source | Package | Notes |
+|---|---|---|---|---|---|---|
+| Proton Mail (with Calendar) | mail | yes | yes | aur | `proton-mail-bin` | Official desktop app; replaces Thunderbird and Proton Mail Bridge |
+| Proton Pass | password-manager | yes |  | aur | `proton-pass-bin` | Desktop app; browser extension in [[0042-browser\|ADR 0042]] |
+| Proton Pass CLI | password-manager | yes |  | aur | `proton-pass-cli` |  |
+| Proton VPN | vpn | yes | yes | repo | `proton-vpn-gtk-app`, `proton-vpn-cli` | In Arch's `extra`; see the DNS and Tailscale note in [[0058-tailscale\|ADR 0058]] |
+| Proton Authenticator | authenticator | yes | yes | aur | `proton-authenticator-bin` | 2FA codes with sync |
+| Proton Drive CLI | cloud-storage | yes | yes | aur | `proton-drive-cli-bin` | Proton's official command-line client; Proton has no Linux desktop Drive app |
 
 ### Office and writing
 
@@ -79,12 +89,11 @@ change.
 | App | Role | Preinstalled | Default | Source | Package | Notes |
 |---|---|---|---|---|---|---|
 | Bitwarden CLI | password-manager | yes | yes | repo | `bitwarden-cli` | `bw` command |
-| Bitwarden | password-manager |  |  | repo | `bitwarden` | Desktop app, offered |
 | PipeWire Control Center | audio-routing | yes | yes | aur | `pipewire-control-center` |  |
 | Ark | archive | yes | yes | repo | `ark` | KDE; pairs with Dolphin |
 | Popsicle | usb-flasher |  |  | aur | `popsicle` |  |
-| Solaar | device-manager |  |  | repo | `solaar` | Logitech devices; could install on detection ([[0050-hardware-support\|ADR 0050]]) |
-| OpenPods (LibrePods) | device-manager |  |  | aur | `librepods` | AirPods; the `sputnik` launcher is named OpenPods and runs `librepods` |
+| Solaar | device-manager |  |  | repo | `solaar` | Installed when a Logitech receiver or device is detected ([[0050-hardware-support\|ADR 0050]]) |
+| OpenPods (LibrePods) | device-manager |  |  | aur | `librepods` | AirPods; installed when AirPods are paired. The `sputnik` launcher is named OpenPods and runs `librepods` |
 | Print Settings | printer-setup | yes |  | repo | `system-config-printer` | CUPS is on every install ([[0022-printing\|ADR 0022]]) |
 | Voxtype configuration | dictation | yes | yes | aur | `voxtype-bin` | Dictation, preinstalled for push-to-talk ([[0056-quality-of-life\|ADR 0056]]); `voxtype` (source build) also exists |
 
@@ -93,17 +102,18 @@ change.
 | App | Role | Preinstalled | Default | Source | Package | Notes |
 |---|---|---|---|---|---|---|
 | VLC | media-player | yes | yes | repo | `vlc`, `vlc-plugin-ffmpeg`, `vlc-plugin-freetype`, `vlc-plugin-ass` | `vlc` pulls `vlc-gui-qt`, which brings `vlc-plugins-base` (Ogg, Matroska, FLAC, Opus, Vorbis, MP3, AAC, VP8/9, AV1) and `vlc-plugins-video-output`. Added: FFmpeg (H.264, H.265 and most other codecs, VA-API decoding), FreeType (subtitle and on-screen text), ASS (styled subtitles). `vlc-plugins-extra` and `vlc-plugins-all` stay off. VLC 3 uses Qt 5, so it adds the Qt 5 libraries |
-| cliamp | music-player |  |  | aur | `cliamp` | Terminal music player |
-| OBS Studio | recorder |  |  | repo | `obs-studio` |  |
+| cliamp | music-player | yes | yes | aur | `cliamp` | Terminal music player |
+| OBS Studio | recorder | yes | yes | repo | `obs-studio` |  |
+| Kdenlive | video-editor | yes | yes | repo | `kdenlive` |  |
 
 ### Graphics and 3D
 
 | App | Role | Preinstalled | Default | Source | Package | Notes |
 |---|---|---|---|---|---|---|
-| GIMP | image-editor |  | yes | repo | `gimp` |  |
+| GIMP | image-editor | yes | yes | repo | `gimp` |  |
 | Pinta | image-editor |  |  | repo | `pinta` | Lighter alternative to GIMP |
-| Inkscape | vector-editor |  | yes | repo | `inkscape` |  |
-| Glaxnimate | animation |  |  | repo | `glaxnimate` |  |
+| Inkscape | vector-editor | yes | yes | repo | `inkscape` |  |
+| Glaxnimate | animation | yes | yes | repo | `glaxnimate` |  |
 | FreeCAD | cad |  |  | repo | `freecad` |  |
 | PrusaSlicer | slicer |  |  | repo | `prusa-slicer` |  |
 
@@ -113,7 +123,7 @@ change.
 |---|---|---|---|---|---|---|
 | Steam | game-store |  |  | repo | `steam` | `multilib`; brings the 32-bit graphics libraries ([[0006-gpu-drivers\|ADR 0006]]) |
 | Lutris | game-launcher |  |  | repo | `lutris` | Also brings the 32-bit libraries |
-| qBittorrent | torrent |  |  | repo | `qbittorrent` |  |
+| qBittorrent | torrent | yes | yes | repo | `qbittorrent` |  |
 
 ### Core viewers and tools (gaps filled 2026-11-07)
 
@@ -122,7 +132,6 @@ change.
 | Okular | pdf-viewer | yes | yes | repo | `okular` | Annotations, forms, signatures; reuses the KDE libraries Dolphin installs |
 | swayimg | image-viewer | yes | yes | repo | `swayimg` | Wayland-native, gallery mode |
 | grim + slurp + satty | screenshot | yes | yes | repo | `grim`, `slurp`, `satty` | Capture, region pick, annotate; run from a keybinding, nothing in the background |
-| Thunderbird | mail |  | yes | repo | `thunderbird` | Offered; works with Proton Mail Bridge over IMAP/SMTP |
 | Launcher calculator | calculator | yes | yes | repo | `libqalculate` | Sums typed in the shell launcher |
 | Qalculate! | calculator | yes |  | repo | `qalculate-qt` | Same engine: units, history, graphs |
 | btop | system-monitor | yes | yes | repo | `btop` | Opens in kitty; themed from the palette |
@@ -164,22 +173,21 @@ Installed automatically with Chromium ([[0042-browser|ADR 0042]]).
 
 ## Web apps
 
-None are preinstalled and the catalogue is empty (owner, 2026-11-07). The
-"install web app" command, borrowed from Omarchy's `omarchy-webapp-install`,
-stays available: it opens any site in its own Chromium app window with a
-launcher entry.
+**Discord** is the one preinstalled web app (owner, 2026-11-07), with the
+Vencord Web extension. Otherwise the catalogue is empty. The "install web app"
+command, borrowed from Omarchy's `omarchy-webapp-install`, opens any site in
+its own Chromium app window with a launcher entry.
 
 ## Gaps
 
 All core roles have an app as of 2026-11-07. Gaps and better picks get added
 here as they come up.
 
-Apps on `sputnik` that this draft leaves out (from
-[[sputnik-apps|Apps on sputnik]]), in case any were missed: 1Password,
-Proton Mail app, Typora, Xournal++, Kdenlive, Ardour, Guitarix, TuxGuitar,
-qpwgraph, Feishin, Streamlink Twitch GUI, Chatterino, Vivaldi, Helix, Podman
-Desktop, Unity Hub, GeForce NOW, Moonlight, ProtonUp-Qt, JDownloader, TigerVNC,
-scrcpy, LocalSend, Raspberry Pi Imager, Filelight, File Roller, Tailscale tray,
-BlueFerry, LibreOffice.
+Apps on `sputnik` that this list leaves out (from
+[[sputnik-apps|Apps on sputnik]]): 1Password, Typora, Xournal++, Ardour,
+Guitarix, TuxGuitar, qpwgraph, Feishin, Streamlink Twitch GUI, Chatterino,
+Vivaldi, Zen, Helix, Podman Desktop, Unity Hub, GeForce NOW, Moonlight,
+ProtonUp-Qt, JDownloader, TigerVNC, scrcpy, Raspberry Pi Imager, Filelight,
+File Roller, Tailscale tray, BlueFerry, LibreOffice, Thunderbird.
 
 Related: [[0044-default-apps|ADR 0044]] · [[sputnik-apps|Apps on sputnik]] · [[0054-lightweight-battery-first|ADR 0054]]

@@ -41,6 +41,12 @@ pause during captive portal sign-in.
 - `tailscaled` runs all the time once enabled; it is idle when not signed in.
   ([[0054-lightweight-battery-first|ADR 0054]] counts it.)
 - The Taildrop receiver runs only while signed in.
+- Proton VPN is also preinstalled ([[app-list|App list]]). When connected it
+  sets its own DNS and can block traffic outside the tunnel, which overrides
+  the DNS trust policy ([[0020-dns|ADR 0020]]) and can conflict with a
+  Tailscale exit node. At home, the owner's gateway already routes through
+  Proton, so connecting the app there tunnels twice. Test both together
+  before relying on them.
 - Firewall: Tailscale manages its own `tailscale0` interface. Omarchy's
   firewall script has no Tailscale rule; check whether ufw needs one when
   implementing ([[0019-firewall|ADR 0019]]).

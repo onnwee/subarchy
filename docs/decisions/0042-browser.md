@@ -4,9 +4,9 @@ type: decision
 status: accepted
 adr: 42
 created: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-07
 tags: [decision, adr, apps]
-aliases: [ADR 0042, A4, Browser, Zen]
+aliases: [ADR 0042, A4, Browser, Chromium]
 ---
 
 # ADR 0042: Browser
@@ -15,11 +15,14 @@ Decision map item A4. Accepted 2026-11-06.
 
 ## Decision
 
-**Zen Browser** is the default browser. It is Firefox-based and is the
-owner's default on `sputnik` (`x-scheme-handler/https=zen.desktop`).
+**Chromium is the only browser** (owner, 2026-11-07). It is the default
+browser, runs web apps in their own windows, and gets extensions installed
+automatically.
 
-**Chromium** is also preinstalled as a second browser (owner, 2026-11-06),
-with extensions installed automatically:
+Revised 2026-11-07: Zen was first the default, with Chromium as a second
+browser; the owner dropped Zen.
+
+Extension install routes:
 
 | Kind | Mechanism | Needs network |
 |---|---|---|
@@ -39,6 +42,13 @@ extension file so users can remove them:
 |---|---|---|---|
 | Claude ("Claude in Chrome") | Anthropic | `fcoeoabgfenejglbffodgkkbkcdhcgfn` | Works from a side panel; the listing says it needs a paid Claude plan. ID confirmed on the store page. |
 | ChatGPT (OpenAI's Codex browser extension) | OpenAI | `hehggadaopoacecdllhhajmbjkdcmajg` | Lets the ChatGPT/Codex desktop app control the browser. OpenAI's Codex extension docs now redirect to this extension's page. Its docs list Chrome, Edge, Brave, Opera and Vivaldi, not Chromium, so it is untested here. |
+| Bitwarden Password Manager | Bitwarden | `nngceckbapebfimnlniiiahkandclblb` | Owner, 2026-11-07; pairs with the preinstalled Bitwarden CLI |
+| Vencord Web | Vendicated | `cbghhgpcnddeihccjmnadmkaejncjndb` | Owner, 2026-11-07; modifies Discord in the browser and in the Discord web app window |
+| Proton Pass | Proton | `ghmbeldphafepmbegfdlkpapadhbakde` | Owner, 2026-11-07 ("everything from Proton") |
+| Proton VPN | Proton | `jplgfhpmjnbigmhklmmbgecoobifkmpa` | Owner, 2026-11-07; browser-only proxy, separate from the system VPN app |
+
+Further extensions are proposed from the owner's Vivaldi set and wait for
+confirmation.
 
 Use `force_installed` policy instead if they should ever be locked.
 
@@ -46,18 +56,16 @@ Use `force_installed` policy instead if they should ever be locked.
 
 | Option | Why not chosen |
 |---|---|
-| Chromium (Omarchy) | Not the owner's browser. |
-| Zen plus Chromium for web apps | Not chosen for now; see web apps below. |
+| Zen as default with Chromium beside it (first version) | The owner dropped Zen on 2026-11-07. |
+| Vivaldi (the owner's other browser on `sputnik`) | Not chosen; its extensions are reviewed for Chromium instead. |
 
 ## Consequences
 
-- `zen-browser-bin` is not in Arch's repositories. On `sputnik` it comes from
-  `[omarchy]`; Subarchy rebuilds it ([[0025-package-repository|ADR 0025]]).
-- Zen needs a theme template (`userChrome.css` or Zen's theme settings) for
-  [[0037-theming|ADR 0037]]; Omarchy's Chromium template does not apply.
-- **Web apps** (A6): Omarchy runs them as Chromium `--app` windows. With Zen
-  only, web apps need another mechanism, such as a Firefox PWA tool, or
-  Chromium kept for web apps alone. Decide with the default app set.
+- Chromium's theme colour is set by managed policy, as Omarchy's
+  `color.json` does; Theme Tender drives it ([[0037-theming|ADR 0037]]).
+- **Web apps** run as Chromium `--app` windows with Omarchy's
+  `omarchy-launch-webapp` approach. Extensions in the default profile also
+  work inside web-app windows, so Vencord applies to the Discord web app.
 - Browser policies (Omarchy's `install/config/browser-policy.sh`) are written
   for Chromium; Firefox-family policies use `policies.json`.
 - Omarchy 4.5 already uses both extension routes: `/etc/chromium/policies/managed/omarchy.json`
