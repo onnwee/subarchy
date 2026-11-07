@@ -20,6 +20,7 @@ review can be a yes/no pass.
 | [[open-questions\|Open questions]] | Name, licence, hosting, hardware targets, ISO |
 | [[app-list\|App list]] | Which apps ship, which are offered, default per role (owner writes) |
 | [[rice-port-review\|Rice port review]] | Which SUBCULT rice features to port, rethink or skip |
+| [[next-decisions\|Next decisions]] | Everything still open: new decisions, design work, assumptions, questions |
 
 ## How to review
 

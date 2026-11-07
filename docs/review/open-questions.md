@@ -75,5 +75,12 @@ Answer inline and move answered items to the bottom with the date.
   ([[0049-installer|ADR 0049]]).
 - **14. AI agents**: built in, lighter than Omarchy
   ([[0047-ai-agents|ADR 0047]]).
+- **3. `ID_LIKE`**: `arch` only; Subarchy does not claim `omarchy`
+  ([[0052-name-identity|ADR 0052]]).
+- **13. Default user**: Subarchy is mainly for the owner, while staying
+  compatible with many devices (2026-11-07; [[0054-lightweight-battery-first|ADR 0054]]).
+
+Still open: 2, 5, 6, 8, 15, 16, 17. They are tracked in
+[[next-decisions|Next decisions]].
 
 Related: [[0001-fork-strategy|ADR 0001]] · [[brand-identity|Brand identity]] · [[roadmap|Roadmap]]
