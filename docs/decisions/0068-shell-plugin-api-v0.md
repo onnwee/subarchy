@@ -1,7 +1,7 @@
 ---
 title: "ADR 0068: Shell plugin API v0"
 type: decision
-status: proposed
+status: accepted
 adr: 68
 created: 2026-11-07
 updated: 2026-11-07
@@ -10,6 +10,8 @@ aliases: [ADR 0068, Plugin API v0]
 ---
 
 # ADR 0068: Shell plugin API v0
+
+Accepted 2026-11-07 with the shell and look design; implemented in stage 1.
 
 ## Context
 
@@ -81,5 +83,20 @@ carries them and keeps the battery rules machine-readable
   permissions and a plugin manager wait for v1.
 - CI can read every manifest's `cost` and fail a widget that adds a timer
   without battery values.
+
+## As built (2026-11-07)
+
+- The contract is code: `shell/Ui/BarWidget.qml` (mode, screen, settings,
+  shell, `hidden`, `openPanel()`), `shell/Ui/PanelBase.qml`, and
+  `shell/Ui/WidgetTimer.qml`, the only timer a widget may use. A widget hides
+  itself with `hidden`, not `visible`.
+- `shell.power` is `{ onBattery, interval(timerName) }` and `shell.config`
+  is `{ set(key, value) }`, both bound to the widget. The widget is created
+  with these as initial properties.
+- `tools/shell/gen-index.py` writes `shell/widgets/index.json` from the
+  manifests; `make verify` fails when it is stale.
+- Services that are not bar items (the notification daemon, OSD, polkit
+  agent, Alt-Tab) live in the shell itself (`shell/services/`, `shell/*.qml`)
+  until a loader for `kind: service` widgets exists.
 
 Related: [[0035-plugin-api|ADR 0035]] · [[0034-shell-toolkit|ADR 0034]] · [[shell-and-look-design|Shell and look design]] · [[decisions-index|Decisions]]
