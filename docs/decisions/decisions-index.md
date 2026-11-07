@@ -80,5 +80,6 @@ order.
 | [[0053-licence\|0053]] | Licence |
 | [[0054-lightweight-battery-first\|0054]] | Lightweight and battery-first defaults |
 | [[0055-containers\|0055]] | Containers |
+| [[0056-quality-of-life\|0056]] | Quality-of-life features |
 
 Related: [[home|Docs home]]

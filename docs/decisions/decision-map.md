@@ -93,6 +93,7 @@ NVMe.
 | D5 | Theming system | `colors.toml` per theme rendered into per-app templates | [[0037-theming\|ADR 0037]]: Theme Tender (palette, templates, catalog, apply); SUBCULT default |
 | D6 | Wallpaper engine | `owe` | [[0038-wallpaper\|ADR 0038]]: shell-drawn, still by default, video opt-in |
 | D7 | Fonts and icon theme | JetBrains Mono Nerd, Yaru icons | [[0039-fonts-icons\|ADR 0039]]: JetBrains Mono, Space Grotesk, Oswald, Papirus |
+| D8 | Quality-of-life conveniences and keybindings | Omarchy's bindings, toggles, capture tools | [[0056-quality-of-life\|ADR 0056]]: Omarchy's set, owner picked all 16 extras |
 
 ## Applications and tooling
 

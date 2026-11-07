@@ -86,7 +86,7 @@ change.
 | Solaar | device-manager |  |  | repo | `solaar` | Logitech devices; could install on detection ([[0050-hardware-support\|ADR 0050]]) |
 | OpenPods (LibrePods) | device-manager |  |  | aur | `librepods` | AirPods; the `sputnik` launcher is named OpenPods and runs `librepods` |
 | Print Settings | printer-setup | yes |  | repo | `system-config-printer` | CUPS is on every install ([[0022-printing\|ADR 0022]]) |
-| Voxtype configuration | dictation |  | yes | aur | `voxtype-bin` | Dictation; `voxtype` (source build) also exists |
+| Voxtype configuration | dictation | yes | yes | aur | `voxtype-bin` | Dictation, preinstalled for push-to-talk ([[0056-quality-of-life\|ADR 0056]]); `voxtype` (source build) also exists |
 
 ### Music and video
 
@@ -144,6 +144,7 @@ still work ([[0028-developer-toolchains|ADR 0028]]).
 | Media | `yt-dlp`, `ffmpeg`, `imagemagick` |
 | Disk usage | `dust`, `duf` |
 | Containers | `docker`, `docker-compose`, `docker-buildx` ([[0055-containers\|ADR 0055]]) |
+| Quality-of-life tools ([[0056-quality-of-life\|ADR 0056]]) | `wtype`, `hyprpicker`, `hyprsunset`, `tesseract`, `tesseract-data-eng`, `zbar`, `qrencode`, `udiskie`, `localsend` (AUR), `voxtype-bin` (AUR) |
 
 Already decided elsewhere: zsh, starship and atuin
 ([[0041-shell-prompt|ADR 0041]]), btop, yazi, Neovim. Not preinstalled:
