@@ -52,8 +52,8 @@ func Catalog() []Entry {
 		pick("MonaspiceNe Nerd Font", "otf-monaspace-nerd", mono, "pacman"),
 		pick("IosevkaTerm Nerd Font", "ttf-iosevkaterm-nerd", mono, "pacman"),
 		pick("OpenDyslexicM Nerd Font", "otf-opendyslexic-nerd", mono, "pacman"),
-		pick("Monofur Nerd Font", "ttf-monofur-nerd", mono, "pacman"),
-		pick("ProFont IIx Nerd Font", "ttf-profont-nerd", mono, "pacman"),
+		pick("Monofur Nerd Font Mono", "ttf-monofur-nerd", mono, "pacman"),
+		pick("ProFont IIx Nerd Font Mono", "ttf-profont-nerd", mono, "pacman"),
 		pick("ProggyClean Nerd Font", "ttf-proggyclean-nerd", mono, "pacman"),
 		pick("Terminess Nerd Font", "ttf-terminus-nerd", mono, "pacman"),
 

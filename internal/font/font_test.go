@@ -139,17 +139,23 @@ func TestVerdictString(t *testing.T) {
 }
 
 func TestUserConfRoundTrip(t *testing.T) {
-	roles := map[Role]string{Mono: "Dank Mono", UI: "Ubuntu Nerd Font"}
-	xml := RenderUserConf(roles)
-	if !strings.Contains(xml, `mode="prepend_first"`) {
-		t.Error("user file must use prepend_first so it outranks the system roles")
+	in := UserConf{
+		Roles:   map[Role]string{Mono: "Dank Mono", UI: "Dank Mono", Serif: "Alegreya"},
+		Follows: map[Role]bool{UI: true},
+	}
+	xml := RenderUserConf(in)
+	if !strings.Contains(xml, `mode="prepend"`) || strings.Contains(xml, "prepend_first") {
+		t.Error("the user file must insert before the generic name (prepend), not first")
 	}
 	got, err := ParseUserConf(xml)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got) != 2 || got[Mono] != "Dank Mono" || got[UI] != "Ubuntu Nerd Font" {
-		t.Errorf("round trip gave %v", got)
+	if len(got.Roles) != 3 || got.Roles[Mono] != "Dank Mono" || got.Roles[Serif] != "Alegreya" {
+		t.Errorf("roles came back as %v", got.Roles)
+	}
+	if !got.Follows[UI] || got.Follows[Mono] || got.Follows[Serif] {
+		t.Errorf("follows came back as %v, want only the interface role", got.Follows)
 	}
 	if _, err := ParseUserConf("<fontconfig><match>"); err == nil {
 		t.Error("want an error for broken XML")
@@ -157,13 +163,27 @@ func TestUserConfRoundTrip(t *testing.T) {
 }
 
 func TestRenderUserConfEscapes(t *testing.T) {
-	xml := RenderUserConf(map[Role]string{Mono: `A & <B>`})
+	xml := RenderUserConf(UserConf{Roles: map[Role]string{Mono: `A & <B>`}})
 	got, err := ParseUserConf(xml)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got[Mono] != `A & <B>` {
-		t.Errorf("family came back as %q", got[Mono])
+	if got.Roles[Mono] != `A & <B>` {
+		t.Errorf("family came back as %q", got.Roles[Mono])
+	}
+}
+
+func TestUserConfPath(t *testing.T) {
+	if UserConfPath != ".config/subcult/fonts.conf" {
+		t.Errorf("UserConfPath = %s; the system roles file includes subcult/fonts.conf from XDG_CONFIG_HOME", UserConfPath)
+	}
+}
+
+func TestCatalogUsesMonoBuildsWhereFacesDiffer(t *testing.T) {
+	for _, fam := range []string{"ProFont IIx Nerd Font Mono", "Monofur Nerd Font Mono"} {
+		if _, ok := Find(fam); !ok {
+			t.Errorf("%s missing; the plain family has proportional faces", fam)
+		}
 	}
 }
 

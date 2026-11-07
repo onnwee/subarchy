@@ -95,11 +95,24 @@ func readRoles(t *testing.T, e env) map[font.Role]string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	roles, err := font.ParseUserConf(string(data))
+	c, err := font.ParseUserConf(string(data))
 	if err != nil {
 		t.Fatal(err)
 	}
-	return roles
+	return c.Roles
+}
+
+func readConf(t *testing.T, e env) font.UserConf {
+	t.Helper()
+	data, err := os.ReadFile(confPath(e))
+	if err != nil {
+		t.Fatal(err)
+	}
+	c, err := font.ParseUserConf(string(data))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return c
 }
 
 func TestSetWritesRoleAndRefreshes(t *testing.T) {
@@ -253,7 +266,7 @@ func TestCurrentReportsMismatch(t *testing.T) {
 	}}
 	e, out, _ := newEnv(t, r)
 	os.MkdirAll(filepath.Dir(confPath(e)), 0o755)
-	os.WriteFile(confPath(e), []byte(font.RenderUserConf(map[font.Role]string{font.Mono: "Dank Mono"})), 0o644)
+	os.WriteFile(confPath(e), []byte(font.RenderUserConf(font.UserConf{Roles: map[font.Role]string{font.Mono: "Dank Mono"}})), 0o644)
 	if code := run(context.Background(), []string{"current"}, e); code != 0 {
 		t.Fatalf("exit %d", code)
 	}
@@ -308,5 +321,123 @@ func TestImportCopiesAndChecks(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), "Symbols fallback") {
 		t.Errorf("want the verdict printed, got %q", out)
+	}
+}
+
+// faceTable answers fc-list and fc-query for a family made of the given
+// faces (file → fc-query line).
+func faceTable(r *fakeRunner, family string, faces [][2]string) {
+	if r.outputs == nil {
+		r.outputs = map[string]string{}
+	}
+	var files []string
+	for _, f := range faces {
+		files = append(files, f[0])
+		r.outputs["fc-query -f "+font.FcQueryFormat+" "+f[0]] = f[1]
+	}
+	r.outputs["fc-list -f %{file}\\n "+family+":"] = strings.Join(files, "\n") + "\n"
+}
+
+func TestSetJudgesTheFamilyByItsBestFace(t *testing.T) {
+	r := &fakeRunner{}
+	faceTable(r, "Monofur Nerd Font", [][2]string{
+		{"/f/bold.ttf", "Monofur Nerd Font\t\t20-7e\n"},
+		{"/f/regular.ttf", "Monofur Nerd Font\t100\t20-7e 2500-257f e0b0 f015\n"},
+	})
+	e, _, errb := newEnv(t, r)
+	if code := run(context.Background(), []string{"set", "Monofur Nerd Font"}, e); code != 0 {
+		t.Fatalf("exit %d: %s", code, errb)
+	}
+}
+
+func TestSetStoresTheCanonicalFamily(t *testing.T) {
+	r := &fakeRunner{}
+	faceTable(r, "jetbrainsmono nerd font", [][2]string{{"/f/a.ttf", nerdLine}})
+	e, _, errb := newEnv(t, r)
+	if code := run(context.Background(), []string{"set", "jetbrainsmono nerd font"}, e); code != 0 {
+		t.Fatalf("exit %d: %s", code, errb)
+	}
+	if got := readRoles(t, e)[font.Mono]; got != "JetBrainsMono Nerd Font" {
+		t.Errorf("stored %q, want fontconfig's spelling", got)
+	}
+}
+
+func TestInterfaceFollowsMonospaceUntilSetOnItsOwn(t *testing.T) {
+	r := &fakeRunner{}
+	faceTable(r, "SpaceMono Nerd Font", [][2]string{{"/f/s.ttf", "SpaceMono Nerd Font\t100\t20-7e 2500-257f e0b0 f015\n"}})
+	faceTable(r, "SpaceMono Nerd Font Propo", [][2]string{{"/f/sp.ttf", "SpaceMono Nerd Font Propo\t\t20-7e\n"}})
+	faceTable(r, "Agave Nerd Font", [][2]string{{"/f/a.ttf", "Agave Nerd Font\t100\t20-7e 2500-257f e0b0 f015\n"}})
+	faceTable(r, "Agave Nerd Font Propo", [][2]string{})
+	faceTable(r, "Ubuntu Nerd Font", [][2]string{{"/f/u.ttf", "Ubuntu Nerd Font\t\t20-7e\n"}})
+	e, _, errb := newEnv(t, r)
+	ctx := context.Background()
+
+	if code := run(ctx, []string{"set", "SpaceMono Nerd Font"}, e); code != 0 {
+		t.Fatalf("exit %d: %s", code, errb)
+	}
+	c := readConf(t, e)
+	if c.Roles[font.UI] != "SpaceMono Nerd Font Propo" || !c.Follows[font.UI] {
+		t.Fatalf("interface = %q follows=%v, want the Propo build following monospace", c.Roles[font.UI], c.Follows[font.UI])
+	}
+
+	if code := run(ctx, []string{"set", "Agave Nerd Font"}, e); code != 0 {
+		t.Fatalf("exit %d: %s", code, errb)
+	}
+	if c = readConf(t, e); c.Roles[font.UI] != "Agave Nerd Font" {
+		t.Errorf("without a Propo build the interface should follow the family itself, got %q", c.Roles[font.UI])
+	}
+
+	if code := run(ctx, []string{"set", "--ui", "Ubuntu Nerd Font"}, e); code != 0 {
+		t.Fatalf("exit %d: %s", code, errb)
+	}
+	if code := run(ctx, []string{"set", "SpaceMono Nerd Font"}, e); code != 0 {
+		t.Fatalf("exit %d: %s", code, errb)
+	}
+	if c = readConf(t, e); c.Roles[font.UI] != "Ubuntu Nerd Font" || c.Follows[font.UI] {
+		t.Errorf("an interface font set on its own must stay: %q follows=%v", c.Roles[font.UI], c.Follows[font.UI])
+	}
+}
+
+func TestListAsksPacmanOnce(t *testing.T) {
+	r := &fakeRunner{outputs: map[string]string{"pacman -Qq": "ttf-jetbrains-mono-nerd\notf-libertinus\n"}}
+	e, out, _ := newEnv(t, r)
+	if code := run(context.Background(), []string{"list"}, e); code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+	n := 0
+	for _, c := range r.calls {
+		if c[0] == "pacman" {
+			n++
+		}
+	}
+	if n != 1 {
+		t.Errorf("pacman ran %d times, want once", n)
+	}
+	for _, line := range strings.Split(out.String(), "\n") {
+		if strings.Contains(line, "Libertinus Mono") && !strings.Contains(line, "installed") {
+			t.Errorf("Libertinus Mono should be installed: %q", line)
+		}
+		if strings.Contains(line, "Agave Nerd Font") && !strings.Contains(line, "available") {
+			t.Errorf("Agave should be available: %q", line)
+		}
+	}
+}
+
+func TestFlagsMayFollowTheFamily(t *testing.T) {
+	r := installedFont("Noto Sans", propLine)
+	e, _, errb := newEnv(t, r)
+	if code := run(context.Background(), []string{"set", "Noto Sans", "--ui"}, e); code != 0 {
+		t.Fatalf("exit %d: %s", code, errb)
+	}
+	if readRoles(t, e)[font.UI] != "Noto Sans" {
+		t.Error("--ui after the family was ignored")
+	}
+}
+
+func TestUIAndSerifTogetherRefused(t *testing.T) {
+	r := installedFont("Noto Sans", propLine)
+	e, _, _ := newEnv(t, r)
+	if code := run(context.Background(), []string{"set", "--ui", "--serif", "Noto Sans"}, e); code != 2 {
+		t.Fatalf("exit %d, want 2", code)
 	}
 }

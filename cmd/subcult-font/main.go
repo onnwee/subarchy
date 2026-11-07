@@ -95,10 +95,22 @@ func run(ctx context.Context, args []string, e env) int {
 	ui := fs.Bool("ui", false, "set the interface font (sans-serif)")
 	serif := fs.Bool("serif", false, "set the serif font")
 	force := fs.Bool("force", false, "use a font the check advises against")
-	if err := fs.Parse(args[1:]); err != nil {
+	// Flags may come before or after the family name.
+	var flagArgs, rest []string
+	for _, a := range args[1:] {
+		if strings.HasPrefix(a, "-") && len(a) > 1 {
+			flagArgs = append(flagArgs, a)
+		} else {
+			rest = append(rest, a)
+		}
+	}
+	if err := fs.Parse(flagArgs); err != nil {
 		return 2
 	}
-	rest := fs.Args()
+	if *ui && *serif {
+		fmt.Fprintln(e.stderr, "subcult font: choose --ui or --serif, not both")
+		return 2
+	}
 
 	var err error
 	switch args[0] {
@@ -143,19 +155,20 @@ func withOneName(rest []string, fn func(string) error) error {
 }
 
 func confPath(e env) string {
-	return filepath.Join(e.home, ".config", "fontconfig", "conf.d", font.UserConfName)
+	return filepath.Join(e.home, font.UserConfPath)
 }
 
-func configuredRoles(e env) map[font.Role]string {
+func loadConf(e env) font.UserConf {
+	empty := font.UserConf{Roles: map[font.Role]string{}, Follows: map[font.Role]bool{}}
 	data, err := os.ReadFile(confPath(e))
 	if err != nil {
-		return map[font.Role]string{}
+		return empty
 	}
-	roles, err := font.ParseUserConf(string(data))
+	c, err := font.ParseUserConf(string(data))
 	if err != nil {
-		return map[font.Role]string{}
+		return empty
 	}
-	return roles
+	return c
 }
 
 func resolved(ctx context.Context, e env, r font.Role) string {
@@ -167,7 +180,7 @@ func resolved(ctx context.Context, e env, r font.Role) string {
 }
 
 func current(ctx context.Context, e env) error {
-	conf := configuredRoles(e)
+	conf := loadConf(e).Roles
 	for _, r := range []font.Role{font.Mono, font.UI, font.Serif} {
 		got := resolved(ctx, e, r)
 		want, ok := conf[r]
@@ -184,7 +197,7 @@ func current(ctx context.Context, e env) error {
 }
 
 func list(ctx context.Context, e env, all bool) error {
-	conf := configuredRoles(e)
+	conf := loadConf(e).Roles
 	inUse := map[string]bool{}
 	for _, r := range []font.Role{font.Mono, font.UI, font.Serif} {
 		if f, ok := conf[r]; ok {
@@ -193,9 +206,15 @@ func list(ctx context.Context, e env, all bool) error {
 			inUse[strings.ToLower(resolved(ctx, e, r))] = true
 		}
 	}
+	installed := map[string]bool{}
+	if out, err := e.runner.Output(ctx, "pacman", "-Qq"); err == nil {
+		for _, p := range strings.Fields(out) {
+			installed[p] = true
+		}
+	}
 	for _, en := range font.Catalog() {
 		state := "available"
-		if _, err := e.runner.Output(ctx, "pacman", "-Q", en.Package); err == nil {
+		if installed[en.Package] {
 			state = "installed"
 		}
 		mark := " "
@@ -258,24 +277,61 @@ func set(ctx context.Context, e env, family string, role font.Role, force bool) 
 			return fmt.Errorf("%s is still not installed after installing %s", family, en.Package)
 		}
 	}
-	_, v, err := verdictOf(ctx, e, files[0])
+	// A family's faces can differ (Monofur's bold is proportional): judge it
+	// by its best face, and store fontconfig's own spelling of the family.
+	info, v, err := bestFace(ctx, e, files)
 	if err != nil {
 		return err
 	}
 	if role == font.Mono && (v == font.InterfaceOnly || v == font.BreaksTUI) && !force {
-		return fmt.Errorf("%w: %s %s; use --force to set it anyway", errUsage, family, v)
+		return fmt.Errorf("%w: %s %s; use --force to set it anyway", errUsage, info.Family, v)
 	}
-	roles := configuredRoles(e)
-	roles[role] = family
-	if err := writeAtomic(confPath(e), []byte(font.RenderUserConf(roles))); err != nil {
+	c := loadConf(e)
+	c.Roles[role] = info.Family
+	switch role {
+	case font.UI:
+		c.Follows[font.UI] = false
+	case font.Mono:
+		// The interface follows monospace unless it was set on its own.
+		if _, set := c.Roles[font.UI]; !set || c.Follows[font.UI] {
+			c.Roles[font.UI] = info.Family
+			if len(faces(ctx, e, info.Family+" Propo")) > 0 {
+				c.Roles[font.UI] = info.Family + " Propo"
+			}
+			c.Follows[font.UI] = true
+		}
+	}
+	if err := writeAtomic(confPath(e), []byte(font.RenderUserConf(c))); err != nil {
 		return err
 	}
 	if err := e.runner.Run(ctx, "fc-cache", "-f"); err != nil {
 		return err
 	}
 	_ = e.runner.Run(ctx, "pkill", "-USR1", "-x", "kitty") // no kitty running is fine
-	fmt.Fprintf(e.stdout, "%s: %s (%s)\n", role, family, v)
+	fmt.Fprintf(e.stdout, "%s: %s (%s)\n", role, info.Family, v)
 	return nil
+}
+
+func bestFace(ctx context.Context, e env, files []string) (font.FontInfo, font.Verdict, error) {
+	var best font.FontInfo
+	bestV := font.Verdict(-1)
+	var firstErr error
+	for _, f := range files {
+		info, v, err := verdictOf(ctx, e, f)
+		if err != nil {
+			if firstErr == nil {
+				firstErr = err
+			}
+			continue
+		}
+		if bestV < 0 || v < bestV {
+			best, bestV = info, v
+		}
+	}
+	if bestV < 0 {
+		return font.FontInfo{}, 0, firstErr
+	}
+	return best, bestV, nil
 }
 
 func pacmanInstall(ctx context.Context, e env, pkg string) error {
