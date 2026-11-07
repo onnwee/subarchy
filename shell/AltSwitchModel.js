@@ -1,0 +1,39 @@
+.pragma library
+// Alt-Tab order: windows by how recently they were focused (all
+// workspaces), then any never focused, in their own order.
+
+function order(clients, history) {
+  const open = clients || []
+  const recent = (history || []).filter(a => open.indexOf(a) >= 0)
+  return recent.concat(open.filter(a => recent.indexOf(a) < 0))
+}
+
+// Put the newly focused window first, keep at most cap entries.
+function remember(history, address, cap) {
+  if (!address)
+    return history
+  return [address].concat((history || []).filter(a => a !== address)).slice(0, cap)
+}
+
+function next(order, index, step) {
+  if (!order || order.length === 0)
+    return -1
+  return ((index + step) % order.length + order.length) % order.length
+}
+
+// Where a switch starts: the window used before this one, or (going
+// backwards) the oldest.
+function start(order, step) {
+  if (!order || order.length === 0)
+    return -1
+  if (order.length === 1)
+    return 0
+  return step > 0 ? 1 : order.length - 1
+}
+
+// Each Alt-Tab key press and the Alt release arrive as separate processes,
+// so on a quick tap the release (commit) can land before the first step.
+// A step within windowMs after such an empty commit applies at once.
+function autoCommit(lastEmptyCommitMs, nowMs, windowMs) {
+  return lastEmptyCommitMs >= 0 && nowMs - lastEmptyCommitMs <= windowMs
+}

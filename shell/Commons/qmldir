@@ -5,3 +5,5 @@ singleton Config 1.0 Config.qml
 singleton Style 1.0 Style.qml
 singleton WidgetIndex 1.0 WidgetIndex.qml
 WatchedFile 1.0 WatchedFile.qml
+singleton Clock 1.0 Clock.qml
+singleton KeepAwake 1.0 KeepAwake.qml

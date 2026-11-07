@@ -14,7 +14,7 @@ src=$(realpath "${1:?path to the shell folder}")
 root=$(git rev-parse --show-toplevel)
 fail() { echo "shell-headless: $*" >&2; exit 1; }
 
-for tool in sway swaymsg quickshell grim magick python3 dbus-run-session; do
+for tool in sway swaymsg quickshell grim magick python3 dbus-run-session gdbus; do
   if ! command -v "$tool" >/dev/null; then
     [[ -n ${CI:-} ]] && fail "$tool not installed"
     echo "shell-headless: $tool not installed, skipped"
@@ -88,7 +88,7 @@ cat >"$work/session-bus.conf" <<EOF
  "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
 <busconfig>
   <type>session</type>
-  <listen>unix:dir=$work</listen>
+  <listen>unix:path=$work/bus</listen>
   <policy context="default">
     <allow send_destination="*" eavesdrop="true"/>
     <allow eavesdrop="true"/>
@@ -105,9 +105,9 @@ start_shell() { # home log
 }
 
 check_log() { # log
-  # No PipeWire daemon, Hyprland or GPU here; those messages are the
-  # environment, not the shell.
-  if grep -vE 'Failed to connect pipewire context|^MESA|ZINK' "$1" |
+  # No PipeWire daemon, NetworkManager, Hyprland or GPU may be here; those
+  # messages are the environment, not the shell.
+  if grep -vE 'Failed to (connect|create) pipewire context|Network will not work. Could not find an available backend|^MESA|ZINK' "$1" |
     grep -nE 'ERROR|TypeError|ReferenceError|is not a type|is not installed|Cannot assign'; then
     fail "QML errors in the shell log"
   fi
@@ -115,6 +115,13 @@ check_log() { # log
 
 shot() { # output
   grim -o "$1" "$work/shot.png"
+}
+
+# The bar's dominant colour (rows 2-21 of the last shot), not one pixel:
+# widgets sit anywhere along the bar.
+bar_colour() {
+  magick "$work/shot.png" -crop "x20+0+2" +repage -format %c histogram:info:- | sort -rn | head -1 |
+    grep -oE "#[0-9A-F]{6}" | head -1 | cut -c2-
 }
 
 pixel() { # x y (of the last shot) -> RRGGBB
@@ -137,7 +144,7 @@ start_shell "$home1" "$work/qs1.log"
 check_log "$work/qs1.log"
 shot HEADLESS-1
 [[ $(pixel 640 25) == 1F1830 ]] || fail "no bar line at y=25 (got $(pixel 640 25))"
-[[ $(pixel 640 10) == 100B19 ]] || fail "the bar is not base #100B19 (got $(pixel 640 10))"
+[[ $(bar_colour) == 100B19 ]] || fail "the bar is not base #100B19 (got $(bar_colour))"
 [[ $(pixel 640 40) == 100B19 ]] || fail "the background is not base #100B19 (got $(pixel 640 40))"
 magick "$work/shot.png" -crop "x24+0+0" +repage -format %c histogram:info:- | grep -q '#FF00FF' ||
   fail "the probe widget did not draw"
@@ -148,13 +155,45 @@ st=$(status "$home1")
 [[ $(json 'd["intervals"].get("subcult.test-probe.tick")') == "{'interval': 60000, 'running': True}" ]] ||
   fail "live timer not reported: $st"
 
+# A notification reaches the shell's daemon and pops up.
+DBUS_SESSION_BUS_ADDRESS=unix:path=$work/bus gdbus call --session --dest org.freedesktop.Notifications \
+  --object-path /org/freedesktop/Notifications --method org.freedesktop.Notifications.Notify \
+  "subarchy-test" 0 "" "Subarchy test" "hello" "[]" "{}" 5000 >/dev/null ||
+  fail "notify-send could not reach the shell's notification daemon"
+sleep 1
+st=$(status "$home1")
+[[ $(json 'd.get("popups")') == 1 && $(json 'd.get("unread")') == 1 ]] || fail "no popup for a notification: $st"
+sleep 6
+st=$(status "$home1")
+[[ $(json 'd.get("popups")') == 0 && $(json 'd.get("unread")') == 1 ]] ||
+  fail "the popup did not go after five seconds, or its record was lost: $st"
+
+# Without UPower (CI) there is no battery: the battery widget is not shown.
+if [[ -n ${CI:-} ]]; then
+  [[ $(json '"subcult.battery" in d["shown"]["HEADLESS-1"]') == False && $(json 'd["onBattery"]') == False ]] ||
+    fail "a machine without a battery shows one: $st"
+fi
+
+# The OSD answers its IPC call (media keys use it; capslock needs no
+# backlight or brightnessctl, which CI lacks).
+HOME=$home1 quickshell ipc -p "$shell" call subcult.osd flash capslock >/dev/null 2>&1 ||
+  fail "the OSD has no IPC handler"
+st=$(status "$home1")
+[[ $(json 'd.get("osd")') == capslock ]] || fail "the OSD did not show: $st"
+
+# Alt-Tab answers its IPC calls (no windows here, so nothing to show).
+for call in next prev cancel; do
+  HOME=$home1 quickshell ipc -p "$shell" call subcult.altswitch "$call" >/dev/null 2>&1 ||
+    fail "Alt-Tab IPC call $call failed"
+done
+
 # 2. A palette written after start applies without a restart.
 mkdir -p "$home1/.config/subcult/theme"
 printf '{"schema": 1, "colors": {"base": "#FF0000", "surface0": "#00FF00"}}\n' >"$home1/.config/subcult/theme/palette.json"
 sleep 2
 shot HEADLESS-1
-[[ $(pixel 640 10) == FF0000 && $(pixel 640 25) == 00FF00 ]] ||
-  fail "a new palette was not applied live (bar $(pixel 640 10), line $(pixel 640 25))"
+[[ $(bar_colour) == FF0000 && $(pixel 640 25) == 00FF00 ]] ||
+  fail "a new palette was not applied live (bar $(bar_colour), line $(pixel 640 25))"
 
 # 3. A bar config changed after start applies without a restart.
 printf '{"layout": {"left": []}}\n' >"$home1/.config/subcult/shell/bar.json"
@@ -187,7 +226,7 @@ printf '{ "layout": ' >"$home2/.config/subcult/shell/bar.json"
 start_shell "$home2" "$work/qs2.log"
 check_log "$work/qs2.log"
 shot HEADLESS-1
-[[ $(pixel 640 10) == 100B19 ]] || fail "a bad base role was not replaced by the system colour (got $(pixel 640 10))"
+[[ $(bar_colour) == 100B19 ]] || fail "a bad base role was not replaced by the system colour (got $(bar_colour))"
 [[ $(pixel 640 25) == 00FF00 ]] || fail "a good role next to a bad one was not applied (got $(pixel 640 25))"
 warnings=$(grep -c 'subcult shell config' "$work/qs2.log" || true)
 [[ $warnings == 1 ]] || fail "want exactly one config warning, got $warnings"

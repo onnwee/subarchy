@@ -1,0 +1,8 @@
+{
+  "id": "subcult.world-clock",
+  "name": "World clock",
+  "version": "1.0.0",
+  "api": 0,
+  "kind": "bar-widget",
+  "settings": { "zones": [] }
+}

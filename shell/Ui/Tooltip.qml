@@ -28,6 +28,7 @@ PopupWindow {
     id: label
     anchors.centerIn: parent
     text: tip.text
+    textFormat: Text.PlainText
     color: Theme.text
     font.family: Style.fontFamily
     font.pixelSize: Style.fontSize

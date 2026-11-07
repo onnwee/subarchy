@@ -1,0 +1,7 @@
+{
+  "id": "subcult.tray",
+  "name": "Tray",
+  "version": "1.0.0",
+  "api": 0,
+  "kind": "bar-widget"
+}
