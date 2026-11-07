@@ -29,7 +29,7 @@ already decided:
 |---|---|
 | Terminal | kitty ([[0040-terminal\|ADR 0040]]) |
 | Editor | Neovim with Subarchy's LazyVim config ([[0045-editor\|ADR 0045]]) |
-| Browser | Chromium ([[0042-browser\|ADR 0042]]) |
+| Browser | Zen; Chromium for web apps and agents ([[0042-browser\|ADR 0042]]) |
 | Files | Dolphin, yazi ([[0043-file-manager\|ADR 0043]]) |
 
 **The owner writes the app list** in [[app-list|App list]]. It says which apps

@@ -47,7 +47,8 @@ hardware-specific apps install on detection.
 
 | App | Role | Preinstalled | Default | Source | Package | Notes |
 |---|---|---|---|---|---|---|
-| Chromium | browser | yes | yes | repo | `chromium` | The only browser (owner, 2026-11-07); runs web apps; extensions in [[0042-browser\|ADR 0042]] |
+| Zen | browser | yes | yes | aur | `zen-browser-bin` | Default browser with Firefox add-ons including full uBlock Origin ([[0042-browser\|ADR 0042]]) |
+| Chromium | browser | yes |  | repo | `chromium` | For web apps (Discord) and for Claude and Codex to control a signed-in browser ([[0042-browser\|ADR 0042]]) |
 
 ### Communication
 
