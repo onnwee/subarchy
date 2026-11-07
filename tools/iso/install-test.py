@@ -139,6 +139,12 @@ def boot(disk: Path, vars_file: Path) -> bool:
             "shell": serial.run("getent passwd " + USER),
             "uki": serial.run(f"{sudo} ls /boot/EFI/Linux"),
             "subvols": serial.run(f"{sudo} btrfs subvolume list /"),
+            # A snapshot must show up as a boot entry (limine-snapper-sync).
+            "snapshot": serial.run(
+                f"{sudo} snapper -c root create -d install-test >/dev/null && sleep 5"
+                f" && {sudo} limine-snapper-sync >/dev/null 2>&1; {sudo} cat /boot/limine.conf",
+                timeout=120,
+            ),
             "state": serial.run("systemctl is-system-running --wait", timeout=120),
             "failed": serial.run("systemctl --failed --no-legend --plain | awk '{print $1}'"),
         }
@@ -164,7 +170,9 @@ def boot(disk: Path, vars_file: Path) -> bool:
         "snapper root config": "root" in r["snapper"],
         "NetworkManager enabled": r["nm"].strip().endswith("enabled"),
         "login shell is zsh": r["shell"].strip().endswith("/usr/bin/zsh"),
-        "both UKIs present": "subarchy-linux-zen.efi" in r["uki"] and "subarchy-linux-lts.efi" in r["uki"],
+        "both UKIs present": "subarchy_linux-zen.efi" in r["uki"] and "subarchy_linux-lts.efi" in r["uki"],
+        "snapshot boot entry": "rootflags=subvol=/@/.snapshots/" in r["snapshot"],
+        "no self-referencing EFI entry": "/EFI/BOOT/BOOTX64.EFI" not in r["snapshot"],
         "@factory snapshot": any(line.endswith(" path @factory") for line in r["subvols"].splitlines()),
         "system running or degraded": state in ("running", "degraded"),
     }

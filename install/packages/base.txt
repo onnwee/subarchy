@@ -13,6 +13,8 @@ amd-ucode
 mkinitcpio
 systemd-ukify
 limine
+limine-mkinitcpio-hook
+limine-snapper-sync
 efibootmgr
 cryptsetup
 btrfs-progs

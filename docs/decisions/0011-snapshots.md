@@ -49,4 +49,11 @@ Decision map item B5. Accepted 2026-11-06.
 - A DKMS failure after an update is recoverable by snapshot as well as by the
   `linux-lts` fallback.
 
+## Progress
+
+- 2026-11-07: the installer sets up snapper and `limine-snapper-sync`. In the
+  VM install test a new snapshot gets a Limine entry for both kernels that
+  boots `subvol=/@/.snapshots/<n>/snapshot`. Booting a snapshot entry has not
+  been tested yet.
+
 Related: [[decision-map|Decision map]] · [[0009-disk-layout|ADR 0009]] · [[0007-bootloader|ADR 0007]]
