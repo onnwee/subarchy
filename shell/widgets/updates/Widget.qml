@@ -28,6 +28,8 @@ BarWidget {
     label: String(root.count)
     color: Theme.accent
     tooltip: root.count + (root.count === 1 ? " update" : " updates")
-    onClicked: Quickshell.execDetached(["xdg-terminal-exec", "subcult", "update"])
+    // Through uwsm-app (ADR 0031): the update runs in its own unit and
+    // survives a shell restart.
+    onClicked: Quickshell.execDetached(["uwsm-app", "--", "xdg-terminal-exec", "subcult", "update"])
   }
 }

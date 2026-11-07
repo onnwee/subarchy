@@ -17,6 +17,7 @@ BarWidget {
     anchors.verticalCenter: parent.verticalCenter
     width: root.implicitWidth
     text: root.title
+    textFormat: Text.PlainText // titles come from any app or web page
     elide: Text.ElideRight
     color: Theme.subtext
     font.family: Style.fontFamily

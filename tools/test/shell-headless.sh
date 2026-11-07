@@ -163,6 +163,16 @@ DBUS_SESSION_BUS_ADDRESS=unix:path=$work/bus gdbus call --session --dest org.fre
 sleep 1
 st=$(status "$home1")
 [[ $(json 'd.get("popups")') == 1 && $(json 'd.get("unread")') == 1 ]] || fail "no popup for a notification: $st"
+sleep 6
+st=$(status "$home1")
+[[ $(json 'd.get("popups")') == 0 && $(json 'd.get("unread")') == 1 ]] ||
+  fail "the popup did not go after five seconds, or its record was lost: $st"
+
+# Without UPower (CI) there is no battery: the battery widget is not shown.
+if [[ -n ${CI:-} ]]; then
+  [[ $(json '"subcult.battery" in d["shown"]["HEADLESS-1"]') == False && $(json 'd["onBattery"]') == False ]] ||
+    fail "a machine without a battery shows one: $st"
+fi
 
 # The OSD answers its IPC call (media keys use it; capslock needs no
 # backlight or brightnessctl, which CI lacks).

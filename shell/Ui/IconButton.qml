@@ -31,6 +31,7 @@ Item {
     }
     Text {
       text: button.label
+      textFormat: Text.PlainText
       visible: text !== ""
       color: button.color
       font.family: Style.fontFamily

@@ -46,6 +46,18 @@ PanelWindow { // qmllint disable uncreatable-type
     return ids
   }
 
+  // The loaded widgets that are not hidden (no device, no data).
+  function shownIds() {
+    const ids = []
+    for (const section of [left, center, right])
+      for (let i = 0; i < section.hosts.count; i++) {
+        const h = section.hosts.itemAt(i) as WidgetHost
+        if (h && h.visible)
+          ids.push(h.widgetId)
+      }
+    return ids
+  }
+
   component Section: Row {
     property var ids: []
     property alias hosts: repeater
