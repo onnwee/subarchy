@@ -14,7 +14,7 @@ aliases: [First install, Install runbook]
 How to put the current Subarchy on `sputnik`'s empty second drive
 ([[0049-installer|ADR 0049]]), and what has and has not been tested. Written
 2026-11-07 after the overnight build-out; everything below "Tested" passed
-in the QEMU install test on `sputnik` (`make install-test`, 44 checks).
+in the QEMU install test on `sputnik` (`make install-test`, 46 checks).
 
 ## What you get
 
@@ -36,6 +36,8 @@ notifications), and the only app is kitty (Super+Enter). Apps come from
 - Hardware detection in a VM (no firmware), the GPU hook staying silent.
 - `subcult secureboot setup` on Secure Boot firmware, then booting with it
   enforced, twice.
+- `subcult disk tpm enable` with a software TPM, then booting without the
+  passphrase.
 
 ## Not tested on real hardware
 
@@ -46,7 +48,7 @@ notifications), and the only app is kitty (Super+Enter). Apps come from
   battery profile switching.
 - The graphical Plymouth splash (the VM test runs Plymouth in text mode).
 - DisplayLink: `evdi`/`displaylink` are not installed by anything yet.
-- Secure Boot on the real firmware.
+- Secure Boot and TPM unlock on the real firmware and TPM.
 
 ## Steps
 
@@ -68,6 +70,6 @@ notifications), and the only app is kitty (Super+Enter). Apps come from
    first with `efibootmgr --bootorder`.
 7. After the first login: `subcult hw info`, `subcult app list`,
    `subcult update`. Optional: `sudo subcult secureboot setup` with the
-   firmware in setup mode.
+   firmware in setup mode, then `sudo subcult disk tpm enable`.
 
 Related: [[0049-installer|ADR 0049]] · [[roadmap|Roadmap]] · [[review-index|Review index]]
