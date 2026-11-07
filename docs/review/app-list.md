@@ -62,24 +62,25 @@ change.
 
 | App | Role | Preinstalled | Default | Source | Package | Notes |
 |---|---|---|---|---|---|---|
-| Claude Code (TUI) | agent |  | yes | mise | `claude` | Default agent proposal ([[0047-ai-agents\|ADR 0047]]); `claude-code` also exists in the AUR |
-| Codex (TUI) | agent |  |  | mise | `codex` | `openai-codex` is also in Arch's `extra` |
-| T3 Code Nightly | agent-gui |  |  | appimage | T3 Code AppImage | Outside pacman; needs the AppImage rule open in [[0044-default-apps\|ADR 0044]] |
-| VS Code | editor |  |  | aur | `visual-studio-code-bin` | Microsoft build, as on `sputnik`; Code-OSS is `code` in `extra` |
+| Claude Code (TUI) | agent | yes | yes | aur | `claude-code` | Preinstalled as a system package so every user has it; per-user mise installs still work ([[0047-ai-agents\|ADR 0047]]) |
+| Codex (TUI) | agent | yes |  | repo | `openai-codex` | Preinstalled from Arch's `extra`; per-user mise installs still work |
+| T3 Code Nightly | agent-gui | yes | yes | aur | `t3code-nightly-bin` | AUR (0.1.8 nightly on 2026-11-07); stable is `t3code-bin`. Replaces the hand-installed AppImage on `sputnik` |
+| VS Code | editor | yes |  | aur | `visual-studio-code-bin` | Microsoft build, as on `sputnik`; Code-OSS is `code` in `extra` |
 | Neovim | editor | yes | yes | repo | `neovim` | With Subarchy's LazyVim config package ([[0045-editor\|ADR 0045]]) |
 
 ### Office and writing
 
 | App | Role | Preinstalled | Default | Source | Package | Notes |
 |---|---|---|---|---|---|---|
-| Obsidian | notes |  |  | repo | `obsidian` |  |
+| Obsidian | notes | yes | yes | repo | `obsidian` |  |
 
 ### Utilities and system
 
 | App | Role | Preinstalled | Default | Source | Package | Notes |
 |---|---|---|---|---|---|---|
-| Bitwarden | password-manager |  | yes | repo | `bitwarden` |  |
-| PipeWire Control Center | audio-routing |  |  | aur | `pipewire-control-center` |  |
+| Bitwarden CLI | password-manager | yes | yes | repo | `bitwarden-cli` | `bw` command |
+| Bitwarden | password-manager |  |  | repo | `bitwarden` | Desktop app, offered |
+| PipeWire Control Center | audio-routing | yes | yes | aur | `pipewire-control-center` |  |
 | Ark | archive | yes | yes | repo | `ark` | KDE; pairs with Dolphin |
 | Popsicle | usb-flasher |  |  | aur | `popsicle` |  |
 | Solaar | device-manager |  |  | repo | `solaar` | Logitech devices; could install on detection ([[0050-hardware-support\|ADR 0050]]) |
@@ -93,7 +94,6 @@ change.
 |---|---|---|---|---|---|---|
 | VLC | media-player | yes | yes | repo | `vlc` | Plugins are split packages; pick a minimal set |
 | cliamp | music-player |  |  | aur | `cliamp` | Terminal music player |
-| ferrosonic | music-client |  |  | build | `ferrosonic` (to package) | Terminal Subsonic/Navidrome client, MIT. No Arch or AUR package. `sputnik` runs 0.7.0 built by hand into `/usr/local/bin`; upstreams are `jaidaken/ferrosonic` and the `ferrosonic-ng` fork; pick one |
 | OBS Studio | recorder |  |  | repo | `obs-studio` |  |
 
 ### Graphics and 3D
@@ -135,7 +135,7 @@ with no app picked yet:
 - **Screenshot and annotation**: `sputnik` has Omasnap and Wayscriber.
 - **Mail client** for Proton Mail Bridge.
 - **System monitor**: `sputnik` has btop and htop.
-- **Web apps**: which ones, and whether Chromium runs them.
+- **Web apps**: which ones. Chromium is now preinstalled, so it can run them in app windows as Omarchy does.
 
 Apps on `sputnik` that this draft leaves out (from
 [[sputnik-apps|Apps on sputnik]]), in case any were missed: 1Password,

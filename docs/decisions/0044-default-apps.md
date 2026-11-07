@@ -73,7 +73,9 @@ Subarchy reads them from the list instead.
   password managers, PDF viewers, archive tools.
 - Web apps: which ones ship, and how they run without Chromium
   ([[0042-browser|ADR 0042]]).
-- How apps from outside pacman (AppImages, custom builds) are handled.
+- How apps from outside pacman (AppImages, custom builds) are handled. T3 Code,
+  the first case, turned out to have AUR packages (`t3code-bin`,
+  `t3code-nightly-bin`).
 - The list file's machine-readable format, once the owner's list exists.
 
 ## Consequences
