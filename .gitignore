@@ -10,3 +10,4 @@ __pycache__/
 .obsidian/plugins/dataview/data.json
 .obsidian/plugins/table-editor-obsidian/data.json
 .trash/
+build/
