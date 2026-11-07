@@ -184,6 +184,53 @@ def boot(disk: Path, vars_file: Path) -> bool:
     return all(checks.values())
 
 
+DOWN, ENTER = "\x1b[B", "\r"
+
+
+def boot_snapshot(disk: Path, vars_file: Path) -> bool:
+    """Boot the newest snapshot's linux-zen entry from the Limine menu.
+
+    Menu with the Subarchy directory open: 1 Subarchy, 2 linux-zen (default),
+    3 linux-lts, 4 Snapshots (closed). The keys open Snapshots, then the
+    first snapshot, and boot its first kernel.
+    """
+    cmd = qemu_command(vars_file, "-drive", f"file={disk},if=virtio,format=qcow2")
+    proc, serial, log = start(cmd, VM / "snapshot-serial.log")
+    try:
+        serial.expect(re.compile(rb"starting Boot.*Limine"), 60)
+        time.sleep(1.5)  # let Limine draw its menu
+        for key in (DOWN, DOWN, ENTER, DOWN, ENTER, DOWN, ENTER):
+            serial.send(key)
+            time.sleep(0.3)
+        serial.expect(re.compile(rb"assphrase for"), 180)
+        serial.send(PASSPHRASE + "\n")
+        serial.expect(re.compile(rb"login: "), 180)
+        serial.send(USER + "\n")
+        serial.expect(re.compile(rb"Password: "), 30)
+        serial.send(PASSWORD + "\n")
+        serial.claim_prompt(60)
+        cmdline = serial.run("cat /proc/cmdline")
+        root = serial.run("findmnt -no FSTYPE /")
+        state = serial.run("systemctl is-system-running --wait", timeout=120).strip()
+        serial.send(f"echo {PASSWORD} | sudo -S -p '' poweroff\n")
+    except TimeoutError as e:
+        proc.kill()
+        print(f"install-test: FAIL booting the snapshot, timed out {e}", file=sys.stderr)
+        print(serial.tail(), file=sys.stderr)
+        return False
+    finally:
+        stop(proc, log)
+    state = state.splitlines()[-1] if state else ""
+    checks = {
+        "snapshot booted": "subvol=/@/.snapshots/" in cmdline,
+        "snapshot root is a writable overlay": root.strip() == "overlay",
+        "snapshot system running or degraded": state in ("running", "degraded"),
+    }
+    for name, ok in checks.items():
+        print(f"install-test: {'ok  ' if ok else 'FAIL'} {name}")
+    return all(checks.values())
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("iso", type=Path)
@@ -198,7 +245,9 @@ def main() -> int:
     write_config()
     if not args.skip_install and not install(args.iso, disk, vars_file, args.timeout_install):
         return 1
-    return 0 if boot(disk, vars_file) else 1
+    if not boot(disk, vars_file):
+        return 1
+    return 0 if boot_snapshot(disk, vars_file) else 1
 
 
 if __name__ == "__main__":

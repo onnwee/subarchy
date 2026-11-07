@@ -124,9 +124,10 @@ write_boot_config() {
   echo "$cmdline" >"$target/etc/kernel/cmdline"
   echo "KEYMAP=${conf[KEYMAP]}" >"$target/etc/vconsole.conf"
   cat >"$target/etc/mkinitcpio.conf.d/subarchy.conf" <<'EOF'
-# Subarchy (ADR 0008): systemd-based initramfs. Plymouth joins with the
+# Subarchy (ADR 0008): systemd-based initramfs; sd-btrfs-overlayfs makes
+# read-only snapshots bootable (ADR 0011). Plymouth joins with the
 # boot splash.
-HOOKS=(base systemd autodetect microcode modconf kms keyboard sd-vconsole block sd-encrypt filesystems fsck)
+HOOKS=(base systemd autodetect microcode modconf kms keyboard sd-vconsole block sd-encrypt filesystems fsck sd-btrfs-overlayfs)
 EOF
   # limine-mkinitcpio-hook builds one UKI per kernel and writes the Limine
   # entries; limine-snapper-sync adds the snapshot entries (ADR 0007, 0011).

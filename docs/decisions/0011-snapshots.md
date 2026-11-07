@@ -53,7 +53,10 @@ Decision map item B5. Accepted 2026-11-06.
 
 - 2026-11-07: the installer sets up snapper and `limine-snapper-sync`. In the
   VM install test a new snapshot gets a Limine entry for both kernels that
-  boots `subvol=/@/.snapshots/<n>/snapshot`. Booting a snapshot entry has not
-  been tested yet.
+  boots `subvol=/@/.snapshots/<n>/snapshot`. The test then picks that entry
+  from the Limine menu over the serial console: the snapshot boots with the
+  `sd-btrfs-overlayfs` initramfs hook, which puts a writable overlay over the
+  read-only snapshot, and reaches `running`. Restoring a snapshot
+  (`limine-snapper-restore`) is not tested yet.
 
 Related: [[decision-map|Decision map]] · [[0009-disk-layout|ADR 0009]] · [[0007-bootloader|ADR 0007]]
