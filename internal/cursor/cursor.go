@@ -53,6 +53,39 @@ func LoadPalette(path string) (Palette, error) {
 	return Palette(doc.Colors), nil
 }
 
+// LoadLayered reads the system palette, then lays the user's valid roles
+// over it. A user file that is missing, unreadable or not JSON leaves the
+// system palette; a role that is not #RRGGBB is skipped. Each problem is
+// returned as a warning, so a broken theme never stops the cursor.
+func LoadLayered(systemPath, userPath string) (Palette, []string, error) {
+	p, err := LoadPalette(systemPath)
+	if err != nil {
+		return nil, nil, err
+	}
+	data, err := os.ReadFile(userPath)
+	if errors.Is(err, os.ErrNotExist) {
+		return p, nil, nil
+	}
+	if err != nil {
+		return p, []string{err.Error()}, nil
+	}
+	var doc struct {
+		Colors map[string]string `json:"colors"`
+	}
+	if err := json.Unmarshal(data, &doc); err != nil {
+		return p, []string{fmt.Sprintf("%s: %v; using the system palette", userPath, err)}, nil
+	}
+	var warnings []string
+	for role, value := range doc.Colors {
+		if !hexColour.MatchString(value) {
+			warnings = append(warnings, fmt.Sprintf("%s: %s is %q, not #RRGGBB; using the system colour", userPath, role, value))
+			continue
+		}
+		p[role] = value
+	}
+	return p, warnings, nil
+}
+
 // Outline picks the outline for a fill: crust on light fills, text on dark
 // ones, judged by OKLab lightness against 0.5.
 func Outline(fill, crust, text string) (string, error) {
@@ -184,6 +217,13 @@ func SaveSettings(path string, s Settings) error {
 		return err
 	}
 	return os.Rename(tmp, path)
+}
+
+// EnvLua is ~/.config/subcult/cursor-env.lua: Hyprland reads it at login
+// (default/hypr/envs.lua), so a size chosen with `set` outlives the session.
+func EnvLua(size int) string {
+	return fmt.Sprintf("-- Written by `subcult cursor set`; change it with that command.\n"+
+		"hl.env(\"XCURSOR_SIZE\", \"%d\")\nhl.env(\"HYPRCURSOR_SIZE\", \"%d\")\n", size, size)
 }
 
 // ErrInvalid marks a setting the palette or the size list rejects.

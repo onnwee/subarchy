@@ -32,25 +32,22 @@ func Build(ctx context.Context, r update.Runner, o BuildOptions) error {
 		return err
 	}
 
-	work, err := os.MkdirTemp("", "subcult-cursor-")
+	// Scratch space sits next to the destination so every rename below stays
+	// on one filesystem (TMPDIR is often a tmpfs), and each build has its own.
+	if err := os.MkdirAll(filepath.Dir(o.Out), 0o755); err != nil {
+		return err
+	}
+	work, err := os.MkdirTemp(filepath.Dir(o.Out), "."+ThemeName+"-")
 	if err != nil {
 		return err
 	}
 	defer os.RemoveAll(work)
-
-	if err := os.MkdirAll(filepath.Dir(o.Out), 0o755); err != nil {
-		return err
-	}
-	staging := o.Out + ".new"
-	if err := os.RemoveAll(staging); err != nil {
-		return err
-	}
+	staging := filepath.Join(work, "theme")
 	for _, d := range []string{filepath.Join(staging, "cursors"), filepath.Join(work, "hc", "hyprcursors")} {
 		if err := os.MkdirAll(d, 0o755); err != nil {
 			return err
 		}
 	}
-	defer os.RemoveAll(staging)
 
 	for _, s := range shapes {
 		if err := buildShape(ctx, r, o, s, work, staging); err != nil {
@@ -76,7 +73,7 @@ func Build(ctx context.Context, r update.Runner, o BuildOptions) error {
 	if err := os.WriteFile(filepath.Join(staging, "index.theme"), []byte(index), 0o644); err != nil {
 		return err
 	}
-	return swap(staging, o.Out)
+	return swap(staging, o.Out, filepath.Join(work, "old"))
 }
 
 func buildShape(ctx context.Context, r update.Runner, o BuildOptions, s Shape, work, staging string) error {
@@ -126,20 +123,13 @@ func buildShape(ctx context.Context, r update.Runner, o BuildOptions, s Shape, w
 	return os.WriteFile(filepath.Join(dir, "meta.hl"), []byte(meta), 0o644)
 }
 
-// swap replaces dst with src: the old theme moves aside, the new one takes
-// its name, then the old one is removed.
-func swap(src, dst string) error {
-	old := dst + ".old"
-	if err := os.RemoveAll(old); err != nil {
-		return err
-	}
+// swap replaces dst with src: the old theme moves aside to old (inside the
+// build's scratch folder, removed with it), the new one takes its name.
+func swap(src, dst, old string) error {
 	if _, err := os.Lstat(dst); err == nil {
 		if err := os.Rename(dst, old); err != nil {
 			return err
 		}
 	}
-	if err := os.Rename(src, dst); err != nil {
-		return err
-	}
-	return os.RemoveAll(old)
+	return os.Rename(src, dst)
 }

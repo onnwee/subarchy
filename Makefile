@@ -27,6 +27,8 @@ smoke: build
 	tools/test/power-auto-test.sh
 	tools/test/gpu-test.sh
 	tools/test/cursor-test.sh $(BUILD)/subcult-cursor
+	tools/test/fontconfig-test.sh
+	tools/test/hypr-theme-test.sh
 
 shellcheck:
 	@if [ -n "$(SHELL_SCRIPTS)" ]; then shellcheck -x $(SHELL_SCRIPTS); fi

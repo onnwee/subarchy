@@ -21,6 +21,19 @@ out="$work/subcult-cursor"
   --src "$root/default/cursor" --out "$out" >"$work/build.log" 2>&1 ||
   { tail -20 "$work/build.log" >&2; fail "build failed"; }
 
+# The temporary folder may be on another filesystem than the theme (tmpfs
+# /tmp against /home); a build must still land.
+if [[ -d /dev/shm && -w /dev/shm ]]; then
+  shm=$(mktemp -d -p /dev/shm)
+  TMPDIR=$shm "$bin" build --role lavender --palette "$root/default/theme/palette.json" \
+    --src "$root/default/cursor" --out "$work/xdev/subcult-cursor" >"$work/xdev.log" 2>&1 ||
+    { rm -rf -- "$shm"; tail -5 "$work/xdev.log" >&2; fail "build across filesystems failed"; }
+  rm -rf -- "$shm"
+  [[ -f $work/xdev/subcult-cursor/hyprcursors/default.hlc ]] || fail "cross-filesystem build incomplete"
+  leftovers=$(find "$work/xdev" -mindepth 1 -maxdepth 1 ! -name subcult-cursor)
+  [[ -z $leftovers ]] || fail "build left behind: $leftovers"
+fi
+
 for name in left_ptr text pointer; do
   [[ $(head -c4 "$out/cursors/$name") == Xcur ]] || fail "cursors/$name is not an Xcursor file"
 done
@@ -68,5 +81,24 @@ status=$?
 set -e
 [[ $status == 2 ]] || fail "set --role nonsense exited $status, want 2"
 [[ $(cat "$home/.config/subcult/cursor.json") == "$before" ]] || fail "cursor.json changed after a refused set"
+
+# A size chosen with set survives a new session: Hyprland reads it from
+# ~/.config/subcult/cursor-env.lua at login. GSettings uses a throwaway
+# backend so the test cannot touch the real desktop settings.
+home2="$work/home2"
+mkdir -p "$home2"
+env -u DBUS_SESSION_BUS_ADDRESS -u HYPRLAND_INSTANCE_SIGNATURE GSETTINGS_BACKEND=memory HOME="$home2" SUBCULT_PATH="$root" \
+  "$bin" set --size 32 --src "$root/default/cursor" >"$work/set.log" 2>&1 ||
+  { tail -5 "$work/set.log" >&2; fail "set --size 32 failed"; }
+grep -q '"HYPRCURSOR_SIZE", "32"' "$home2/.config/subcult/cursor-env.lua" 2>/dev/null ||
+  fail "set --size does not persist the size for the next session"
+grep -q '"XCURSOR_SIZE", "32"' "$home2/.config/subcult/cursor-env.lua" || fail "XCURSOR_SIZE not persisted"
+
+# A system without the GNOME interface schemas (no gsettings-desktop-schemas)
+# still gets the cursor; the GSettings step only warns.
+mkdir -p "$work/noschemas"
+env -u DBUS_SESSION_BUS_ADDRESS -u HYPRLAND_INSTANCE_SIGNATURE GSETTINGS_BACKEND=memory HOME="$home2" SUBCULT_PATH="$root" \
+  XDG_DATA_DIRS="$work/noschemas" "$bin" set --size 24 --src "$root/default/cursor" >"$work/set2.log" 2>&1 ||
+  { tail -5 "$work/set2.log" >&2; fail "set fails when GSettings has no interface schema"; }
 
 echo "cursor-test: ok"
