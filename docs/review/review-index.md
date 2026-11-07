@@ -19,6 +19,7 @@ review can be a yes/no pass.
 | [[triage\|Plugin and add-on triage]] | What ships by default, as optional, or not at all |
 | [[open-questions\|Open questions]] | Name, licence, hosting, hardware targets, ISO |
 | [[app-list\|App list]] | Which apps ship, which are offered, default per role (owner writes) |
+| [[rice-port-review\|Rice port review]] | Which SUBCULT rice features to port, rethink or skip |
 
 ## How to review
 

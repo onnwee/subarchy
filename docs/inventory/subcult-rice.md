@@ -47,6 +47,9 @@ overlay on top of a stock Omarchy install, not a fork.
 
 ## Features worth carrying into Subarchy
 
+The owner decided not to port the rice's theme (2026-11-06); the
+feature-by-feature verdicts are in [[rice-port-review|the rice port review]].
+
 These are described in the rice's own documents; this inventory did not
 re-test them on Omarchy 4.5.
 

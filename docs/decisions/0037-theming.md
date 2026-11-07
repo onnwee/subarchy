@@ -19,13 +19,15 @@ Decision map item D5. Accepted 2026-11-06.
 **backgrounds**. Applying a theme renders **templates** into matching configs
 for every themed program: terminals, Hyprland, hyprlock, the shell, SDDM,
 Plymouth colours, btop, editors, GTK and Qt, the browser and Flatpak apps.
-Themes support the SUBCULT rice's **variants**: Standard, OLED, Daylight and
-High Contrast.
+Whether themes support variants (Standard, OLED, Daylight, High Contrast, as
+the SUBCULT rice does) is open in [[rice-port-review|the rice port review]].
 
 **Shipped themes.**
 
-- Defaults: `subcult` and `subcult-minimal`, with the rice's five affinity
-  palettes (Press, Acid Block, Paper Stock, Violet Field, Ink Run).
+- Default: a **new SUBCULT theme** designed in Subarchy's format from the
+  brand colours ([[brand-identity|Brand identity]]). The SUBCULT rice's
+  `subcult` and `subcult-minimal` themes and its affinity palettes are **not**
+  ported (owner, 2026-11-06).
 - A short list of popular community palettes rebuilt in Subarchy's format,
   for example Tokyo Night, Catppuccin, Gruvbox and Nord. Each one's licence is
   checked before it ships.
@@ -49,8 +51,8 @@ with that tool.
 - Omarchy's `colors.toml` and `default/themed/*.tpl` templates (Alacritty,
   Foot, Ghostty, Kitty, btop, Chromium, Hyprland, Neovim, Helix, VS Code,
   Obsidian, fcitx5, keyboard RGB, shell and others).
-- The rice's palette (see [[brand-identity|Brand identity]]), affinity
-  palettes and variant rules from `THEME_VARIANTS.md`.
+- Nothing from the rice's theme. Its variant mechanism is listed under
+  "decide later" in [[rice-port-review|the rice port review]].
 
 ## Open
 

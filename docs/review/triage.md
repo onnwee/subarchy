@@ -40,18 +40,9 @@ Placement values:
 
 ## SUBCULT rice
 
-| Part | Proposed | Reason |
-|---|---|---|
-| `subcult` and `subcult-minimal` themes, wallpapers, brand kit | default | The visual identity. |
-| `subcult.settings` control center, scenes, theme variants, affinity palettes | default | Core of the rice; must be re-verified on Omarchy 4.5. |
-| `subcult.workspace-names`, `subcult.workspace-osd`, topology and machine profiles | default | Replace the hand-made `sputnik-dock-workspaces` watcher. |
-| `subcult.command-palette`, `subcult.operations-log`, `subcult.context` | evaluate | Large surfaces; confirm they are still wanted after the bar moved away from the SUBCULT layout on 2026-11-02. |
-| `subcult.battery`, `subcult.clipboard`, `subcult.lock`, `subcult.notifications`, `subcult.power`, `subcult.workspaces` | evaluate | Manifests mark these as clones of the matching `omarchy.*` built-ins. In a fork, restyle the built-ins instead of carrying clones. |
-| `subcult.idle`, `subcult.media`, `subcult.bluetooth`, `subcult.tailscale`, `subcult.dropbox`, `subcult.agents`, `subcult.world-clock` | evaluate | Same names as built-ins (`omarchy.elsewhen` for the world clock) without a clone marker; check whether they replace or wrap them. |
-| Thermal, privacy, intrusion, mission, demo, closed-door, power-sequence, health, performance plugins | evaluate | SUBCULT-only features; confirm each is still wanted. |
-| `subcult-*` commands (61) | evaluate | Keep the ones that back kept plugins; check each against an `omarchy` equivalent. |
-| `post-update.d/90-restore-subcult` | drop under ADR 0001 B | Not needed when the fork owns the files it restores. |
-| Rice installer, preflight, rollback | evaluate | Useful for converting an existing Omarchy install; not needed on a fresh image. |
+Superseded by [[rice-port-review|the rice port review]] (2026-11-06): the
+owner does not want the rice's theme, and useful features are ported through
+Subarchy's own plugin API.
 
 ## Community plugins
 
