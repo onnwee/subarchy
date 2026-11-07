@@ -61,7 +61,8 @@ Threads Video Controls has no Firefox version and is dropped.
 
 **Baseline: the owner's Zen profile on `sputnik`** (2026-11-07, profile
 `9ysr1yvg.Default (release)`, 48 add-ons). Windowed, Song Identifier and
-SoundFixer above come from it. Proposed additions from it, pending the owner:
+SoundFixer above come from it, and so do these, accepted by the owner
+2026-11-07:
 
 | Add-on | Publisher | Add-on ID | AMO slug |
 |---|---|---|---|
@@ -120,7 +121,7 @@ or `normal_installed`), and unpacked extensions loaded with
 
 ### Open
 
-- The proposed additions from the `sputnik` Zen profile, above.
+- None for extensions.
 
 ## Options considered
 
