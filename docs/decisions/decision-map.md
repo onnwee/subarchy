@@ -32,7 +32,7 @@ NVMe.
 | F2 | CPU architectures supported | x86_64 plus several aarch64 platforms | [[0003-cpu-architectures\|ADR 0003]]: x86_64 only |
 | F3 | Kernel | `linux-omarchy` (BORE CPU scheduler, ADIOS I/O scheduler), no fallback kernel | [[0004-kernel\|ADR 0004]]: `linux-zen`, `linux-lts` fallback |
 | F4 | Firmware and microcode | `linux-firmware` split packages, Intel and AMD microcode | [[0005-firmware\|ADR 0005]]: detected vendors, fwupd |
-| F5 | GPU driver policy (Intel, AMD, NVIDIA, hybrid) | Per-vendor install scripts, NVIDIA open DKMS | [[0006-gpu-drivers\|ADR 0006]]: open DKMS + 580xx legacy, iGPU with on-demand NVIDIA, 32-bit libraries on demand |
+| F5 | GPU driver policy (Intel, AMD, NVIDIA, hybrid) | Per-vendor install scripts, NVIDIA open DKMS | [[0006-gpu-drivers\|ADR 0006]]: open DKMS + 580xx legacy, Intel mode by default; NVIDIA desktop mode offered when docked on AC, never automatic; 32-bit libraries on demand |
 
 ## Boot and storage
 
