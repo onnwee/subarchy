@@ -56,7 +56,11 @@ Decision map item B5. Accepted 2026-11-06.
   boots `subvol=/@/.snapshots/<n>/snapshot`. The test then picks that entry
   from the Limine menu over the serial console: the snapshot boots with the
   `sd-btrfs-overlayfs` initramfs hook, which puts a writable overlay over the
-  read-only snapshot, and reaches `running`. Restoring a snapshot
-  (`limine-snapper-restore`) is not tested yet.
+  read-only snapshot, and reaches `running`. From that snapshot the test
+  runs `limine-snapper-sync --restore` (method `replace`): it swaps the
+  snapshot in as `@`, keeps the old `@` as a "backup before restore"
+  snapshot, restores the matching kernels and reboots. The default entry
+  then boots the restored `@`, and a file created after the snapshot is
+  gone.
 
 Related: [[decision-map|Decision map]] · [[0009-disk-layout|ADR 0009]] · [[0007-bootloader|ADR 0007]]
