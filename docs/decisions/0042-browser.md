@@ -26,7 +26,21 @@ with extensions installed automatically:
 | Chrome Web Store extensions | Policy file in `/etc/chromium/policies/managed/` with `ExtensionSettings` (or `ExtensionInstallForcelist`), each entry's `installation_mode` set to `force_installed` (user cannot remove or disable) or `normal_installed` (installed automatically, user can disable) | Yes, downloaded on first launch |
 | Subarchy's own extensions | Unpacked in the package and loaded with `--load-extension=` in `chromium-flags.conf` | No |
 
-Which extensions, and whether they are locked, is open.
+A third route, which Omarchy's `omarchy-install-chromium-claude` uses: a file
+`/usr/share/chromium/extensions/<id>.json` containing
+`{ "external_update_url": "https://clients2.google.com/service/update2/crx" }`
+makes Chromium install the extension from the Web Store on next launch, and
+the user can still remove it.
+
+**Installed automatically** (owner, 2026-11-06), through that external
+extension file so users can remove them:
+
+| Extension | Publisher | Web Store ID | Notes |
+|---|---|---|---|
+| Claude ("Claude in Chrome") | Anthropic | `fcoeoabgfenejglbffodgkkbkcdhcgfn` | Works from a side panel; the listing says it needs a paid Claude plan. ID confirmed on the store page. |
+| ChatGPT (OpenAI's Codex browser extension) | OpenAI | `hehggadaopoacecdllhhajmbjkdcmajg` | Lets the ChatGPT/Codex desktop app control the browser. OpenAI's Codex extension docs now redirect to this extension's page. Its docs list Chrome, Edge, Brave, Opera and Vivaldi, not Chromium, so it is untested here. |
+
+Use `force_installed` policy instead if they should ever be locked.
 
 ## Options considered
 

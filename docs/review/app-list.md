@@ -115,6 +115,15 @@ change.
 | Lutris | game-launcher |  |  | repo | `lutris` | Also brings the 32-bit libraries |
 | qBittorrent | torrent |  |  | repo | `qbittorrent` |  |
 
+### Chromium extensions
+
+Installed automatically with Chromium ([[0042-browser|ADR 0042]]).
+
+| Extension | Web Store ID | Notes |
+|---|---|---|
+| Claude | `fcoeoabgfenejglbffodgkkbkcdhcgfn` | Anthropic; paid Claude plan |
+| ChatGPT (Codex browser control) | `hehggadaopoacecdllhhajmbjkdcmajg` | OpenAI; browser control needs the ChatGPT/Codex desktop app. On `sputnik` that is `openai-codex-desktop`, which only `[omarchy]` carries; the AUR has `chatgpt-desktop`. Not on the app list yet |
+
 ## Gaps to fill
 
 Roles the lean core needs ([[0044-default-apps|ADR 0044]]) or the list implies,
