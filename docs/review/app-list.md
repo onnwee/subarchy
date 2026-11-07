@@ -92,7 +92,7 @@ change.
 
 | App | Role | Preinstalled | Default | Source | Package | Notes |
 |---|---|---|---|---|---|---|
-| VLC | media-player | yes | yes | repo | `vlc` | Plugins are split packages; pick a minimal set |
+| VLC | media-player | yes | yes | repo | `vlc`, `vlc-plugin-ffmpeg`, `vlc-plugin-freetype`, `vlc-plugin-ass` | `vlc` pulls `vlc-gui-qt`, which brings `vlc-plugins-base` (Ogg, Matroska, FLAC, Opus, Vorbis, MP3, AAC, VP8/9, AV1) and `vlc-plugins-video-output`. Added: FFmpeg (H.264, H.265 and most other codecs, VA-API decoding), FreeType (subtitle and on-screen text), ASS (styled subtitles). `vlc-plugins-extra` and `vlc-plugins-all` stay off. VLC 3 uses Qt 5, so it adds the Qt 5 libraries |
 | cliamp | music-player |  |  | aur | `cliamp` | Terminal music player |
 | OBS Studio | recorder |  |  | repo | `obs-studio` |  |
 
@@ -139,10 +139,10 @@ Installed automatically with Chromium ([[0042-browser|ADR 0042]]).
 
 ## Web apps
 
-None are preinstalled. The app installer offers an "install web app" command,
-borrowed from Omarchy's `omarchy-webapp-install`, that opens a site in its own
-Chromium app window with a launcher entry, plus a short catalogue to pick
-from. The catalogue is not chosen yet.
+None are preinstalled and the catalogue is empty (owner, 2026-11-07). The
+"install web app" command, borrowed from Omarchy's `omarchy-webapp-install`,
+stays available: it opens any site in its own Chromium app window with a
+launcher entry.
 
 ## Gaps
 
