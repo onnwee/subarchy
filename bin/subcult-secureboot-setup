@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# subcult:summary=Turn on Secure Boot with this machine's own keys
+# subcult:requires-sudo=true
+# subcult:dangerous=true
+# subcult:examples=sudo subcult secureboot setup
+#
+# ADR 0012. With the firmware in setup mode: create keys with sbctl, enroll
+# them next to Microsoft's (GPU and network option ROMs need those), sign
+# Limine and the UKIs, enroll Limine's config hash, and check that every
+# boot file is signed. Kernel and bootloader updates are then signed by the
+# sbctl and limine-entry-tool hooks.
+#
+# Not done: kernel lockdown (ADR 0063). Lockdown refuses unsigned kernel
+# modules, which would stop DKMS drivers such as NVIDIA's from loading until
+# module signing exists.
+set -euo pipefail
+
+say() { echo ">> $*"; }
+die() { echo "subcult secureboot: $*" >&2; exit 1; }
+
+((EUID == 0)) || die "run with sudo"
+[[ -d /sys/firmware/efi ]] || die "this machine did not boot with UEFI"
+command -v sbctl >/dev/null || die "sbctl is not installed (sudo pacman -S sbctl)"
+
+status=$(sbctl status --json)
+if [[ $status == *'"installed": true'* || $status == *'"installed":true'* ]]; then
+  die "sbctl keys already exist; see 'sbctl status'"
+fi
+if [[ $status != *'"setup_mode": true'* && $status != *'"setup_mode":true'* ]]; then
+  cat >&2 <<'EOF'
+subcult secureboot: the firmware is not in setup mode.
+  Reboot into the firmware settings (often F2 or Del), find Secure Boot, and
+  choose "Reset to setup mode" or "Clear keys". Leave Secure Boot itself off,
+  boot Subarchy and run this command again.
+EOF
+  exit 1
+fi
+
+say "creating keys"
+sbctl create-keys
+say "enrolling them with Microsoft's keys"
+sbctl enroll-keys --microsoft
+
+say "turning on Limine config enrollment"
+if grep -q '^ENABLE_ENROLL_LIMINE_CONFIG=' /etc/default/limine; then
+  sed -i 's/^ENABLE_ENROLL_LIMINE_CONFIG=.*/ENABLE_ENROLL_LIMINE_CONFIG=yes/' /etc/default/limine
+else
+  echo 'ENABLE_ENROLL_LIMINE_CONFIG=yes' >>/etc/default/limine
+fi
+
+say "signing Limine and the kernels"
+limine-update
+# limine-update copies the fallback loader unsigned; keep it in sbctl's
+# list so its pacman hook re-signs it after every update.
+if [[ -f /boot/EFI/BOOT/BOOTX64.EFI ]]; then
+  sbctl sign --save /boot/EFI/BOOT/BOOTX64.EFI
+fi
+
+say "checking signatures"
+if sbctl verify 2>&1 | grep -q 'is not signed'; then
+  sbctl verify >&2 || true
+  die "some boot files are unsigned; Secure Boot would refuse them"
+fi
+sbctl verify
+
+cat <<'EOF'
+
+Secure Boot keys are enrolled and every boot file is signed.
+Reboot. If the firmware does not switch Secure Boot on by itself, turn it
+on in the firmware settings. `subcult secureboot status` checks it after.
+EOF

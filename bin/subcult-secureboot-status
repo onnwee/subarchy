@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# subcult:summary=Show whether Secure Boot is on and boot files are signed
+# subcult:examples=subcult secureboot status
+set -euo pipefail
+
+if ! command -v sbctl >/dev/null; then
+  echo "sbctl is not installed"
+  exit 1
+fi
+sbctl status
