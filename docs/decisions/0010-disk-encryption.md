@@ -39,4 +39,16 @@ Decision map item B4. Accepted 2026-11-06.
 - Key derivation and cipher stay at cryptsetup's LUKS2 defaults unless a
   benchmark shows a reason to change them.
 
+## Progress
+
+- 2026-11-07: the installer encrypts the root partition with LUKS2 and a
+  passphrase, unlocked by `sd-encrypt` at boot. `sudo subcult disk tpm
+  enable` enrolls the TPM with `systemd-cryptenroll`, bound to PCR 7 (the
+  Secure Boot state and keys, so kernel and bootloader updates do not
+  break it), adds `tpm2-device=auto` to the kernel command line and keeps
+  the passphrase as the recovery key; it refuses unless Secure Boot is on
+  (ADR 0012). `disable` wipes the TPM slot. The VM test enables it with a
+  software TPM and boots without the passphrase. FIDO2 enrollment is still
+  to do.
+
 Related: [[decision-map|Decision map]] · [[0008-initramfs|ADR 0008]] · [[0009-disk-layout|ADR 0009]]
