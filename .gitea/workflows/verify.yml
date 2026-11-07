@@ -41,3 +41,26 @@ jobs:
           git config --global --add safe.directory "$PWD"
           chown -R builder: "$PWD"
           su builder -c "git config --global --add safe.directory '$PWD' && make package"
+
+  shell:
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    steps:
+      - name: Install Quickshell, Qt and the headless test tools
+        run: |
+          pacman -Syu --noconfirm --needed git make nodejs python quickshell qt6-declarative sway grim imagemagick libnotify ttf-dejavu
+          # Arch gives sway cap_sys_nice as a file capability, which a container
+          # may not grant; without it the binary cannot start at all.
+          setcap -r /usr/bin/sway
+      - uses: actions/checkout@v4
+      - name: Model tests, lint and widget index
+        run: |
+          git config --global --add safe.directory "$PWD"
+          make shell-test shell-lint shell-index-check
+      - name: Shell in a headless sway
+        run: |
+          useradd -m runner
+          chown -R runner: "$PWD"
+          su runner -c "git config --global --add safe.directory '$PWD' && tools/test/shell-headless.sh shell"

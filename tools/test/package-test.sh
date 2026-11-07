@@ -57,6 +57,12 @@ grep -qx usr/share/fontconfig/conf.avail/44-subarchy-roles.conf <<<"$list" || fa
 for path in etc/xdg/nvim/sysinit.vim usr/share/icons/default/index.theme; do
   if grep -qx "$path" <<<"$list"; then fail "$path belongs to another Arch package"; fi
 done
+for path in usr/share/subcult/shell/shell.qml usr/share/subcult/shell/Bar.qml usr/share/subcult/shell/Commons/qmldir \
+  usr/share/subcult/shell/widgets/index.json usr/lib/systemd/user/subcult-shell.service \
+  usr/lib/systemd/user/graphical-session.target.wants/subcult-shell.service; do
+  grep -qx "$path" <<<"$list" || fail "missing $path"
+done
+if grep -q '^usr/share/subcult/shell/.*tests/' <<<"$list"; then fail "shell tests are packaged"; fi
 grep -qx "icon-theme='Papirus-Dark'" <(bsdtar -xOf "$pkg" usr/share/glib-2.0/schemas/90-subarchy.gschema.override) ||
   fail "GSettings override lacks Papirus-Dark"
 

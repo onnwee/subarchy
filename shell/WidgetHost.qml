@@ -1,0 +1,118 @@
+import QtQuick
+import Quickshell
+import qs.Commons
+import qs.Ui
+import "Commons/ConfigModel.js" as ConfigModel
+
+// One widget slot in the bar (ADR 0068). Loads widgets/<dir>/Widget.qml,
+// hands it mode, screen, settings and the shell services, and owns its
+// panel: Panel.qml is loaded only while the panel is open.
+Item {
+  id: host
+
+  property string widgetId
+  property string mode: "full"
+  property var screen
+  property bool panelOpen: false
+
+  readonly property var entry: WidgetIndex.entry(widgetId)
+  readonly property var manifest: entry ? entry.manifest : null
+  readonly property var settings: manifest
+    ? ConfigModel.merge(manifest.settings || {}, (Config.bar.widgets || {})[widgetId] || {})
+    : ({})
+  // What the widget gets as `shell` (ADR 0068): power and config are bound
+  // to this widget, so it asks for its own timers by name and can write
+  // only its own settings.
+  readonly property var shellServices: ({ theme: Theme, style: Style, power: powerApi, config: configApi, manifest: manifest })
+
+  QtObject {
+    id: powerApi
+    readonly property bool onBattery: Power.onBattery
+    function interval(timerName: string): int {
+      return Power.interval(host.entry ? host.entry.manifest : null, timerName)
+    }
+  }
+
+  QtObject {
+    id: configApi
+    function set(key: string, value: var): bool {
+      return Config.set(host.widgetId, key, value)
+    }
+  }
+
+  readonly property BarWidget widgetItem: widget.item as BarWidget
+  readonly property PanelBase panelItem: panelLoader.item as PanelBase
+
+  implicitWidth: widgetItem ? widgetItem.implicitWidth : 0
+  implicitHeight: Style.barHeight
+  visible: widgetItem !== null && !widgetItem.hidden
+
+  property bool warned: false
+  onEntryChanged: {
+    if (!entry && widgetId !== "" && !warned && Object.keys(WidgetIndex.widgets).length > 0) {
+      console.warn("subcult shell: unknown widget", widgetId)
+      warned = true
+    }
+    Qt.callLater(host.load)
+  }
+  Component.onCompleted: Qt.callLater(host.load)
+
+  // The widget is created with its real mode, screen, settings and shell
+  // (initial properties), so its own Component.onCompleted already sees
+  // them; the bindings follow in onLoaded.
+  function load() {
+    if (!host.entry) {
+      widget.source = ""
+      return
+    }
+    widget.setSource(Qt.resolvedUrl("widgets/" + host.entry.dir + "/Widget.qml"),
+      { mode: host.mode, screen: host.screen, settings: host.settings, shell: host.shellServices })
+  }
+
+  Loader {
+    id: widget
+    anchors.fill: parent
+    onLoaded: {
+      const w = item as BarWidget
+      if (!w) {
+        console.warn("subcult shell:", host.widgetId, "Widget.qml is not a BarWidget")
+        return
+      }
+      w.mode = Qt.binding(() => host.mode)
+      w.screen = Qt.binding(() => host.screen)
+      w.settings = Qt.binding(() => host.settings)
+      w.shell = host.shellServices
+      w.openPanel.connect(() => host.panelOpen = !host.panelOpen)
+    }
+  }
+
+  PopupWindow {
+    id: panel
+    visible: host.panelOpen && panelLoader.status === Loader.Ready
+    anchor.item: host // qmllint disable missing-property
+    anchor.rect.y: host.height // qmllint disable unqualified unresolved-type
+    implicitWidth: host.panelItem ? host.panelItem.implicitWidth : 1
+    implicitHeight: host.panelItem ? host.panelItem.implicitHeight : 1
+    color: "transparent"
+
+    Loader {
+      id: panelLoader
+      active: host.panelOpen && host.entry !== null && host.manifest.panel === true
+      onActiveChanged: {
+        if (active)
+          setSource(Qt.resolvedUrl("widgets/" + host.entry.dir + "/Panel.qml"),
+            { settings: host.settings, shell: host.shellServices })
+      }
+      onLoaded: {
+        const p = item as PanelBase
+        if (!p) {
+          console.warn("subcult shell:", host.widgetId, "Panel.qml is not a PanelBase")
+          return
+        }
+        p.settings = Qt.binding(() => host.settings)
+        p.shell = host.shellServices
+        p.closePanel.connect(() => host.panelOpen = false)
+      }
+    }
+  }
+}
