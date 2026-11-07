@@ -43,4 +43,16 @@ topology-aware `monitors.lua`, and the dock workspace watcher.
 - The GPU session toggle ([[0006-gpu-drivers|ADR 0006]]) writes Hyprland
   environment entries.
 
+## Progress
+
+- 2026-11-07: Subarchy's Hyprland Lua defaults live in `default/hypr/`
+  (installed to `/usr/share/subcult/default/hypr/`). The installer writes
+  `~/.config/hypr/hyprland.lua`, which runs `bootstrap.lua`, loads
+  `subcult.lua` and then the user's overrides (ADR 0048). Helpers are in the
+  global `sub` table. The defaults so far: environment, input from
+  `/etc/vconsole.conf`, gaps and borders without blur or shadows, a small
+  Omarchy-derived binding set, and `dbus-update-activation-environment` at
+  start. `make hypr-check` runs `Hyprland --verify-config` on them. In the VM
+  test the session starts and `hyprctl` reports the defaults.
+
 Related: [[decision-map|Decision map]] · [[0031-session-manager|ADR 0031]] · [[0033-portals|ADR 0033]]

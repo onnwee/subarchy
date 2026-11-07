@@ -52,7 +52,8 @@ Plymouth, NetworkManager with the DNS trust policy, PipeWire, ufw.
 ## Phase 3: session and shell
 
 - [ ] SDDM theme, uwsm session, Hyprland defaults with layered user overrides
-      ([[0048-config-ownership|ADR 0048]])
+      ([[0048-config-ownership|ADR 0048]]); session, greeter and layered
+      defaults boot in the VM test since 2026-11-07, theme still to do
 - [ ] Plugin API design record ([[0035-plugin-api|ADR 0035]])
 - [ ] Quickshell shell: bar, launcher, notifications, OSD, polkit
 - [ ] Standalone QML lock program with the screensaver until input, and

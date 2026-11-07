@@ -39,4 +39,14 @@ Hyprland. Artwork and text are replaced (R4).
 - Two password prompts per boot: disk, then login.
 - SDDM must start the session through uwsm ([[0031-session-manager|ADR 0031]]).
 
+## Progress
+
+- 2026-11-07: SDDM runs its greeter inside Hyprland
+  (`/usr/lib/sddm/sddm.conf.d/subarchy.conf`, compositor config
+  `default/sddm/hyprland.lua`), as Omarchy does. The `SUBCULT` session
+  (`/usr/share/wayland-sessions/subarchy.desktop`) starts Hyprland through
+  uwsm (ADR 0031). The VM test sees the greeter on screen, then logs in with
+  a test-only autologin and finds Hyprland under `wayland-wm@`. The greeter
+  still uses SDDM's stock theme; the Subarchy QML theme is open.
+
 Related: [[decision-map|Decision map]] · [[0031-session-manager|ADR 0031]] · [[0013-boot-splash|ADR 0013]]
