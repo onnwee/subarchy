@@ -49,8 +49,8 @@ for path in usr/share/icons/subcult-cursor/index.theme usr/share/icons/subcult-c
   usr/share/icons/subcult-cursor/hyprcursors/default.hlc usr/share/icons/subcult-cursor/manifest.hl; do
   grep -qx "$path" <<<"$list" || fail "missing $path"
 done
-grep -qx usr/share/fontconfig/conf.avail/50-subarchy-roles.conf <<<"$list" || fail "missing font roles conf"
-[[ $(bsdtar -tvf "$pkg" etc/fonts/conf.d/50-subarchy-roles.conf 2>/dev/null) == *"-> /usr/share/fontconfig/conf.avail/50-subarchy-roles.conf" ]] ||
+grep -qx usr/share/fontconfig/conf.avail/44-subarchy-roles.conf <<<"$list" || fail "missing font roles conf"
+[[ $(bsdtar -tvf "$pkg" etc/fonts/conf.d/44-subarchy-roles.conf 2>/dev/null) == *"-> /usr/share/fontconfig/conf.avail/44-subarchy-roles.conf" ]] ||
   fail "font roles conf is not linked from /etc/fonts/conf.d"
 # Files other Arch packages own must not be in this package (neovim owns
 # /etc/xdg/nvim/sysinit.vim; default-cursors owns the default cursor theme).

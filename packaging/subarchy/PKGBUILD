@@ -99,9 +99,9 @@ package() {
   install -Dm644 "$root/default/nvim/colors/subcult-ink.lua" "$pkgdir/usr/share/nvim/site/colors/subcult-ink.lua"
   install -Dm644 "$root/default/nvim/plugin/subarchy-colors.lua" "$pkgdir/usr/share/nvim/site/plugin/subarchy-colors.lua"
 
-  install -Dm644 "$root/default/fontconfig/50-subarchy-roles.conf" "$pkgdir/usr/share/fontconfig/conf.avail/50-subarchy-roles.conf"
+  install -Dm644 "$root/default/fontconfig/44-subarchy-roles.conf" "$pkgdir/usr/share/fontconfig/conf.avail/44-subarchy-roles.conf"
   install -dm755 "$pkgdir/etc/fonts/conf.d"
-  ln -s /usr/share/fontconfig/conf.avail/50-subarchy-roles.conf "$pkgdir/etc/fonts/conf.d/50-subarchy-roles.conf"
+  ln -s /usr/share/fontconfig/conf.avail/44-subarchy-roles.conf "$pkgdir/etc/fonts/conf.d/44-subarchy-roles.conf"
   install -dm755 "$pkgdir/usr/share/icons"
   cp -a "$srcdir/subcult-cursor" "$pkgdir/usr/share/icons/subcult-cursor"
 
