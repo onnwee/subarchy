@@ -36,9 +36,9 @@ NVMe.
 | # | Decision | Omarchy 4.5 choice | Status |
 |---|---|---|---|
 | B1 | Bootloader | Limine | [[0007-bootloader\|ADR 0007]]: Limine, UEFI |
-| B2 | Initramfs generator and UKI | mkinitcpio, Limine hook | open |
-| B3 | Disk layout and filesystem | btrfs with subvolumes | open |
-| B4 | Disk encryption and unlock | LUKS2, passphrase | open |
+| B2 | Initramfs generator and UKI | mkinitcpio, Limine hook | [[0008-initramfs\|ADR 0008]]: mkinitcpio, systemd hooks, UKIs |
+| B3 | Disk layout and filesystem | btrfs with subvolumes | [[0009-disk-layout\|ADR 0009]]: btrfs subvolumes, 4 GiB ESP |
+| B4 | Disk encryption and unlock | LUKS2, passphrase | [[0010-disk-encryption\|ADR 0010]]: LUKS2 always, passphrase; TPM2/FIDO2 opt-in |
 | B5 | Snapshots and rollback | snapper with `limine-snapper-sync` boot entries | open |
 | B6 | Secure Boot | Not configured | open |
 | B7 | Boot splash | Plymouth | open |

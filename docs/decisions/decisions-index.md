@@ -32,5 +32,8 @@ order.
 | [[0005-firmware\|0005]] | Firmware and microcode |
 | [[0006-gpu-drivers\|0006]] | GPU drivers |
 | [[0007-bootloader\|0007]] | Bootloader |
+| [[0008-initramfs\|0008]] | Initramfs and kernel images |
+| [[0009-disk-layout\|0009]] | Disk layout and filesystem |
+| [[0010-disk-encryption\|0010]] | Disk encryption |
 
 Related: [[home|Docs home]]
