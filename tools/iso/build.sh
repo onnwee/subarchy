@@ -31,12 +31,17 @@ pacman -T go >/dev/null 2>&1 || nodeps=(--nodeps)
     makepkg --force --cleanbuild --noconfirm "${nodeps[@]}"
 ) >"$root/build/makepkg.log" 2>&1 || { tail -30 "$root/build/makepkg.log" >&2; exit 1; }
 pkg=$(find "$repo" -maxdepth 1 -name 'subarchy-*.pkg.tar.zst' -printf '%T@ %p\n' | sort -n | tail -1 | cut -d' ' -f2-)
-repo-add --quiet --remove --new "$repo/subarchy.db.tar.gz" "$pkg" >/dev/null
+repo-add --quiet "$repo/subarchy.db.tar.gz" "$pkg" >/dev/null
 
 echo ">> preparing the profile"
 mkdir -p "$profile"
 cp -a --no-preserve=ownership "$root/iso/profile/." "$profile/"
 sed -i "s|@LOCAL_REPO@|$repo|" "$profile/pacman.conf"
+# The installer and its package lists, run as `subarchy-install` on the image.
+lib="$profile/airootfs/usr/local/lib/subarchy-install"
+mkdir -p "$lib" "$profile/airootfs/usr/local/bin"
+cp -a --no-preserve=ownership "$root/install/subarchy-install" "$root/install/packages" "$lib/"
+ln -sfn ../lib/subarchy-install/subarchy-install "$profile/airootfs/usr/local/bin/subarchy-install"
 
 echo ">> running mkarchiso (work: $work, out: $out)"
 mkdir -p "$out"

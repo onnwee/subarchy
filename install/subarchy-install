@@ -1,0 +1,273 @@
+#!/usr/bin/env bash
+# Subarchy installer, scripted stage (ADR 0049). Runs on the live ISO.
+#
+# Usage: subarchy-install --config FILE --yes
+#
+# Wipes the disk named in the config and installs Subarchy to it:
+# GPT with a 4 GiB EFI partition and a LUKS2 root (ADR 0009, 0010), btrfs
+# subvolumes @ @home @log @pkg, linux-zen and linux-lts as unified kernel
+# images built by mkinitcpio's systemd hooks (ADR 0004, 0008), Limine
+# (ADR 0007), snapper for @ (ADR 0011), zram swap (ADR 0014) and
+# NetworkManager (ADR 0016). The TUI that asks the questions comes later and
+# writes this config file.
+#
+# Config: KEY=value lines, '#' comments. Keys:
+#   DISK                  whole disk to wipe, e.g. /dev/vda (required)
+#   HOSTNAME              (required)
+#   USERNAME              (required)
+#   USER_PASSWORD_FILE    file holding the user's password (required)
+#   LUKS_PASSPHRASE_FILE  file holding the disk passphrase (required)
+#   TIMEZONE              e.g. America/Chicago (default UTC)
+#   LOCALE                e.g. en_US.UTF-8 (default)
+#   KEYMAP                console keymap (default us)
+#   SUBARCHY_REPO         pacman Server URL for the [subarchy] repository (required)
+#   PACKAGE_CACHE         pacman cache directory to reuse (optional)
+#   KERNEL_CMDLINE_EXTRA  appended to the kernel command line (optional)
+set -euo pipefail
+
+here=$(dirname "$(realpath "$0")")
+target=/mnt
+log=/var/log/subarchy-install.log
+
+die() { echo "subarchy-install: $*" >&2; exit 1; }
+step() { echo ">> $*"; }
+
+declare -A conf=(
+  [TIMEZONE]=UTC [LOCALE]=en_US.UTF-8 [KEYMAP]=us
+  [PACKAGE_CACHE]="" [KERNEL_CMDLINE_EXTRA]=""
+)
+keys=" DISK HOSTNAME USERNAME USER_PASSWORD_FILE LUKS_PASSPHRASE_FILE TIMEZONE LOCALE KEYMAP SUBARCHY_REPO PACKAGE_CACHE KERNEL_CMDLINE_EXTRA "
+
+read_config() {
+  local line key value n=0
+  while IFS= read -r line || [[ -n $line ]]; do
+    n=$((n + 1))
+    [[ $line =~ ^[[:space:]]*(#|$) ]] && continue
+    [[ $line =~ ^([A-Z_]+)=(.*)$ ]] || die "$1:$n: expected KEY=value"
+    key=${BASH_REMATCH[1]} value=${BASH_REMATCH[2]}
+    [[ $keys == *" $key "* ]] || die "$1:$n: unknown key $key"
+    conf[$key]=$value
+  done <"$1"
+  for key in DISK HOSTNAME USERNAME USER_PASSWORD_FILE LUKS_PASSPHRASE_FILE SUBARCHY_REPO; do
+    [[ -n ${conf[$key]:-} ]] || die "$1: $key is required"
+  done
+  [[ ${conf[HOSTNAME]} =~ ^[a-z0-9][a-z0-9-]{0,62}$ ]] || die "HOSTNAME: lowercase letters, digits and dashes"
+  [[ ${conf[USERNAME]} =~ ^[a-z_][a-z0-9_-]{0,31}$ ]] || die "USERNAME: not a valid user name"
+  [[ -f /usr/share/zoneinfo/${conf[TIMEZONE]} ]] || die "TIMEZONE: unknown zone ${conf[TIMEZONE]}"
+  [[ -s ${conf[USER_PASSWORD_FILE]} ]] || die "USER_PASSWORD_FILE: missing or empty"
+  [[ -s ${conf[LUKS_PASSPHRASE_FILE]} ]] || die "LUKS_PASSPHRASE_FILE: missing or empty"
+}
+
+check_disk() {
+  local disk=${conf[DISK]}
+  [[ -b $disk ]] || die "DISK $disk is not a block device"
+  [[ $(lsblk -dno TYPE "$disk") == disk ]] || die "DISK $disk is not a whole disk"
+  if lsblk -no MOUNTPOINTS "$disk" | grep -q .; then
+    die "DISK $disk has mounted partitions"
+  fi
+  if [[ -e /run/archiso/bootmnt ]] && [[ $(findmnt -no SOURCE /run/archiso/bootmnt) == "$disk"* ]]; then
+    die "DISK $disk is the install medium"
+  fi
+}
+
+# partition DISK: 4 GiB ESP and the rest for LUKS (ADR 0009).
+partition() {
+  local disk=${conf[DISK]}
+  step "partitioning $disk"
+  wipefs --all --quiet "$disk"
+  sgdisk --zap-all --clear \
+    --new=1:0:+4G --typecode=1:ef00 --change-name=1:EFI \
+    --new=2:0:0 --typecode=2:8309 --change-name=2:subarchy \
+    "$disk" >/dev/null
+  udevadm settle
+  esp=$(lsblk -lnpo NAME "$disk" | sed -n 2p)
+  luks=$(lsblk -lnpo NAME "$disk" | sed -n 3p)
+  [[ -b $esp && -b $luks ]] || die "partitions did not appear"
+}
+
+encrypt() {
+  step "encrypting $luks (LUKS2)"
+  local key=${conf[LUKS_PASSPHRASE_FILE]}
+  # The passphrase file must not carry the trailing newline a user would not type.
+  cryptsetup luksFormat --type luks2 --batch-mode --label subarchy-luks \
+    --key-file <(printf '%s' "$(<"$key")") "$luks"
+  cryptsetup open --key-file <(printf '%s' "$(<"$key")") "$luks" root
+  luks_uuid=$(cryptsetup luksUUID "$luks")
+}
+
+make_filesystems() {
+  step "creating btrfs subvolumes"
+  mkfs.fat -F 32 -n EFI "$esp" >/dev/null
+  mkfs.btrfs --quiet --label subarchy /dev/mapper/root
+  mount /dev/mapper/root "$target"
+  local sv
+  for sv in @ @home @log @pkg; do
+    btrfs subvolume create "$target/$sv" >/dev/null
+  done
+  umount "$target"
+  local opts=compress=zstd:3,noatime
+  mount -o "$opts,subvol=@" /dev/mapper/root "$target"
+  mkdir -p "$target"/{boot,home,var/log,var/cache/pacman/pkg}
+  mount -o "$opts,subvol=@home" /dev/mapper/root "$target/home"
+  mount -o "$opts,subvol=@log" /dev/mapper/root "$target/var/log"
+  mount -o "$opts,subvol=@pkg" /dev/mapper/root "$target/var/cache/pacman/pkg"
+  mount -o umask=0077 "$esp" "$target/boot"
+}
+
+# Files mkinitcpio reads must exist before the kernels are installed, so the
+# first build already produces the UKIs.
+write_boot_config() {
+  step "writing boot configuration"
+  local cmdline="rd.luks.name=$luks_uuid=root rd.luks.options=discard root=/dev/mapper/root rootflags=subvol=@ rw"
+  [[ -n ${conf[KERNEL_CMDLINE_EXTRA]} ]] && cmdline+=" ${conf[KERNEL_CMDLINE_EXTRA]}"
+  install -d "$target"/etc/{kernel,mkinitcpio.conf.d,mkinitcpio.d} "$target/boot/EFI/Linux"
+  echo "$cmdline" >"$target/etc/kernel/cmdline"
+  echo "KEYMAP=${conf[KEYMAP]}" >"$target/etc/vconsole.conf"
+  cat >"$target/etc/mkinitcpio.conf.d/subarchy.conf" <<'EOF'
+# Subarchy (ADR 0008): systemd-based initramfs. Plymouth joins with the
+# boot splash.
+HOOKS=(base systemd autodetect microcode modconf kms keyboard sd-vconsole block sd-encrypt filesystems fsck)
+EOF
+  local kernel
+  for kernel in linux-zen linux-lts; do
+    cat >"$target/etc/mkinitcpio.d/$kernel.preset" <<EOF
+# Subarchy: one unified kernel image per kernel (ADR 0008).
+ALL_kver="/boot/vmlinuz-$kernel"
+PRESETS=('default')
+default_uki="/boot/EFI/Linux/subarchy-$kernel.efi"
+EOF
+  done
+}
+
+pacstrap_packages() {
+  step "installing packages"
+  local conf_file=/tmp/subarchy-pacman.conf
+  {
+    sed '/^\[core\]/,$d' /etc/pacman.conf
+    if [[ -n ${conf[PACKAGE_CACHE]} ]]; then
+      echo "CacheDir = ${conf[PACKAGE_CACHE]}"
+    fi
+    printf '[subarchy]\nSigLevel = Optional TrustAll\nServer = %s\n\n' "${conf[SUBARCHY_REPO]}"
+    printf '[core]\nInclude = /etc/pacman.d/mirrorlist\n\n[extra]\nInclude = /etc/pacman.d/mirrorlist\n'
+  } >"$conf_file"
+  local -a pkgs
+  mapfile -t pkgs < <(sed 's/#.*//; /^[[:space:]]*$/d' "$here/packages/base.txt")
+  local -a cache=()
+  [[ -n ${conf[PACKAGE_CACHE]} ]] && cache=(-c)
+  pacstrap -C "$conf_file" -K "${cache[@]}" "$target" "${pkgs[@]}"
+}
+
+configure_system() {
+  step "configuring the system"
+  genfstab -U "$target" >>"$target/etc/fstab"
+  echo "${conf[HOSTNAME]}" >"$target/etc/hostname"
+  ln -sf "/usr/share/zoneinfo/${conf[TIMEZONE]}" "$target/etc/localtime"
+  sed -i "s/^#\(${conf[LOCALE]//./\\.} \)/\1/" "$target/etc/locale.gen"
+  echo "LANG=${conf[LOCALE]}" >"$target/etc/locale.conf"
+  arch-chroot "$target" locale-gen >/dev/null
+  arch-chroot "$target" hwclock --systohc 2>/dev/null || true
+
+  cat >"$target/etc/systemd/zram-generator.conf" <<'EOF'
+# Subarchy (ADR 0014): compressed swap in RAM.
+[zram0]
+zram-size = ram / 2
+compression-algorithm = zstd
+EOF
+
+  arch-chroot "$target" systemctl enable --quiet NetworkManager systemd-timesyncd
+
+  local user=${conf[USERNAME]}
+  arch-chroot "$target" useradd --create-home --groups wheel --shell /usr/bin/zsh "$user"
+  printf '%s:%s\n' "$user" "$(<"${conf[USER_PASSWORD_FILE]}")" | arch-chroot "$target" chpasswd
+  arch-chroot "$target" passwd --lock root >/dev/null
+  install -m 0440 /dev/stdin "$target/etc/sudoers.d/10-wheel" <<<'%wheel ALL=(ALL:ALL) ALL'
+  # zsh's first-run wizard would greet the user otherwise.
+  touch "$target/home/$user/.zshrc"
+  arch-chroot "$target" chown "$user:$user" "/home/$user/.zshrc"
+}
+
+setup_snapper() {
+  step "configuring snapper"
+  arch-chroot "$target" snapper --no-dbus -c root create-config /
+  arch-chroot "$target" snapper --no-dbus -c root set-config \
+    NUMBER_LIMIT=5 NUMBER_LIMIT_IMPORTANT=5 TIMELINE_CREATE=no
+}
+
+install_limine() {
+  step "installing Limine"
+  install -Dm644 "$target/usr/share/limine/BOOTX64.EFI" "$target/boot/EFI/BOOT/BOOTX64.EFI"
+  install -Dm644 "$target/usr/share/limine/BOOTX64.EFI" "$target/boot/EFI/limine/BOOTX64.EFI"
+  cat >"$target/boot/limine.conf" <<'EOF'
+# Subarchy boot menu (ADR 0007). Snapshot entries are added by the update
+# command once limine-snapper-sync is packaged.
+timeout: 3
+serial: yes
+interface_branding: SUBCULT // Subarchy
+interface_branding_colour: 8b5cf6
+
+/Subarchy
+    protocol: efi
+    path: boot():/EFI/Linux/subarchy-linux-zen.efi
+
+/Subarchy (LTS kernel)
+    protocol: efi
+    path: boot():/EFI/Linux/subarchy-linux-lts.efi
+EOF
+  # A firmware entry of its own, so other disks' boot entries stay untouched
+  # (ADR 0049). Firmware without NVRAM support still finds EFI/BOOT.
+  if [[ -d /sys/firmware/efi/efivars ]]; then
+    local disk=${conf[DISK]}
+    efibootmgr --quiet --create --disk "$disk" --part 1 \
+      --label Subarchy --loader '\EFI\limine\BOOTX64.EFI' ||
+      echo "subarchy-install: could not add a firmware boot entry; EFI/BOOT fallback remains" >&2
+  fi
+  [[ -s $target/boot/EFI/Linux/subarchy-linux-zen.efi ]] || die "linux-zen UKI missing"
+  [[ -s $target/boot/EFI/Linux/subarchy-linux-lts.efi ]] || die "linux-lts UKI missing"
+}
+
+finish() {
+  step "finishing"
+  cp "$log" "$target/var/log/subarchy-install.log" 2>/dev/null || true
+  sync
+  umount -R "$target"
+  # Read-only snapshot of the fresh install for factory reset, outside
+  # snapper's rotation (ADR 0049, 0056).
+  local top=/run/subarchy-top
+  mkdir -p "$top"
+  mount -o subvolid=5 /dev/mapper/root "$top"
+  btrfs subvolume snapshot -r "$top/@" "$top/@factory" >/dev/null
+  umount "$top"
+  cryptsetup close root
+}
+
+main() {
+  local config="" yes=0
+  while (($#)); do
+    case $1 in
+      --config) config=${2:?--config needs a file}; shift 2 ;;
+      --yes) yes=1; shift ;;
+      -h | --help) sed -n '2,26p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+      *) die "unknown argument $1" ;;
+    esac
+  done
+  [[ -n $config ]] || die "--config FILE is required"
+  ((EUID == 0)) || die "run as root"
+  [[ -d /run/archiso ]] || die "run this from the Subarchy live ISO"
+  read_config "$config"
+  check_disk
+  ((yes)) || die "this wipes ${conf[DISK]}; pass --yes to continue"
+
+  exec > >(tee -a "$log") 2>&1
+  partition
+  encrypt
+  make_filesystems
+  write_boot_config
+  pacstrap_packages
+  configure_system
+  setup_snapper
+  install_limine
+  finish
+  echo "subarchy-install: done"
+}
+
+main "$@"

@@ -1,0 +1,33 @@
+# Packages pacstrapped onto every install (Phase 2: base system boots).
+# One package per line; '#' starts a comment. Desktop packages come later.
+
+# Foundation (ADR 0002, 0004, 0005)
+base
+linux-zen
+linux-lts
+linux-firmware
+intel-ucode
+amd-ucode
+
+# Boot, disk, snapshots (ADR 0007-0011)
+mkinitcpio
+systemd-ukify
+limine
+efibootmgr
+cryptsetup
+btrfs-progs
+dosfstools
+snapper
+
+# System (ADR 0014, 0016, 0024)
+zram-generator
+networkmanager
+wpa_supplicant
+sudo
+zsh
+man-db
+neovim
+git
+
+# Subarchy: subcult CLI, defaults, /etc/os-release
+subarchy

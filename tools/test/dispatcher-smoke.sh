@@ -37,7 +37,8 @@ set -e
 app="$(dirname "$bin")/subcult-app"
 if [[ -x $app ]]; then
   cp "$app" "$dir/"
-  "$bin" commands | grep -q 'subcult app install' || fail "compiled command routes not listed"
+  out=$("$bin" commands)
+  [[ $out == *"subcult app install"* ]] || fail "compiled command routes not listed"
   out=$(SUBCULT_APPS_SYSTEM="$(git rev-parse --show-toplevel)/default/apps.toml" "$bin" app show kitty)
   [[ $out == *"terminal"* ]] || fail "subcult app show: $out"
 fi
