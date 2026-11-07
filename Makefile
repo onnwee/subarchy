@@ -4,8 +4,19 @@ BUILD := build
 VERSION ?= 0.0.0
 LDFLAGS := -X git.subcult.tv/subculture-collective/subarchy/internal/dispatch.Version=$(VERSION)
 SHELL_SCRIPTS := $(shell git ls-files '*.sh' 'bin/subcult-*' 2>/dev/null)
+QT6BIN ?= /usr/lib/qt6/bin
+.DEFAULT_GOAL := verify
 
-.PHONY: verify fmt-check vet test build smoke shellcheck docs-check package iso iso-test install-test hypr-check
+.PHONY: verify fmt-check vet test build smoke shellcheck docs-check package iso iso-test install-test hypr-check shell-test shell-lint
+
+# Quickshell shell (shell and look design). Pure JavaScript models are tested
+# with Qt 6's qmltestrunner; QML files are linted. Needs qt6-declarative and,
+# for the shell's imports, quickshell; the CI shell job installs both.
+shell-test:
+	$(QT6BIN)/qmltestrunner -platform offscreen -input shell/tests
+
+shell-lint:
+	@files=$$(git ls-files 'shell/*.qml'); [ -z "$$files" ] || $(QT6BIN)/qmllint -I shell $$files
 
 verify: fmt-check vet test build smoke shellcheck docs-check hypr-check
 
