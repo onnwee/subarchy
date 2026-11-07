@@ -50,5 +50,8 @@ Built into the base system, lighter than Omarchy:
 - Agent CLIs install through mise or the app installer, not as system
   packages ([[0028-developer-toolchains|ADR 0028]]).
 - Dictation (voxtype on `sputnik`) is a separate app-list role.
+- Browser control comes from the Chromium extensions in
+  [[0042-browser|ADR 0042]]; desktop control from Subarchy's MCP server in
+  [[0059-agent-desktop-control|ADR 0059]].
 
 Related: [[decision-map|Decision map]] · [[0046-distribution-cli|ADR 0046]] · [[0044-default-apps|ADR 0044]]

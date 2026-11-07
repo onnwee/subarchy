@@ -83,5 +83,6 @@ order.
 | [[0056-quality-of-life\|0056]] | Quality-of-life features |
 | [[0057-launcher\|0057]] | Launcher |
 | [[0058-tailscale\|0058]] | Tailscale |
+| [[0059-agent-desktop-control\|0059]] | Agent desktop control |
 
 Related: [[home|Docs home]]
