@@ -31,7 +31,9 @@ for path in usr/bin/subcult usr/bin/sub usr/bin/subcult-app usr/bin/subcult-upda
   usr/lib/sysctl.d/90-subarchy-hardening.conf usr/lib/systemd/resolved.conf.d/50-subarchy.conf \
   usr/lib/NetworkManager/conf.d/50-subarchy-dns.conf usr/lib/systemd/coredump.conf.d/50-subarchy.conf \
   etc/sudoers.d/50-subarchy-update usr/lib/systemd/user/timers.target.wants/subcult-update-check.timer \
-  usr/lib/udev/rules.d/90-subarchy-power.rules usr/bin/subcult-power-auto; do
+  usr/lib/udev/rules.d/90-subarchy-power.rules usr/bin/subcult-power-auto \
+  usr/lib/udev/rules.d/70-subarchy-gpu.rules usr/share/uwsm/env-hyprland.d/50-subarchy-gpu \
+  usr/bin/subcult-gpu-env usr/bin/subcult-gpu-run usr/bin/subcult-gpu-mode; do
   grep -qx "$path" <<<"$list" || fail "missing $path"
 done
 

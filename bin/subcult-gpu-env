@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# subcult:summary=Print the session's GPU environment for uwsm
+# subcult:hidden=true
+#
+# ADR 0006, hybrid laptops. Sourced through
+# /usr/share/uwsm/env-hyprland.d/50-subarchy-gpu before Hyprland starts.
+#
+# Intel mode (default): Hyprland and apps render on the integrated GPU; the
+# NVIDIA GPU stays powered off unless `subcult gpu run` offloads an app.
+# NVIDIA mode: only when the user chose it (`subcult gpu mode nvidia`) and
+# the machine is on AC with two or more external monitors; otherwise the
+# session falls back to Intel mode. Machines without both GPUs print nothing.
+set -euo pipefail
+
+sysfs=${SUBCULT_SYSFS:-/sys}
+dev=${SUBCULT_DEV:-/dev}
+icd=${SUBCULT_ICD_DIR:-/usr/share/vulkan/icd.d}
+state=${SUBCULT_GPU_STATE:-${XDG_STATE_HOME:-$HOME/.local/state}/subcult/gpu-mode}
+
+igpu=$dev/dri/subcult-igpu
+dgpu=$dev/dri/subcult-dgpu
+[[ -e $igpu && -e $dgpu ]] || exit 0
+
+on_ac() {
+  local s battery=0 ac=0
+  for s in "$sysfs"/class/power_supply/*; do
+    [[ -r $s/type ]] || continue
+    case $(<"$s/type") in
+      Battery) [[ -r $s/scope && $(<"$s/scope") == Device ]] || battery=1 ;;
+      Mains | USB) [[ -r $s/online && $(<"$s/online") == 1 ]] && ac=1 ;;
+    esac
+  done
+  ((ac || !battery))
+}
+
+external_monitors() {
+  local c n=0
+  for c in "$sysfs"/class/drm/card*-*; do
+    [[ -r $c/status && $(<"$c/status") == connected ]] || continue
+    case ${c##*/} in
+      *-eDP-* | *-LVDS-* | *-DSI-*) ;; # the laptop panel
+      *) n=$((n + 1)) ;;
+    esac
+  done
+  echo "$n"
+}
+
+mode=intel
+if [[ -r $state && $(<"$state") == nvidia ]]; then
+  if on_ac && (($(external_monitors) >= 2)); then
+    mode=nvidia
+  else
+    echo "subcult-gpu-env: NVIDIA mode needs AC and two external monitors; starting in Intel mode" >&2
+  fi
+fi
+
+echo "export SUBCULT_GPU_MODE=$mode"
+if [[ $mode == nvidia ]]; then
+  # Hyprland renders on NVIDIA; the integrated GPU still drives the outputs.
+  echo "export AQ_DRM_DEVICES=$dgpu:$igpu"
+  echo "export LIBVA_DRIVER_NAME=nvidia"
+  echo "export __GLX_VENDOR_LIBRARY_NAME=nvidia"
+  echo "export NVD_BACKEND=direct"
+  exit 0
+fi
+
+echo "export AQ_DRM_DEVICES=$igpu"
+echo "export __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/50_mesa.json"
+for f in "$icd"/intel_icd.json "$icd"/intel_icd.x86_64.json "$icd"/radeon_icd.json "$icd"/radeon_icd.x86_64.json; do
+  if [[ -e $f ]]; then
+    echo "export VK_DRIVER_FILES=$f"
+    break
+  fi
+done

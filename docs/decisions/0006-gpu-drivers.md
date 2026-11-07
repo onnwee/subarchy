@@ -123,7 +123,17 @@ Implementation notes:
   `0x1e00` (Turing) up `nvidia-open-dkms`, `nvidia-utils`,
   `libva-nvidia-driver` and both kernels' headers. Maxwell and Pascal cards
   get a note and nouveau until the 580xx branch is packaged. `subcult hw
-  info` reports hybrid machines; the GPU modes, udev symlinks and `gpu-run`
-  are still to do.
+  info` reports hybrid machines.
+- 2026-11-07, later: GPU modes. A udev rule names the DRM device nodes
+  `/dev/dri/subcult-igpu` and `/dev/dri/subcult-dgpu` (checked against
+  `sputnik`'s `card2` Intel and `card1` NVIDIA). uwsm sources
+  `/usr/share/uwsm/env-hyprland.d/50-subarchy-gpu` before Hyprland starts,
+  which runs `subcult-gpu-env`: Intel mode pins `AQ_DRM_DEVICES`, Mesa EGL
+  and the Intel Vulkan driver; NVIDIA mode applies only if chosen with
+  `subcult gpu mode nvidia` and the machine is on AC with two or more
+  external monitors (DisplayLink counts), otherwise the session starts in
+  Intel mode. `subcult gpu run` offloads one app and drops the Intel pins
+  for it. `tools/test/gpu-test.sh` covers the cases; on real hybrid hardware
+  this is untested. The dock prompt waits for the shell's notifications.
 
 Related: [[decision-map|Decision map]] · [[0004-kernel|ADR 0004]] · [[0005-firmware|ADR 0005]]

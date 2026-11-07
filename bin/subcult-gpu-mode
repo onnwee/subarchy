@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# subcult:summary=Show or choose the desktop GPU for the next login (hybrid laptops)
+# subcult:args=[intel|nvidia]
+# subcult:examples=subcult gpu mode | subcult gpu mode nvidia
+#
+# ADR 0006. The choice applies at the next login; NVIDIA mode still falls
+# back to Intel unless the machine is on AC with two external monitors.
+set -euo pipefail
+
+state=${SUBCULT_GPU_STATE:-${XDG_STATE_HOME:-$HOME/.local/state}/subcult/gpu-mode}
+
+case ${1:-} in
+  "")
+    chosen=intel
+    [[ -r $state ]] && chosen=$(<"$state")
+    echo "chosen:  $chosen"
+    echo "running: ${SUBCULT_GPU_MODE:-unknown (not a hybrid session)}"
+    ;;
+  intel | nvidia)
+    mkdir -p "$(dirname "$state")"
+    echo "$1" >"$state"
+    echo "Desktop GPU set to $1. Log out and back in to switch."
+    ;;
+  *)
+    echo "Usage: subcult gpu mode [intel|nvidia]" >&2
+    exit 2
+    ;;
+esac
