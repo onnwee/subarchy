@@ -66,7 +66,33 @@ def stop(proc: subprocess.Popen, log) -> None:
     log.close()
 
 
-def install(iso: Path, disk: Path, vars_file: Path, timeout: float) -> bool:
+def guided(serial: Serial, timeout: float) -> str:
+    """Answer subarchy-setup's questions on the serial console."""
+    serial.buf = b""
+    serial.send(
+        "subarchy-setup --cmdline-extra 'console=tty0 console=ttyS0,115200'"
+        " --package-cache /run/pkgcache; echo EXIT=$?\n"
+    )
+    answers = [
+        (rb"disk number: ", "1"),
+        (rb"Computer name \[subarchy\]: ", "subarchy-vm"),
+        (rb"Your user name: ", USER),
+        (rb"Password for \w+: ", PASSWORD),
+        (rb"Password for \w+ again: ", PASSWORD),
+        (rb"Disk passphrase: ", PASSPHRASE),
+        (rb"Disk passphrase again: ", PASSPHRASE),
+        (rb"Time zone \[UTC\]: ", "America/Chicago"),
+        (rb"Keyboard layout \[us\]: ", ""),
+        (rb"Type vda to erase it", "vda"),
+    ]
+    for prompt, answer in answers:
+        serial.expect(re.compile(prompt), 60)
+        serial.send(answer + "\n")
+    out = serial.expect(re.compile(rb"EXIT=\d+"), timeout)
+    return ANSI.sub("", out.decode(errors="replace"))
+
+
+def install(iso: Path, disk: Path, vars_file: Path, timeout: float, guided_setup: bool = False) -> bool:
     disk.unlink(missing_ok=True)
     subprocess.run(["qemu-img", "create", "-q", "-f", "qcow2", str(disk), "24G"], check=True)
     shutil.copy(OVMF_VARS, vars_file)
@@ -97,10 +123,14 @@ def install(iso: Path, disk: Path, vars_file: Path, timeout: float) -> bool:
             f" && mount -t 9p -o {opts} pkgcache /run/pkgcache && echo MOUNTED"
         )
         serial.run("systemctl is-system-running --wait >/dev/null; pacman-key --init >/dev/null 2>&1; true", timeout=180)
-        out = serial.run(
-            "/run/src/install/subarchy-install --config /run/src/build/vm/install.conf --yes; echo EXIT=$?",
-            timeout=timeout,
-        )
+        if guided_setup:
+            # The image's own subarchy-setup, installer and repository.
+            out = guided(serial, timeout)
+        else:
+            out = serial.run(
+                "/run/src/install/subarchy-install --config /run/src/build/vm/install.conf --yes; echo EXIT=$?",
+                timeout=timeout,
+            )
         ok = "subarchy-install: done" in out and "EXIT=0" in out
         print(f"install-test: installer {'finished' if ok else 'FAILED'} after {time.monotonic() - started:.0f}s")
         if not ok:
@@ -309,6 +339,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("iso", type=Path)
     ap.add_argument("--skip-install", action="store_true", help="boot the existing build/vm disk only")
+    ap.add_argument("--guided", action="store_true", help="install by answering subarchy-setup from the image")
     ap.add_argument("--timeout-install", type=float, default=2400)
     args = ap.parse_args()
     for f in (args.iso, OVMF_CODE, OVMF_VARS, ROOT / "build" / "repo" / "subarchy.db"):
@@ -317,7 +348,7 @@ def main() -> int:
             return 2
     disk, vars_file = VM / "disk.qcow2", VM / "OVMF_VARS.fd"
     write_config()
-    if not args.skip_install and not install(args.iso, disk, vars_file, args.timeout_install):
+    if not args.skip_install and not install(args.iso, disk, vars_file, args.timeout_install, args.guided):
         return 1
     if not boot(disk, vars_file):
         return 1

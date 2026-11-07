@@ -74,5 +74,11 @@ Decision map item R2. Accepted 2026-11-06.
   takes the passphrase on the serial console and reaches `running`
   (`make install-test`). Still to come: the TUI, snapshot boot entries,
   Plymouth, the desktop and the offline package cache.
+- 2026-11-07, later: snapshot entries, Plymouth and the desktop session
+  landed. `subarchy-setup` asks the questions with plain line prompts instead
+  of a full-screen TUI, so it works on any console including serial; the VM
+  test drives it end to end with `--guided`. The image carries Subarchy's own
+  packages in `/opt/subarchy/repo`; Arch packages still come from the
+  network, so the offline cache is still open.
 
 Related: [[decision-map|Decision map]] · [[0050-hardware-support|ADR 0050]]
