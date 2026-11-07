@@ -25,19 +25,12 @@ ShellRoot {
     // Used by the tests: which outputs have a bar, the power state, and the
     // interval each widget timer runs at right now.
     function status(): string {
-      const intervals = {}
-      for (const id in WidgetIndex.widgets) {
-        const m = WidgetIndex.widgets[id].manifest
-        const timers = (m.cost && m.cost.timers) || []
-        for (const t of timers)
-          intervals[id + "." + t.name] = Power.interval(m, t.name)
-      }
       return JSON.stringify({
         bars: bars.instances.map(b => b.screen.name),
         widgets: Object.keys(WidgetIndex.widgets).length,
         loaded: bars.instances.reduce((acc, b) => { acc[b.screen.name] = (b as Bar).loadedIds(); return acc }, {}),
         onBattery: Power.onBattery,
-        intervals: intervals
+        intervals: Power.report()
       })
     }
   }

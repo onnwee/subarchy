@@ -20,7 +20,25 @@ Item {
   readonly property var settings: manifest
     ? ConfigModel.merge(manifest.settings || {}, (Config.bar.widgets || {})[widgetId] || {})
     : ({})
-  readonly property var shellServices: ({ theme: Theme, power: Power, config: Config, style: Style, manifest: manifest })
+  // What the widget gets as `shell` (ADR 0068): power and config are bound
+  // to this widget, so it asks for its own timers by name and can write
+  // only its own settings.
+  readonly property var shellServices: ({ theme: Theme, style: Style, power: powerApi, config: configApi, manifest: manifest })
+
+  QtObject {
+    id: powerApi
+    readonly property bool onBattery: Power.onBattery
+    function interval(timerName: string): int {
+      return Power.interval(host.entry ? host.entry.manifest : null, timerName)
+    }
+  }
+
+  QtObject {
+    id: configApi
+    function set(key: string, value: var): bool {
+      return Config.set(host.widgetId, key, value)
+    }
+  }
 
   readonly property BarWidget widgetItem: widget.item as BarWidget
   readonly property PanelBase panelItem: panelLoader.item as PanelBase
@@ -35,13 +53,25 @@ Item {
       console.warn("subcult shell: unknown widget", widgetId)
       warned = true
     }
+    Qt.callLater(host.load)
+  }
+  Component.onCompleted: Qt.callLater(host.load)
+
+  // The widget is created with its real mode, screen, settings and shell
+  // (initial properties), so its own Component.onCompleted already sees
+  // them; the bindings follow in onLoaded.
+  function load() {
+    if (!host.entry) {
+      widget.source = ""
+      return
+    }
+    widget.setSource(Qt.resolvedUrl("widgets/" + host.entry.dir + "/Widget.qml"),
+      { mode: host.mode, screen: host.screen, settings: host.settings, shell: host.shellServices })
   }
 
   Loader {
     id: widget
     anchors.fill: parent
-    active: host.entry !== null
-    source: host.entry ? Qt.resolvedUrl("widgets/" + host.entry.dir + "/Widget.qml") : ""
     onLoaded: {
       const w = item as BarWidget
       if (!w) {
@@ -59,8 +89,8 @@ Item {
   PopupWindow {
     id: panel
     visible: host.panelOpen && panelLoader.status === Loader.Ready
-    anchor.item: host
-    anchor.rect.y: host.height
+    anchor.item: host // qmllint disable missing-property
+    anchor.rect.y: host.height // qmllint disable unqualified unresolved-type
     implicitWidth: host.panelItem ? host.panelItem.implicitWidth : 1
     implicitHeight: host.panelItem ? host.panelItem.implicitHeight : 1
     color: "transparent"
@@ -68,7 +98,11 @@ Item {
     Loader {
       id: panelLoader
       active: host.panelOpen && host.entry !== null && host.manifest.panel === true
-      source: active ? Qt.resolvedUrl("widgets/" + host.entry.dir + "/Panel.qml") : ""
+      onActiveChanged: {
+        if (active)
+          setSource(Qt.resolvedUrl("widgets/" + host.entry.dir + "/Panel.qml"),
+            { settings: host.settings, shell: host.shellServices })
+      }
       onLoaded: {
         const p = item as PanelBase
         if (!p) {

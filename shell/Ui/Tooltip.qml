@@ -11,8 +11,8 @@ PopupWindow {
   property bool shown: false
 
   visible: shown
-  anchor.item: target
-  anchor.rect.y: target.height + 2
+  anchor.item: target // qmllint disable missing-property
+  anchor.rect.y: target.height + 2 // qmllint disable unqualified unresolved-type
   implicitWidth: label.implicitWidth + 2 * Style.padding
   implicitHeight: label.implicitHeight + Style.padding
   color: Theme.mantle
