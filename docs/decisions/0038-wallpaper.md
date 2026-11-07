@@ -4,7 +4,7 @@ type: decision
 status: accepted
 adr: 38
 created: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-07
 tags: [decision, adr, shell, theme]
 aliases: [ADR 0038, D6, Wallpaper]
 ---
@@ -32,11 +32,38 @@ images in the `subcult-minimal` theme on `sputnik`
   riso, midnight, botanical, noir, cosmic, y2k, punk, broadcast, gouache);
 - the seven SUBCULT poster wallpapers from the rice at 2560×1440.
 
-The 1586×992 images will look soft on `sputnik`'s 3456×2160 panel and the
-2560×1440 monitor. Upscale or re-export them at higher resolution before
-shipping. At 254 MB they do not belong in this Git repository; they ship as
-a separate `subarchy-wallpapers` package built from an assets store (Git LFS
-or release files).
+The 1586×992 images look soft on `sputnik`'s 3456×2160 panel and the
+2560×1440 monitor, so they are upscaled before shipping. They ship as a
+separate `subarchy-wallpapers` package built from an assets store (Git LFS
+or release files), not from this Git repository.
+
+### First set: 25 at 4K (2026-11-07)
+
+On the owner's request, 25 images were picked across the series and upscaled
+on `sputnik`; the other 84 wait:
+Real-ESRGAN `realesrgan-x4plus` (ncnn-vulkan, Intel Iris Xe) at 4×, then
+ImageMagick Lanczos to exactly 3840×2400 (16:10, the illustrations' own
+ratio), 8-bit PNG, metadata stripped. Output: 262 MB in
+`~/Pictures/subcult-wallpapers-4k/`, numbered in rotation order:
+
+| # | Image | # | Image |
+|---|---|---|---|
+| 01 | acid-negative-space | 14 | noir-platform-terminal |
+| 02 | acid-hinge-cut | 15 | cosmic-orrery-ferry |
+| 03 | ghost-tape-tidal-current | 16 | cosmic-desert-eclipse-station |
+| 04 | riso-spool-rainy-listening | 17 | ova-window-shift |
+| 05 | midnight-tide-archive | 18 | ova-dockside-dawn |
+| 06 | midnight-bench-stencil | 19 | citypop-beach-broadcast |
+| 07 | lunar-stitched-mark | 20 | citypop-first-light-balcony |
+| 08 | moth-botanical-sigil | 21 | y2k-last-connection |
+| 09 | cel-arkhiv-last-train | 22 | ink-listening-carriage |
+| 10 | cel-arkhiv-harbor-crossing | 23 | punk-bookmobile-gig |
+| 11 | watercolor-after-the-rain | 24 | broadcast-rooftop-transmitter |
+| 12 | watercolor-winter-print-night | 25 | gouache-window-practice |
+| 13 | noir-phosphor-monogram | | |
+
+01 is the default. The owner has not yet looked at the upscaled results for
+artefacts; review them before packaging.
 
 ## Options considered
 
