@@ -33,4 +33,13 @@ code=$?
 set -e
 [[ $code -eq 127 ]] || fail "unknown command exit $code"
 
+# A compiled command next to the dispatcher describes its routes itself.
+app="$(dirname "$bin")/subcult-app"
+if [[ -x $app ]]; then
+  cp "$app" "$dir/"
+  "$bin" commands | grep -q 'subcult app install' || fail "compiled command routes not listed"
+  out=$(SUBCULT_APPS_SYSTEM="$(git rev-parse --show-toplevel)/default/apps.toml" "$bin" app show kitty)
+  [[ $out == *"terminal"* ]] || fail "subcult app show: $out"
+fi
+
 echo "smoke: ok"

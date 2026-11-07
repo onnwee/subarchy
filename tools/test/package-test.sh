@@ -24,7 +24,8 @@ pkg=$(find "$work/out" -name 'subarchy-*.pkg.tar.zst' | head -1)
 [[ -n $pkg ]] || fail "no package produced"
 
 list=$(bsdtar -tf "$pkg")
-for path in usr/bin/subcult usr/bin/sub etc/os-release usr/share/subcult/default/ usr/share/licenses/subarchy/LICENSE; do
+for path in usr/bin/subcult usr/bin/sub usr/bin/subcult-app etc/os-release \
+  usr/share/subcult/default/apps.toml usr/share/licenses/subarchy/LICENSE; do
   grep -qx "$path" <<<"$list" || fail "missing $path"
 done
 
@@ -34,7 +35,9 @@ for want in 'NAME="Subarchy"' 'ID=subarchy' 'ID_LIKE=arch' 'VERSION_ID=0.0.0'; d
 done
 
 mkdir "$work/root"
-bsdtar -xf "$pkg" -C "$work/root" usr/bin
+bsdtar -xf "$pkg" -C "$work/root" usr
 "$work/root/usr/bin/subcult" --version | grep -qx 'subcult 0.0.0' || fail "subcult --version"
+"$work/root/usr/bin/subcult-app" validate "$work/root/usr/share/subcult/default/apps.toml" >/dev/null ||
+  fail "shipped app catalogue does not validate"
 
 echo "package-test: ok ($(basename "$pkg"), $(wc -l <<<"$list") entries)"

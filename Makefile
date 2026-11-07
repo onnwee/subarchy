@@ -20,7 +20,7 @@ test:
 
 build:
 	mkdir -p $(BUILD)
-	CGO_ENABLED=0 $(GO) build -trimpath -ldflags '$(LDFLAGS)' -o $(BUILD)/subcult ./cmd/subcult
+	CGO_ENABLED=0 $(GO) build -trimpath -ldflags '$(LDFLAGS)' -o $(BUILD)/ ./cmd/...
 
 smoke: build
 	tools/test/dispatcher-smoke.sh $(BUILD)/subcult

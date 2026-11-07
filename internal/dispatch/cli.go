@@ -48,7 +48,8 @@ func (a *App) Run(args []string) int {
 			a.commandHelp(cmd)
 			return 0
 		}
-		if err := a.Exec(cmd.Path, append([]string{cmd.Binary}, rest...)); err != nil {
+		argv := append([]string{cmd.Binary}, cmd.ArgPrefix...)
+		if err := a.Exec(cmd.Path, append(argv, rest...)); err != nil {
 			fmt.Fprintf(a.Stderr, "subcult: run %s: %v\n", cmd.Binary, err)
 			return 126
 		}

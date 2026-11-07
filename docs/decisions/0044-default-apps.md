@@ -78,7 +78,10 @@ Subarchy reads them from the list instead.
 - How apps from outside pacman (AppImages, custom builds) are handled. T3 Code,
   the first case, turned out to have AUR packages (`t3code-bin`,
   `t3code-nightly-bin`).
-- The list file's machine-readable format, once the owner's list exists.
+- ~~The list file's machine-readable format~~: `default/apps.toml`
+  (schema 1), read by `subcult app` (`cmd/subcult-app`, `internal/apps`)
+  since 2026-11-07. User overrides go in `~/.config/subcult/apps.toml`;
+  default choices in `~/.config/subcult/defaults.toml`.
 
 ## Consequences
 
