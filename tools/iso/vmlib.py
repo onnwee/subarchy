@@ -19,6 +19,36 @@ PROMPT = re.compile(rb"SUBARCHY-READY> ")
 ANSI = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(\x07|\x1b\\)|\x1b[()][0-9A-B]|\r")
 
 
+def screendump(qmp_socket: Path, out: Path, timeout: float = 10) -> None:
+    """Save the guest display as a PNG through QEMU's QMP socket."""
+    import json
+    import socket
+
+    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
+        s.settimeout(timeout)
+        s.connect(str(qmp_socket))
+        f = s.makefile("rw")
+        f.readline()  # greeting
+        for cmd in (
+            {"execute": "qmp_capabilities"},
+            {"execute": "screendump", "arguments": {"filename": str(out), "format": "png"}},
+        ):
+            f.write(json.dumps(cmd) + "\n")
+            f.flush()
+            while True:
+                reply = json.loads(f.readline())
+                if "return" in reply:
+                    break
+                if "error" in reply:
+                    raise RuntimeError(f"QMP {cmd['execute']}: {reply['error']}")
+
+
+def distinct_colours(png: Path) -> int:
+    """Number of distinct colours in an image (ImageMagick); 1 means blank."""
+    out = subprocess.run(["magick", "identify", "-format", "%k", str(png)], capture_output=True, text=True, check=True)
+    return int(out.stdout.strip())
+
+
 def qemu_command(vars_file: Path, *extra: str, memory: str = "4096") -> list[str]:
     """Base QEMU command line: q35, OVMF, serial on stdio, user networking."""
     cmd = [

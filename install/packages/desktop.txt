@@ -1,0 +1,29 @@
+# Desktop session packages (Phase 3). Installed with base.txt.
+
+# Session: Wayland, Hyprland under uwsm, SDDM (ADR 0029-0033)
+hyprland
+uwsm
+sddm
+qt6-wayland
+xdg-desktop-portal-hyprland
+xdg-desktop-portal-gtk
+xdg-terminal-exec
+polkit
+gnome-keyring
+
+# Audio (ADR 0017)
+pipewire
+wireplumber
+pipewire-pulse
+pipewire-alsa
+pipewire-jack
+realtime-privileges
+
+# Terminal (ADR 0040)
+kitty
+
+# Fonts (ADR 0039). Space Grotesk and Oswald need packaging first.
+ttf-jetbrains-mono-nerd
+noto-fonts
+noto-fonts-cjk
+noto-fonts-emoji

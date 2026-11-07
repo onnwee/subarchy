@@ -5,9 +5,9 @@ VERSION ?= 0.0.0
 LDFLAGS := -X git.subcult.tv/subculture-collective/subarchy/internal/dispatch.Version=$(VERSION)
 SHELL_SCRIPTS := $(shell git ls-files '*.sh' 'bin/subcult-*' 2>/dev/null)
 
-.PHONY: verify fmt-check vet test build smoke shellcheck docs-check package iso iso-test install-test
+.PHONY: verify fmt-check vet test build smoke shellcheck docs-check package iso iso-test install-test hypr-check
 
-verify: fmt-check vet test build smoke shellcheck docs-check
+verify: fmt-check vet test build smoke shellcheck docs-check hypr-check
 
 fmt-check:
 	@out=$$(gofmt -l $$(git ls-files '*.go')); if [ -n "$$out" ]; then echo "gofmt needed:"; echo "$$out"; exit 1; fi
@@ -31,6 +31,14 @@ shellcheck:
 docs-check:
 	python3 tools/obsidian/check-vault.py
 	python3 -m py_compile tools/inventory/collect.py tools/obsidian/check-vault.py tools/obsidian/install-plugins.py tools/iso/boot-test.py tools/iso/install-test.py tools/iso/vmlib.py
+
+# Checks the Hyprland Lua defaults where Hyprland is installed (not in CI).
+hypr-check:
+	@if command -v Hyprland >/dev/null; then \
+	  for c in default/hypr/user-hyprland.lua default/sddm/hyprland.lua; do \
+	    SUBCULT_PATH=$(CURDIR) Hyprland --verify-config -c $$c 2>&1 | grep -qx 'config ok' || { echo "hypr-check: $$c"; exit 1; }; \
+	  done; echo "hypr-check: ok"; \
+	else echo "hypr-check: Hyprland not installed, skipped"; fi
 
 # Builds the subarchy pacman package and checks its contents (Arch only).
 package:

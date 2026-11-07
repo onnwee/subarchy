@@ -23,7 +23,7 @@ import sys
 import time
 from pathlib import Path
 
-from vmlib import OVMF_CODE, OVMF_VARS, Serial, qemu_command
+from vmlib import OVMF_CODE, OVMF_VARS, Serial, distinct_colours, qemu_command, screendump
 
 ROOT = Path(__file__).resolve().parents[2]
 VM = ROOT / "build" / "vm"
@@ -116,8 +116,20 @@ def install(iso: Path, disk: Path, vars_file: Path, timeout: float) -> bool:
         stop(proc, log)
 
 
+def wait_for(serial: Serial, command: str, seconds: int = 60) -> str:
+    """Poll a shell condition in the guest for up to `seconds`."""
+    return serial.run(
+        f"for i in $(seq {seconds}); do {command} && break; sleep 1; done", timeout=seconds + 30
+    )
+
+
 def boot(disk: Path, vars_file: Path) -> bool:
-    cmd = qemu_command(vars_file, "-drive", f"file={disk},if=virtio,format=qcow2")
+    qmp = VM / "qmp.sock"
+    qmp.unlink(missing_ok=True)
+    cmd = qemu_command(
+        vars_file, "-drive", f"file={disk},if=virtio,format=qcow2",
+        "-qmp", f"unix:{qmp},server=on,wait=off",
+    )
     started = time.monotonic()
     proc, serial, log = start(cmd, VM / "boot-serial.log")
     try:
@@ -158,6 +170,29 @@ def boot(disk: Path, vars_file: Path) -> bool:
             "state": serial.run("systemctl is-system-running --wait", timeout=120),
             "failed": serial.run("systemctl --failed --no-legend --plain | awk '{print $1}'"),
         }
+        # Desktop (ADR 0029-0032): the SDDM greeter, then a test-only
+        # autologin into the uwsm/Hyprland session.
+        results["greeter"] = wait_for(serial, "pgrep -a sddm-greeter", 60)
+        time.sleep(3)
+        screendump(qmp, VM / "greeter.png")
+        results["greeter_colours"] = distinct_colours(VM / "greeter.png")
+        serial.run(
+            f"echo {PASSWORD} | sudo -S -p '' -v && sudo mkdir -p /etc/sddm.conf.d"
+            f" && printf '[Autologin]\\nUser={USER}\\nSession=subarchy.desktop\\n'"
+            f" | sudo tee /etc/sddm.conf.d/zz-install-test.conf >/dev/null && sudo systemctl restart sddm"
+        )
+        results["hyprland"] = wait_for(serial, f"pgrep -u {USER} -x Hyprland", 90)
+        results["hypr_opts"] = wait_for(
+            serial,
+            "hyprctl -i 0 getoption general:gaps_out 2>/dev/null | grep -q gap "
+            "&& hyprctl -i 0 getoption general:gaps_out && hyprctl -i 0 binds | grep 'description: Terminal'",
+            60,
+        )
+        results["uwsm"] = serial.run("systemctl --user list-units --plain --no-legend 'wayland-wm@*'")
+        time.sleep(3)
+        screendump(qmp, VM / "session.png")
+        results["session_colours"] = distinct_colours(VM / "session.png")
+        serial.run(f"{sudo} rm -f /etc/sddm.conf.d/zz-install-test.conf")
         serial.send(f"{sudo} poweroff\n")
     except TimeoutError as e:
         proc.kill()
@@ -187,9 +222,18 @@ def boot(disk: Path, vars_file: Path) -> bool:
         "update took a snapshot": "subcult update" in r["update"].split("UPDATE_EXIT")[-1],
         "@factory snapshot": any(line.endswith(" path @factory") for line in r["subvols"].splitlines()),
         "system running or degraded": state in ("running", "degraded"),
+        "SDDM greeter running": "sddm-greeter" in r["greeter"],
+        "greeter drew something": r["greeter_colours"] > 1,
+        "Hyprland session started": r["hyprland"].strip() != "",
+        "session runs under uwsm": "wayland-wm@" in r["uwsm"],
+        "Subarchy Hyprland defaults loaded": "gap data: 8 8 8 8" in r["hypr_opts"]
+        and "description: Terminal" in r["hypr_opts"],
+        "session drew something": r["session_colours"] > 1,
     }
     for name, ok in checks.items():
         print(f"install-test: {'ok  ' if ok else 'FAIL'} {name}")
+    print(f"install-test: screenshots {VM / 'greeter.png'}, {VM / 'session.png'}"
+          f" ({r['greeter_colours']} and {r['session_colours']} colours)")
     if r["failed"].strip():
         print("install-test: failed units: " + ", ".join(r["failed"].split()))
     print(f"install-test: kernel {r['kernel'].strip()}, state {state}")

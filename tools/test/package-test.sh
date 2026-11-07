@@ -25,7 +25,9 @@ pkg=$(find "$work/out" -name 'subarchy-*.pkg.tar.zst' | head -1)
 
 list=$(bsdtar -tf "$pkg")
 for path in usr/bin/subcult usr/bin/sub usr/bin/subcult-app usr/bin/subcult-update etc/os-release \
-  usr/share/subcult/default/apps.toml usr/share/subcult/migrations/ usr/share/licenses/subarchy/LICENSE; do
+  usr/share/subcult/default/apps.toml usr/share/subcult/migrations/ usr/share/licenses/subarchy/LICENSE \
+  usr/share/subcult/default/hypr/subcult.lua usr/share/subcult/default/hypr/user-hyprland.lua \
+  usr/share/wayland-sessions/subarchy.desktop usr/lib/sddm/sddm.conf.d/subarchy.conf; do
   grep -qx "$path" <<<"$list" || fail "missing $path"
 done
 

@@ -20,6 +20,7 @@
 #   TIMEZONE              e.g. America/Chicago (default UTC)
 #   LOCALE                e.g. en_US.UTF-8 (default)
 #   KEYMAP                console keymap (default us)
+#   XKB_LAYOUT            desktop keyboard layout (default us)
 #   SUBARCHY_REPO         pacman Server URL for the [subarchy] repository (required)
 #   PACKAGE_CACHE         pacman cache directory to reuse (optional)
 #   KERNEL_CMDLINE_EXTRA  appended to the kernel command line (optional)
@@ -33,10 +34,10 @@ die() { echo "subarchy-install: $*" >&2; exit 1; }
 step() { echo ">> $*"; }
 
 declare -A conf=(
-  [TIMEZONE]=UTC [LOCALE]=en_US.UTF-8 [KEYMAP]=us
+  [TIMEZONE]=UTC [LOCALE]=en_US.UTF-8 [KEYMAP]=us [XKB_LAYOUT]=us
   [PACKAGE_CACHE]="" [KERNEL_CMDLINE_EXTRA]=""
 )
-keys=" DISK HOSTNAME USERNAME USER_PASSWORD_FILE LUKS_PASSPHRASE_FILE TIMEZONE LOCALE KEYMAP SUBARCHY_REPO PACKAGE_CACHE KERNEL_CMDLINE_EXTRA "
+keys=" DISK HOSTNAME USERNAME USER_PASSWORD_FILE LUKS_PASSPHRASE_FILE TIMEZONE LOCALE KEYMAP XKB_LAYOUT SUBARCHY_REPO PACKAGE_CACHE KERNEL_CMDLINE_EXTRA "
 
 read_config() {
   local line key value n=0
@@ -122,7 +123,7 @@ write_boot_config() {
   [[ -n ${conf[KERNEL_CMDLINE_EXTRA]} ]] && cmdline+=" ${conf[KERNEL_CMDLINE_EXTRA]}"
   install -d "$target"/etc/{kernel,mkinitcpio.conf.d,default}
   echo "$cmdline" >"$target/etc/kernel/cmdline"
-  echo "KEYMAP=${conf[KEYMAP]}" >"$target/etc/vconsole.conf"
+  printf "KEYMAP=%s\nXKBLAYOUT=%s\n" "${conf[KEYMAP]}" "${conf[XKB_LAYOUT]}" >"$target/etc/vconsole.conf"
   cat >"$target/etc/mkinitcpio.conf.d/subarchy.conf" <<'EOF'
 # Subarchy (ADR 0008): systemd-based initramfs; sd-btrfs-overlayfs makes
 # read-only snapshots bootable (ADR 0011). Plymouth joins with the
@@ -167,7 +168,7 @@ pacstrap_packages() {
     printf '[core]\nInclude = /etc/pacman.d/mirrorlist\n\n[extra]\nInclude = /etc/pacman.d/mirrorlist\n'
   } >"$conf_file"
   local -a pkgs
-  mapfile -t pkgs < <(sed 's/#.*//; /^[[:space:]]*$/d' "$here/packages/base.txt")
+  mapfile -t pkgs < <(sed 's/#.*//; /^[[:space:]]*$/d' "$here/packages/base.txt" "$here/packages/desktop.txt")
   local -a cache=()
   [[ -n ${conf[PACKAGE_CACHE]} ]] && cache=(-c)
   pacstrap -C "$conf_file" -K "${cache[@]}" "$target" "${pkgs[@]}"
@@ -190,10 +191,10 @@ zram-size = ram / 2
 compression-algorithm = zstd
 EOF
 
-  arch-chroot "$target" systemctl enable --quiet NetworkManager systemd-timesyncd
+  arch-chroot "$target" systemctl enable --quiet NetworkManager systemd-timesyncd sddm
 
   local user=${conf[USERNAME]}
-  arch-chroot "$target" useradd --create-home --groups wheel --shell /usr/bin/zsh "$user"
+  arch-chroot "$target" useradd --create-home --groups wheel,realtime --shell /usr/bin/zsh "$user"
   printf '%s:%s\n' "$user" "$(<"${conf[USER_PASSWORD_FILE]}")" | arch-chroot "$target" chpasswd
   arch-chroot "$target" passwd --lock root >/dev/null
   install -m 0440 /dev/stdin "$target/etc/sudoers.d/10-wheel" <<<'%wheel ALL=(ALL:ALL) ALL'
@@ -202,6 +203,12 @@ EOF
   arch-chroot "$target" chown "$user:$user" "/home/$user/.zshrc"
   # A new user starts current: migrations shipped so far are already done.
   arch-chroot "$target" runuser -u "$user" -- subcult-update migrate --mark-all
+  # The user's Hyprland config: Subarchy's defaults plus room for overrides
+  # (ADR 0048). Written once; updates never touch it.
+  arch-chroot "$target" runuser -u "$user" -- install -Dm644 \
+    /usr/share/subcult/default/hypr/user-hyprland.lua "/home/$user/.config/hypr/hyprland.lua"
+  echo kitty.desktop >"$target/home/$user/.config/xdg-terminals.list"
+  arch-chroot "$target" chown "$user:$user" "/home/$user/.config/xdg-terminals.list"
 }
 
 setup_snapper() {

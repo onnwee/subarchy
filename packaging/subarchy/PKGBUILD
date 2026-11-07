@@ -57,8 +57,17 @@ package() {
   sed "s/@VERSION@/${pkgver}/" "$root/branding/os-release.in" |
     install -Dm644 /dev/stdin "$pkgdir/etc/os-release"
 
-  # System defaults (ADR 0048): the app catalogue (ADR 0044) so far.
-  install -Dm644 "$root/default/apps.toml" "$pkgdir/usr/share/subcult/default/apps.toml"
+  # System defaults (ADR 0048): app catalogue, Hyprland and SDDM defaults.
+  (
+    cd "$root/default"
+    find . -type f ! -name README.md -print0 |
+      while IFS= read -r -d '' f; do
+        install -Dm644 "$f" "$pkgdir/usr/share/subcult/default/${f#./}"
+      done
+  )
+  # Session and greeter (ADR 0030, 0031).
+  install -Dm644 "$root/default/sddm/subarchy.desktop" "$pkgdir/usr/share/wayland-sessions/subarchy.desktop"
+  install -Dm644 "$root/default/sddm/subarchy.conf" "$pkgdir/usr/lib/sddm/sddm.conf.d/subarchy.conf"
 
   # Migrations run once per user by `subcult update` (ADR 0026).
   install -dm755 "$pkgdir/usr/share/subcult/migrations"
