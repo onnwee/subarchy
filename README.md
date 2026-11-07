@@ -72,5 +72,6 @@ leaves out.
 
 ## Licence
 
-Not chosen yet. Omarchy is MIT-licensed; see
-[open questions](docs/review/open-questions.md).
+GPL-3.0-or-later; see [LICENSE](LICENSE) and
+[ADR 0053](docs/decisions/0053-licence.md). Code borrowed from Omarchy (MIT)
+and the LazyVim starter (Apache-2.0) keeps its original licence notices.

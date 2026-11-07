@@ -93,8 +93,8 @@ vaults:
 | Dataview (`dataview`) | 0.5.68 | MIT | Lists open roadmap tasks on [[home]]; Bases cannot query tasks |
 | Advanced Tables (`table-editor-obsidian`) | 0.23.2 | GPL-3.0 | Most notes are tables; it formats and navigates them |
 
-Plugin code is not committed. Advanced Tables is GPL-3.0 and the repository
-has no licence yet ([[open-questions]]). Install the pinned releases:
+Plugin code is not committed, to keep third-party code out of the
+repository ([[0053-licence|ADR 0053]]). Install the pinned releases:
 
 ```bash
 python3 tools/obsidian/install-plugins.py          # download and verify

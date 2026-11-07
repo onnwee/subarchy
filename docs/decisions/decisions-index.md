@@ -76,5 +76,7 @@ order.
 | [[0049-installer\|0049]] | Installer and install image |
 | [[0050-hardware-support\|0050]] | Hardware support policy |
 | [[0051-hosting-ci\|0051]] | Source hosting and CI |
+| [[0052-name-identity\|0052]] | Name and identity |
+| [[0053-licence\|0053]] | Licence |
 
 Related: [[home|Docs home]]

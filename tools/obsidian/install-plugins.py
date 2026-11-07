@@ -3,8 +3,8 @@
 
 Downloads each release asset listed in tools/obsidian/plugins.json from
 GitHub, checks its SHA-256, and writes it to .obsidian/plugins/<id>/. Plugin
-code is not committed (Advanced Tables is GPL-3.0 and the repository has no
-licence yet), so run this once after cloning, then reload Obsidian.
+code is not committed, to keep third-party code out of the repository, so
+run this once after cloning, then reload Obsidian.
 
 Usage: python3 tools/obsidian/install-plugins.py [--check]
   --check  verify installed files against the pins without downloading

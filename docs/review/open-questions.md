@@ -59,4 +59,21 @@ Answer inline and move answered items to the bottom with the date.
     on 2026-10-06; neither is in `~/.config/omarchy/plugins` now. Were they
     removed on purpose?
 
+
+## Answered 2026-11-06
+
+- **1. Public name**: not chosen; "Subcarchy" is the working name only
+  ([[0052-name-identity|ADR 0052]]).
+- **4. Licence**: GPL-3.0-or-later ([[0053-licence|ADR 0053]]).
+- **7. Canonical repository**: `git.subcult.tv` with a GitHub mirror
+  ([[0051-hosting-ci|ADR 0051]]).
+- **9 and 10. Fork questions**: no longer apply; Subcarchy is built from
+  scratch ([[0001-fork-strategy|ADR 0001]]).
+- **11. Targets**: x86_64 only ([[0003-cpu-architectures|ADR 0003]]),
+  hardware fixes per [[0050-hardware-support|ADR 0050]].
+- **12. First deliverable**: own ISO and installer
+  ([[0049-installer|ADR 0049]]).
+- **14. AI agents**: built in, lighter than Omarchy
+  ([[0047-ai-agents|ADR 0047]]).
+
 Related: [[0001-fork-strategy|ADR 0001]] · [[brand-identity|Brand identity]] · [[roadmap|Roadmap]]
