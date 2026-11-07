@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# subcult:summary=Unlock the disk with the TPM instead of typing the passphrase
+# subcult:args=enable | disable | status
+# subcult:requires-sudo=true
+# subcult:examples=sudo subcult disk tpm enable | subcult disk tpm status
+#
+# ADR 0010 and 0012. Binds the LUKS volume to TPM PCR 7, which records the
+# Secure Boot state and keys, so kernel and bootloader updates do not break
+# it, while turning Secure Boot off or changing its keys does. The
+# passphrase stays as the recovery key. Offered only with Secure Boot on.
+# Asks for the passphrase (or reads it from $PASSWORD, for tests).
+set -euo pipefail
+
+die() { echo "subcult disk tpm: $*" >&2; exit 1; }
+sb_var=/sys/firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c
+
+luks_device() {
+  local dev
+  dev=$(cryptsetup status root 2>/dev/null | awk '$1 == "device:" {print $2}')
+  [[ -n $dev ]] || die "the root volume is not an open LUKS device named root"
+  echo "$dev"
+}
+
+has_tpm_slot() {
+  systemd-cryptenroll "$1" 2>/dev/null | awk '{print $2}' | grep -qx tpm2
+}
+
+set_cmdline_option() { # add|remove
+  local conf=/etc/default/limine
+  if [[ $1 == add ]]; then
+    grep -q 'tpm2-device=auto' "$conf" ||
+      sed -i 's/rd\.luks\.options=discard/rd.luks.options=discard,tpm2-device=auto/' "$conf"
+  else
+    sed -i 's/,tpm2-device=auto//' "$conf"
+  fi
+}
+
+case ${1:-status} in
+  status)
+    dev=$(luks_device)
+    if has_tpm_slot "$dev"; then echo "TPM unlock: on ($dev)"; else echo "TPM unlock: off ($dev)"; fi
+    ;;
+  enable)
+    ((EUID == 0)) || die "run with sudo"
+    [[ -r $sb_var && $(od -An -t u1 -j4 -N1 "$sb_var" | tr -d ' ') == 1 ]] ||
+      die "turn Secure Boot on first (sudo subcult secureboot setup)"
+    [[ -e /dev/tpmrm0 ]] || die "no TPM 2.0 found"
+    dev=$(luks_device)
+    has_tpm_slot "$dev" && die "TPM unlock is already on"
+    systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 "$dev"
+    set_cmdline_option add
+    limine-update
+    echo "TPM unlock is on. The passphrase still works as the recovery key."
+    ;;
+  disable)
+    ((EUID == 0)) || die "run with sudo"
+    dev=$(luks_device)
+    systemd-cryptenroll --wipe-slot=tpm2 "$dev"
+    set_cmdline_option remove
+    limine-update
+    echo "TPM unlock is off; the disk asks for the passphrase at boot."
+    ;;
+  *)
+    echo "Usage: subcult disk tpm enable | disable | status" >&2
+    exit 2
+    ;;
+esac

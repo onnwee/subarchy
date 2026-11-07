@@ -405,9 +405,27 @@ def boot_secureboot(disk: Path, vars_file: Path) -> bool:
     """Enroll keys with `subcult secureboot setup`, then boot with Secure
     Boot enforced, take a snapshot (rewrites limine.conf, so the enrolled
     config hash must follow) and boot once more (ADR 0012)."""
-    cmd = qemu_command(vars_file, "-drive", f"file={disk},if=virtio,format=qcow2")
+    # A software TPM for this phase (ADR 0010 TPM unlock); fresh each run.
+    tpm_dir = VM / "tpm"
+    shutil.rmtree(tpm_dir, ignore_errors=True)
+    tpm_dir.mkdir(parents=True)
+    tpm_sock = tpm_dir / "swtpm.sock"
+    swtpm = subprocess.Popen(
+        ["swtpm", "socket", "--tpm2", "--tpmstate", f"dir={tpm_dir}", "--ctrl", f"type=unixio,path={tpm_sock}"],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    )
+    for _ in range(50):
+        if tpm_sock.exists():
+            break
+        time.sleep(0.1)
+    cmd = qemu_command(
+        vars_file, "-drive", f"file={disk},if=virtio,format=qcow2",
+        "-chardev", f"socket,id=chrtpm,path={tpm_sock}", "-tpmdev", "emulator,id=tpm0,chardev=chrtpm",
+        "-device", "tpm-tis,tpmdev=tpm0",
+    )
     proc, serial, log = start(cmd, VM / "secureboot-serial.log")
     sb_state = f"od -An -t u1 -j4 -N1 {SB_VAR}"
+    tpm_boot = b""
     try:
         unlock_and_login(serial)
         before = serial.run(sb_state)
@@ -423,7 +441,25 @@ def boot_secureboot(disk: Path, vars_file: Path) -> bool:
         serial.send("sudo reboot\n")
         unlock_and_login(serial)
         again = serial.run(f"{sb_state}; systemctl is-system-running --wait", timeout=120)
-        serial.send(f"echo {PASSWORD} | sudo -S -p '' poweroff\n")
+        # TPM unlock (ADR 0010): bind the disk to PCR 7, then boot without
+        # typing the passphrase.
+        tpm = serial.run(
+            f"echo {PASSWORD} | sudo -S -p '' -v && sudo env PASSWORD={PASSPHRASE} subcult disk tpm enable;"
+            " echo TPM_EXIT=$?; subcult disk tpm status 2>&1 || sudo subcult disk tpm status",
+            timeout=300,
+        )
+        serial.send("sudo reboot\n")
+        tpm_boot = serial.expect(re.compile(rb"assphrase for|login: "), 240)
+        if b"login: " in tpm_boot:
+            serial.send(USER + "\n")
+            serial.expect(re.compile(rb"Password: "), 30)
+            serial.send(PASSWORD + "\n")
+            serial.claim_prompt(60)
+            tpm_state = serial.run("systemctl is-system-running --wait", timeout=120)
+            serial.send(f"echo {PASSWORD} | sudo -S -p '' poweroff\n")
+        else:
+            tpm_state = ""
+            proc.kill()
     except TimeoutError as e:
         proc.kill()
         print(f"install-test: FAIL in the Secure Boot phase, timed out {e}", file=sys.stderr)
@@ -431,11 +467,16 @@ def boot_secureboot(disk: Path, vars_file: Path) -> bool:
         return False
     finally:
         stop(proc, log)
+        swtpm.terminate()
+        swtpm.wait(timeout=10)
     checks = {
         "Secure Boot off before setup": before.split()[:1] == ["0"],
         "subcult secureboot setup succeeded": "SETUP_EXIT=0" in setup,
         "boots with Secure Boot on": after.split()[:1] == ["1"] and after.split()[-1] in ("running", "degraded"),
         "still boots after limine.conf changed": again.split()[:1] == ["1"] and again.split()[-1] in ("running", "degraded"),
+        "TPM unlock enabled": "TPM_EXIT=0" in tpm and "TPM unlock: on" in tpm,
+        "boots without the passphrase (TPM)": b"assphrase for" not in tpm_boot
+        and tpm_state.strip().splitlines()[-1:] in (["running"], ["degraded"]),
     }
     for name, ok in checks.items():
         print(f"install-test: {'ok  ' if ok else 'FAIL'} {name}")
