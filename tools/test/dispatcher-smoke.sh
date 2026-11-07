@@ -43,4 +43,13 @@ if [[ -x $app ]]; then
   [[ $out == *"terminal"* ]] || fail "subcult app show: $out"
 fi
 
+fontcmd="$(dirname "$bin")/subcult-font"
+if [[ -x $fontcmd ]]; then
+  cp "$fontcmd" "$dir/"
+  out=$("$bin" commands)
+  [[ $out == *"subcult font set"* ]] || fail "subcult font routes not listed"
+  out=$(HOME="$dir" "$bin" font list 2>/dev/null)
+  [[ $out == *"JetBrainsMono Nerd Font"* && $out == *"Terminess Nerd Font"* ]] || fail "subcult font list: $out"
+fi
+
 echo "smoke: ok"
