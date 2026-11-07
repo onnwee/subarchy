@@ -1,6 +1,18 @@
+---
+title: "Additions beyond Omarchy on sputnik"
+type: inventory
+status: active
+host: sputnik
+observed: 2026-11-06
+created: 2026-11-06
+updated: 2026-11-06
+tags: [inventory, local]
+aliases: [Local additions]
+---
+
 # Additions beyond Omarchy on `sputnik`
 
-Snapshot 2026-11-06. Full tables are in [`generated/local/`](generated/local/).
+Snapshot 2026-11-06. Full tables are in [[inventory-index#Generated documents|`generated/local/`]].
 This page groups them by purpose so they can be reviewed for the distribution.
 
 `sputnik` carries three kinds of additions, and they need different treatment:
@@ -33,7 +45,7 @@ Source repositories are under `~/Work/Tools/`.
 ### SUBCULT rice plugins (38)
 
 All `subcult.*` plugins come from
-[`subcult-omarchy-rice`](subcult-rice.md). None is referenced in the current
+[[subcult-rice|`subcult-omarchy-rice`]]. None is referenced in the current
 `shell.json`: the bar moved to `patrickfanella.monitor-bar` with stock and
 community widgets on 2026-11-02, and the SUBCULT layout was kept as
 `shell.subcult.json` and `shell.json.bak.subcult-plugins-20261102-195151`. The
@@ -137,7 +149,7 @@ personal choices.
 
 63 developer tools are managed by mise rather than pacman, including Node,
 Python, Go, Rust, Bun, Deno and over a dozen AI coding CLIs
-([list](generated/local/packages.md#mise-tools-63)).
+([[local-packages#mise tools (63)|list]]).
 
 ## Host fixes that should not ship as-is
 
@@ -164,3 +176,5 @@ briefing. Each is a lead for a general feature, not a default.
 | `~/Work/Builds/omarchy-dell-power-profiles` | Package build for the Dell power backend |
 | `~/Work/Lab/omarchy-plugin-research`, `omarchy-plugin-review-20261104`, `awesome-omarchy-plugin-submission` | Plugin research and review notes |
 | `~/Work/Tools/estate-config` | Fleet configuration (chezmoi, Ansible) that already manages parts of this host |
+
+Related: [[subcult-rice|SUBCULT rice]] · [[local-plugins|Installed plugins]] · [[triage|Triage]]

@@ -1,3 +1,14 @@
+---
+title: "Branding surfaces"
+type: inventory
+status: active
+host: sputnik
+observed: 2026-11-06
+created: 2026-11-06
+updated: 2026-11-06
+tags: [inventory, branding]
+---
+
 # Branding surfaces
 
 Every place a user sees the Omarchy name, logo or URLs, and what it takes to
@@ -34,3 +45,5 @@ the licence notice. The licence does not grant use of the Omarchy name or
 logo. A distribution should replace the name, logos, Plymouth and SDDM art and
 support URLs, and credit Omarchy as upstream. Get advice before shipping
 anything that could look like an official Omarchy release.
+
+Related: [[omarchy-overview|Omarchy component map]] · [[brand-identity|Brand identity]] · [[0001-fork-strategy|ADR 0001]]

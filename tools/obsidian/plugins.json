@@ -1,0 +1,37 @@
+{
+  "plugins": [
+    {
+      "id": "homepage",
+      "repo": "mirnovov/obsidian-homepage",
+      "version": "4.5.0",
+      "license": "MIT",
+      "files": {
+        "main.js": "567b14e6e7913301b46d9b61fd36a4081fa7de1818f1926c1fcb586792aab201",
+        "manifest.json": "5e7e20085c952d10a10d373ca5718516997f52b2dfeae1627cafc9c70f8df29c",
+        "styles.css": "bf346def46e6626446c54983f7e6ce4775b84b01159cd046301e9be5c3407589"
+      }
+    },
+    {
+      "id": "dataview",
+      "repo": "blacksmithgu/obsidian-dataview",
+      "version": "0.5.68",
+      "license": "MIT",
+      "files": {
+        "main.js": "794e9eaede73920bb8d54b0eda4f5de2182d698cc638774500f24f14bcd4da0b",
+        "manifest.json": "9235db47112da81b85591c79ecb9ae2574e5e72207056e976472f90616286185",
+        "styles.css": "3306dd9032e00f989ba7233a37fd255bc4d3f4340cee661762e952f3f6aa1de9"
+      }
+    },
+    {
+      "id": "table-editor-obsidian",
+      "repo": "tgrosinger/advanced-tables-obsidian",
+      "version": "0.23.2",
+      "license": "GPL-3.0",
+      "files": {
+        "main.js": "cf5dd4ddbddebef68cc99cd93a883e33895c7f123d04bc5d1106ea6e338ba791",
+        "manifest.json": "698b4f77445e07d887f33450eaf533a28e099b7b483f642fa883362ffbd8ffe9",
+        "styles.css": "23fa30d76f117fd3d1624c4c2e6ddedabf809923996b0534895f8254ea6a39f7"
+      }
+    }
+  ]
+}

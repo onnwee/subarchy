@@ -1,0 +1,22 @@
+filters:
+  and:
+    - 'note.type == "decision"'
+    - not:
+        - file.inFolder("docs/templates")
+properties:
+  note.adr:
+    displayName: ADR
+  note.title:
+    displayName: Title
+  note.status:
+    displayName: Status
+  note.created:
+    displayName: Created
+views:
+  - type: table
+    name: Decisions
+    order:
+      - note.adr
+      - note.title
+      - note.status
+      - note.created

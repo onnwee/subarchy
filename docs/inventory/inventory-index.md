@@ -1,3 +1,15 @@
+---
+title: "Inventory"
+type: index
+status: active
+host: sputnik
+observed: 2026-11-06
+created: 2026-11-06
+updated: 2026-11-06
+tags: [index, inventory]
+aliases: [Inventory overview]
+---
+
 # Inventory
 
 Snapshot: `sputnik`, 2026-11-06, Omarchy `4.5.0-3`, kernel `7.2.15-1-omarchy`.
@@ -15,29 +27,33 @@ Snapshot: `sputnik`, 2026-11-06, Omarchy `4.5.0-3`, kernel `7.2.15-1-omarchy`.
 
 ## Hand-written documents
 
-- [Omarchy component map](omarchy-overview.md): the parts of Omarchy and how they fit.
-- [Local additions](local-additions.md): what was added beyond Omarchy, grouped by purpose.
-- [SUBCULT rice](subcult-rice.md): the existing 2.0.0 overlay that supplies the `subcult.*` plugins and `subcult-*` commands.
-- [Branding surfaces](branding-surfaces.md): where the Omarchy name, logo and URLs appear.
+- [[omarchy-overview|Omarchy component map]]: the parts of Omarchy and how they fit.
+- [[local-additions|Local additions]]: what was added beyond Omarchy, grouped by purpose.
+- [[subcult-rice|SUBCULT rice]]: the existing 2.0.0 overlay that supplies the `subcult.*` plugins and `subcult-*` commands.
+- [[branding-surfaces|Branding surfaces]]: where the Omarchy name, logo and URLs appear.
 
 ## Generated documents
 
 `tools/inventory/collect.py` writes these from the live system. Do not edit
 them by hand.
 
-| File | Source |
+| Note | Source |
 |---|---|
-| [omarchy/layout.md](generated/omarchy/layout.md) | `/usr/share/omarchy` tree, install scripts, migrations, web apps |
-| [omarchy/commands.md](generated/omarchy/commands.md) | `omarchy commands --json --all` |
-| [omarchy/packages.md](generated/omarchy/packages.md) | `install/*.packages` with installed versions |
-| [omarchy/repo-packages.md](generated/omarchy/repo-packages.md) | Every package in the `[omarchy]` pacman repository |
-| [omarchy/shell.md](generated/omarchy/shell.md) | Built-in shell plugin manifests |
-| [omarchy/themes.md](generated/omarchy/themes.md) | Stock theme directories |
-| [local/plugins.md](generated/local/plugins.md) | User plugin manifests, git origins, `shell.json` bar layout and dock pins |
-| [local/themes.md](generated/local/themes.md) | User theme directories and origins |
-| [local/config.md](generated/local/config.md) | Hooks, menu extensions, Omarchy and Hyprland config file names |
-| [local/scripts-and-services.md](generated/local/scripts-and-services.md) | `~/.local/bin`, user systemd units, desktop entries |
-| [local/packages.md](generated/local/packages.md) | Explicit packages outside Omarchy's lists, mise tools |
+| [[omarchy-layout]] | `/usr/share/omarchy` tree, install scripts, migrations, web apps |
+| [[omarchy-commands]] | `omarchy commands --json --all` |
+| [[omarchy-packages]] | `install/*.packages` with installed versions |
+| [[omarchy-repo-packages]] | Every package in the `[omarchy]` pacman repository |
+| [[omarchy-shell]] | Built-in shell plugin manifests |
+| [[omarchy-themes]] | Stock theme directories |
+| [[local-plugins]] | User plugin manifests, git origins, `shell.json` bar layout and dock pins |
+| [[local-themes]] | User theme directories and origins |
+| [[local-config]] | Hooks, menu extensions, Omarchy and Hyprland config file names |
+| [[local-scripts-and-services]] | `~/.local/bin`, user systemd units, desktop entries |
+| [[local-packages]] | Explicit packages outside Omarchy's lists, mise tools |
+
+Their properties (`scope`, `observed`, `source`) feed this view:
+
+![[inventory.base]]
 
 ## What the collector does not record
 
@@ -59,3 +75,5 @@ them by hand.
   choices; the generated page says so.
 - Plugin source is inferred from the id prefix and git origin. A plugin with
   no origin is marked *local*.
+
+Related: [[home|Docs home]]

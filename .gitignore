@@ -1,2 +1,12 @@
 __pycache__/
 *.pyc
+
+# Obsidian: per-machine state and downloaded plugin code stay local.
+# Plugin code is installed by tools/obsidian/install-plugins.py.
+.obsidian/workspace*.json
+.obsidian/graph.json
+.obsidian/plugins/*/*
+!.obsidian/plugins/*/data.json
+.obsidian/plugins/dataview/data.json
+.obsidian/plugins/table-editor-obsidian/data.json
+.trash/

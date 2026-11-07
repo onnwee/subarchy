@@ -1,3 +1,13 @@
+---
+title: "Brand identity"
+type: brand
+status: draft
+created: 2026-11-06
+updated: 2026-11-06
+tags: [brand]
+aliases: [Brand draft]
+---
+
 # Brand identity (draft)
 
 Status: draft for review. Nothing here is approved.
@@ -8,7 +18,7 @@ Status: draft for review. Nothing here is approved.
 SUBCULT and Omarchy. Before it is used publicly, check:
 
 - that the "-archy" ending does not suggest an official Omarchy product (see
-  the trademark note in [branding surfaces](../inventory/branding-surfaces.md));
+  the trademark note in [[branding-surfaces|branding surfaces]]);
 - how it fits the SUBCULT sub-brand map
   (`Strategy/Identity/Canon/SUBCULT Project and Sub-Brand Map.md` in the
   SUBCULT vault), which requires sub-brands to keep SUBCULT's
@@ -57,7 +67,7 @@ image.
 ## Assets the distribution needs
 
 Each replaces an Omarchy surface listed in
-[branding surfaces](../inventory/branding-surfaces.md).
+[[branding-surfaces|branding surfaces]].
 
 | Asset | Format | Exists? |
 |---|---|---|
@@ -75,3 +85,5 @@ Each replaces an Omarchy surface listed in
 Follow `SUBCULT Brand Voice.md` in the SUBCULT vault for user-facing text. The
 rice's documentation already uses a plain, specific style: it states what is
 verified and what is not.
+
+Related: [[branding-surfaces|Branding surfaces]] · [[subcult-rice|SUBCULT rice]] · [[open-questions|Open questions]]

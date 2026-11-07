@@ -1,3 +1,13 @@
+---
+title: "Open questions"
+type: review
+status: draft
+review: pending
+created: 2026-11-06
+updated: 2026-11-06
+tags: [review]
+---
+
 # Open questions
 
 Answer inline and move answered items to the bottom with the date.
@@ -5,7 +15,7 @@ Answer inline and move answered items to the bottom with the date.
 ## Identity
 
 1. Is "Subcarchy" the public name, or a working title? See
-   [brand identity](../brand/identity.md) for the clash checks.
+   [[brand-identity|brand identity]] for the clash checks.
 2. Who is the publisher: onnwee personally or the
    `subculture-collective` organisation?
 3. Should `os-release` keep `ID_LIKE` including `omarchy` for compatibility?
@@ -48,3 +58,5 @@ Answer inline and move answered items to the bottom with the date.
 17. The Machinum host briefing lists OmaSSH and Fleetbar plugins as installed
     on 2026-10-06; neither is in `~/.config/omarchy/plugins` now. Were they
     removed on purpose?
+
+Related: [[0001-fork-strategy|ADR 0001]] · [[brand-identity|Brand identity]] · [[roadmap|Roadmap]]

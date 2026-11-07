@@ -1,3 +1,14 @@
+---
+title: "Plugin and add-on triage"
+type: review
+status: draft
+review: pending
+created: 2026-11-06
+updated: 2026-11-06
+tags: [review, plugins]
+aliases: [Triage]
+---
+
 # Plugin and add-on triage
 
 Proposed placement for everything added beyond Omarchy on `sputnik`. Edit the
@@ -109,3 +120,5 @@ commit, and record the upstream in the package. None of that is done yet.
 | Creative, gaming, media apps | profile | Personal; Omarchy offers many through `omarchy install`. |
 | Hardware drivers (DisplayLink, Solaar) | optional | Install on detection or request. |
 | mise developer tools | profile | Personal toolchain. |
+
+Related: [[local-additions|Local additions]] · [[subcult-rice|SUBCULT rice]] · [[0001-fork-strategy|ADR 0001]]

@@ -14,8 +14,17 @@ repository is at the inventory and review stage; nothing builds yet.
 - `docs/decisions/` holds numbered ADRs. Do not rewrite an accepted ADR; add a
   superseding one.
 - `docs/review/` holds checklists waiting on the owner.
+- The repository root is an Obsidian vault; `.obsidian/` holds shared config.
+  Read `docs/vault-conventions.md` before adding or renaming notes.
 
 ## Rules
+
+- Notes in `docs/` use wikilinks and the frontmatter schema in
+  `docs/vault-conventions.md`. Keep note names unique; never add another
+  `README.md` under `docs/`. The root and build-folder READMEs use Markdown
+  links because the forge reads them.
+- Do not commit `.obsidian/workspace*.json` or plugin code. Change plugin
+  versions in `tools/obsidian/plugins.json` with fresh SHA-256 values.
 
 - Never edit `/usr/share/omarchy`; read it freely.
 - The collector must not record configuration values, tokens or remote-URL
@@ -31,4 +40,5 @@ repository is at the inventory and review stage; nothing builds yet.
 ```bash
 python3 tools/inventory/collect.py
 git diff --stat docs/inventory/generated
+python3 tools/obsidian/check-vault.py
 ```

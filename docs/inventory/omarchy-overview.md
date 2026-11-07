@@ -1,8 +1,20 @@
+---
+title: "Omarchy component map"
+type: inventory
+status: active
+host: sputnik
+observed: 2026-11-06
+created: 2026-11-06
+updated: 2026-11-06
+tags: [inventory, omarchy]
+aliases: [Omarchy overview]
+---
+
 # Omarchy component map
 
 Observed on `sputnik` with Omarchy `4.5.0-3`. Upstream source:
 <https://github.com/omacom/omarchy> (MIT). Full tables are in
-[`generated/omarchy/`](generated/omarchy/).
+[[inventory-index#Generated documents|`generated/omarchy/`]].
 
 ## How Omarchy is delivered
 
@@ -22,7 +34,7 @@ Omarchy 4.x is a set of pacman packages, not a dotfiles script:
 
 The `[omarchy]` repository at `https://pkgs.omarchy.org/stable/$arch` carries
 256 packages. Most are AUR or third-party packages rebuilt so users never need an
-AUR helper ([list](generated/omarchy/repo-packages.md)). `omarchy channel set`
+AUR helper ([[omarchy-repo-packages|list]]). `omarchy channel set`
 switches the package channel.
 
 Updates run `omarchy update`, which upgrades packages and then applies
@@ -71,7 +83,7 @@ lists what those commands and the hardware fixes can pull in.
 
 ## Command groups
 
-The largest groups ([full list](generated/omarchy/commands.md)):
+The largest groups ([[omarchy-commands|full list]]):
 
 | Group | Commands | Purpose |
 |---|---:|---|
@@ -106,4 +118,6 @@ and the package repository. The `omarchy-settings` install script also copies
 `etc-overrides/` over `/etc/os-release`, `/etc/plymouth/plymouthd.conf`,
 `/etc/nsswitch.conf`, `/etc/security/faillock.conf`, `/etc/skel/.bashrc` and
 the CUPS configs on every upgrade; its own comment calls this "intentionally
-destructive". See [branding surfaces](branding-surfaces.md).
+destructive". See [[branding-surfaces|branding surfaces]].
+
+Related: [[branding-surfaces|Branding surfaces]] · [[omarchy-commands|Omarchy commands]] · [[0001-fork-strategy|ADR 0001]]

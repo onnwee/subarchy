@@ -1,6 +1,15 @@
+---
+title: "Roadmap"
+type: plan
+status: draft
+created: 2026-11-06
+updated: 2026-11-06
+tags: [plan]
+---
+
 # Roadmap
 
-Phases assume [ADR 0001](decisions/0001-fork-strategy.md) option B is
+Phases assume [[0001-fork-strategy|ADR 0001]] option B is
 accepted. If it is not, phases 2 to 4 change.
 
 ## Phase 0: inventory (this commit)
@@ -8,17 +17,17 @@ accepted. If it is not, phases 2 to 4 change.
 - [x] Regenerable inventory of Omarchy 4.5.0 and `sputnik` additions
 - [x] Component map, branding surfaces, rice summary
 - [x] Fork strategy proposal, triage and open questions
-- [ ] Owner review of ADR 0001, [triage](review/triage.md) and
-      [open questions](review/open-questions.md)
+- [ ] Owner review of ADR 0001, [[triage|triage]] and
+      [[open-questions|open questions]]
 
 ## Phase 1: identity
 
 - Settle the name, `os-release` fields and publisher.
-- Produce the missing assets from [brand identity](brand/identity.md): ASCII
+- Produce the missing assets from [[brand-identity|brand identity]]: ASCII
   wordmark, sized icons, Plymouth splash, SDDM theme, Limine branding.
 - Check asset and community-plugin licences.
 
-Done when every row in [branding surfaces](inventory/branding-surfaces.md) has
+Done when every row in [[branding-surfaces|branding surfaces]] has
 a replacement asset or an explicit "keep".
 
 ## Phase 2: fork and packages
@@ -47,3 +56,5 @@ Done when a stock Omarchy 4.5 install can switch to Subcarchy packages with
 - Choose between Omarchy's ISO builder with Subcarchy package lists and a
   convert-in-place installer.
 - Build and boot-test on `sputnik`, then on a clean machine or VM.
+
+Related: [[0001-fork-strategy|ADR 0001]] · [[open-questions|Open questions]]

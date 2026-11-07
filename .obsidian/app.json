@@ -1,0 +1,26 @@
+{
+  "useMarkdownLinks": false,
+  "newLinkFormat": "shortest",
+  "alwaysUpdateLinks": true,
+  "newFileLocation": "folder",
+  "newFileFolderPath": "docs",
+  "attachmentFolderPath": "docs/attachments",
+  "propertiesInDocument": "visible",
+  "readableLineLength": true,
+  "promptDelete": true,
+  "trashOption": "local",
+  "userIgnoreFilters": [
+    "applications/",
+    "bin/",
+    "branding/",
+    "config/",
+    "default/",
+    "install/",
+    "iso/",
+    "migrations/",
+    "packaging/",
+    "shell/",
+    "themes/",
+    "tools/"
+  ]
+}

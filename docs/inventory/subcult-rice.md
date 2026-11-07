@@ -1,3 +1,15 @@
+---
+title: "SUBCULT Omarchy Rice"
+type: inventory
+status: active
+host: sputnik
+observed: 2026-11-06
+created: 2026-11-06
+updated: 2026-11-06
+tags: [inventory, subcult, rice]
+aliases: [SUBCULT rice, subcult-omarchy-rice]
+---
+
 # SUBCULT Omarchy Rice
 
 The rice is the closest thing to Subcarchy that already exists. It is an
@@ -70,5 +82,7 @@ The rice already shows what an overlay costs:
 - It supports a version range (`<5.0.0`) and must be re-verified as Omarchy
   moves; 4.5 is untested by its own records.
 
-[ADR 0001](../decisions/0001-fork-strategy.md) uses these points to choose
+[[0001-fork-strategy|ADR 0001]] uses these points to choose
 between continuing the overlay and forking.
+
+Related: [[local-additions|Local additions]] · [[brand-identity|Brand identity]] · [[0001-fork-strategy|ADR 0001]]

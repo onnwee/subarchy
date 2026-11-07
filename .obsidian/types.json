@@ -1,0 +1,17 @@
+{
+  "types": {
+    "title": "text",
+    "type": "text",
+    "status": "text",
+    "review": "text",
+    "adr": "number",
+    "scope": "text",
+    "host": "text",
+    "source": "text",
+    "observed": "date",
+    "created": "date",
+    "updated": "date",
+    "aliases": "aliases",
+    "tags": "tags"
+  }
+}

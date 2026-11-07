@@ -1,10 +1,21 @@
+---
+title: "ADR 0001: How Subcarchy relates to Omarchy"
+type: decision
+status: proposed
+adr: 1
+created: 2026-11-06
+updated: 2026-11-06
+tags: [decision, adr]
+aliases: [ADR 0001, Fork strategy]
+---
+
 # ADR 0001: How Subcarchy relates to Omarchy
 
 - Status: **proposed**, awaiting owner review
 - Date: 2026-11-06
-- Inputs: [component map](../inventory/omarchy-overview.md),
-  [branding surfaces](../inventory/branding-surfaces.md),
-  [SUBCULT rice](../inventory/subcult-rice.md)
+- Inputs: [[omarchy-overview|component map]],
+  [[branding-surfaces|branding surfaces]],
+  [[subcult-rice|SUBCULT rice]]
 
 ## Context
 
@@ -80,3 +91,5 @@ Option **B**, in stages:
   first target "install Omarchy, then convert"?
 - Does the old `PatrickFanella/omarchy-subcult-theme` repository, which also
   installs as `subcult`, need retiring to avoid name clashes?
+
+Related: [[omarchy-overview|Omarchy component map]] · [[branding-surfaces|Branding surfaces]] · [[subcult-rice|SUBCULT rice]] · [[roadmap|Roadmap]]

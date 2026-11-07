@@ -1,0 +1,28 @@
+filters:
+  and:
+    - 'note.type == "inventory"'
+properties:
+  note.title:
+    displayName: Title
+  note.scope:
+    displayName: Scope
+  note.status:
+    displayName: Status
+  note.host:
+    displayName: Host
+  note.observed:
+    displayName: Observed
+  note.source:
+    displayName: Source
+views:
+  - type: table
+    name: Inventory
+    groupBy:
+      property: note.status
+      direction: ASC
+    order:
+      - file.name
+      - note.title
+      - note.scope
+      - note.observed
+      - note.source
