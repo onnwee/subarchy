@@ -57,7 +57,7 @@ Plymouth, NetworkManager with the DNS trust policy, PipeWire, ufw.
 - [x] Plugin API design record: [[0068-shell-plugin-api-v0|ADR 0068]] (v0)
 - [ ] Quickshell shell, stage 1 ([[shell-and-look-design|Shell and look
       design]]):
-  - [ ] Plan 1 ([[shell-stage-1-core-plan|core plan]]): look layer, font
+  - [x] Plan 1 ([[shell-stage-1-core-plan|core plan]]): look layer, font
         roles and `subcult font`, Subarchy cursor, shell core, event-driven
         bar widgets, notifications, OSD, polkit dialog, Alt-Tab, VM checks
         (2026-11-07)

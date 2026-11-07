@@ -654,9 +654,9 @@ Open the Phase D PR; done when CI is green and it merges.
   `idle-budget.json` has `null`, the run records the first value and prints
   it for committing; afterwards the check fails above budget × 1.2.
 
-- [ ] Add the checks → run `make install-test` → expected PASS on all new
+- [x] Add the checks → run `make install-test` → expected PASS on all new
   checks; commit the measured budget.
-- [ ] Commit `test: shell, fonts, battery and idle checks in the VM`.
+- [x] Commit `test: shell, fonts, battery and idle checks in the VM`.
 
 ### Task 17: Docs
 
@@ -666,7 +666,7 @@ Open the Phase D PR; done when CI is green and it merges.
 `default/README.md`, `docs/plans/shell-stage-1-core-plan.md` (`status:
 accepted`, tasks ticked).
 
-- [ ] Update; `make docs-check` → PASS; commit `docs: shell stage 1 core
+- [x] Update; `make docs-check` → PASS; commit `docs: shell stage 1 core
   landed`.
 
 Open the Phase E PR; done when CI is green and it merges. Then the owner
@@ -703,6 +703,10 @@ recorded as a ruling during the run:
   per-widget battery intervals (no plan-1 widget has a timer), checks the
   bar's own line colour instead of the window border, matches errors rather
   than every warning, and counts idle wake-ups over all the shell's threads.
+
+The final fresh-install VM run passed all 59 checks (shell, fonts, Lua
+dispatch, Alt-Tab, battery, idle 9 a minute against a budget of 12, snapshot
+boot, Secure Boot and TPM unlock).
 
 Not verified by the tests: the Alt release key binding with a real
 keyboard, the polkit retry flow, HiDPI at scale 1.6 and real tray apps; the
