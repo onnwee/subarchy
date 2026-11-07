@@ -24,7 +24,7 @@ shell-index-check:
 # so the linter gets a qs -> shell link on its import path.
 shell-lint:
 	@mkdir -p $(BUILD)/qml && ln -sfn ../../shell $(BUILD)/qml/qs
-	@files=$$(git ls-files 'shell/*.qml' | sed 's|^|$(CURDIR)/|'); [ -z "$$files" ] || $(QT6BIN)/qmllint -I $(CURDIR)/$(BUILD)/qml $$files
+	@files=$$(git ls-files 'shell/*.qml' | sed 's|^|$(CURDIR)/|'); [ -z "$$files" ] || $(QT6BIN)/qmllint --max-warnings 0 -I $(CURDIR)/$(BUILD)/qml $$files
 
 verify: fmt-check vet test build smoke shellcheck docs-check hypr-check shell-index-check
 
