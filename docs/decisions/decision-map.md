@@ -39,10 +39,10 @@ NVMe.
 | B2 | Initramfs generator and UKI | mkinitcpio, Limine hook | [[0008-initramfs\|ADR 0008]]: mkinitcpio, systemd hooks, UKIs |
 | B3 | Disk layout and filesystem | btrfs with subvolumes | [[0009-disk-layout\|ADR 0009]]: btrfs subvolumes, 4 GiB ESP |
 | B4 | Disk encryption and unlock | LUKS2, passphrase | [[0010-disk-encryption\|ADR 0010]]: LUKS2 always, passphrase; TPM2/FIDO2 opt-in |
-| B5 | Snapshots and rollback | snapper with `limine-snapper-sync` boot entries | open |
-| B6 | Secure Boot | Not configured | open |
-| B7 | Boot splash | Plymouth | open |
-| B8 | Swap and hibernation | zram; hibernation optional | open |
+| B5 | Snapshots and rollback | snapper with `limine-snapper-sync` boot entries | [[0011-snapshots\|ADR 0011]]: snapshot on system update, keep 5, boot entries |
+| B6 | Secure Boot | Not configured | [[0012-secure-boot\|ADR 0012]]: opt-in with sbctl |
+| B7 | Boot splash | Plymouth | [[0013-boot-splash\|ADR 0013]]: Plymouth, themed |
+| B8 | Swap and hibernation | zram; hibernation optional | [[0014-swap-hibernation\|ADR 0014]]: zram, hibernation opt-in |
 
 ## System services
 

@@ -35,5 +35,9 @@ order.
 | [[0008-initramfs\|0008]] | Initramfs and kernel images |
 | [[0009-disk-layout\|0009]] | Disk layout and filesystem |
 | [[0010-disk-encryption\|0010]] | Disk encryption |
+| [[0011-snapshots\|0011]] | Snapshots and rollback |
+| [[0012-secure-boot\|0012]] | Secure Boot |
+| [[0013-boot-splash\|0013]] | Boot splash |
+| [[0014-swap-hibernation\|0014]] | Swap and hibernation |
 
 Related: [[home|Docs home]]
