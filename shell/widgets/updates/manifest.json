@@ -1,0 +1,7 @@
+{
+  "id": "subcult.updates",
+  "name": "Update count",
+  "version": "1.0.0",
+  "api": 0,
+  "kind": "bar-widget"
+}

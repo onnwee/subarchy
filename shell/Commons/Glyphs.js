@@ -57,3 +57,7 @@ function battery(percent, charging) {
 function powerProfile(name) {
   return name === "power-saver" ? "\u{F032A}" : name === "performance" ? "\u{F14DE}" : "\u{F05D1}"
 }
+
+const idleInhibit = "\u{F0176}" // coffee
+const recording = "\u{F044A}"   // record
+const updates = "\u{F06B0}"     // update

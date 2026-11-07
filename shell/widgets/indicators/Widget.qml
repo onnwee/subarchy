@@ -1,0 +1,52 @@
+import QtQuick
+import Quickshell
+import Quickshell.Services.Pipewire
+import Quickshell.Wayland
+import qs.Commons
+import qs.Ui
+import "Model.js" as Model
+import "../../Commons/Glyphs.js" as Glyphs
+
+// Small status marks: keep-awake (click to toggle) and screen capture in
+// progress. Both are driven by events.
+BarWidget {
+  id: root
+
+  property bool keepAwake: false
+  readonly property var streams: Pipewire.nodes ? Pipewire.nodes.values.filter(n => n.isStream) : []
+  readonly property bool recording: Model.recording(streams.map(n => ({
+    isStream: n.isStream,
+    mediaClass: n.properties ? n.properties["media.class"] : ""
+  })))
+
+  implicitWidth: row.implicitWidth
+
+  PwObjectTracker {
+    objects: root.streams
+  }
+
+  IdleInhibitor {
+    window: root.QsWindow.window
+    enabled: root.keepAwake
+  }
+
+  Row {
+    id: row
+    anchors.verticalCenter: parent.verticalCenter
+    spacing: 4
+
+    IconButton {
+      visible: root.recording
+      glyph: Glyphs.recording
+      color: Theme.error
+      tooltip: "Screen capture in progress"
+    }
+
+    IconButton {
+      glyph: Glyphs.idleInhibit
+      color: root.keepAwake ? Theme.accent : Theme.muted
+      tooltip: root.keepAwake ? "Staying awake" : "Keep awake"
+      onClicked: root.keepAwake = !root.keepAwake
+    }
+  }
+}
