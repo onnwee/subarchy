@@ -40,7 +40,7 @@ Packages and installer for the foundation, boot and system layers: Arch with
 `linux-zen` and `linux-lts`, Limine, systemd UKIs, LUKS2 on btrfs, snapper,
 Plymouth, NetworkManager with the DNS trust policy, PipeWire, ufw.
 
-- [ ] ISO builds in CI ([[0049-installer|ADR 0049]])
+- [ ] ISO builds in CI ([[0049-installer|ADR 0049]]); builds and boots locally since 2026-11-07 (`make iso iso-test`), CI needs a privileged runner
 - [ ] Installs in a VM to an encrypted, bootable system with snapshot entries
 - [ ] Set the CI memory and package budgets from this first build
       ([[0054-lightweight-battery-first|ADR 0054]])
