@@ -15,8 +15,11 @@ QT6BIN ?= /usr/lib/qt6/bin
 shell-test:
 	$(QT6BIN)/qmltestrunner -platform offscreen -input shell/tests
 
+# Quickshell maps the shell folder to the module prefix qs (import qs.Commons),
+# so the linter gets a qs -> shell link on its import path.
 shell-lint:
-	@files=$$(git ls-files 'shell/*.qml'); [ -z "$$files" ] || $(QT6BIN)/qmllint -I shell $$files
+	@mkdir -p $(BUILD)/qml && ln -sfn ../../shell $(BUILD)/qml/qs
+	@files=$$(git ls-files 'shell/*.qml' | sed 's|^|$(CURDIR)/|'); [ -z "$$files" ] || $(QT6BIN)/qmllint -I $(CURDIR)/$(BUILD)/qml $$files
 
 verify: fmt-check vet test build smoke shellcheck docs-check hypr-check
 

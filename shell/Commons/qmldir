@@ -1,0 +1,5 @@
+module qs.Commons
+singleton Theme 1.0 Theme.qml
+singleton Power 1.0 Power.qml
+singleton Config 1.0 Config.qml
+singleton Style 1.0 Style.qml
