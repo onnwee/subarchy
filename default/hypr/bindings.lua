@@ -32,3 +32,13 @@ sub.bind("SUPER + mouse:273", "Resize window", hl.dsp.window.resize(), { mouse =
 
 -- Leave the session cleanly through uwsm (ADR 0031).
 sub.bind("SUPER + SHIFT + ESCAPE", "Log out", "uwsm stop")
+
+-- Media keys. Volume changes show the OSD by themselves (the shell watches
+-- PipeWire); brightness asks the shell's OSD to show the new level.
+local osd = "quickshell ipc -p /usr/share/subcult/shell call subcult.osd flash"
+sub.bind("XF86AudioRaiseVolume", "Volume up", "wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+", { locked = true, repeating = true })
+sub.bind("XF86AudioLowerVolume", "Volume down", "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-", { locked = true, repeating = true })
+sub.bind("XF86AudioMute", "Mute", "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle", { locked = true })
+sub.bind("XF86AudioMicMute", "Mute microphone", "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle", { locked = true })
+sub.bind("XF86MonBrightnessUp", "Brightness up", "brightnessctl -q set 5%+ && " .. osd .. " brightness", { locked = true, repeating = true })
+sub.bind("XF86MonBrightnessDown", "Brightness down", "brightnessctl -q set 5%- && " .. osd .. " brightness", { locked = true, repeating = true })

@@ -67,3 +67,9 @@ function bell(unread, dnd) {
     return "\u{F009B}" // bell_off
   return unread > 0 ? "\u{F009E}" : "\u{F009A}" // bell_ring : bell
 }
+
+function brightness(level) {
+  return level < 0.34 ? "\u{F00DE}" : level < 0.67 ? "\u{F00DF}" : "\u{F00E0}" // brightness_5/6/7
+}
+
+const capsLock = "\u{F0632}" // keyboard_caps

@@ -164,6 +164,12 @@ sleep 1
 st=$(status "$home1")
 [[ $(json 'd.get("popups")') == 1 && $(json 'd.get("unread")') == 1 ]] || fail "no popup for a notification: $st"
 
+# The OSD answers its IPC call (media keys use it for brightness).
+HOME=$home1 quickshell ipc -p "$shell" call subcult.osd flash brightness >/dev/null 2>&1 ||
+  fail "the OSD has no IPC handler"
+st=$(status "$home1")
+[[ $(json 'd.get("osd")') == brightness ]] || fail "the OSD did not show: $st"
+
 # 2. A palette written after start applies without a restart.
 mkdir -p "$home1/.config/subcult/theme"
 printf '{"schema": 1, "colors": {"base": "#FF0000", "surface0": "#00FF00"}}\n' >"$home1/.config/subcult/theme/palette.json"

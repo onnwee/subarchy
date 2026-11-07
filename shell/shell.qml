@@ -22,6 +22,12 @@ ShellRoot {
 
   NotificationPopups {}
 
+  Osd {
+    id: osd
+  }
+
+  PolkitDialog {}
+
   IpcHandler {
     target: "subcult.shell"
 
@@ -35,6 +41,7 @@ ShellRoot {
         onBattery: Power.onBattery,
         popups: Notifications.popups.length,
         unread: Notifications.unread,
+        osd: osd.kind,
         intervals: Power.report()
       })
     }
