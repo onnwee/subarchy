@@ -45,5 +45,9 @@ order.
 | [[0018-bluetooth\|0018]] | Bluetooth |
 | [[0019-firewall\|0019]] | Firewall |
 | [[0020-dns\|0020]] | DNS and name resolution |
+| [[0021-power\|0021]] | Power and thermal management |
+| [[0022-printing\|0022]] | Printing and device discovery |
+| [[0023-authentication\|0023]] | Secrets and login factors |
+| [[0024-time-locale-input\|0024]] | Time zone, locale and input methods |
 
 Related: [[home|Docs home]]

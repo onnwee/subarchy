@@ -54,10 +54,10 @@ NVMe.
 | S4 | Audio | PipeWire with WirePlumber | [[0017-audio\|ADR 0017]]: PipeWire, JACK, realtime |
 | S5 | Bluetooth | BlueZ | [[0018-bluetooth\|ADR 0018]]: BlueZ |
 | S6 | Firewall | ufw with `ufw-docker` | [[0019-firewall\|ADR 0019]]: ufw, ufw-docker |
-| S7 | Power and thermal management | `omarchy-power-profiles-daemon`, thermald | open |
-| S8 | Printing and device discovery | CUPS, Avahi | open |
-| S9 | Authentication: PAM, polkit, keyring, fingerprint, FIDO | gnome-keyring, shell polkit agent, optional fprintd | open |
-| S10 | Time, locale and input methods | tzupdate, fcitx5 | open |
+| S7 | Power and thermal management | `omarchy-power-profiles-daemon`, thermald | [[0021-power\|ADR 0021]]: power-profiles-daemon, auto AC/battery, thermald |
+| S8 | Printing and device discovery | CUPS, Avahi | [[0022-printing\|ADR 0022]]: CUPS socket-activated, Avahi |
+| S9 | Authentication: PAM, polkit, keyring, fingerprint, FIDO | gnome-keyring, shell polkit agent, optional fprintd | [[0023-authentication\|ADR 0023]]: gnome-keyring, fingerprint/FIDO opt-in |
+| S10 | Time, locale and input methods | tzupdate, fcitx5 | [[0024-time-locale-input\|ADR 0024]]: auto time zone, input methods on demand |
 
 ## Packages and updates
 
