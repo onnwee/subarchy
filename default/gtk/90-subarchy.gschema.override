@@ -1,0 +1,11 @@
+# Subarchy desktop defaults (shell and look design). Fonts point at the
+# fontconfig aliases, so GTK follows `subcult font set`.
+[org.gnome.desktop.interface]
+gtk-theme='Adwaita-dark'
+color-scheme='prefer-dark'
+icon-theme='Papirus-Dark'
+cursor-theme='subcult-cursor'
+cursor-size=24
+font-name='Sans 11'
+monospace-font-name='Monospace 11'
+document-font-name='Serif 11'

@@ -22,6 +22,13 @@ realtime-privileges
 # Terminal (ADR 0040)
 kitty
 
+# Desktop shell and look (shell and look design)
+quickshell
+papirus-icon-theme
+brightnessctl
+libsecret
+mpv
+
 # Fonts (ADR 0039). Space Grotesk and Oswald need packaging first.
 ttf-jetbrains-mono-nerd
 noto-fonts

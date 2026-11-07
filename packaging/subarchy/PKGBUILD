@@ -14,7 +14,7 @@ license=('GPL-3.0-or-later')
 depends=('bash' 'glibc' 'pacman-contrib' 'fakeroot')
 makedepends=('go' 'git')
 options=('!debug')
-backup=()
+backup=(etc/xdg/gtk-3.0/settings.ini etc/xdg/gtk-4.0/settings.ini etc/xdg/kitty/kitty.conf etc/xdg/kitty/subcult-ink.conf etc/xdg/nvim/sysinit.vim)
 
 _root() {
   realpath "$startdir/../.."
@@ -86,6 +86,15 @@ package() {
   # GPU modes on hybrid laptops (ADR 0006).
   install -Dm644 "$sys/gpu.rules" "$pkgdir/usr/lib/udev/rules.d/70-subarchy-gpu.rules"
   install -Dm644 "$sys/uwsm-gpu-env" "$pkgdir/usr/share/uwsm/env-hyprland.d/50-subarchy-gpu"
+
+  # Look layer (shell and look design): GTK, kitty and Neovim defaults.
+  install -Dm644 "$root/default/gtk/90-subarchy.gschema.override" "$pkgdir/usr/share/glib-2.0/schemas/90-subarchy.gschema.override"
+  install -Dm644 "$root/default/gtk/settings.ini" "$pkgdir/etc/xdg/gtk-3.0/settings.ini"
+  install -Dm644 "$root/default/gtk/settings.ini" "$pkgdir/etc/xdg/gtk-4.0/settings.ini"
+  install -Dm644 "$root/default/kitty/kitty.conf" "$pkgdir/etc/xdg/kitty/kitty.conf"
+  install -Dm644 "$root/default/kitty/subcult-ink.conf" "$pkgdir/etc/xdg/kitty/subcult-ink.conf"
+  install -Dm644 "$root/default/nvim/colors/subcult-ink.lua" "$pkgdir/usr/share/nvim/site/colors/subcult-ink.lua"
+  install -Dm644 "$root/default/nvim/sysinit.vim" "$pkgdir/etc/xdg/nvim/sysinit.vim"
 
   # Migrations run once per user by `subcult update` (ADR 0026).
   install -dm755 "$pkgdir/usr/share/subcult/migrations"

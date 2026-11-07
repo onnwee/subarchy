@@ -38,6 +38,16 @@ for path in usr/bin/subcult usr/bin/sub usr/bin/subcult-app usr/bin/subcult-upda
   grep -qx "$path" <<<"$list" || fail "missing $path"
 done
 
+# Look layer (shell and look design): GTK, kitty and Neovim defaults.
+for path in usr/share/glib-2.0/schemas/90-subarchy.gschema.override etc/xdg/gtk-3.0/settings.ini \
+  etc/xdg/gtk-4.0/settings.ini etc/xdg/kitty/kitty.conf etc/xdg/kitty/subcult-ink.conf \
+  usr/share/nvim/site/colors/subcult-ink.lua etc/xdg/nvim/sysinit.vim; do
+  mode=$(bsdtar -tvf "$pkg" "$path" 2>/dev/null | cut -c1-10) || true
+  [[ $mode == -rw-r--r-- ]] || fail "missing $path or mode ${mode:-none}, want 0644"
+done
+grep -qx "icon-theme='Papirus-Dark'" <(bsdtar -xOf "$pkg" usr/share/glib-2.0/schemas/90-subarchy.gschema.override) ||
+  fail "GSettings override lacks Papirus-Dark"
+
 perm=$(bsdtar -tvf "$pkg" etc/sudoers.d/50-subarchy-update | cut -c1-10)
 [[ $perm == -r--r----- ]] || fail "sudoers drop-in mode $perm, want 0440"
 
