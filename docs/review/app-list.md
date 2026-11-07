@@ -126,6 +126,7 @@ change.
 | Launcher calculator | calculator | yes | yes | repo | `libqalculate` | Sums typed in the shell launcher |
 | Qalculate! | calculator | yes |  | repo | `qalculate-qt` | Same engine: units, history, graphs |
 | btop | system-monitor | yes | yes | repo | `btop` | Opens in kitty; themed from the palette |
+| disktree | disk-usage | yes | yes | aur | `disktree-bin` | Treemap of what fills the disk, with removal; Rust and GPUI, by Tobi Lütke for Omarchy. `disktree` (source build) also in the AUR |
 | Theme Tender | theme-manager | yes | yes | build | `theme-tender` (planned AUR name) | Applies themes to every app ([[0037-theming\|ADR 0037]]); planning stage on 2026-11-07, no release yet |
 | gpu-screen-recorder | screen-recorder | yes | yes | repo | `gpu-screen-recorder` | Hardware-encoded; started and stopped from a keybinding or the shell |
 
@@ -138,7 +139,7 @@ still work ([[0028-developer-toolchains|ADR 0028]]).
 | Group | Packages |
 |---|---|
 | Basics (included without asking) | `curl`, `wget`, `rsync`, `unzip`, `7zip`, `less`, `man-db`, `man-pages`, `wl-clipboard`, `git`, `openssh` |
-| Modern shell tools | `bat`, `eza`, `fd`, `ripgrep`, `fzf`, `zoxide`, `jq`, `go-yq` |
+| Modern shell tools | `bat`, `eza`, `fd`, `ripgrep`, `fzf`, `zoxide`, `jq`, `go-yq`, `tealdeer` (tldr) |
 | Terminal apps | `lazygit`, `tmux`, `fastfetch`, `lazydocker` |
 | Git and forges | `github-cli`, `tea`, `git-delta` |
 | Media | `yt-dlp`, `ffmpeg`, `imagemagick` |
@@ -149,7 +150,7 @@ still work ([[0028-developer-toolchains|ADR 0028]]).
 
 Already decided elsewhere: zsh, starship and atuin
 ([[0041-shell-prompt|ADR 0041]]), btop, yazi, Neovim. Not preinstalled:
-`tealdeer`, `plocate` (needs a daily index timer), `zellij`, `direnv`,
+`plocate` (needs a daily index timer), `zellij`, `direnv`,
 `just`, `hyperfine`, `tokei`.
 
 ### Chromium extensions
