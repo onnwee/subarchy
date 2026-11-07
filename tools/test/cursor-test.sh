@@ -21,6 +21,19 @@ out="$work/subcult-cursor"
   --src "$root/default/cursor" --out "$out" >"$work/build.log" 2>&1 ||
   { tail -20 "$work/build.log" >&2; fail "build failed"; }
 
+# The temporary folder may be on another filesystem than the theme (tmpfs
+# /tmp against /home); a build must still land.
+if [[ -d /dev/shm && -w /dev/shm ]]; then
+  shm=$(mktemp -d -p /dev/shm)
+  TMPDIR=$shm "$bin" build --role lavender --palette "$root/default/theme/palette.json" \
+    --src "$root/default/cursor" --out "$work/xdev/subcult-cursor" >"$work/xdev.log" 2>&1 ||
+    { rm -rf -- "$shm"; tail -5 "$work/xdev.log" >&2; fail "build across filesystems failed"; }
+  rm -rf -- "$shm"
+  [[ -f $work/xdev/subcult-cursor/hyprcursors/default.hlc ]] || fail "cross-filesystem build incomplete"
+  leftovers=$(find "$work/xdev" -mindepth 1 -maxdepth 1 ! -name subcult-cursor)
+  [[ -z $leftovers ]] || fail "build left behind: $leftovers"
+fi
+
 for name in left_ptr text pointer; do
   [[ $(head -c4 "$out/cursors/$name") == Xcur ]] || fail "cursors/$name is not an Xcursor file"
 done
