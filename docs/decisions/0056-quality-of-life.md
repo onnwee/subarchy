@@ -48,6 +48,9 @@ full keymap is designed with the shell (D3).
 | Reminders | Super+Ctrl+R | `omarchy reminder` | | a systemd timer per reminder |
 | Dictation, push to talk | Alt+Space | `default/hypr/bindings/dictation.lua`, voxtype setup | `voxtype-bin` (AUR, rebuilt) | the speech model's memory while the daemon runs |
 | USB drives mount automatically | — | `udiskie` in Omarchy's base list | `udiskie` | a small always-running daemon |
+| Package installer for the official and Subarchy repositories: fuzzy search, multi-select, details preview | menu, launcher | `omarchy pkg install` (`pacman -Slq` into `fzf`, `pacman -Sii` preview) | `fzf` | none |
+| AUR package installer with details and PKGBUILD preview | menu, launcher | `omarchy pkg aur install` (`yay -Slqa`, `yay -Siia` preview, PKGBUILD toggle) | `yay` ([[0027-third-party-software\|ADR 0027]]) | none |
+| Package remover for installed packages | menu, launcher | `omarchy pkg remove` | `fzf` | none |
 
 ## Added beyond Omarchy
 
@@ -59,6 +62,19 @@ Suggested by the agent and accepted by the owner, 2026-11-07.
 | Battery charge limit | One toggle that stops charging at a set level (default 80%), using the kernel's `charge_control_end_threshold` where available or the vendor add-on ([[0021-power\|ADR 0021]]); hidden when the hardware has neither | none |
 | Picture-in-picture windows float and pin | Hyprland window rules match browser picture-in-picture windows: float, pin across workspaces, fixed corner | none |
 | Find files from the launcher | The launcher searches file names with `fd` when asked; no background index | none |
+
+The package tools run as `subcult pkg install`, `subcult pkg aur install` and
+`subcult pkg remove` in a floating kitty window, opened from the menu or the
+launcher ([[0057-launcher|ADR 0057]]). Changes from Omarchy's versions:
+
+- Omarchy runs `updatedb` after AUR installs; Subarchy has no `plocate` index,
+  so that step is dropped.
+- They sit beside the curated app installer ([[0044-default-apps|ADR 0044]]):
+  the app installer adds integration steps for listed apps, the package tools
+  install any package as-is.
+- AUR packages are trusted by the user, not vetted by Subarchy; the PKGBUILD
+  preview is one key away.
+- Flathub search is not included; it could be a third source later.
 
 ## Consequences
 
