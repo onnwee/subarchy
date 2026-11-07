@@ -23,7 +23,7 @@ import sys
 import time
 from pathlib import Path
 
-from vmlib import OVMF_CODE, OVMF_VARS, Serial, distinct_colours, qemu_command, screendump
+from vmlib import ANSI, OVMF_CODE, OVMF_VARS, Serial, distinct_colours, qemu_command, screendump
 
 ROOT = Path(__file__).resolve().parents[2]
 VM = ROOT / "build" / "vm"
@@ -210,10 +210,12 @@ def boot(disk: Path, vars_file: Path) -> bool:
             ),
             # A snapshot must show up as a boot entry (limine-snapper-sync).
             "snapshot": serial.run(
-                f"{sudo} snapper -c root create -d install-test >/dev/null && sleep 5"
+                f"{sudo} rm -f /etc/subarchy-after-snapshot && {sudo} snapper -c root create -d install-test >/dev/null && sleep 5"
                 f" && {sudo} limine-snapper-sync >/dev/null 2>&1; {sudo} cat /boot/limine.conf",
                 timeout=120,
             ),
+            # Marker made after every snapshot: a restore must remove it.
+            "marker": serial.run(f"{sudo} touch /etc/subarchy-after-snapshot && echo MARKED"),
             "state": serial.run("systemctl is-system-running --wait", timeout=120),
             "failed": serial.run("systemctl --failed --no-legend --plain | awk '{print $1}'"),
         }
@@ -271,6 +273,7 @@ def boot(disk: Path, vars_file: Path) -> bool:
         "power profile service (no battery: unchanged)": r["power_auto"].splitlines()[0:1] == ["success"]
         and "no system battery" in r["power_auto"],
         "update took a snapshot": "subcult update" in r["update"].split("UPDATE_EXIT")[-1],
+        "marker created after the snapshots": "MARKED" in r["marker"],
         "@factory snapshot": any(line.endswith(" path @factory") for line in r["subvols"].splitlines()),
         "system running or degraded": state in ("running", "degraded"),
         "ufw active, incoming denied": "Status: active" in r["ufw"] and "deny (incoming)" in r["ufw"],
@@ -328,6 +331,30 @@ def boot_snapshot(disk: Path, vars_file: Path) -> bool:
         cmdline = serial.run("cat /proc/cmdline")
         root = serial.run("findmnt -no FSTYPE /")
         state = serial.run("systemctl is-system-running --wait", timeout=120).strip()
+        # Restore the booted snapshot over @, then boot the default entry
+        # (ADR 0011): the marker made after the snapshot must be gone.
+        # The tool reads each answer with a fresh buffered reader, so the
+        # answers (restore, default backup description) arrive one at a
+        # time. It ends with "Reboot now? [Y/n]", and the closed input
+        # takes the default: the VM reboots into the default entry.
+        serial.buf = b""
+        serial.send(
+            f"echo {PASSWORD} | sudo -S -p '' -v && (echo r; sleep 5; echo; sleep 5)"
+            " | sudo limine-snapper-sync --restore\n"
+        )
+        restore = ANSI.sub("", serial.expect(re.compile(rb"Restore complete"), 600).decode(errors="replace"))
+        serial.expect(re.compile(rb"assphrase for"), 240)
+        serial.send(PASSPHRASE + "\n")
+        serial.expect(re.compile(rb"login: "), 180)
+        serial.send(USER + "\n")
+        serial.expect(re.compile(rb"Password: "), 30)
+        serial.send(PASSWORD + "\n")
+        serial.claim_prompt(60)
+        restored = serial.run(
+            "test -e /etc/subarchy-after-snapshot && echo MARKER_PRESENT || echo MARKER_GONE;"
+            " findmnt -no OPTIONS / | tr , '\\n' | grep subvol=; systemctl is-system-running --wait",
+            timeout=120,
+        )
         serial.send(f"echo {PASSWORD} | sudo -S -p '' poweroff\n")
     except TimeoutError as e:
         proc.kill()
@@ -341,6 +368,10 @@ def boot_snapshot(disk: Path, vars_file: Path) -> bool:
         "snapshot booted": "subvol=/@/.snapshots/" in cmdline,
         "snapshot root is a writable overlay": root.strip() == "overlay",
         "snapshot system running or degraded": state in ("running", "degraded"),
+        "restore from the snapshot succeeded": "Success: mv" in restore and "Restore complete" in restore,
+        "after restore: change since snapshot gone": "MARKER_GONE" in restored,
+        "after restore: boots @ and runs": "subvol=/@\n" in restored + "\n"
+        and restored.strip().splitlines()[-1] in ("running", "degraded"),
     }
     for name, ok in checks.items():
         print(f"install-test: {'ok  ' if ok else 'FAIL'} {name}")
