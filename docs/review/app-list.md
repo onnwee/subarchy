@@ -47,7 +47,7 @@ change.
 | App | Role | Preinstalled | Default | Source | Package | Notes |
 |---|---|---|---|---|---|---|
 | Zen | browser | yes | yes | aur | `zen-browser-bin` | [[0042-browser\|ADR 0042]] |
-| Chromium | browser |  |  | repo | `chromium` | Also a candidate for running web apps in app windows ([[0042-browser\|ADR 0042]]) |
+| Chromium | browser | yes |  | repo | `chromium` | Preinstalled (owner, 2026-11-06), with extensions set by policy ([[0042-browser\|ADR 0042]]); also a candidate for running web apps |
 
 ### Communication
 
