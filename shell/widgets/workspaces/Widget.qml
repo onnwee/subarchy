@@ -5,6 +5,7 @@ import qs.Commons
 import qs.Ui
 import "Model.js" as Model
 import "../../Commons/Glyphs.js" as Glyphs
+import "../../Commons/HyprDispatch.js" as Dispatch
 
 // Workspaces 1–0 for this output, as on sputnik's bar: the shown one as a
 // filled square, occupied ones in text colour, empty ones muted. Click to
@@ -45,7 +46,13 @@ BarWidget {
 
         MouseArea {
           anchors.fill: parent
-          onClicked: Hyprland.dispatch("workspace " + slot.modelData.id)
+          onClicked: {
+            const ws = Hyprland.workspaces.values.find(w => w.id === slot.modelData.id)
+            if (ws)
+              ws.activate()
+            else
+              Hyprland.dispatch(Dispatch.workspace(slot.modelData.id))
+          }
         }
       }
     }

@@ -6,6 +6,7 @@ import Quickshell.Wayland
 import Quickshell.Hyprland
 import qs.Commons
 import "AltSwitchModel.js" as Model
+import "Commons/HyprDispatch.js" as Dispatch
 
 // Alt-Tab across all workspaces, most recently used first. Hyprland's
 // bindings drive it over IPC (next, prev, commit on Alt release, cancel).
@@ -17,6 +18,7 @@ PanelWindow { // qmllint disable uncreatable-type
   property var history: []
   property var order: []
   property int index: -1
+  property real lastEmptyCommit: -1
   readonly property var byAddress: {
     const m = {}
     for (const t of Hyprland.toplevels.values)
@@ -29,8 +31,8 @@ PanelWindow { // qmllint disable uncreatable-type
   WlrLayershell.namespace: "subcult-altswitch"
   WlrLayershell.layer: WlrLayer.Overlay
   exclusionMode: ExclusionMode.Ignore
-  implicitWidth: Math.min(list.implicitWidth + 2 * Style.spacing, 900)
-  implicitHeight: list.implicitHeight + 2 * Style.spacing
+  implicitWidth: Math.min(sw.order.length * 168 + Style.spacing, 900)
+  implicitHeight: 52 + 2 * Style.spacing
   color: "transparent"
 
   Connections {
@@ -43,17 +45,27 @@ PanelWindow { // qmllint disable uncreatable-type
 
   function step(n) {
     if (sw.index < 0) {
+      Hyprland.refreshToplevels()
       sw.order = Model.order(Hyprland.toplevels.values.map(t => t.address), sw.history)
       sw.index = Model.start(sw.order, n)
+      // The Alt release can overtake the first step; apply it now.
+      if (Model.autoCommit(sw.lastEmptyCommit, Date.now(), 300))
+        sw.commit()
     } else {
       sw.index = Model.next(sw.order, sw.index, n)
     }
   }
 
   function commit() {
-    if (sw.index >= 0 && sw.index < sw.order.length) {
-      const a = String(sw.order[sw.index])
-      Hyprland.dispatch("focuswindow address:" + (a.indexOf("0x") === 0 ? a : "0x" + a))
+    if (sw.index < 0) {
+      sw.lastEmptyCommit = Date.now()
+      return
+    }
+    sw.lastEmptyCommit = -1
+    if (sw.index < sw.order.length) {
+      const d = Dispatch.window(sw.order[sw.index])
+      if (d !== "")
+        Hyprland.dispatch(d)
     }
     sw.cancel()
   }
@@ -77,48 +89,54 @@ PanelWindow { // qmllint disable uncreatable-type
     border.width: 1
     border.color: Theme.border
 
-    Row {
+    ListView {
       id: list
-      x: Style.spacing
-      y: Style.spacing
+      anchors.fill: parent
+      anchors.margins: Style.spacing
+      orientation: ListView.Horizontal
       spacing: Style.spacing
+      clip: true
+      interactive: false
+      model: sw.order
+      currentIndex: sw.index
+      highlightFollowsCurrentItem: true
+      highlightMoveDuration: 0
 
-      Repeater {
-        model: sw.order
-        delegate: Rectangle {
-          id: card
-          required property var modelData
-          required property int index
-          readonly property var toplevel: sw.byAddress[modelData] || null
+      delegate: Rectangle {
+        id: card
+        required property var modelData
+        required property int index
+        readonly property var toplevel: sw.byAddress[modelData] || null
 
-          width: 160
-          height: 52
-          color: index === sw.index ? Theme.selection : Theme.base
-          border.width: 1
-          border.color: index === sw.index ? Theme.accent : Theme.surface
+        width: 160
+        height: 52
+        color: index === sw.index ? Theme.selection : Theme.base
+        border.width: 1
+        border.color: index === sw.index ? Theme.accent : Theme.surface
 
-          Column {
-            anchors.fill: parent
-            anchors.margins: 6
-            spacing: 2
-            Text {
-              width: parent.width
-              text: card.toplevel && card.toplevel.lastIpcObject ? card.toplevel.lastIpcObject.class || "" : ""
-              color: Theme.muted
-              elide: Text.ElideRight
-              font.family: Style.uiFontFamily
-              font.pixelSize: Style.fontSize - 1
-            }
-            Text {
-              width: parent.width
-              text: card.toplevel ? card.toplevel.title : ""
-              color: Theme.text
-              elide: Text.ElideRight
-              maximumLineCount: 2
-              wrapMode: Text.Wrap
-              font.family: Style.uiFontFamily
-              font.pixelSize: Style.fontSize
-            }
+        Column {
+          anchors.fill: parent
+          anchors.margins: 6
+          spacing: 2
+          Text {
+            width: parent.width
+            text: card.toplevel && card.toplevel.lastIpcObject ? card.toplevel.lastIpcObject.class || "" : ""
+            textFormat: Text.PlainText
+            color: Theme.muted
+            elide: Text.ElideRight
+            font.family: Style.uiFontFamily
+            font.pixelSize: Style.fontSize - 1
+          }
+          Text {
+            width: parent.width
+            text: card.toplevel ? card.toplevel.title : ""
+            textFormat: Text.PlainText
+            color: Theme.text
+            elide: Text.ElideRight
+            maximumLineCount: 2
+            wrapMode: Text.Wrap
+            font.family: Style.uiFontFamily
+            font.pixelSize: Style.fontSize
           }
         }
       }
