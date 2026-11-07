@@ -21,6 +21,23 @@ battery**, showing a still frame. No separate wallpaper daemon.
 
 Revised 2026-11-06 under [[0054-lightweight-battery-first|ADR 0054]].
 
+## Wallpapers that ship
+
+The owner's own wallpapers (the owner holds the rights), starting with the 109
+images in the `subcult-minimal` theme on `sputnik`
+(`~/.config/omarchy/themes/subcult-minimal/backgrounds/`, 254 MB, read
+2026-11-07):
+
+- 102 illustrations at 1586×992 or 1585×992 (series such as acid, ghost tape,
+  riso, midnight, botanical, noir, cosmic, y2k, punk, broadcast, gouache);
+- the seven SUBCULT poster wallpapers from the rice at 2560×1440.
+
+The 1586×992 images will look soft on `sputnik`'s 3456×2160 panel and the
+2560×1440 monitor. Upscale or re-export them at higher resolution before
+shipping. At 254 MB they do not belong in this Git repository; they ship as
+a separate `subarchy-wallpapers` package built from an assets store (Git LFS
+or release files).
+
 ## Options considered
 
 | Option | Why not chosen |

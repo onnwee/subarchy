@@ -46,6 +46,7 @@ NVMe.
 | B6 | Secure Boot | Not configured | [[0012-secure-boot\|ADR 0012]]: opt-in with sbctl |
 | B7 | Boot splash | Plymouth | [[0013-boot-splash\|ADR 0013]]: Plymouth, themed |
 | B8 | Swap and hibernation | zram; hibernation optional | [[0014-swap-hibernation\|ADR 0014]]: zram, hibernation opt-in |
+| B9 | Backups of user files | Not covered | [[0060-backups\|ADR 0060]]: borg (borgmatic) to the homelab |
 
 ## System services
 
@@ -63,6 +64,9 @@ NVMe.
 | S10 | Time, locale and input methods | tzupdate, fcitx5 | [[0024-time-locale-input\|ADR 0024]]: auto time zone, input methods on demand |
 | S11 | Containers | Docker, socket-activated; user not in `docker` group | [[0055-containers\|ADR 0055]]: same as Omarchy |
 | S12 | VPN and mesh networking | Tailscale panel, Taildrop receive service (optional install) | [[0058-tailscale\|ADR 0058]]: Tailscale preinstalled, panel, Taildrop |
+| S13 | sudo and polkit policy | Password; optional permanent passwordless toggle | [[0062-privilege-policy\|ADR 0062]]: listed actions skip it; "skip sudo for X minutes" |
+| S14 | Security hardening | ufw, faillock lockout settings | [[0063-security-hardening\|ADR 0063]]: AppArmor, sysctl, lockdown with Secure Boot, security fast path |
+| S15 | Privacy and telemetry | — | [[0065-privacy-telemetry\|ADR 0065]]: nothing leaves unless the user acts |
 
 ## Packages and updates
 
@@ -95,6 +99,7 @@ NVMe.
 | D6 | Wallpaper engine | `owe` | [[0038-wallpaper\|ADR 0038]]: shell-drawn, still by default, video opt-in |
 | D7 | Fonts and icon theme | JetBrains Mono Nerd, Yaru icons | [[0039-fonts-icons\|ADR 0039]]: JetBrains Mono, Space Grotesk, Oswald, Papirus |
 | D8 | Quality-of-life conveniences and keybindings | Omarchy's bindings, toggles, capture tools | [[0056-quality-of-life\|ADR 0056]]: Omarchy's set, 16 extras, 4 additions |
+| D9 | Default bar and calendar | Stock bar | [[0061-default-bar-calendar\|ADR 0061]]: the owner's current bar; Google and CalDAV calendar |
 
 ## Applications and tooling
 
@@ -108,6 +113,7 @@ NVMe.
 | A6 | Default app set and web apps | `omarchy-base.packages` apps, 11 web apps | [[0044-default-apps\|ADR 0044]]: lean core, installer and default picker; owner writes the list |
 | A7 | Command-line interface for the distribution | `omarchy <group> <action>` over 556 commands | [[0046-distribution-cli\|ADR 0046]]: one dispatcher; Bash glue, Go for complex parts |
 | A8 | AI agent integration | `omarchy agent`, agents bar widget | [[0047-ai-agents\|ADR 0047]]: default agent, usage widget, skills; no account manager. Desktop control: [[0059-agent-desktop-control\|ADR 0059]] |
+| A9 | Virtual machines | A Windows VM that runs through Docker | [[0064-virtual-machines\|ADR 0064]]: QEMU/KVM, libvirt, virt-manager, no images |
 
 ## Delivery and identity
 
@@ -119,5 +125,7 @@ NVMe.
 | R4 | Name, `os-release` and brand | Omarchy | [[0052-name-identity\|ADR 0052]]: Subarchy; screens SUBCULT; command `subcult`, alias `sub` |
 | R5 | Licence | MIT | [[0053-licence\|ADR 0053]]: GPL-3.0-or-later |
 | R6 | Source hosting and CI | GitHub | [[0051-hosting-ci\|ADR 0051]]: Gitea primary, GitHub mirror |
+| R7 | Versioning | Semantic versions (4.5.0) | [[0066-versioning\|ADR 0066]]: semver from 0.0.0 |
+| R8 | User manual | Online manual and agent skill | [[0067-user-manual\|ADR 0067]]: repository source, offline on device, agent skill |
 
 Related: [[0001-fork-strategy|ADR 0001]] · [[decisions-index|Decisions]] · [[omarchy-overview|Omarchy component map]]

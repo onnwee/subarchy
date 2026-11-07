@@ -57,6 +57,7 @@ before building on it.
   `omarchy-keyring`.
 - CI must rebuild DKMS and AUR packages when their upstream changes, and
   rebuild against the staged Arch snapshot ([[0026-update-model|ADR 0026]]).
-- The signing key needs an owner, offline backup and a rotation plan.
+- The owner holds the signing key; it is on `soyuz` (2026-11-07), and the
+  owner will copy it to a second place. A rotation plan is still needed.
 
 Related: [[decision-map|Decision map]] · [[0026-update-model|ADR 0026]] · [[0027-third-party-software|ADR 0027]]

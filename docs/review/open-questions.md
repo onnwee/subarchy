@@ -80,7 +80,12 @@ Answer inline and move answered items to the bottom with the date.
 - **13. Default user**: Subarchy is mainly for the owner, while staying
   compatible with many devices (2026-11-07; [[0054-lightweight-battery-first|ADR 0054]]).
 
-Still open: 2, 5, 6, 8, 15, 16, 17. They are tracked in
-[[next-decisions|Next decisions]].
+- **2. Publisher**: `subculture-collective` (2026-11-07).
+- **5. Assets**: the owner holds the rights to all SUBCULT assets.
+- **6. Licences**: not a concern while private; checked before going public.
+- **8. Signing key**: held by the owner, on `soyuz`.
+- **15. Old theme repository**: left as it is.
+
+Still open: 16 (`.bak` cleanup on `sputnik`) and 17 (OmaSSH and Fleetbar).
 
 Related: [[0001-fork-strategy|ADR 0001]] · [[brand-identity|Brand identity]] · [[roadmap|Roadmap]]

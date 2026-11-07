@@ -55,8 +55,8 @@ battery in NVIDIA mode, a notification offers the switch back the same way.
 
 At login, an accepted NVIDIA choice applies only if the machine is still on
 AC with two or more external monitors; otherwise the session starts in Intel
-mode ([[0054-lightweight-battery-first|ADR 0054]]). This login fallback is an
-agent proposal; change it if NVIDIA mode should stick regardless.
+mode ([[0054-lightweight-battery-first|ADR 0054]]). This login fallback was
+proposed by the agent and confirmed by the owner on 2026-11-07.
 
 Implementation notes:
 

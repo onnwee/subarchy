@@ -66,7 +66,7 @@ hotkeys). Script commands live in `~/.config/subcult/commands/`.
 The script-command header also accepts **Raycast's `@raycast.*` keys**
 (`title`, `mode`, `argument1` …), so existing Raycast script commands run
 unchanged where they do not depend on macOS tools. This compatibility choice
-was made by the agent and is easy to drop.
+was proposed by the agent and confirmed by the owner on 2026-11-07.
 
 ## Options considered
 

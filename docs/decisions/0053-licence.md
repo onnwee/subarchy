@@ -19,9 +19,7 @@ Subarchy's own code is licensed under the **GNU General Public License,
 version 3 or later** (`GPL-3.0-or-later`). The text is in `LICENSE` at the
 repository root.
 
-The owner chose "GPL-3.0"; "or later" is the assumed variant, matching
-common practice and the SPDX file used. Change to `GPL-3.0-only` here and in
-file headers if later versions should not apply.
+The owner chose "GPL-3.0" and confirmed "or later" on 2026-11-07.
 
 ## Borrowed code keeps its licence
 
@@ -42,6 +40,13 @@ distribution is then under GPL-3.0 terms.
 |---|---|
 | MIT | Allows closed derivatives. |
 | Apache-2.0 | Allows closed derivatives. |
+
+## Third-party licences while private
+
+The owner holds the rights to all SUBCULT assets and is not concerned with
+third-party licences while the repository stays private (2026-11-07). The
+licence checks listed below become a release gate before anything is made
+public.
 
 ## Consequences
 

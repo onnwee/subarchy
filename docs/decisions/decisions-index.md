@@ -84,5 +84,13 @@ order.
 | [[0057-launcher\|0057]] | Launcher |
 | [[0058-tailscale\|0058]] | Tailscale |
 | [[0059-agent-desktop-control\|0059]] | Agent desktop control |
+| [[0060-backups\|0060]] | Backups |
+| [[0061-default-bar-calendar\|0061]] | Default bar and calendar |
+| [[0062-privilege-policy\|0062]] | sudo and polkit policy |
+| [[0063-security-hardening\|0063]] | Security hardening |
+| [[0064-virtual-machines\|0064]] | Virtual machines |
+| [[0065-privacy-telemetry\|0065]] | Privacy and telemetry |
+| [[0066-versioning\|0066]] | Versioning |
+| [[0067-user-manual\|0067]] | User manual |
 
 Related: [[home|Docs home]]

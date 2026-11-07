@@ -20,7 +20,7 @@ runs and is checked in CI.
 - [x] Foundation, boot, system, package, session, shell, app and delivery
       decisions (ADRs 0002 to 0053)
 - [x] Product name: Subarchy, shown as SUBCULT ([[0052-name-identity|ADR 0052]])
-- [ ] Owner's app list ([[app-list|App list]])
+- [x] Owner's app list ([[app-list|App list]])
 - [x] Owner's theme tool: Theme Tender ([[0037-theming|ADR 0037]])
 
 ## Phase 1: infrastructure
@@ -72,7 +72,8 @@ Plymouth, NetworkManager with the DNS trust policy, PipeWire, ufw.
 
 - [ ] Port Omarchy's x86 hardware fixes, marked untested until run on real
       hardware ([[0050-hardware-support|ADR 0050]])
-- [ ] Install on `sputnik` as the reference machine
+- [ ] Install on `sputnik`'s empty second drive (`nvme0n1`), keeping Omarchy on
+      `nvme1n1` as the fallback ([[0049-installer|ADR 0049]])
 - [ ] First release on the stable channel
 
 Related: [[decision-map|Decision map]] · [[0001-fork-strategy|ADR 0001]] · [[open-questions|Open questions]]

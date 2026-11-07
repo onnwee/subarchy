@@ -48,7 +48,7 @@ Browser control is covered by the Chromium extensions in
 | Launch apps and run `subcult` commands | the launcher's command index ([[0057-launcher\|ADR 0057]]) |
 
 - Two safeguards that do not limit availability, proposed by the agent and
-  easy to drop:
+  confirmed by the owner on 2026-11-07:
   - a bar indicator while an agent is controlling the desktop, using the
     privacy indicator from the [[rice-port-review|rice port]];
   - control pauses while the screen is locked, so an agent cannot type into

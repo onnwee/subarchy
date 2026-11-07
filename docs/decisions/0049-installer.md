@@ -49,6 +49,14 @@ Decision map item R2. Accepted 2026-11-06.
   the installer.
 - The CI boot test ([[0026-update-model|ADR 0026]]) uses the same ISO in a
   VM.
+- The installer asks which disk to use and leaves every other disk untouched.
+  On a machine with another OS on a second disk it creates its own EFI
+  partition on the target disk, adds its own firmware boot entry, and can
+  add a Limine entry that chainloads the other disk's bootloader.
+  The first install is `sputnik`'s empty second drive: `nvme0n1`, a 931.5 GB
+  SPCC SSD with a blank GPT and no partitions (2026-11-07). Omarchy stays on
+  `nvme1n1` (Crucial P5) as the fallback; its Limine firmware entry is
+  `Boot0002`.
 - The installer takes an `@factory` btrfs snapshot of the finished install,
   kept outside snapper's rotation, and supports a first-boot owner setup, so
   factory reset works ([[0056-quality-of-life|ADR 0056]]). Borrowed from
