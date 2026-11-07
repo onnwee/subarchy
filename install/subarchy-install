@@ -7,7 +7,7 @@
 # GPT with a 4 GiB EFI partition and a LUKS2 root (ADR 0009, 0010), btrfs
 # subvolumes @ @home @log @pkg, linux-zen and linux-lts as unified kernel
 # images built by mkinitcpio's systemd hooks (ADR 0004, 0008), Limine
-# (ADR 0007), snapper for @ (ADR 0011), zram swap (ADR 0014) and
+# (ADR 0007) with snapshot entries, snapper for @ (ADR 0011), zram swap (ADR 0014) and
 # NetworkManager (ADR 0016). The TUI that asks the questions comes later and
 # writes this config file.
 #
@@ -120,23 +120,39 @@ write_boot_config() {
   step "writing boot configuration"
   local cmdline="rd.luks.name=$luks_uuid=root rd.luks.options=discard root=/dev/mapper/root rootflags=subvol=@ rw"
   [[ -n ${conf[KERNEL_CMDLINE_EXTRA]} ]] && cmdline+=" ${conf[KERNEL_CMDLINE_EXTRA]}"
-  install -d "$target"/etc/{kernel,mkinitcpio.conf.d,mkinitcpio.d} "$target/boot/EFI/Linux"
+  install -d "$target"/etc/{kernel,mkinitcpio.conf.d,default}
   echo "$cmdline" >"$target/etc/kernel/cmdline"
   echo "KEYMAP=${conf[KEYMAP]}" >"$target/etc/vconsole.conf"
   cat >"$target/etc/mkinitcpio.conf.d/subarchy.conf" <<'EOF'
-# Subarchy (ADR 0008): systemd-based initramfs. Plymouth joins with the
+# Subarchy (ADR 0008): systemd-based initramfs; sd-btrfs-overlayfs makes
+# read-only snapshots bootable (ADR 0011). Plymouth joins with the
 # boot splash.
-HOOKS=(base systemd autodetect microcode modconf kms keyboard sd-vconsole block sd-encrypt filesystems fsck)
+HOOKS=(base systemd autodetect microcode modconf kms keyboard sd-vconsole block sd-encrypt filesystems fsck sd-btrfs-overlayfs)
 EOF
-  local kernel
-  for kernel in linux-zen linux-lts; do
-    cat >"$target/etc/mkinitcpio.d/$kernel.preset" <<EOF
-# Subarchy: one unified kernel image per kernel (ADR 0008).
-ALL_kver="/boot/vmlinuz-$kernel"
-PRESETS=('default')
-default_uki="/boot/EFI/Linux/subarchy-$kernel.efi"
+  # limine-mkinitcpio-hook builds one UKI per kernel and writes the Limine
+  # entries; limine-snapper-sync adds the snapshot entries (ADR 0007, 0011).
+  cat >"$target/etc/default/limine" <<EOF
+# Subarchy boot entries (ADR 0007, 0008, 0011). Read by limine-entry-tool
+# and limine-snapper-sync; see /etc/limine-entry-tool.conf for all options.
+TARGET_OS_NAME="Subarchy"
+ESP_PATH="/boot"
+KERNEL_CMDLINE[default]="$cmdline"
+ENABLE_UKI=yes
+CUSTOM_UKI_NAME="subarchy"
+ENABLE_LIMINE_FALLBACK=yes
+FIND_BOOTLOADERS=no
+BOOT_ORDER="linux-zen, linux-lts, *, *fallback, Snapshots"
+MAX_SNAPSHOT_ENTRIES=5
 EOF
-  done
+  # Global menu options; the tools add the entries below them. Entry 1 is
+  # the Subarchy directory, so entry 2 is its first kernel (linux-zen).
+  cat >"$target/boot/limine.conf" <<'EOF'
+timeout: 3
+default_entry: 2
+serial: yes
+interface_branding: SUBCULT // Subarchy
+interface_branding_colour: 8b5cf6
+EOF
 }
 
 pacstrap_packages() {
@@ -184,6 +200,8 @@ EOF
   # zsh's first-run wizard would greet the user otherwise.
   touch "$target/home/$user/.zshrc"
   arch-chroot "$target" chown "$user:$user" "/home/$user/.zshrc"
+  # A new user starts current: migrations shipped so far are already done.
+  arch-chroot "$target" runuser -u "$user" -- subcult-update migrate --mark-all
 }
 
 setup_snapper() {
@@ -194,35 +212,17 @@ setup_snapper() {
 }
 
 install_limine() {
-  step "installing Limine"
-  install -Dm644 "$target/usr/share/limine/BOOTX64.EFI" "$target/boot/EFI/BOOT/BOOTX64.EFI"
-  install -Dm644 "$target/usr/share/limine/BOOTX64.EFI" "$target/boot/EFI/limine/BOOTX64.EFI"
-  cat >"$target/boot/limine.conf" <<'EOF'
-# Subarchy boot menu (ADR 0007). Snapshot entries are added by the update
-# command once limine-snapper-sync is packaged.
-timeout: 3
-serial: yes
-interface_branding: SUBCULT // Subarchy
-interface_branding_colour: 8b5cf6
-
-/Subarchy
-    protocol: efi
-    path: boot():/EFI/Linux/subarchy-linux-zen.efi
-
-/Subarchy (LTS kernel)
-    protocol: efi
-    path: boot():/EFI/Linux/subarchy-linux-lts.efi
-EOF
-  # A firmware entry of its own, so other disks' boot entries stay untouched
-  # (ADR 0049). Firmware without NVRAM support still finds EFI/BOOT.
-  if [[ -d /sys/firmware/efi/efivars ]]; then
-    local disk=${conf[DISK]}
-    efibootmgr --quiet --create --disk "$disk" --part 1 \
-      --label Subarchy --loader '\EFI\limine\BOOTX64.EFI' ||
-      echo "subarchy-install: could not add a firmware boot entry; EFI/BOOT fallback remains" >&2
-  fi
-  [[ -s $target/boot/EFI/Linux/subarchy-linux-zen.efi ]] || die "linux-zen UKI missing"
-  [[ -s $target/boot/EFI/Linux/subarchy-linux-lts.efi ]] || die "linux-lts UKI missing"
+  step "checking the boot entries"
+  # The pacman hooks already built the UKIs and the menu while pacstrapping;
+  # run them once more now that snapper is set up, then sync snapshots.
+  arch-chroot "$target" limine-update
+  arch-chroot "$target" systemctl enable --quiet limine-snapper-sync.service
+  local kernel
+  for kernel in linux-zen linux-lts; do
+    [[ -s $target/boot/EFI/Linux/subarchy_$kernel.efi ]] || die "$kernel UKI missing"
+  done
+  [[ -s $target/boot/EFI/BOOT/BOOTX64.EFI ]] || die "Limine fallback loader missing"
+  grep -q '^/+Subarchy' "$target/boot/limine.conf" || die "no Subarchy entry in limine.conf"
 }
 
 finish() {

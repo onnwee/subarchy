@@ -60,4 +60,12 @@ before building on it.
 - The owner holds the signing key; it is on `soyuz` (2026-11-07), and the
   owner will copy it to a second place. A rotation plan is still needed.
 
+## Progress
+
+- 2026-11-07: `packaging/aur/` holds the reviewed, pinned AUR PKGBUILDs for
+  `limine-mkinitcpio-hook` 1.40.0 and `limine-snapper-sync` 1.32.1.
+  `packaging/aur/build.sh` builds them in a clean `archlinux` container into
+  the local, unsigned test repository `build/repo`. Signing and hosting are
+  still open.
+
 Related: [[decision-map|Decision map]] · [[0026-update-model|ADR 0026]] · [[0027-third-party-software|ADR 0027]]

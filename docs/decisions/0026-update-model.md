@@ -81,4 +81,18 @@ How the stable snapshot is served:
 - Direct `pacman -Syu` bypasses the snapshot and migrations; the update guard
   should warn.
 
+## Progress
+
+- 2026-11-07: `subcult update` (`cmd/subcult-update`, `internal/update`)
+  does steps 1 to 7 above: snapper snapshot, `pacman -Syu`, the DKMS check
+  for every installed kernel, per-user migrations from
+  `/usr/share/subcult/migrations` (markers in
+  `~/.local/state/subcult/migrations`), fwupd/yay/mise when installed,
+  orphan removal on confirmation, `paccache -rk2`, and a report of the
+  snapshot, DKMS problems and whether a reboot is needed. `--dry-run` prints
+  what would change. `subcult update check` counts updates with
+  `checkupdates`. The VM install test runs it on a fresh install. Not yet:
+  the channels, the daily check timer and bar indicator, and service restart
+  detection.
+
 Related: [[decision-map|Decision map]] · [[0025-package-repository|ADR 0025]] · [[0011-snapshots|ADR 0011]]

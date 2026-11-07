@@ -4,17 +4,23 @@
 #   2. copies iso/profile, pointing its [subarchy] repository at that path;
 #   3. runs mkarchiso (needs root) with a work directory outside the checkout.
 #
-# Usage: tools/iso/build.sh [out-dir]   (default: build/iso)
+# Usage: tools/iso/build.sh [out-dir]       (default: build/iso)
+#        tools/iso/build.sh --package-only  (step 1 only, for make install-test)
 # Env:   SUBARCHY_ISO_WORK  mkarchiso work dir (default /var/tmp/subarchy-iso-work)
 set -euo pipefail
 
 root=$(git rev-parse --show-toplevel)
+package_only=0
+if [[ ${1:-} == --package-only ]]; then
+  package_only=1
+  shift
+fi
 out=$(realpath -m "${1:-$root/build/iso}")
 work=${SUBARCHY_ISO_WORK:-/var/tmp/subarchy-iso-work}
 repo="$root/build/repo"
 profile="$root/build/iso-profile"
 
-command -v mkarchiso >/dev/null || { echo "build.sh: mkarchiso not found (pacman -S archiso)" >&2; exit 1; }
+((package_only)) || command -v mkarchiso >/dev/null || { echo "build.sh: mkarchiso not found (pacman -S archiso)" >&2; exit 1; }
 
 echo ">> building the subarchy package"
 mkdir -p "$repo"
@@ -32,6 +38,7 @@ pacman -T go >/dev/null 2>&1 || nodeps=(--nodeps)
 ) >"$root/build/makepkg.log" 2>&1 || { tail -30 "$root/build/makepkg.log" >&2; exit 1; }
 pkg=$(find "$repo" -maxdepth 1 -name 'subarchy-*.pkg.tar.zst' -printf '%T@ %p\n' | sort -n | tail -1 | cut -d' ' -f2-)
 repo-add --quiet "$repo/subarchy.db.tar.gz" "$pkg" >/dev/null
+((package_only)) && exit 0
 
 echo ">> preparing the profile"
 mkdir -p "$profile"

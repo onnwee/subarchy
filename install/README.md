@@ -20,15 +20,19 @@ What it builds:
 | Partition | GPT: 4 GiB FAT32 ESP at `/boot`, rest LUKS2 | 0009, 0010 |
 | Filesystems | btrfs `@ @home @log @pkg`, `compress=zstd:3,noatime` | 0009 |
 | Packages | `packages/base.txt` via pacstrap | 0002, 0004 |
-| initramfs | systemd hooks with `sd-encrypt`; one UKI per kernel in `/boot/EFI/Linux` | 0008 |
-| Boot | Limine (`EFI/limine` with its own firmware entry, plus `EFI/BOOT` fallback) | 0007 |
-| Snapshots | snapper config `root` for `@`, 5 numbered, no timeline | 0011 |
+| initramfs | systemd hooks with `sd-encrypt`; `limine-mkinitcpio-hook` builds one UKI per kernel in `/boot/EFI/Linux` | 0008 |
+| Boot | Limine with its own firmware entry and the `EFI/BOOT` fallback; menu from `/etc/default/limine` | 0007 |
+| Snapshots | snapper config `root` for `@`, 5 numbered, no timeline; `limine-snapper-sync` adds a boot entry per snapshot | 0011 |
 | System | zram swap, NetworkManager, timesyncd, user in `wheel` with zsh, root locked | 0014, 0016 |
 | Factory reset | read-only `@factory` snapshot of the fresh `@` | 0049, 0056 |
 
 Not yet: the TUI that asks the questions and writes the config, Plymouth,
-SDDM and the desktop, snapshot boot entries (limine-snapper-sync is not
-packaged yet), hardware detection, and the offline package cache.
+SDDM and the desktop, hardware detection, a Limine entry that chainloads
+another disk's bootloader, and the offline package cache.
+
+The two Limine tools are AUR packages rebuilt locally into `build/repo` by
+`packaging/aur/build.sh` (needs docker) until the Subarchy repository
+exists.
 
 ## Testing
 

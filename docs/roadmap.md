@@ -42,10 +42,12 @@ Packages and installer for the foundation, boot and system layers: Arch with
 Plymouth, NetworkManager with the DNS trust policy, PipeWire, ufw.
 
 - [ ] ISO builds in CI ([[0049-installer|ADR 0049]]); builds and boots locally since 2026-11-07 (`make iso iso-test`), CI needs a privileged runner
-- [ ] Installs in a VM to an encrypted, bootable system with snapshot entries
+- [x] Installs in a VM to an encrypted, bootable system with snapshot entries
+      (2026-11-07, `make install-test`; snapshot entry boots)
 - [ ] Set the CI memory and package budgets from this first build
       ([[0054-lightweight-battery-first|ADR 0054]])
-- [ ] Update command: snapshot, upgrade, DKMS check, migrations
+- [ ] Update command: snapshot, upgrade, DKMS check, migrations (`subcult
+      update` works in the VM test; channels and the check timer remain)
 
 ## Phase 3: session and shell
 
