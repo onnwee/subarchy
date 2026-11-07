@@ -1,7 +1,7 @@
 ---
 title: "Shell and look: design"
 type: plan
-status: proposed
+status: accepted
 created: 2026-11-07
 updated: 2026-11-07
 tags: [plan, shell, theme, design]
