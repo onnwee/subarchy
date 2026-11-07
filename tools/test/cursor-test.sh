@@ -82,4 +82,16 @@ set -e
 [[ $status == 2 ]] || fail "set --role nonsense exited $status, want 2"
 [[ $(cat "$home/.config/subcult/cursor.json") == "$before" ]] || fail "cursor.json changed after a refused set"
 
+# A size chosen with set survives a new session: Hyprland reads it from
+# ~/.config/subcult/cursor-env.lua at login. GSettings uses a throwaway
+# backend so the test cannot touch the real desktop settings.
+home2="$work/home2"
+mkdir -p "$home2"
+env -u DBUS_SESSION_BUS_ADDRESS -u HYPRLAND_INSTANCE_SIGNATURE GSETTINGS_BACKEND=memory HOME=$home2 SUBCULT_PATH=$root \
+  "$bin" set --size 32 --src "$root/default/cursor" >"$work/set.log" 2>&1 ||
+  { tail -5 "$work/set.log" >&2; fail "set --size 32 failed"; }
+grep -q '"HYPRCURSOR_SIZE", "32"' "$home2/.config/subcult/cursor-env.lua" 2>/dev/null ||
+  fail "set --size does not persist the size for the next session"
+grep -q '"XCURSOR_SIZE", "32"' "$home2/.config/subcult/cursor-env.lua" || fail "XCURSOR_SIZE not persisted"
+
 echo "cursor-test: ok"

@@ -219,6 +219,13 @@ func SaveSettings(path string, s Settings) error {
 	return os.Rename(tmp, path)
 }
 
+// EnvLua is ~/.config/subcult/cursor-env.lua: Hyprland reads it at login
+// (default/hypr/envs.lua), so a size chosen with `set` outlives the session.
+func EnvLua(size int) string {
+	return fmt.Sprintf("-- Written by `subcult cursor set`; change it with that command.\n"+
+		"hl.env(\"XCURSOR_SIZE\", \"%d\")\nhl.env(\"HYPRCURSOR_SIZE\", \"%d\")\n", size, size)
+}
+
 // ErrInvalid marks a setting the palette or the size list rejects.
 var ErrInvalid = errors.New("invalid cursor setting")
 

@@ -145,6 +145,13 @@ func apply(ctx context.Context, e env, p cursor.Palette, src string, s cursor.Se
 	if err := build(ctx, e, p, src, out, s); err != nil {
 		return err
 	}
+	envFile := filepath.Join(e.home, ".config", "subcult", "cursor-env.lua")
+	if err := os.WriteFile(envFile+".tmp", []byte(cursor.EnvLua(s.Size)), 0o644); err != nil {
+		return err
+	}
+	if err := os.Rename(envFile+".tmp", envFile); err != nil {
+		return err
+	}
 	if os.Getenv("HYPRLAND_INSTANCE_SIGNATURE") != "" && e.runner.Has("hyprctl") {
 		if err := e.runner.Run(ctx, "hyprctl", "setcursor", cursor.ThemeName, fmt.Sprint(s.Size)); err != nil {
 			return err
