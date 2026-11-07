@@ -39,6 +39,16 @@ PanelWindow { // qmllint disable uncreatable-type
       password.forceActiveFocus()
   }
 
+  // After a wrong password PAM asks again; the field was disabled while it
+  // checked, so give it the focus back.
+  Connections {
+    target: dialog.flow
+    function onIsResponseRequiredChanged() {
+      if (dialog.flow && dialog.flow.isResponseRequired)
+        password.forceActiveFocus()
+    }
+  }
+
   function submit() {
     if (dialog.flow && dialog.flow.isResponseRequired) {
       dialog.flow.submit(password.text)
@@ -51,74 +61,89 @@ PanelWindow { // qmllint disable uncreatable-type
       dialog.flow.cancelAuthenticationRequest()
   }
 
-  Rectangle {
-    anchors.centerIn: parent
-    width: 420
-    height: content.implicitHeight + 3 * Style.spacing
-    color: Theme.mantle
-    border.width: 1
-    border.color: Theme.border
+  Item {
+    anchors.fill: parent
+    Keys.onEscapePressed: dialog.cancel()
 
-    Column {
-      id: content
-      x: 1.5 * Style.spacing
-      y: 1.5 * Style.spacing
-      width: parent.width - 3 * Style.spacing
-      spacing: Style.spacing
+    Rectangle {
+      anchors.centerIn: parent
+      width: 420
+      height: content.implicitHeight + 3 * Style.spacing
+      color: Theme.mantle
+      border.width: 1
+      border.color: Theme.border
 
-      Text {
-        width: parent.width
-        text: "Authentication required"
-        color: Theme.text
-        font.family: Style.uiFontFamily
-        font.pixelSize: Style.fontSize + 3
-        font.bold: true
-      }
-      Text {
-        width: parent.width
-        text: dialog.flow ? dialog.flow.message : ""
-        color: Theme.subtext
-        wrapMode: Text.Wrap
-        font.family: Style.uiFontFamily
-        font.pixelSize: Style.fontSize
-      }
-      Text {
-        width: parent.width
-        visible: text !== ""
-        text: dialog.flow ? dialog.flow.supplementaryMessage : ""
-        color: dialog.flow && dialog.flow.supplementaryIsError ? Theme.error : Theme.subtext
-        wrapMode: Text.Wrap
-        font.family: Style.uiFontFamily
-        font.pixelSize: Style.fontSize
-      }
-      TextField {
-        id: password
-        width: parent.width
-        placeholderText: dialog.flow ? dialog.flow.inputPrompt : "Password"
-        echoMode: dialog.flow && dialog.flow.responseVisible ? TextInput.Normal : TextInput.Password
-        enabled: dialog.flow !== null && dialog.flow.isResponseRequired
-        color: Theme.text
-        font.family: Style.fontFamily
-        font.pixelSize: Style.fontSize + 1
-        background: Rectangle {
-          color: Theme.base
-          border.width: 1
-          border.color: password.activeFocus ? Theme.accent : Theme.surface
-        }
-        onAccepted: dialog.submit()
-        Keys.onEscapePressed: dialog.cancel()
-      }
-      Row {
-        anchors.right: parent.right
+      Column {
+        id: content
+        x: 1.5 * Style.spacing
+        y: 1.5 * Style.spacing
+        width: parent.width - 3 * Style.spacing
         spacing: Style.spacing
-        Button {
-          text: "Cancel"
-          onClicked: dialog.cancel()
+
+        Text {
+          width: parent.width
+          text: "Authentication required"
+          color: Theme.text
+          font.family: Style.uiFontFamily
+          font.pixelSize: Style.fontSize + 3
+          font.bold: true
         }
-        Button {
-          text: "Authenticate"
-          enabled: password.enabled
-          onClicked: dialog.submit()
+        Text {
+          width: parent.width
+          text: dialog.flow ? dialog.flow.message : ""
+          textFormat: Text.PlainText
+          color: Theme.subtext
+          wrapMode: Text.Wrap
+          font.family: Style.uiFontFamily
+          font.pixelSize: Style.fontSize
+        }
+        Text {
+          width: parent.width
+          visible: text !== ""
+          text: dialog.flow ? dialog.flow.supplementaryMessage : ""
+          textFormat: Text.PlainText
+          color: dialog.flow && dialog.flow.supplementaryIsError ? Theme.error : Theme.subtext
+          wrapMode: Text.Wrap
+          font.family: Style.uiFontFamily
+          font.pixelSize: Style.fontSize
+        }
+        Text {
+          width: parent.width
+          visible: dialog.flow !== null && dialog.flow.failed && (!dialog.flow.supplementaryMessage || dialog.flow.supplementaryMessage === "")
+          text: "Wrong password, try again."
+          color: Theme.error
+          font.family: Style.uiFontFamily
+          font.pixelSize: Style.fontSize
+        }
+        TextField {
+          id: password
+          width: parent.width
+          placeholderText: dialog.flow ? dialog.flow.inputPrompt : "Password"
+          echoMode: dialog.flow && dialog.flow.responseVisible ? TextInput.Normal : TextInput.Password
+          enabled: dialog.flow !== null && dialog.flow.isResponseRequired
+          color: Theme.text
+          font.family: Style.fontFamily
+          font.pixelSize: Style.fontSize + 1
+          background: Rectangle {
+            color: Theme.base
+            border.width: 1
+            border.color: password.activeFocus ? Theme.accent : Theme.surface
+          }
+          onAccepted: dialog.submit()
+          Keys.onEscapePressed: dialog.cancel()
+        }
+        Row {
+          anchors.right: parent.right
+          spacing: Style.spacing
+          Button {
+            text: "Cancel"
+            onClicked: dialog.cancel()
+          }
+          Button {
+            text: "Authenticate"
+            enabled: password.enabled
+            onClicked: dialog.submit()
+          }
         }
       }
     }
