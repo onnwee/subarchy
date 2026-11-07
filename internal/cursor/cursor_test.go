@@ -141,3 +141,42 @@ func writeFile(t *testing.T, path, content string) {
 		t.Fatal(err)
 	}
 }
+
+func TestLoadLayered(t *testing.T) {
+	dir := t.TempDir()
+	system := filepath.Join(dir, "system.json")
+	writeFile(t, system, `{"schema": 1, "colors": {"lavender": "#A78BFA", "crust": "#06040A", "text": "#F0ECE4"}}`)
+	user := filepath.Join(dir, "user.json")
+
+	tests := []struct {
+		name, content string
+		lavender      string
+		warnings      int
+	}{
+		{"missing user file", "", "#A78BFA", 0},
+		{"bad JSON", `{"colors": `, "#A78BFA", 1},
+		{"one bad role", `{"colors": {"lavender": "#112233", "foo": "oops"}}`, "#112233", 1},
+		{"role missing in user file", `{"colors": {"green": "#00FF88"}}`, "#A78BFA", 0},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			os.Remove(user)
+			if tt.content != "" {
+				writeFile(t, user, tt.content)
+			}
+			p, warnings, err := LoadLayered(system, user)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if p["lavender"] != tt.lavender {
+				t.Errorf("lavender = %s, want %s", p["lavender"], tt.lavender)
+			}
+			if len(warnings) != tt.warnings {
+				t.Errorf("warnings = %v, want %d", warnings, tt.warnings)
+			}
+		})
+	}
+	if _, _, err := LoadLayered(filepath.Join(dir, "none.json"), user); err == nil {
+		t.Error("want an error when the system palette is missing")
+	}
+}

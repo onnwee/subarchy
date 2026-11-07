@@ -65,16 +65,27 @@ func run(ctx context.Context, args []string, e env) int {
 	fs.SetOutput(e.stderr)
 	role := fs.String("role", "", "palette role for the fill")
 	size := fs.Int("size", 0, "cursor size in pixels")
-	palettePath := fs.String("palette", "", "palette.json (default: the user's, else the system one)")
+	palettePath := fs.String("palette", "", "palette.json to use alone (default: the system palette with the user's roles on top)")
 	src := fs.String("src", filepath.Join(e.system, "default", "cursor"), "folder with the shapes")
 	out := fs.String("out", "", "theme folder (build only)")
 	if err := fs.Parse(args[1:]); err != nil {
 		return 2
 	}
-	if *palettePath == "" {
-		*palettePath = defaultPalette(e)
+	var palette cursor.Palette
+	var err error
+	if *palettePath != "" {
+		palette, err = cursor.LoadPalette(*palettePath)
+	} else {
+		// The system palette underneath, the user's valid roles on top, so a
+		// broken theme file never stops the cursor.
+		var warnings []string
+		palette, warnings, err = cursor.LoadLayered(
+			filepath.Join(e.system, "default", "theme", "palette.json"),
+			filepath.Join(e.home, ".config", "subcult", "theme", "palette.json"))
+		for _, w := range warnings {
+			fmt.Fprintf(e.stderr, "subcult cursor: warning: %s\n", w)
+		}
 	}
-	palette, err := cursor.LoadPalette(*palettePath)
 	if err != nil {
 		fmt.Fprintf(e.stderr, "subcult cursor: %v\n", err)
 		return 1
@@ -108,14 +119,6 @@ func run(ctx context.Context, args []string, e env) int {
 	}
 	fmt.Fprintf(e.stderr, "subcult cursor: unknown command %q\n", args[0])
 	return 2
-}
-
-func defaultPalette(e env) string {
-	user := filepath.Join(e.home, ".config", "subcult", "theme", "palette.json")
-	if _, err := os.Stat(user); err == nil {
-		return user
-	}
-	return filepath.Join(e.system, "default", "theme", "palette.json")
 }
 
 func build(ctx context.Context, e env, p cursor.Palette, src, out string, s cursor.Settings) error {
