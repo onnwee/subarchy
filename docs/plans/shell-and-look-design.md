@@ -30,6 +30,8 @@ the implementation plan.
   shell code is copied ([[#Ownership]]).
 - Icons are Papirus (the owner's original pick in
   [[0039-fonts-icons|ADR 0039]]), not Yaru.
+- The cursor is Subarchy's own, coloured from a palette role the user picks
+  ([[#Cursor]]).
 - Battery comes first when off AC ([[0054-lightweight-battery-first|ADR 0054]]);
   on AC nothing is slowed down.
 - Interface text follows the monospace font by default; GTK and Qt follow
@@ -91,13 +93,41 @@ Each stage is one or more PRs; each PR is done when CI is green and it merges.
 | Fonts | Three switchable roles through fontconfig aliases, JetBrains Mono by default for monospace and interface, Libertinus Mono for serif ([[#Fonts]]) |
 | GTK | Adwaita-dark, `prefer-dark`, through a GSettings schema override in the package plus `/etc/xdg/gtk-3.0/settings.ini` and `gtk-4.0/settings.ini` |
 | Icons | Papirus-Dark (`papirus-icon-theme`, `extra`) |
-| Cursor | Catppuccin Latte Mauve, size 24 (`catppuccin-cursors-latte`, AUR, vendored in `packaging/aur/`) |
+| Cursor | Subarchy's own flat cursor set, coloured from a palette role, default `lavender`, size 24 ([[#Cursor]]) |
 | kitty | System default config: JetBrainsMono Nerd Font 9 pt, no padding, decorations hidden, block cursor, Subcult Ink colours |
 | Neovim | Subcult Ink colour scheme |
 | Background | Drawn by the shell. Plain `base` until `subarchy-wallpapers` exists; then image 01, `acid-negative-space` |
 
 Subcult Ink colours for other apps arrive when those apps join the package
 list.
+
+## Cursor
+
+Hyprland draws the pointer, so the shell cannot paint it; Subarchy instead
+generates its own cursor theme from the palette and the shell regenerates it
+when the theme changes.
+
+- **Shapes**: about 15 flat SVG shapes drawn for Subarchy in the 1 px look
+  (arrow, text beam, hand, busy, crosshair, the resize arrows, move,
+  not-allowed, grab), mapped to the standard cursor names. No third-party
+  cursor set.
+- **Colour**: the fill is a palette role the user picks, default
+  `lavender` (`#A78BFA`, owner 2026-11-07); the outline is `crust`, or `text`
+  when the fill is dark. Because it is a role, a theme change recolours it.
+- **Build**: `subcult cursor apply` renders the SVGs with `rsvg-convert`
+  (`librsvg`), builds a hyprcursor theme with `hyprcursor-util` and an
+  Xcursor theme with `xcursorgen` (`xorg-xcursorgen`) at 24, 32 and 48 px,
+  into `~/.local/share/icons/subcult-cursor/`, then applies it with
+  `hyprctl setcursor` and GSettings.
+- **Default**: the package ships a prebuilt `subcult-cursor` in `lavender` at
+  `/usr/share/icons/subcult-cursor/`, so the greeter and first login have it;
+  the user's copy has the same name and wins.
+- **Trigger**: the shell already watches the palette; it runs
+  `subcult cursor apply` when the palette or the chosen role changes. No idle
+  cost.
+- **Settings**: `~/.config/subcult/cursor.json` holds `role` and `size`;
+  `subcult cursor set --role <role> --size <px>` changes them. Pickers come
+  with the settings panel and launcher.
 
 ## Fonts
 
