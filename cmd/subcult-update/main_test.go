@@ -38,9 +38,12 @@ func newApp(t *testing.T, r update.Runner, scripts ...string) (*app, *bytes.Buff
 		}
 	}
 	out, errOut := &bytes.Buffer{}, &bytes.Buffer{}
+	state := filepath.Join(t.TempDir(), "state")
 	return &app{
 		stdin: strings.NewReader(""), stdout: out, stderr: errOut, runner: r,
 		migrations: func() (update.Migrations, error) { return m, nil },
+		euid:       1000,
+		stateDir:   func() (string, error) { return state, nil },
 	}, out, errOut
 }
 
@@ -50,7 +53,7 @@ func TestMetadata(t *testing.T) {
 		t.Fatalf("exit %d", code)
 	}
 	var got []dispatch.Described
-	if err := json.Unmarshal(out.Bytes(), &got); err != nil || len(got) != 3 {
+	if err := json.Unmarshal(out.Bytes(), &got); err != nil || len(got) != 4 {
 		t.Fatalf("metadata %q: %v", out, err)
 	}
 }
@@ -64,7 +67,7 @@ func TestDryRunTouchesNothing(t *testing.T) {
 	if len(r.ran) != 0 {
 		t.Errorf("dry run ran %q", r.ran)
 	}
-	for _, want := range []string{"would run: sudo pacman -Syu", "would run: bash -euo pipefail"} {
+	for _, want := range []string{"would run: sudo /usr/bin/subcult-update privileged upgrade", "would run: bash -euo pipefail"} {
 		if !strings.Contains(out.String(), want) {
 			t.Errorf("output lacks %q:\n%s", want, out)
 		}
@@ -80,7 +83,7 @@ func TestUpdateYes(t *testing.T) {
 	if code := a.main(context.Background(), []string{"--yes", "--no-snapshot"}); code != 0 {
 		t.Fatalf("exit %d: %s", code, errOut)
 	}
-	if len(r.ran) == 0 || r.ran[0] != "sudo pacman -Syu --noconfirm" {
+	if len(r.ran) == 0 || r.ran[0] != "sudo /usr/bin/subcult-update privileged upgrade --noconfirm" {
 		t.Errorf("ran %q", r.ran)
 	}
 	if !strings.Contains(out.String(), "reboot") {
@@ -147,5 +150,55 @@ func TestUsageErrors(t *testing.T) {
 	a, out, _ := newApp(t, &fakeRunner{})
 	if code := a.main(context.Background(), []string{"--help"}); code != 0 || !strings.Contains(out.String(), "subcult update check") {
 		t.Errorf("help: %d %q", code, out)
+	}
+}
+
+func TestPrivileged(t *testing.T) {
+	r := &fakeRunner{out: "12\n"}
+	a, out, errOut := newApp(t, r)
+	if code := a.main(context.Background(), []string{"privileged", "upgrade"}); code != 1 || !strings.Contains(errOut.String(), "as root") {
+		t.Fatalf("non-root: exit %d, %q", code, errOut)
+	}
+	a.euid = 0
+	for _, tt := range []struct {
+		args []string
+		ran  string
+	}{
+		{[]string{"privileged", "upgrade", "--noconfirm"}, "pacman -Syu --noconfirm"},
+		{[]string{"privileged", "prune"}, "paccache -rk2"},
+	} {
+		r.ran = nil
+		if code := a.main(context.Background(), tt.args); code != 0 || len(r.ran) != 1 || r.ran[0] != tt.ran {
+			t.Errorf("%q: exit %d, ran %q", tt.args, code, r.ran)
+		}
+	}
+	if code := a.main(context.Background(), []string{"privileged", "snapshot"}); code != 0 || out.String() != "12\n" {
+		t.Errorf("snapshot: exit %d, out %q", code, out)
+	}
+	for _, bad := range [][]string{{"privileged", "upgrade", "--overwrite=*"}, {"privileged"}, {"privileged", "rm"}} {
+		if code := a.main(context.Background(), bad); code != 2 {
+			t.Errorf("%q accepted: exit %d", bad, code)
+		}
+	}
+}
+
+func TestCheckState(t *testing.T) {
+	r := &fakeRunner{tools: map[string]bool{"checkupdates": true}, out: "a 1 -> 2\nb 1 -> 2\nc 1 -> 2\n"}
+	a, _, _ := newApp(t, r)
+	if code := a.main(context.Background(), []string{"check", "--state", "-q"}); code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+	dir, _ := a.stateDir()
+	got, err := os.ReadFile(filepath.Join(dir, "update-count"))
+	if err != nil || string(got) != "3\n" {
+		t.Errorf("state = %q, %v", got, err)
+	}
+	none := &fakeRunner{tools: map[string]bool{"checkupdates": true}, err: exec.Command("sh", "-c", "exit 2").Run()}
+	a.runner = none
+	if code := a.main(context.Background(), []string{"check", "--state"}); code != 2 {
+		t.Fatalf("none: exit %d", code)
+	}
+	if got, _ := os.ReadFile(filepath.Join(dir, "update-count")); string(got) != "0\n" {
+		t.Errorf("state after none = %q", got)
 	}
 }

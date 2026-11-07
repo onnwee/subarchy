@@ -46,4 +46,14 @@ the permanent toggle.
   countdown makes that visible.
 - Each passwordless rule is reviewed when the command it names changes.
 
+## Progress
+
+- 2026-11-07: `subcult update` needs no password for its root steps. They
+  are `subcult-update privileged snapshot|upgrade [--noconfirm]|prune`,
+  each running a fixed command, and `/etc/sudoers.d/50-subarchy-update`
+  allows exactly those four command lines for `wheel`. Removing orphaned
+  packages still asks. The VM test runs the update after `sudo -k` with no
+  input. The other rules (time zone, the "skip sudo for X minutes" menu) are
+  still to do.
+
 Related: [[decision-map|Decision map]] · [[0023-authentication|ADR 0023]] · [[0063-security-hardening|ADR 0063]]

@@ -13,6 +13,8 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
+	"strconv"
 	"strings"
 
 	"git.subcult.tv/subculture-collective/subarchy/internal/dispatch"
@@ -30,13 +32,21 @@ var routes = []dispatch.Described{
 	{Words: []string{"update", "migrate"}, Metadata: dispatch.Metadata{
 		Summary: "Run pending migrations, or list them with --pending",
 		Args:    "[--pending | --mark-all]", Examples: []string{"subcult update migrate --pending"}}},
+	{Words: []string{"update", "privileged"}, Metadata: dispatch.Metadata{
+		Summary: "Run one root step of the update (used through sudo)",
+		Args:    "snapshot | upgrade [--noconfirm] | prune", Hidden: true, RequiresSudo: true}},
 }
+
+// selfPath is the path sudoers names for the privileged steps.
+const selfPath = "/usr/bin/subcult-update"
 
 type app struct {
 	stdin          io.Reader
 	stdout, stderr io.Writer
 	runner         update.Runner
 	migrations     func() (update.Migrations, error)
+	euid           int
+	stateDir       func() (string, error)
 }
 
 func main() {
@@ -46,6 +56,8 @@ func main() {
 		stdin: os.Stdin, stdout: os.Stdout, stderr: os.Stderr,
 		runner:     update.ExecRunner{Stdin: os.Stdin, Stdout: os.Stdout, Stderr: os.Stderr},
 		migrations: update.DefaultMigrations,
+		euid:       os.Geteuid(),
+		stateDir:   stateDir,
 	}
 	os.Exit(a.main(ctx, os.Args[1:]))
 }
@@ -61,13 +73,16 @@ func (a *app) main(ctx context.Context, args []string) int {
 	if len(args) > 0 && !strings.HasPrefix(args[0], "-") {
 		sub, args = args[0], args[1:]
 	}
+	if sub == "privileged" {
+		return a.privileged(ctx, strings.Join(args, " "))
+	}
 	flags := map[string]bool{}
 	for _, f := range args {
 		flags[f] = true
 	}
 	allowed := map[string][]string{
 		"":        {"--yes", "-y", "--no-snapshot", "--dry-run", "-n", "--help", "-h"},
-		"check":   {"--quiet", "-q"},
+		"check":   {"--quiet", "-q", "--state"},
 		"migrate": {"--pending", "--mark-all"},
 	}
 	known, ok := allowed[sub]
@@ -81,7 +96,7 @@ func (a *app) main(ctx context.Context, args []string) int {
 	}
 	switch sub {
 	case "check":
-		return a.check(ctx, flags["--quiet"] || flags["-q"])
+		return a.check(ctx, flags["--quiet"] || flags["-q"], flags["--state"])
 	case "migrate":
 		return a.migrate(ctx, flags["--pending"], flags["--mark-all"])
 	}
@@ -131,6 +146,7 @@ func (a *app) update(ctx context.Context, yes, noSnapshot, dryRun bool) int {
 	u := &update.Updater{R: r, O: update.Options{
 		Yes: yes, NoSnapshot: noSnapshot || dryRun, Version: dispatch.Version,
 		ModulesDir: "/usr/lib/modules", Migrations: m, Stdin: a.stdin, Stdout: a.stdout,
+		Privileged: []string{"sudo", selfPath, "privileged"},
 	}}
 	rep, err := u.Run(ctx)
 	if err != nil {
@@ -142,13 +158,66 @@ func (a *app) update(ctx context.Context, yes, noSnapshot, dryRun bool) int {
 
 // check prints the number of available updates. Exit 0 when there are
 // updates, 2 when there are none (checkupdates' convention), 1 on error.
-func (a *app) check(ctx context.Context, quiet bool) int {
+// privileged runs one fixed root step; sudoers allows exactly these
+// command lines for wheel without a password (ADR 0062).
+func (a *app) privileged(ctx context.Context, step string) int {
+	argv, ok := update.PrivilegedSteps(dispatch.Version)[step]
+	if !ok {
+		return a.usage(fmt.Errorf("unknown privileged step %q", step))
+	}
+	if a.euid != 0 {
+		return a.fail(errors.New("privileged steps run as root, through sudo"))
+	}
+	if step == "snapshot" {
+		out, err := a.runner.Output(ctx, argv...)
+		fmt.Fprint(a.stdout, out)
+		if err != nil {
+			return a.fail(err)
+		}
+		return 0
+	}
+	if err := a.runner.Run(ctx, argv...); err != nil {
+		return a.fail(err)
+	}
+	return 0
+}
+
+func stateDir() (string, error) {
+	state := os.Getenv("XDG_STATE_HOME")
+	if state == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return "", err
+		}
+		state = filepath.Join(home, ".local", "state")
+	}
+	return filepath.Join(state, "subcult"), nil
+}
+
+// writeState records the update count for the bar (ADR 0026).
+func (a *app) writeState(n int) error {
+	dir, err := a.stateDir()
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(dir, "update-count"), []byte(strconv.Itoa(n)+"\n"), 0o644)
+}
+
+func (a *app) check(ctx context.Context, quiet, state bool) int {
 	if !a.runner.Has("checkupdates") {
 		return a.fail(errors.New("checkupdates not found (pacman-contrib)"))
 	}
 	out, err := a.runner.Output(ctx, "checkupdates", "--nocolor")
 	var exit *exec.ExitError
 	if errors.As(err, &exit) && exit.ExitCode() == 2 {
+		if state {
+			if err := a.writeState(0); err != nil {
+				return a.fail(err)
+			}
+		}
 		if !quiet {
 			fmt.Fprintln(a.stdout, "0 updates")
 		}
@@ -161,6 +230,11 @@ func (a *app) check(ctx context.Context, quiet bool) int {
 	for _, line := range strings.Split(out, "\n") {
 		if strings.TrimSpace(line) != "" {
 			n++
+		}
+	}
+	if state {
+		if err := a.writeState(n); err != nil {
+			return a.fail(err)
 		}
 	}
 	if quiet {

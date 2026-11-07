@@ -46,4 +46,14 @@ Decision map item S7. Accepted 2026-11-06.
   `sputnik` version polls, which should become event-driven.
 - Charge thresholds are vendor-specific and belong to the vendor add-ons.
 
+## Progress
+
+- 2026-11-07: power-profiles-daemon is installed and enabled, thermald on
+  Intel CPUs. `subcult power auto` (`bin/subcult-power-auto`) sets `balanced`
+  on AC and `power-saver` on battery, at boot (`subcult-power-auto.service`)
+  and when the power source changes (udev rule), so a hand-picked profile
+  holds until the next change. Machines without a system battery are left
+  alone. `tools/test/power-auto-test.sh` covers the detection; the VM has no
+  battery, so switching itself is untested.
+
 Related: [[decision-map|Decision map]] · [[0014-swap-hibernation|ADR 0014]]

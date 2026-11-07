@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# subcult:summary=Set the power profile for the current power source
+# subcult:args=[--dry-run]
+# subcult:examples=subcult power auto | subcult power auto --dry-run
+#
+# ADR 0021: balanced on AC, power-saver on battery. Runs at boot and from a
+# udev rule when the power source changes, so a profile picked by hand holds
+# until the next change. Machines without a battery are left alone.
+set -euo pipefail
+
+sysfs=${SUBCULT_SYSFS:-/sys}
+dry=0
+[[ ${1:-} == --dry-run ]] && dry=1
+
+has_battery=0
+on_ac=0
+for supply in "$sysfs"/class/power_supply/*; do
+  [[ -r $supply/type ]] || continue
+  case $(<"$supply/type") in
+    Battery)
+      # A peripheral battery (mouse, headset) has scope Device.
+      [[ -r $supply/scope && $(<"$supply/scope") == Device ]] || has_battery=1
+      ;;
+    Mains | USB)
+      [[ -r $supply/online && $(<"$supply/online") == 1 ]] && on_ac=1
+      ;;
+  esac
+done
+
+if ((!has_battery)); then
+  echo "no system battery; profile unchanged"
+  exit 0
+fi
+
+profile=power-saver
+((on_ac)) && profile=balanced
+
+if ((dry)); then
+  echo "would set $profile"
+  exit 0
+fi
+powerprofilesctl set "$profile"
+echo "set $profile"

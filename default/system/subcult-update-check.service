@@ -1,0 +1,10 @@
+[Unit]
+Description=Count available Subarchy updates (ADR 0026)
+Documentation=https://git.subcult.tv/subculture-collective/subarchy
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/subcult-update check --quiet --state
+# 2 means no updates.
+SuccessExitStatus=2

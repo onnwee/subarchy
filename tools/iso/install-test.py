@@ -23,7 +23,7 @@ import sys
 import time
 from pathlib import Path
 
-from vmlib import ANSI, OVMF_CODE, OVMF_VARS, Serial, distinct_colours, qemu_command, screendump
+from vmlib import OVMF_CODE, OVMF_VARS, Serial, distinct_colours, qemu_command, screendump
 
 ROOT = Path(__file__).resolve().parents[2]
 VM = ROOT / "build" / "vm"
@@ -194,9 +194,17 @@ def boot(disk: Path, vars_file: Path) -> bool:
             "dns": serial.run("resolvectl status | grep -i -m1 dnsovertls; resolvectl query archlinux.org", timeout=60),
             "services": serial.run("systemctl is-active avahi-daemon power-profiles-daemon; systemctl is-enabled bluetooth"),
             "cmdline": serial.run("cat /proc/cmdline"),
+            "update_timer": serial.run(
+                "systemctl --user list-timers --all --no-legend | grep -c subcult-update-check;"
+                " systemctl --user start subcult-update-check.service; cat ~/.local/state/subcult/update-count",
+                timeout=120,
+            ),
+            "power_auto": serial.run("systemctl show -p Result --value subcult-power-auto; journalctl -b -u subcult-power-auto -o cat"),
+            "plymouth": serial.run(f"{sudo} journalctl -b -o cat | grep -c 'Show Plymouth Boot Screen'"),
             # subcult update: snapshot, pacman -Syu, migrations, report.
             "update": serial.run(
-                f"echo {PASSWORD} | sudo -S -p '' -v && subcult update --yes; echo UPDATE_EXIT=$?"
+                # sudo -k and no stdin: the update must not need a password (ADR 0062).
+                "sudo -k; subcult update --yes </dev/null; echo UPDATE_EXIT=$?"
                 f" && {sudo} snapper -c root list --columns description",
                 timeout=900,
             ),
@@ -257,7 +265,11 @@ def boot(disk: Path, vars_file: Path) -> bool:
         "both UKIs present": "subarchy_linux-zen.efi" in r["uki"] and "subarchy_linux-lts.efi" in r["uki"],
         "snapshot boot entry": "rootflags=subvol=/@/.snapshots/" in r["snapshot"],
         "no self-referencing EFI entry": "/EFI/BOOT/BOOTX64.EFI" not in r["snapshot"],
-        "subcult update ran": "UPDATE_EXIT=0" in r["update"] and "eboot needed" in r["update"],
+        "subcult update ran without a password": "UPDATE_EXIT=0" in r["update"] and "eboot needed" in r["update"],
+        "daily update check timer and count": r["update_timer"].splitlines()[0:1] == ["1"]
+        and r["update_timer"].strip().splitlines()[-1].isdigit(),
+        "power profile service (no battery: unchanged)": r["power_auto"].splitlines()[0:1] == ["success"]
+        and "no system battery" in r["power_auto"],
         "update took a snapshot": "subcult update" in r["update"].split("UPDATE_EXIT")[-1],
         "@factory snapshot": any(line.endswith(" path @factory") for line in r["subvols"].splitlines()),
         "system running or degraded": state in ("running", "degraded"),
@@ -269,7 +281,7 @@ def boot(disk: Path, vars_file: Path) -> bool:
         # Graphical splash is not checked: with console=ttyS0 (needed to
         # drive the test) Plymouth falls back to its text mode.
         "Plymouth runs and takes the LUKS prompt": "splash" in r["cmdline"]
-        and "Started Show Plymouth Boot Screen" in ANSI.sub("", (VM / "boot-serial.log").read_text(errors="replace")),
+        and r["plymouth"].strip().isdigit() and int(r["plymouth"].strip()) > 0,
         "SDDM greeter running": "sddm-greeter" in r["greeter"],
         "greeter drew something": r["greeter_colours"] > 1,
         "Hyprland session started": r["hyprland"].strip() != "",
