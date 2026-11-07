@@ -14,7 +14,7 @@ src=$(realpath "${1:?path to the shell folder}")
 root=$(git rev-parse --show-toplevel)
 fail() { echo "shell-headless: $*" >&2; exit 1; }
 
-for tool in sway swaymsg quickshell grim magick python3 dbus-run-session; do
+for tool in sway swaymsg quickshell grim magick python3 dbus-run-session gdbus; do
   if ! command -v "$tool" >/dev/null; then
     [[ -n ${CI:-} ]] && fail "$tool not installed"
     echo "shell-headless: $tool not installed, skipped"
@@ -88,7 +88,7 @@ cat >"$work/session-bus.conf" <<EOF
  "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
 <busconfig>
   <type>session</type>
-  <listen>unix:dir=$work</listen>
+  <listen>unix:path=$work/bus</listen>
   <policy context="default">
     <allow send_destination="*" eavesdrop="true"/>
     <allow eavesdrop="true"/>
@@ -154,6 +154,15 @@ grep -q 'probe: mode=full shell=ok interval=60000' "$work/qs1.log" ||
 st=$(status "$home1")
 [[ $(json 'd["intervals"].get("subcult.test-probe.tick")') == "{'interval': 60000, 'running': True}" ]] ||
   fail "live timer not reported: $st"
+
+# A notification reaches the shell's daemon and pops up.
+DBUS_SESSION_BUS_ADDRESS=unix:path=$work/bus gdbus call --session --dest org.freedesktop.Notifications \
+  --object-path /org/freedesktop/Notifications --method org.freedesktop.Notifications.Notify \
+  "subarchy-test" 0 "" "Subarchy test" "hello" "[]" "{}" 5000 >/dev/null ||
+  fail "notify-send could not reach the shell's notification daemon"
+sleep 1
+st=$(status "$home1")
+[[ $(json 'd.get("popups")') == 1 && $(json 'd.get("unread")') == 1 ]] || fail "no popup for a notification: $st"
 
 # 2. A palette written after start applies without a restart.
 mkdir -p "$home1/.config/subcult/theme"

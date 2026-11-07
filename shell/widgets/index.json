@@ -111,6 +111,16 @@
         "kind": "bar-widget"
       }
     },
+    "subcult.notifications": {
+      "dir": "notifications",
+      "manifest": {
+        "id": "subcult.notifications",
+        "name": "Notifications",
+        "version": "1.0.0",
+        "api": 0,
+        "kind": "bar-widget"
+      }
+    },
     "subcult.tray": {
       "dir": "tray",
       "manifest": {

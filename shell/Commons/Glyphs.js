@@ -61,3 +61,9 @@ function powerProfile(name) {
 const idleInhibit = "\u{F0176}" // coffee
 const recording = "\u{F044A}"   // record
 const updates = "\u{F06B0}"     // update
+
+function bell(unread, dnd) {
+  if (dnd)
+    return "\u{F009B}" // bell_off
+  return unread > 0 ? "\u{F009E}" : "\u{F009A}" // bell_ring : bell
+}

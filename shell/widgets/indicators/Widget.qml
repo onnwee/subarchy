@@ -4,6 +4,7 @@ import Quickshell.Services.Pipewire
 import Quickshell.Wayland
 import qs.Commons
 import qs.Ui
+import qs.services
 import "Model.js" as Model
 import "../../Commons/Glyphs.js" as Glyphs
 
@@ -34,6 +35,14 @@ BarWidget {
     id: row
     anchors.verticalCenter: parent.verticalCenter
     spacing: 4
+
+    IconButton {
+      visible: Notifications.dnd
+      glyph: Glyphs.bell(0, true)
+      color: Theme.warning
+      tooltip: "Do not disturb (click to turn off)"
+      onClicked: Notifications.dnd = false
+    }
 
     IconButton {
       visible: root.recording
