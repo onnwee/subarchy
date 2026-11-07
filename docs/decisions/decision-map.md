@@ -50,7 +50,7 @@ NVMe.
 |---|---|---|---|
 | S1 | Init and service manager | systemd | [[0015-init-system\|ADR 0015]]: systemd |
 | S2 | Networking and Wi-Fi | NetworkManager | [[0016-networking\|ADR 0016]]: NetworkManager, wpa_supplicant |
-| S3 | DNS and name resolution | systemd-resolved (stub resolver), Avahi for mDNS | in discussion: resolved with encrypted DNS and home DNS |
+| S3 | DNS and name resolution | systemd-resolved (stub resolver), Avahi for mDNS | [[0020-dns\|ADR 0020]]: resolved, per-network trust, Quad9 DoT |
 | S4 | Audio | PipeWire with WirePlumber | [[0017-audio\|ADR 0017]]: PipeWire, JACK, realtime |
 | S5 | Bluetooth | BlueZ | [[0018-bluetooth\|ADR 0018]]: BlueZ |
 | S6 | Firewall | ufw with `ufw-docker` | [[0019-firewall\|ADR 0019]]: ufw, ufw-docker |

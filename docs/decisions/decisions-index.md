@@ -44,5 +44,6 @@ order.
 | [[0017-audio\|0017]] | Audio |
 | [[0018-bluetooth\|0018]] | Bluetooth |
 | [[0019-firewall\|0019]] | Firewall |
+| [[0020-dns\|0020]] | DNS and name resolution |
 
 Related: [[home|Docs home]]
