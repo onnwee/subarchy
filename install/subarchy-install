@@ -200,6 +200,8 @@ EOF
   # zsh's first-run wizard would greet the user otherwise.
   touch "$target/home/$user/.zshrc"
   arch-chroot "$target" chown "$user:$user" "/home/$user/.zshrc"
+  # A new user starts current: migrations shipped so far are already done.
+  arch-chroot "$target" runuser -u "$user" -- subcult-update migrate --mark-all
 }
 
 setup_snapper() {

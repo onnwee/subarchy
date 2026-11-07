@@ -74,6 +74,10 @@ def install(iso: Path, disk: Path, vars_file: Path, timeout: float) -> bool:
     # pacman downloads as the guest's unprivileged alpm user; the 9p share
     # passes host modes through, so the cache must be writable to everyone.
     CACHE.chmod(0o777)
+    # Local packages are rebuilt without a version bump; a cached copy with
+    # the same name would fail pacman's checksum check.
+    for pkg in (ROOT / "build" / "repo").glob("*.pkg.tar.zst"):
+        (CACHE / pkg.name).unlink(missing_ok=True)
     cmd = qemu_command(
         vars_file,
         "-cdrom", str(iso), "-boot", "d",
@@ -139,6 +143,12 @@ def boot(disk: Path, vars_file: Path) -> bool:
             "shell": serial.run("getent passwd " + USER),
             "uki": serial.run(f"{sudo} ls /boot/EFI/Linux"),
             "subvols": serial.run(f"{sudo} btrfs subvolume list /"),
+            # subcult update: snapshot, pacman -Syu, migrations, report.
+            "update": serial.run(
+                f"echo {PASSWORD} | sudo -S -p '' -v && subcult update --yes; echo UPDATE_EXIT=$?"
+                f" && {sudo} snapper -c root list --columns description",
+                timeout=900,
+            ),
             # A snapshot must show up as a boot entry (limine-snapper-sync).
             "snapshot": serial.run(
                 f"{sudo} snapper -c root create -d install-test >/dev/null && sleep 5"
@@ -173,6 +183,8 @@ def boot(disk: Path, vars_file: Path) -> bool:
         "both UKIs present": "subarchy_linux-zen.efi" in r["uki"] and "subarchy_linux-lts.efi" in r["uki"],
         "snapshot boot entry": "rootflags=subvol=/@/.snapshots/" in r["snapshot"],
         "no self-referencing EFI entry": "/EFI/BOOT/BOOTX64.EFI" not in r["snapshot"],
+        "subcult update ran": "UPDATE_EXIT=0" in r["update"] and "eboot needed" in r["update"],
+        "update took a snapshot": "subcult update" in r["update"].split("UPDATE_EXIT")[-1],
         "@factory snapshot": any(line.endswith(" path @factory") for line in r["subvols"].splitlines()),
         "system running or degraded": state in ("running", "degraded"),
     }

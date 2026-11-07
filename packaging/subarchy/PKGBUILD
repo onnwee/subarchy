@@ -11,7 +11,7 @@ pkgdesc="Subarchy: SUBCULT's Arch Linux desktop (subcult CLI, defaults and OS id
 arch=('x86_64')
 url="https://git.subcult.tv/subculture-collective/subarchy"
 license=('GPL-3.0-or-later')
-depends=('bash' 'glibc')
+depends=('bash' 'glibc' 'pacman-contrib')
 makedepends=('go' 'git')
 options=('!debug')
 backup=()
@@ -59,6 +59,13 @@ package() {
 
   # System defaults (ADR 0048): the app catalogue (ADR 0044) so far.
   install -Dm644 "$root/default/apps.toml" "$pkgdir/usr/share/subcult/default/apps.toml"
+
+  # Migrations run once per user by `subcult update` (ADR 0026).
+  install -dm755 "$pkgdir/usr/share/subcult/migrations"
+  for f in "$root"/migrations/*.sh; do
+    [[ -e $f ]] || continue
+    install -Dm644 "$f" "$pkgdir/usr/share/subcult/migrations/$(basename "$f")"
+  done
 
   install -Dm644 "$root/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
 }

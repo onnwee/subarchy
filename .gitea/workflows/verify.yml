@@ -33,7 +33,7 @@ jobs:
       image: archlinux:latest
     steps:
       - name: Install build tools
-        run: pacman -Syu --noconfirm --needed base-devel go git nodejs
+        run: pacman -Syu --noconfirm --needed base-devel go git nodejs pacman-contrib
       - uses: actions/checkout@v4
       - name: Build and check the package as a normal user
         run: |
