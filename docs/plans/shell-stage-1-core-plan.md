@@ -40,6 +40,8 @@ fontconfig, Python 3 for the VM test.
   from `~/.config/omarchy/themes/subcult-minimal/colors.toml` on `sputnik`.
 - Compositor: gaps 0, border 1 px, rounding 0, opacity 1, no blur, shadow,
   dimming or animations; active border `mauve`, inactive `surface0`.
+- Cursor: Subarchy's own `subcult-cursor`, fill role `lavender` by default,
+  outline `crust`, size 24; no third-party cursor set.
 - Bar: top edge, about 26 px at scale 1, opaque `base`; Full on the primary
   output and any `eDP-*` output, Minimal elsewhere.
 - Font roles are fontconfig aliases: `monospace` JetBrainsMono Nerd Font,
@@ -112,25 +114,20 @@ fontconfig, Python 3 for the VM test.
   → PASS, `hypr-check: ok`.
 - [ ] **Step 5: Commit** `feat: subcult-minimal palette and flat compositor`.
 
-### Task 2: GTK, icons, cursor, kitty and Neovim defaults
+### Task 2: GTK, icons, kitty and Neovim defaults
 
 **Files:**
 - Create: `default/gtk/90-subarchy.gschema.override`,
   `default/gtk/settings.ini` (installed for both GTK 3 and 4)
-- Create: `default/icons/index.theme` (default cursor)
 - Create: `default/kitty/kitty.conf`, `default/kitty/subcult-ink.conf`
 - Create: `default/nvim/colors/subcult-ink.lua`, `default/nvim/sysinit.vim`
-- Create: `packaging/aur/catppuccin-cursors-latte/PKGBUILD` (vendored,
-  pinned, reviewed like the existing two)
-- Modify: `default/hypr/envs.lua` (`XCURSOR_THEME`, `HYPRCURSOR_THEME` =
-  `catppuccin-latte-mauve-cursors`)
 - Modify: `install/packages/desktop.txt`, `packaging/subarchy/PKGBUILD`,
   `tools/test/package-test.sh`
 
 **Interfaces:**
 - GSettings override for `org.gnome.desktop.interface`: `gtk-theme`
   `'Adwaita-dark'`, `color-scheme` `'prefer-dark'`, `icon-theme`
-  `'Papirus-Dark'`, `cursor-theme` `'catppuccin-latte-mauve-cursors'`,
+  `'Papirus-Dark'`, `cursor-theme` `'subcult-cursor'`,
   `cursor-size` `24`, `font-name` `'Sans 11'`, `monospace-font-name`
   `'Monospace 11'`, `document-font-name` `'Serif 11'`.
 - kitty: `font_family monospace`, `font_size 9.0`, `window_padding_width 0`,
@@ -141,20 +138,74 @@ fontconfig, Python 3 for the VM test.
 - Install targets: override →
   `/usr/share/glib-2.0/schemas/90-subarchy.gschema.override`; `settings.ini`
   → `/etc/xdg/gtk-3.0/settings.ini` and `/etc/xdg/gtk-4.0/settings.ini`;
-  `index.theme` → `/usr/share/icons/default/index.theme`; kitty →
+  kitty →
   `/etc/xdg/kitty/`; Neovim colours → `/usr/share/nvim/runtime/colors/`,
   `sysinit.vim` → `/usr/share/nvim/sysinit.vim` (sets `colorscheme
   subcult-ink` only when no colourscheme was chosen).
 - `desktop.txt` adds: `quickshell`, `papirus-icon-theme`,
-  `catppuccin-cursors-latte`, `brightnessctl`, `libsecret`, `mpv`.
+  `brightnessctl`, `libsecret`, `mpv`.
 
 - [ ] **Step 1: Extend `package-test.sh`** to assert each install target
   above exists in the built package with mode 0644.
 - [ ] **Step 2: Run** `make package` → FAIL on the first missing path.
-- [ ] **Step 3: Add the files, PKGBUILD lines, envs and package list.**
-  Add `catppuccin-cursors-latte` to `packaging/aur/build.sh`'s list.
+- [ ] **Step 3: Add the files, PKGBUILD lines and package list.**
 - [ ] **Step 4: Run** `make package && make verify` → PASS.
-- [ ] **Step 5: Commit** `feat: GTK, Papirus, cursor, kitty and Neovim defaults`.
+- [ ] **Step 5: Commit** `feat: GTK, Papirus, kitty and Neovim defaults`.
+
+### Task 2b: Subarchy cursor
+
+**Files:**
+- Create: `default/cursor/svg/<shape>.svg` (about 15 shapes, 32×32 viewBox,
+  fill `#FILL#`, outline `#LINE#`, 1 px at 24 px size), `default/cursor/shapes.tsv`
+  (`shape  hotspot_x  hotspot_y  names…` mapping each shape to the standard
+  cursor names, for example `default left_ptr arrow top_left_arrow`)
+- Create: `bin/subcult-cursor`
+- Create: `default/icons/index.theme` (`Inherits=subcult-cursor`)
+- Modify: `default/hypr/envs.lua` (`XCURSOR_THEME` and `HYPRCURSOR_THEME` =
+  `subcult-cursor`), `packaging/subarchy/PKGBUILD` (build the default theme in
+  `build()` with `bin/subcult-cursor build --role lavender --out
+  "$srcdir/subcult-cursor"` and install it to
+  `/usr/share/icons/subcult-cursor/`; `index.theme` to
+  `/usr/share/icons/default/`), `install/packages/desktop.txt` (`librsvg`,
+  `xorg-xcursorgen`, `hyprcursor`), PKGBUILD `makedepends` (same three)
+- Test: `tools/test/cursor-test.sh`, wired into `make smoke` when the three
+  tools are present and always in the `package` CI job
+
+**Interfaces:**
+- `subcult-cursor` (subcult metadata header like the other `bin/` scripts):
+  - `build --role <role> [--palette <file>] --out <dir>`: reads the role and
+    `crust`/`text` from the palette (default: user palette, else the system
+    one), picks the outline (`crust` unless the fill's OKLab lightness is
+    below 0.5, then `text`), substitutes colours, renders PNGs at 24, 32, 48
+    with `rsvg-convert`, writes Xcursor files with `xcursorgen` and symlinks
+    every alias, writes the hyprcursor working state (`manifest.hl`, one
+    `meta.hl` per shape with `define_override` for the aliases, the SVGs) and
+    compiles it with `hyprcursor-util --create`. Writes `index.theme`
+    (`Name=subcult-cursor`).
+  - `apply`: reads `~/.config/subcult/cursor.json` (`{"role": "lavender",
+    "size": 24}`, defaults if missing or broken), runs `build` into
+    `~/.local/share/icons/subcult-cursor/` through a temp dir and an atomic
+    rename, then `hyprctl setcursor subcult-cursor <size>` and
+    `gsettings set org.gnome.desktop.interface cursor-theme subcult-cursor`
+    / `cursor-size`.
+  - `set [--role <role>] [--size 24|32|48]`: validates the role against the
+    palette's keys, writes `cursor.json`, runs `apply`.
+- Task 7's `Theme` runs `subcult cursor apply` (detached, through
+  `Process`) when the palette file changes; a change to `cursor.json` from
+  `set` already applies.
+- [ ] **Step 1: Write `cursor-test.sh`**: builds into a temp dir with the
+  system palette and asserts `cursors/left_ptr`, `cursors/text` and
+  `cursors/pointer` exist and are Xcursor files (`head -c4` is `Xcur`), every
+  name in `shapes.tsv` resolves, the hyprcursor archive for `left_ptr`
+  exists, the 24 px arrow PNG's most common non-transparent colour is
+  `#A78BFA`; then `set --role nonsense` fails with exit 2 and leaves
+  `cursor.json` unchanged.
+- [ ] **Step 2:** `tools/test/cursor-test.sh` → FAIL.
+- [ ] **Step 3:** Draw the shapes, write `shapes.tsv` and the script.
+- [ ] **Step 4:** `tools/test/cursor-test.sh && make package && make
+  shellcheck` → PASS. Look at the 48 px PNGs and compare them with the
+  arrow on `sputnik` before committing.
+- [ ] **Step 5: Commit** `feat: Subarchy cursor coloured from the palette`.
 
 ### Task 3: Font roles and preinstalled fonts
 
@@ -328,6 +379,8 @@ Open the Phase B PR; done when CI is green and it merges.
 - `Theme` (singleton): one property per `ThemeModel.tokens` key, of type
   `color`. Reads `$SUBCULT_PATH/default/theme/palette.json` as fallback and
   `~/.config/subcult/theme/palette.json` with `FileView { watchChanges: true }`.
+  When the user palette changes it starts `subcult cursor apply` detached
+  (Task 2b).
 - `Power` (singleton): `readonly property bool onBattery` from
   `UPower.onBattery`; `function interval(manifest, timerName): int`.
 - `Config` (singleton): `readonly property var bar` (merged);
