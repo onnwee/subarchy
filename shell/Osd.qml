@@ -28,7 +28,7 @@ PanelWindow { // qmllint disable uncreatable-type
   WlrLayershell.layer: WlrLayer.Overlay
   exclusionMode: ExclusionMode.Ignore
   anchors.bottom: true
-  margins.bottom: 96 // qmllint disable unqualified unresolved-type
+  margins.bottom: 96 // qmllint disable unqualified unresolved-type missing-property
   implicitWidth: 280
   implicitHeight: 40
   color: "transparent"

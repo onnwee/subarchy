@@ -9,7 +9,7 @@ import "../../Commons/Glyphs.js" as Glyphs
 BarWidget {
   id: root
 
-  readonly property var adapter: Bluetooth.defaultAdapter
+  readonly property var adapter: Bluetooth.defaultAdapter // qmllint disable unresolved-type
   readonly property int connected: adapter && adapter.devices
     ? adapter.devices.values.filter(d => d.connected).length : 0
 

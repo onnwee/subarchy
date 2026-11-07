@@ -9,7 +9,7 @@ import "../../Commons/Glyphs.js" as Glyphs
 BarWidget {
   id: root
 
-  readonly property var devices: Networking.devices ? Networking.devices.values : []
+  readonly property var devices: Networking.devices ? Networking.devices.values : [] // qmllint disable missing-property
   readonly property var wired: devices.find(d => d.type === DeviceType.Wired && d.connected) || null
   readonly property var wifiDevice: devices.find(d => d.type === DeviceType.Wifi) || null
   readonly property var wifiNetwork: wifiDevice && wifiDevice.networks

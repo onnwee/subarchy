@@ -10,7 +10,7 @@ import qs.Ui
 BarWidget {
   id: root
 
-  readonly property var items: SystemTray.items ? SystemTray.items.values : []
+  readonly property var items: SystemTray.items ? SystemTray.items.values : [] // qmllint disable missing-property
 
   hidden: items.length === 0
   implicitWidth: row.implicitWidth

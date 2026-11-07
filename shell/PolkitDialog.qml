@@ -13,7 +13,7 @@ import qs.Commons
 PanelWindow { // qmllint disable uncreatable-type
   id: dialog
 
-  readonly property var flow: agent.flow
+  readonly property var flow: agent.flow // qmllint disable unresolved-type
 
   visible: agent.isActive && flow !== null
   screen: Quickshell.screens.find(s => Hyprland.focusedMonitor && s.name === Hyprland.focusedMonitor.name) || Quickshell.screens[0]

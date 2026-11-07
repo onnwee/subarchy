@@ -14,7 +14,7 @@ BarWidget {
   id: root
 
   property bool keepAwake: false
-  readonly property var streams: Pipewire.nodes ? Pipewire.nodes.values.filter(n => n.isStream) : []
+  readonly property var streams: Pipewire.nodes ? Pipewire.nodes.values.filter(n => n.isStream) : [] // qmllint disable missing-property
   readonly property bool recording: Model.recording(streams.map(n => ({
     isStream: n.isStream,
     mediaClass: n.properties ? n.properties["media.class"] : ""

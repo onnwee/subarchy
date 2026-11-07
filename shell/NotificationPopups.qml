@@ -23,8 +23,8 @@ PanelWindow { // qmllint disable uncreatable-type
     top: true
     right: true
   }
-  margins.top: Style.barHeight + Style.spacing // qmllint disable unqualified unresolved-type
-  margins.right: Style.spacing // qmllint disable unqualified unresolved-type
+  margins.top: Style.barHeight + Style.spacing // qmllint disable unqualified unresolved-type missing-property
+  margins.right: Style.spacing // qmllint disable unqualified unresolved-type missing-property
   implicitWidth: 360
   implicitHeight: column.implicitHeight
   color: "transparent"

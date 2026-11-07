@@ -105,9 +105,9 @@ start_shell() { # home log
 }
 
 check_log() { # log
-  # No PipeWire daemon, Hyprland or GPU here; those messages are the
-  # environment, not the shell.
-  if grep -vE 'Failed to connect pipewire context|^MESA|ZINK' "$1" |
+  # No PipeWire daemon, NetworkManager, Hyprland or GPU may be here; those
+  # messages are the environment, not the shell.
+  if grep -vE 'Failed to (connect|create) pipewire context|Network will not work. Could not find an available backend|^MESA|ZINK' "$1" |
     grep -nE 'ERROR|TypeError|ReferenceError|is not a type|is not installed|Cannot assign'; then
     fail "QML errors in the shell log"
   fi
@@ -164,11 +164,12 @@ sleep 1
 st=$(status "$home1")
 [[ $(json 'd.get("popups")') == 1 && $(json 'd.get("unread")') == 1 ]] || fail "no popup for a notification: $st"
 
-# The OSD answers its IPC call (media keys use it for brightness).
-HOME=$home1 quickshell ipc -p "$shell" call subcult.osd flash brightness >/dev/null 2>&1 ||
+# The OSD answers its IPC call (media keys use it; capslock needs no
+# backlight or brightnessctl, which CI lacks).
+HOME=$home1 quickshell ipc -p "$shell" call subcult.osd flash capslock >/dev/null 2>&1 ||
   fail "the OSD has no IPC handler"
 st=$(status "$home1")
-[[ $(json 'd.get("osd")') == brightness ]] || fail "the OSD did not show: $st"
+[[ $(json 'd.get("osd")') == capslock ]] || fail "the OSD did not show: $st"
 
 # Alt-Tab answers its IPC calls (no windows here, so nothing to show).
 for call in next prev cancel; do
