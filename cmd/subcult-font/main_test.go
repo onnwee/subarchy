@@ -84,7 +84,7 @@ func newEnv(t *testing.T, r *fakeRunner) (env, *bytes.Buffer, *bytes.Buffer) {
 
 func installedFont(family, line string) *fakeRunner {
 	return &fakeRunner{outputs: map[string]string{
-		"fc-list -f %{file}\\n " + family + ":": "/fonts/a.ttf\n",
+		"fc-list -f %{file}\\n " + family + ":":               "/fonts/a.ttf\n",
 		"fc-query -f " + font.FcQueryFormat + " /fonts/a.ttf": line,
 	}}
 }
