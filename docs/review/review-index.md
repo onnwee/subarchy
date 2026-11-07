@@ -21,6 +21,7 @@ review can be a yes/no pass.
 | [[app-list\|App list]] | Which apps ship, which are offered, default per role (owner writes) |
 | [[rice-port-review\|Rice port review]] | Which SUBCULT rice features to port, rethink or skip |
 | [[next-decisions\|Next decisions]] | Everything still open: new decisions, design work, assumptions, questions |
+| [[first-install\|First install on sputnik]] | Runbook for the first real install, and what is and is not tested |
 
 ## How to review
 
