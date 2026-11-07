@@ -12,7 +12,7 @@ aliases: [ADR 0056, Quality of life, QoL, Keybindings]
 # ADR 0056: Quality-of-life features
 
 Accepted 2026-11-07. Small everyday conveniences, most borrowed from
-Omarchy 4.5. Each is a keybinding, menu entry or `subcult` command that runs
+Omarchy 4.5, plus four added beyond it. Each is a keybinding, menu entry or `subcult` command that runs
 only when used, unless the idle-cost column says otherwise
 ([[0054-lightweight-battery-first|ADR 0054]]).
 
@@ -48,6 +48,17 @@ full keymap is designed with the shell (D3).
 | Reminders | Super+Ctrl+R | `omarchy reminder` | | a systemd timer per reminder |
 | Dictation, push to talk | Alt+Space | `default/hypr/bindings/dictation.lua`, voxtype setup | `voxtype-bin` (AUR, rebuilt) | the speech model's memory while the daemon runs |
 | USB drives mount automatically | — | `udiskie` in Omarchy's base list | `udiskie` | a small always-running daemon |
+
+## Added beyond Omarchy
+
+Suggested by the agent and accepted by the owner, 2026-11-07.
+
+| Feature | How | Idle cost |
+|---|---|---|
+| Passwords stay out of clipboard history | Copies marked secret (the `x-kde-passwordManagerHint` MIME type, or from `bw` through a Subarchy wrapper) are not stored in history and are cleared after 30 seconds | none beyond the clipboard watcher |
+| Battery charge limit | One toggle that stops charging at a set level (default 80%), using the kernel's `charge_control_end_threshold` where available or the vendor add-on ([[0021-power\|ADR 0021]]); hidden when the hardware has neither | none |
+| Picture-in-picture windows float and pin | Hyprland window rules match browser picture-in-picture windows: float, pin across workspaces, fixed corner | none |
+| Find files from the launcher | The launcher searches file names with `fd` when asked; no background index | none |
 
 ## Consequences
 
