@@ -88,7 +88,7 @@ Each stage is one or more PRs; each PR is done when CI is green and it merges.
 | Palette file | Theme Tender's role names. `base` `#100B19`, `mantle` `#0B0812`, `crust` `#06040A`, `surface0` `#1F1830`, `text` `#F0ECE4`, `subtext1` `#DDD6E8`, `subtext0` `#9A92A8`, `overlay0` `#5E5570`, `green` `#00FF88`, `mauve` `#8F4BC8`, `lavender` `#A78BFA`, `selection_bg` `#3B2470`, and ANSI 0–15 from `subcult-minimal`'s `colors.toml` |
 | Theme tokens | `accent` = `green`, `border` = `mauve`, `borderInactive` = `surface0`, `selection` = `selection_bg`, `muted` = `overlay0`, `warning` = `yellow`, `error` = `red` |
 | Compositor | `default/hypr/looknfeel.lua`: gaps 0, border 1 px, rounding 0, opacity 1, no blur, shadow, dimming or animations. Border colours in a separate include that Theme Tender will own |
-| Fonts | Three switchable roles through fontconfig aliases, JetBrains Mono by default for monospace and interface, Alegreya for serif ([[#Fonts]]) |
+| Fonts | Three switchable roles through fontconfig aliases, JetBrains Mono by default for monospace and interface, Libertinus Mono for serif ([[#Fonts]]) |
 | GTK | Adwaita-dark, `prefer-dark`, through a GSettings schema override in the package plus `/etc/xdg/gtk-3.0/settings.ini` and `gtk-4.0/settings.ini` |
 | Icons | Papirus-Dark (`papirus-icon-theme`, `extra`) |
 | Cursor | Catppuccin Latte Mauve, size 24 (`catppuccin-cursors-latte`, AUR, vendored in `packaging/aur/`) |
@@ -111,7 +111,7 @@ changes it everywhere.
 |---|---|---|---|
 | Monospace | `monospace` | JetBrainsMono Nerd Font | Terminal, shell, editors |
 | Interface | `sans-serif` | Follows monospace (JetBrainsMono Nerd Font Propo) | GTK and Qt interface text |
-| Serif | `serif` | Alegreya | Documents and reading |
+| Serif | `serif` | Libertinus Mono, then Noto Serif | Documents and reading |
 
 The Propo build is the same family with proportional-width icons, which suits
 interface text. GTK's `font-name` and `monospace-font-name` GSettings are set
@@ -128,8 +128,8 @@ covers CJK and emoji behind every role.
 | Space Mono | `ttf-space-mono-nerd` | Monospace | 28 MB |
 | Share Tech Mono | `ttf-sharetech-mono-nerd` | Monospace | 7 MB |
 | Atkinson Hyperlegible Mono | `otf-atkinsonhyperlegiblemono-nerd` | Monospace | 52 MB |
-| Alegreya Sans | `otf-alegreya-sans` (AUR, vendored in `packaging/aur/`) | Interface | small |
-| Alegreya | `otf-alegreya` (AUR, vendored) | Serif | small |
+| Libertinus Mono | `otf-libertinus` (also brings Libertinus Serif, Sans and Math) | Serif | 4.5 MB |
+| Liberation | `ttf-liberation` | Times, Arial and Courier metrics, so documents keep their layout | 4 MB |
 | Symbols Nerd Font | `ttf-nerd-fonts-symbols`, `ttf-nerd-fonts-symbols-mono` | Icon fallback for every font | 5 MB |
 | Noto | `noto-fonts`, `noto-fonts-cjk`, `noto-fonts-emoji` | Fallback | already in the base set |
 
@@ -139,7 +139,7 @@ covers CJK and emoji behind every role.
 |---|---|---|
 | ComicShannsMono | `otf-comicshanns-nerd` | 14 MB |
 | Agave | `ttf-agave-nerd` | 15 MB |
-| Ubuntu Sans | Nerd Fonts release archive (no Arch package) | |
+| UbuntuMono | `ttf-ubuntu-mono-nerd` | 28 MB |
 | CaskaydiaCove | `ttf-cascadia-code-nerd` | 99 MB |
 | BlexMono | `ttf-ibmplex-mono-nerd` | 113 MB |
 | Victor Mono | `ttf-victor-mono-nerd` | 154 MB |
@@ -150,6 +150,19 @@ covers CJK and emoji behind every role.
 | ProFont | `ttf-profont-nerd` | 14 MB |
 | ProggyClean | `ttf-proggyclean-nerd` | 22 MB |
 | Terminess | `ttf-terminus-nerd` | 32 MB |
+
+Interface and serif choices, installed when picked:
+
+| Font | Package | Role | Size |
+|---|---|---|---|
+| Alegreya Sans | `otf-alegreya-sans` (AUR rebuild in the Subarchy repository, [[0025-package-repository\|ADR 0025]]) | Interface | small |
+| Ubuntu | `ttf-ubuntu-nerd` | Interface | 44 MB |
+| Alegreya | `otf-alegreya` (AUR rebuild, as above) | Serif | small |
+| Source Serif 4 | `adobe-source-serif-fonts` | Serif | 18 MB |
+| Crimson Pro | `otf-crimson-pro` | Serif | 1.5 MB |
+
+Libertinus Mono has one weight, Regular; bold and italic in documents are
+synthesised. Libertinus Serif, in the same package, has every weight.
 
 Sizes are pacman's installed sizes on 2026-11-07.
 
