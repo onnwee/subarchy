@@ -16,7 +16,7 @@ aliases: [ADR 0068, Plugin API v0]
 [[0035-plugin-api|ADR 0035]] says Subarchy designs its own shell plugin API
 and records it before shell code is written. The first shell stage
 ([[shell-and-look-design|Shell and look design]]) needs about twenty widgets,
-five of them ported from community plugins. v0 is the smallest API that
+all written for Subarchy. v0 is the smallest API that
 carries them and keeps the battery rules machine-readable
 ([[0054-lightweight-battery-first|ADR 0054]]).
 
@@ -56,7 +56,7 @@ carries them and keeps the battery rules machine-readable
 ```
 
   `kind` is `bar-widget` or `service` (a widget with no bar item, such as the
-  notification daemon). Ports add `upstream`: the source URL, the commit ported from and the licence. `cost` lists
+  notification daemon). `cost` lists
   every repeating timer in seconds and every host contacted; an empty
   `cost` means event-driven only. `settings` holds defaults.
 - **Widget contract**: the shell sets `mode` (`full` or `minimal`), `screen`,
@@ -81,7 +81,5 @@ carries them and keeps the battery rules machine-readable
   permissions and a plugin manager wait for v1.
 - CI can read every manifest's `cost` and fail a widget that adds a timer
   without battery values.
-- Ports record their upstream in the manifest and in
-  `shell/THIRD_PARTY_NOTICES.md`.
 
 Related: [[0035-plugin-api|ADR 0035]] · [[0034-shell-toolkit|ADR 0034]] · [[shell-and-look-design|Shell and look design]] · [[decisions-index|Decisions]]

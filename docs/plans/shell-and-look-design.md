@@ -21,27 +21,28 @@ the implementation plan.
   Omarchy 4.5's shell with Patrick's `patrickfanella.monitor-bar`.
 - Build the bar now, in Subarchy's own Quickshell shell, not a fork of
   Omarchy's ([[0034-shell-toolkit|ADR 0034]], [[0035-plugin-api|ADR 0035]]).
-  Omarchy's MIT-licensed `Commons/`, `Ui/` and services code is copied piece
-  by piece where it helps.
-- Port only plugins that are active on `sputnik` today, minus Bitwarden, plus
+- Rebuild only plugins that are active on `sputnik` today, minus Bitwarden, plus
   a few inactive ones that make good defaults. xray, Bitwarden and weather
-  radar are not ported.
+  radar are left out. HT3 and n8n are kept.
+- A choice of terminal and shell fonts, as Omarchy offers, from a different
+  list ([[#Fonts]]).
+- Every widget is written fresh and is Subarchy's own; no plugin or Omarchy
+  shell code is copied ([[#Ownership]]).
 - Icons are Papirus (the owner's original pick in
   [[0039-fonts-icons|ADR 0039]]), not Yaru.
 - Battery comes first when off AC ([[0054-lightweight-battery-first|ADR 0054]]);
   on AC nothing is slowed down.
 
-Assumed by the agent, open to correction: fonts follow `sputnik` (JetBrains
-Mono in the shell, Adwaita Sans in GTK) rather than ADR 0039's Space Grotesk;
-the Subcult Ink app colours ship as static files until Theme Tender is
-packaged.
+Assumed by the agent, open to correction: GTK interface text uses Adwaita
+Sans as on `sputnik` rather than ADR 0039's Space Grotesk; the Subcult Ink
+app colours ship as static files until Theme Tender is packaged.
 
 ## Stages
 
 | Stage | Delivers | Done when |
 |---|---|---|
 | 1 | Look layer; shell with every default bar widget showing live data; notification daemon, OSD, polkit dialog | VM screendump matches `sputnik`'s bar layout and colours; all checks below pass |
-| 2 | A click-out panel for each widget that has one on `sputnik` (audio, network, Bluetooth, calendar, weather, Soma, notifications, power) | Each panel opens, shows live data and closes in the VM |
+| 2 | A click-out panel for each widget that has one on `sputnik` (audio, network, Bluetooth, calendar, weather, Soma, notifications, power, HT3, n8n) | Each panel opens, shows live data and closes in the VM |
 | 3 | Plugins shipped off by default | Each can be enabled from config and loads without errors |
 
 Each stage is one or more PRs; each PR is done when CI is green and it merges.
@@ -84,7 +85,7 @@ Each stage is one or more PRs; each PR is done when CI is green and it merges.
 | Palette file | Theme Tender's role names. `base` `#100B19`, `mantle` `#0B0812`, `crust` `#06040A`, `surface0` `#1F1830`, `text` `#F0ECE4`, `subtext1` `#DDD6E8`, `subtext0` `#9A92A8`, `overlay0` `#5E5570`, `green` `#00FF88`, `mauve` `#8F4BC8`, `lavender` `#A78BFA`, `selection_bg` `#3B2470`, and ANSI 0–15 from `subcult-minimal`'s `colors.toml` |
 | Theme tokens | `accent` = `green`, `border` = `mauve`, `borderInactive` = `surface0`, `selection` = `selection_bg`, `muted` = `overlay0`, `warning` = `yellow`, `error` = `red` |
 | Compositor | `default/hypr/looknfeel.lua`: gaps 0, border 1 px, rounding 0, opacity 1, no blur, shadow, dimming or animations. Border colours in a separate include that Theme Tender will own |
-| Fonts | JetBrainsMono Nerd Font (`ttf-jetbrains-mono-nerd`) for the shell and terminal; Adwaita Sans (`adwaita-fonts`) for GTK; Noto for fallback, CJK and emoji. fontconfig defaults set system-wide |
+| Fonts | JetBrainsMono Nerd Font by default for the shell and terminal, switchable ([[#Fonts]]); Adwaita Sans (`adwaita-fonts`) for GTK; Noto for fallback, CJK and emoji. fontconfig defaults set system-wide |
 | GTK | Adwaita-dark, `prefer-dark`, through a GSettings schema override in the package plus `/etc/xdg/gtk-3.0/settings.ini` and `gtk-4.0/settings.ini` |
 | Icons | Papirus-Dark (`papirus-icon-theme`, `extra`) |
 | Cursor | Catppuccin Latte Mauve, size 24 (`catppuccin-cursors-latte`, AUR, vendored in `packaging/aur/`) |
@@ -95,62 +96,118 @@ Each stage is one or more PRs; each PR is done when CI is green and it merges.
 Subcult Ink colours for other apps arrive when those apps join the package
 list.
 
+## Fonts
+
+One monospace font drives the shell and the terminal. All are Nerd Font
+builds from Arch's `extra`, so the bar's icon glyphs work in each. The list
+is deliberately not Omarchy's (JetBrains Mono, Cascadia Mono, iA Writer).
+
+Preinstalled (about 410 MB together):
+
+| Font | Package | Character |
+|---|---|---|
+| JetBrains Mono (default) | `ttf-jetbrains-mono-nerd` | Brand font; `sputnik` today |
+| Space Mono | `ttf-space-mono-nerd` | Retro-geometric; the mono partner of the Space Grotesk brand font |
+| Commit Mono | `otf-commit-mono-nerd` | Neutral, calm |
+| Martian Mono | `ttf-martian-mono-nerd` | Wide, technical |
+| Share Tech Mono | `ttf-sharetech-mono-nerd` | Narrow, broadcast and sci-fi |
+| 3270 | `ttf-3270-nerd` | IBM mainframe terminal |
+| Atkinson Hyperlegible Mono | `otf-atkinsonhyperlegiblemono-nerd` | Legibility |
+
+Installed when picked:
+
+| Font | Package | Size |
+|---|---|---|
+| IBM Plex Mono | `ttf-ibmplex-mono-nerd` | 113 MB |
+| Geist Mono | `otf-geist-mono-nerd` | 122 MB |
+| Victor Mono | `ttf-victor-mono-nerd` | 154 MB |
+| Monaspace | `otf-monaspace-nerd` | 393 MB |
+| Iosevka Term | `ttf-iosevkaterm-nerd` | 1.1 GB |
+| OpenDyslexic Mono | `otf-opendyslexic-nerd` | 41 MB |
+| 0xProto | `ttf-0xproto-nerd` | 22 MB |
+
+Sizes are pacman's installed sizes on 2026-11-07.
+
+- `subcult font list` prints the curated list, marking which are installed
+  and which is current. `subcult font current` prints the family.
+  `subcult font set <family>` installs the package if needed (through the
+  update privilege path, [[0062-privilege-policy|ADR 0062]]), then applies it.
+- Applying writes one user fontconfig file that puts the family first for
+  `monospace`, sets `font_family` in the user's kitty layer and signals kitty
+  to reload. The shell resolves `monospace` through fontconfig and watches
+  that file, so it repaints live.
+- `set` accepts any installed monospace family, not only the curated ones.
+- A graphical picker comes with the launcher ([[0057-launcher|ADR 0057]]).
+
 ## Widgets and plugins
+
+Every widget below is written fresh for Subarchy. "Reference" names the
+`sputnik` plugin whose features it reproduces; its code is not copied.
 
 ### On by default
 
-| Widget | Origin | Data source | Idle cost on battery |
+| Widget | Reference | Data source | Idle cost on battery |
 |---|---|---|---|
-| Menu | New (SUBCULT mark) | None | None |
-| Workspaces, active window | Rebuilt from Omarchy and `monitor-bar` | `Quickshell.Hyprland` events | None |
-| Indicators | Rebuilt | Do-not-disturb from the notification server, idle inhibit (`IdleInhibitor`), screen recording from a PipeWire capture node | None |
-| Microphone, audio | Rebuilt | `Quickshell.Services.Pipewire` | None |
-| Keyboard layout, display | Rebuilt | Hyprland events | None |
-| Network | Rebuilt | `Quickshell.Networking` | None |
-| Bluetooth | Rebuilt | `Quickshell.Bluetooth` | None |
-| Battery and power profile | Rebuilt | `Quickshell.Services.UPower`, power-profiles-daemon | None |
-| Tray | Rebuilt | `Quickshell.Services.SystemTray` | None |
-| Update count | New | File watch on the `subcult-update check` state file | None |
-| Clock, world clock (Elsewhen) | Rebuilt | One timer aligned to the minute | One wake a minute |
-| Notifications and centre | Port of `foamy.notification-center` | `Quickshell.Services.Notifications`; history in memory plus a small JSON file | None |
-| OSD | Rebuilt from `omarchy.osd` | PipeWire volume events; brightness and caps-lock bindings call the shell over IPC | None |
-| Polkit dialog | Rebuilt from Omarchy's | `Quickshell.Services.Polkit` | None |
-| Soma.fm | Port of `io.github.joshuaswarren.somafm` | SomaFM API when the panel opens; now-playing polled only while playing; playback through mpv | None unless playing |
-| Weather | Port of `ashuttl.linecast` | Open-Meteo through Linecast's vendored Python | Current conditions every 15 min on AC, 30 min on battery; forecast, sun, moon and tides every 2 h on AC, 6 h on battery, and on panel open when older than the AC interval |
-| Calendar | Port of `tmn73.calendar` | Its sync as a user timer (Google through the Workspace CLI, CalDAV, iCal) writing a cache the widget watches | Sync every 15 min on AC, 60 min on battery |
-| AltSwitch | Port of `io.github.pablo-merino.altswitch` | Hyprland client list, read only while open | None |
+| Menu | None (SUBCULT mark) | None | None |
+| Workspaces, active window | `omarchy.workspaces`, `monitor-bar` | `Quickshell.Hyprland` events | None |
+| Indicators | `omarchy.indicators` | Do-not-disturb from the notification server, idle inhibit (`IdleInhibitor`), screen recording from a PipeWire capture node | None |
+| Microphone, audio | `omarchy.microphone`, `omarchy.audio` | `Quickshell.Services.Pipewire` | None |
+| Keyboard layout, display | `omarchy.keyboard-layout`, `omarchy.monitor` | Hyprland events | None |
+| Network | `omarchy.network` | `Quickshell.Networking` | None |
+| Bluetooth | `omarchy.bluetooth` | `Quickshell.Bluetooth` | None |
+| Battery and power profile | `omarchy.battery` | `Quickshell.Services.UPower`, power-profiles-daemon | None |
+| Tray | `omarchy.tray` | `Quickshell.Services.SystemTray` | None |
+| Update count | `omarchy.system-update` | File watch on the `subcult-update check` state file | None |
+| Clock, world clock | `omarchy.clock`, `omarchy.elsewhen` | One timer aligned to the minute | One wake a minute |
+| Notifications and centre | `foamy.notification-center` | `Quickshell.Services.Notifications`; history in memory plus a small JSON file | None |
+| OSD | `omarchy.osd` | PipeWire volume events; brightness and caps-lock bindings call the shell over IPC | None |
+| Polkit dialog | `omarchy.polkit` | `Quickshell.Services.Polkit` | None |
+| Soma.fm | `io.github.joshuaswarren.somafm` | SomaFM API when the panel opens; now-playing polled only while playing; playback through mpv | None unless playing |
+| Weather | `ashuttl.linecast` | Current conditions from Open-Meteo; forecast, sun, moon and tides from the `linecast` program ([[#Ownership]]) | Current every 15 min on AC, 30 min on battery; the rest every 2 h on AC, 6 h on battery, and on panel open when older than the AC interval |
+| Calendar | `tmn73.calendar` | A user timer syncs Google (Workspace CLI), CalDAV and iCal into a cache the widget watches | Sync every 15 min on AC, 60 min on battery |
+| AltSwitch | `io.github.pablo-merino.altswitch` | Hyprland client list, read only while open | None |
+| HT3 headphones | `patrickfanella.ht3` (Patrick's) | BlueZ and PipeWire; the device helper runs only while the panel is open | None; shows only while an HT3 is connected |
+| n8n | `legendik.n8n` | n8n REST API; API key in the keyring through `secret-tool` | Every 60 s on AC, 5 min on battery; shows only once a server is set up |
 
 ### Shipped, off by default (stage 3)
 
-Dell power (`stappmus.dell-power-profiles`, enabled automatically on Dell
-hardware through `subcult hw`), downloads (`ussego.otoru`), auto-wallpaper
-(`dizziee.auto-wallpaper`), agents usage (rebuilt from `omarchy.agents`).
-Licences of `foamy`, `otoru` and the Dell plugin are checked before porting;
-the Dell plugin's notice names David Heinemeier Hansson.
+Dell power (reference `stappmus.dell-power-profiles`, enabled automatically
+on Dell hardware through `subcult hw`), downloads (`ussego.otoru`),
+auto-wallpaper (`dizziee.auto-wallpaper`), agents usage (`omarchy.agents`).
 
-### Not ported
+### Not built
 
 | Plugin | Why |
 |---|---|
 | Bitwarden, xray, weather radar | Owner's call, 2026-11-07 |
 | omaplug | v0 loads no third-party plugins, so a plugin manager has nothing to manage |
-| Switchyard, n8n, HT3 | Homelab or one device; belong in the owner's profile |
+| Switchyard | Homelab runtime; belongs in the owner's profile |
 | lock-explorer | Replaced by the standalone lock program ([[0036-shell-components\|ADR 0036]]) |
 | `shell.settings` | A settings panel is its own later piece |
 | Installed but inactive plugins not listed above | Not active on `sputnik`, or poll in the background |
 
-### Porting rules
+### Ownership
 
-- Rename out of Omarchy's namespace: ids become `subcult.<name>`,
-  `omarchy-calendar-sync` becomes `subcult-calendar-sync`, config moves under
-  `~/.config/subcult/`.
-- Record upstream URL, commit and MIT notice in `shell/THIRD_PARTY_NOTICES.md`.
-- Fix polling found on read: Soma's 1 s timer that waits for a service
-  becomes an event; Linecast's 30 s and 60 s view timers run only while the
-  panel is open.
-- Keep each plugin's tests, renamed.
-- Only weather, calendar sync and Soma use the network, and each starts only
-  after the user sets it up: a location, an account, pressing play.
+- Widgets are written from a feature list taken from using the reference
+  plugin and reading its README, not by translating its source. That keeps
+  them Subarchy's own under Subarchy's licence
+  ([[0053-licence|ADR 0053]]) with no third-party notice. The same applies to
+  Omarchy's shell: nothing from `/usr/share/omarchy/shell` is copied.
+- Data formats and protocols the references document (the HT3 protocol in
+  `PROTOCOL.md`, n8n's REST API, SomaFM's API) are used as specifications.
+- One outside program stays outside: the weather widget calls
+  [`linecast`](https://github.com/ashuttl/linecast) (v1.15.2 on `sputnik`)
+  for forecast, sun, moon and tides. It ships as its own package with its own
+  licence, built from a pinned tag in `packaging/`; its licence is checked
+  before packaging.
+- Names are Subarchy's: widget ids `subcult.<name>`, commands
+  `subcult-<group>-<action>`, config under `~/.config/subcult/`.
+- Behaviour that polled on `sputnik` is redesigned: Soma's 1 s wait-for-service
+  timer becomes an event, Linecast's 30 s and 60 s view timers run only while
+  its panel is open, n8n's 30 s poll becomes 60 s on AC and 5 min on battery.
+- Only weather, calendar sync, Soma and n8n use the network, and each starts
+  only after the user sets it up: a location, an account, pressing play, a
+  server.
 
 ## Battery policy
 
@@ -166,8 +223,8 @@ the Dell plugin's notice names David Heinemeier Hansson.
 ## Testing
 
 - **Unit tests** (`qmltestrunner`) for the pure logic: interval selection,
-  config merging, Full/Minimal layout, palette-to-token mapping, plus the
-  ported plugins' own tests.
+  config merging, Full/Minimal layout, palette-to-token mapping, and each
+  widget's own model logic.
 - **Static**: `qmllint` on every QML file; a `make verify` target loads the
   shell headless (`QT_QPA_PLATFORM=offscreen`) and fails on any QML error.
 - **VM**: `tools/iso/install-test.py` gains a desktop stage after autologin:
@@ -186,8 +243,8 @@ the Dell plugin's notice names David Heinemeier Hansson.
 
 ## Doc changes that come with stage 1
 
-- [[0039-fonts-icons|ADR 0039]]: revision note for fonts (follow `sputnik`)
-  and icons (Papirus restored).
+- [[0039-fonts-icons|ADR 0039]]: revision note for fonts (switchable
+  monospace list, Adwaita Sans for GTK) and icons (Papirus restored).
 - [[0068-shell-plugin-api-v0|ADR 0068]] accepted.
 - [[triage|Triage]]: placements updated to match this note.
 - [[roadmap|Roadmap]] Phase 3: shell item split into the three stages.
