@@ -13,7 +13,9 @@ import subprocess
 import time
 from pathlib import Path
 
-OVMF_CODE = Path("/usr/share/edk2/x64/OVMF_CODE.4m.fd")
+# Secure Boot capable firmware; with the stock VARS template it starts in
+# setup mode (no keys), so unsigned media boot until keys are enrolled.
+OVMF_CODE = Path("/usr/share/edk2/x64/OVMF_CODE.secboot.4m.fd")
 OVMF_VARS = Path("/usr/share/edk2/x64/OVMF_VARS.4m.fd")
 PROMPT = re.compile(rb"SUBARCHY-READY> ")
 ANSI = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(\x07|\x1b\\)|\x1b[()][0-9A-B]|\r")
@@ -52,7 +54,8 @@ def distinct_colours(png: Path) -> int:
 def qemu_command(vars_file: Path, *extra: str, memory: str = "4096") -> list[str]:
     """Base QEMU command line: q35, OVMF, serial on stdio, user networking."""
     cmd = [
-        "qemu-system-x86_64", "-machine", "q35", "-m", memory, "-smp", "4",
+        "qemu-system-x86_64", "-machine", "q35,smm=on", "-m", memory, "-smp", "4",
+        "-global", "driver=cfi.pflash01,property=secure,value=on",
         "-drive", f"if=pflash,format=raw,readonly=on,file={OVMF_CODE}",
         "-drive", f"if=pflash,format=raw,file={vars_file}",
         "-display", "none", "-serial", "stdio", "-monitor", "none",

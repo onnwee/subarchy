@@ -388,6 +388,60 @@ def boot_snapshot(disk: Path, vars_file: Path) -> bool:
     return all(checks.values())
 
 
+SB_VAR = "/sys/firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c"
+
+
+def unlock_and_login(serial: Serial) -> None:
+    serial.expect(re.compile(rb"assphrase for"), 240)
+    serial.send(PASSPHRASE + "\n")
+    serial.expect(re.compile(rb"login: "), 180)
+    serial.send(USER + "\n")
+    serial.expect(re.compile(rb"Password: "), 30)
+    serial.send(PASSWORD + "\n")
+    serial.claim_prompt(60)
+
+
+def boot_secureboot(disk: Path, vars_file: Path) -> bool:
+    """Enroll keys with `subcult secureboot setup`, then boot with Secure
+    Boot enforced, take a snapshot (rewrites limine.conf, so the enrolled
+    config hash must follow) and boot once more (ADR 0012)."""
+    cmd = qemu_command(vars_file, "-drive", f"file={disk},if=virtio,format=qcow2")
+    proc, serial, log = start(cmd, VM / "secureboot-serial.log")
+    sb_state = f"od -An -t u1 -j4 -N1 {SB_VAR}"
+    try:
+        unlock_and_login(serial)
+        before = serial.run(sb_state)
+        setup = serial.run(f"echo {PASSWORD} | sudo -S -p '' -v && sudo subcult secureboot setup; echo SETUP_EXIT=$?", timeout=600)
+        serial.send("sudo reboot\n")
+        unlock_and_login(serial)
+        after = serial.run(f"{sb_state}; systemctl is-system-running --wait", timeout=120)
+        serial.run(
+            f"echo {PASSWORD} | sudo -S -p '' -v && sudo snapper -c root create -d secureboot-test"
+            " && sleep 5 && sudo limine-snapper-sync >/dev/null 2>&1; echo SNAP_DONE",
+            timeout=180,
+        )
+        serial.send("sudo reboot\n")
+        unlock_and_login(serial)
+        again = serial.run(f"{sb_state}; systemctl is-system-running --wait", timeout=120)
+        serial.send(f"echo {PASSWORD} | sudo -S -p '' poweroff\n")
+    except TimeoutError as e:
+        proc.kill()
+        print(f"install-test: FAIL in the Secure Boot phase, timed out {e}", file=sys.stderr)
+        print(serial.tail(), file=sys.stderr)
+        return False
+    finally:
+        stop(proc, log)
+    checks = {
+        "Secure Boot off before setup": before.split()[:1] == ["0"],
+        "subcult secureboot setup succeeded": "SETUP_EXIT=0" in setup,
+        "boots with Secure Boot on": after.split()[:1] == ["1"] and after.split()[-1] in ("running", "degraded"),
+        "still boots after limine.conf changed": again.split()[:1] == ["1"] and again.split()[-1] in ("running", "degraded"),
+    }
+    for name, ok in checks.items():
+        print(f"install-test: {'ok  ' if ok else 'FAIL'} {name}")
+    return all(checks.values())
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("iso", type=Path)
@@ -405,7 +459,9 @@ def main() -> int:
         return 1
     if not boot(disk, vars_file):
         return 1
-    return 0 if boot_snapshot(disk, vars_file) else 1
+    if not boot_snapshot(disk, vars_file):
+        return 1
+    return 0 if boot_secureboot(disk, vars_file) else 1
 
 
 if __name__ == "__main__":

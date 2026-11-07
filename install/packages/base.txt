@@ -8,13 +8,14 @@ linux-zen
 linux-lts
 fwupd
 
-# Boot, disk, snapshots (ADR 0007-0011)
+# Boot, disk, snapshots, Secure Boot tooling (ADR 0007-0012)
 mkinitcpio
 systemd-ukify
 limine
 limine-mkinitcpio-hook
 limine-snapper-sync
 efibootmgr
+sbctl
 cryptsetup
 btrfs-progs
 dosfstools
