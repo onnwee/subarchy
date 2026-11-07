@@ -14,12 +14,17 @@ if file then
   file:close()
 end
 
+hl.env("XCURSOR_THEME", "subcult-cursor")
+hl.env("XCURSOR_SIZE", "24")
+hl.env("HYPRCURSOR_THEME", "subcult-cursor")
+hl.env("HYPRCURSOR_SIZE", "24")
+
 hl.config({
   input = { kb_layout = layout },
   misc = {
     disable_hyprland_logo = true,
     disable_splash_rendering = true,
-    background_color = "rgb(0a0a0f)",
+    background_color = "rgb(100B19)",
     force_default_wallpaper = 0,
   },
   animations = { enabled = false },

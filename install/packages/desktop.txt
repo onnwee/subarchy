@@ -22,8 +22,28 @@ realtime-privileges
 # Terminal (ADR 0040)
 kitty
 
-# Fonts (ADR 0039). Space Grotesk and Oswald need packaging first.
+# Desktop shell and look (shell and look design)
+quickshell
+papirus-icon-theme
+brightnessctl
+libsecret
+mpv
+librsvg
+xorg-xcursorgen
+hyprcursor
+
+# Fonts: three roles through fontconfig aliases (shell and look design).
+# Other choices install on demand with `subcult font install`.
 ttf-jetbrains-mono-nerd
+ttf-3270-nerd
+ttf-adwaitamono-nerd
+ttf-space-mono-nerd
+ttf-sharetech-mono-nerd
+otf-atkinsonhyperlegiblemono-nerd
+ttf-nerd-fonts-symbols
+ttf-nerd-fonts-symbols-mono
+otf-libertinus
+ttf-liberation
 noto-fonts
 noto-fonts-cjk
 noto-fonts-emoji
