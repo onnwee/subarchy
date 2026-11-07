@@ -1,0 +1,111 @@
+# Plugin and add-on triage
+
+Proposed placement for everything added beyond Omarchy on `sputnik`. Edit the
+**Proposed** column; the reason column explains the default.
+
+Placement values:
+
+- **default**: installed and enabled in every Subcarchy image.
+- **optional**: packaged in the Subcarchy repository, off by default.
+- **profile**: belongs to the owner's personal profile (estate-config or
+  dotfiles), not the distribution.
+- **host**: specific to `sputnik` hardware or the homelab; stays out.
+- **drop**: superseded or not worth carrying.
+- **evaluate**: needs a test on Omarchy 4.5 before deciding.
+
+## Own plugins
+
+| Plugin | Proposed | Reason |
+|---|---|---|
+| `patrickfanella.monitor-bar` | default | Per-monitor bars are a distinguishing feature. Needs its shell patch moved into the fork. |
+| `onnwee.monitor-bar` | drop | Superseded by `patrickfanella.monitor-bar`. |
+| `io.github.patrickfanella.shelfish` | evaluate | Overlaps `leyanora.plugincontainers` and `omatender`; pick one bar-grouping plugin. |
+| `onnwee.command-palette` | evaluate | Overlaps `subcult.command-palette` and the stock menu; keep one. |
+| `patrickfanella.superproductivity` | optional | Useful, but needs the custom Super Productivity build. |
+| `onnwee.spool` | optional | Tied to T3 Code. |
+| `patrickfanella.ht3` | host | One headphone model. |
+| `onnwee.switchyard` | host | Homelab runtime. |
+| `onnwee.gitea-pipelines` | profile | Points at `git.subcult.tv`; could become optional if made configurable. |
+
+## SUBCULT rice
+
+| Part | Proposed | Reason |
+|---|---|---|
+| `subcult` and `subcult-minimal` themes, wallpapers, brand kit | default | The visual identity. |
+| `subcult.settings` control center, scenes, theme variants, affinity palettes | default | Core of the rice; must be re-verified on Omarchy 4.5. |
+| `subcult.workspace-names`, `subcult.workspace-osd`, topology and machine profiles | default | Replace the hand-made `sputnik-dock-workspaces` watcher. |
+| `subcult.command-palette`, `subcult.operations-log`, `subcult.context` | evaluate | Large surfaces; confirm they are still wanted after the bar moved away from the SUBCULT layout on 2026-11-02. |
+| `subcult.battery`, `subcult.clipboard`, `subcult.lock`, `subcult.notifications`, `subcult.power`, `subcult.workspaces` | evaluate | Manifests mark these as clones of the matching `omarchy.*` built-ins. In a fork, restyle the built-ins instead of carrying clones. |
+| `subcult.idle`, `subcult.media`, `subcult.bluetooth`, `subcult.tailscale`, `subcult.dropbox`, `subcult.agents`, `subcult.world-clock` | evaluate | Same names as built-ins (`omarchy.elsewhen` for the world clock) without a clone marker; check whether they replace or wrap them. |
+| Thermal, privacy, intrusion, mission, demo, closed-door, power-sequence, health, performance plugins | evaluate | SUBCULT-only features; confirm each is still wanted. |
+| `subcult-*` commands (61) | evaluate | Keep the ones that back kept plugins; check each against an `omarchy` equivalent. |
+| `post-update.d/90-restore-subcult` | drop under ADR 0001 B | Not needed when the fork owns the files it restores. |
+| Rice installer, preflight, rollback | evaluate | Useful for converting an existing Omarchy install; not needed on a fresh image. |
+
+## Community plugins
+
+| Plugin | Proposed | Reason |
+|---|---|---|
+| `omaplug` | default | Plugin manager. Pick one of `omaplug` and `weedwhitesandwine.plug`. |
+| `io.github.weedwhitesandwine.plug` | evaluate | Alternative plugin manager with AI code scanning before updates. |
+| `shell.settings` | evaluate | Overlaps `subcult.settings`. |
+| `io.github.pablo-merino.altswitch` | default | Alt-Tab across workspaces is a common request. |
+| `io.github.thebenwalther.switchboard`, `io.github.chinofmaya.spaces`, `io.github.agata.omasets` | optional | Window and workspace tools with overlapping scope. |
+| `burninc0de.dock` | evaluate | Omarchy now ships `omarchy.dock`. |
+| `foamy.notification-center` | default | In current use. Drop `shavanced.notification-center` as a duplicate. |
+| `shavanced.notification-center` | drop | Duplicate. |
+| `dailen.omartfy` | optional | ntfy notifications. |
+| `tmn73.calendar` | default | In current use; brings `omarchy-calendar-sync`. |
+| `ashuttl.linecast` | evaluate | Overlaps stock `omarchy.weather`. |
+| `eduardodallecort.weather-radar` | optional | |
+| `io.github.joshuaswarren.somafm` | optional | |
+| `ky.navidrome-remote` | optional | Needs a Navidrome server. |
+| `ussego.otoru` | optional | yt-dlp downloads. |
+| `dizziee.auto-wallpaper` | default | Fits the affinity-palette feature; confirm it cooperates with `owe`. |
+| `io.github.sirjul1337.lock-explorer` | evaluate | Replaces `omarchy.lock` here; a SUBCULT lock design could ship through it. |
+| `taxin.cursor-style` | optional | |
+| `davies-sam.omatheme` | optional | Theme designer; useful for building Subcarchy themes. |
+| `io.github.elevate08.qs-bitwarden-cli` | optional | Password manager choice is personal. |
+| `harshith.system-monitor`, `io.github.rickycbanks.osystemd`, `io.github.randazraik.xray`, `devgtv.docker`, `com.github.linuxgameruk.ollama-status`, `yashwanth.link` | optional | System tools; overlap with each other and with stock panels. |
+| `legendik.n8n`, `io.github.luccast.omarr` | profile | Homelab services. |
+| `stappmus.dell-power-profiles` | optional | Dell hardware only; could be enabled by hardware detection. |
+| `io.github.thisisgm.omapods` | optional | AirPods. |
+| `io.github.chernicharo.voxtype-mode` | evaluate | Depends on whether voxtype dictation ships. |
+| `rperaza.obsidian-notes`, `mateuszkowalczyk.obsidian-quick-switcher` | optional | Obsidian is in Omarchy's base list. |
+| `leyanora.plugincontainers`, `io.github.salemsayed.omatender` | evaluate | Bar grouping; pick one against `shelfish`. |
+| `omakey` | optional | Learning aid. |
+| `io.github.roman.ovaxry` | drop | Novelty. |
+
+Before anything community-made ships by default: check its licence, pin a
+commit, and record the upstream in the package. None of that is done yet.
+
+## Themes
+
+| Theme | Proposed | Reason |
+|---|---|---|
+| `subcult`, `subcult-minimal` | default | Identity. |
+| `evangelion` | drop | Predecessor of `subcult`. |
+| `kvant-sputnik`, `kvant-tty` | profile | Fleet host themes. |
+| `01`, `event-horizon`, `flat-dracula`, `saga`, user `omarchy` | optional | Third-party; check licences before redistributing. |
+| Omarchy's 24 stock themes | evaluate | Keep all, keep a few, or ship only SUBCULT themes. |
+
+## Host fixes and services
+
+| Item | Proposed | Reason |
+|---|---|---|
+| Shell overlay patch (`omarchy-shell-overlay-sync`) | default, as a fork patch | Move the fix into the shell source and offer it upstream. |
+| `hyprctl` socket wrapper | evaluate | Helps services and SSH sessions; may belong in the fork. |
+| `sputnik-dock-workspaces`, idle and power-profile services | host | Replace with topology profiles and a power policy feature. |
+| `voxtype.service` | evaluate | With the dictation decision. |
+| `tmux.service`, `opencode-tasks`, `mise-history` | profile | Workflow preferences. |
+
+## Packages beyond Omarchy
+
+| Group | Proposed | Reason |
+|---|---|---|
+| Fonts used by the brand (JetBrains Mono, Oswald) | default | Needed by the theme. |
+| Accessibility fonts (Atkinson Hyperlegible, OpenDyslexic) | evaluate | Support the rice's accessibility standard. |
+| Browsers, chat, AI desktop apps, editors | profile | Personal choices. Omarchy already ships Chromium. |
+| Creative, gaming, media apps | profile | Personal; Omarchy offers many through `omarchy install`. |
+| Hardware drivers (DisplayLink, Solaar) | optional | Install on detection or request. |
+| mise developer tools | profile | Personal toolchain. |

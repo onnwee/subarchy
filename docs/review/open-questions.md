@@ -1,0 +1,50 @@
+# Open questions
+
+Answer inline and move answered items to the bottom with the date.
+
+## Identity
+
+1. Is "Subcarchy" the public name, or a working title? See
+   [brand identity](../brand/identity.md) for the clash checks.
+2. Who is the publisher: onnwee personally or the
+   `subculture-collective` organisation?
+3. Should `os-release` keep `ID_LIKE` including `omarchy` for compatibility?
+
+## Licence and assets
+
+4. Which licence for Subcarchy's own code? MIT matches Omarchy and the rice.
+5. Can the SUBCULT marks and the Oswald and JetBrains Mono fonts be
+   redistributed in an image under the rice's `ASSETS_LICENSE.md` terms?
+6. Which community plugins and themes allow redistribution? Not yet checked.
+
+## Hosting and build
+
+7. Where does the canonical repository live? `git.subcult.tv` (matching the
+   rice) is the default. This repository has no remote yet.
+8. Where is the Subcarchy pacman repository hosted, and who holds the signing
+   key?
+9. Is this repository the Omarchy fork itself, or a separate build repository?
+   (ADR 0001 open question.)
+10. Track upstream `main` or releases only, and how often to merge?
+
+## Scope
+
+11. Which machines are targets? `sputnik` (x86_64 laptop with dock) is the
+    reference. Omarchy also supports aarch64 (Apple Silicon, Qualcomm, NVIDIA
+    GB10/N1X); supporting them multiplies testing.
+12. Is the first deliverable an ISO, or a conversion of an existing Omarchy
+    install?
+13. Is the default user a developer like the owner, or a general user? This
+    decides how many of the 179 extra packages and 63 mise tools matter.
+14. Are AI agent integrations (Omarchy's `omarchy agent` commands and bar
+    widget, voxtype dictation) part of the default experience?
+
+## Housekeeping
+
+15. The old `PatrickFanella/omarchy-subcult-theme` also installs as `subcult`.
+    Retire or rename it?
+16. `sputnik` has many `.bak` files in `~/.config/hypr` and
+    `~/.config/omarchy`. Clean up before capturing a reference configuration?
+17. The Machinum host briefing lists OmaSSH and Fleetbar plugins as installed
+    on 2026-10-06; neither is in `~/.config/omarchy/plugins` now. Were they
+    removed on purpose?
