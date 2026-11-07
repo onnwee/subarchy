@@ -26,5 +26,9 @@ order.
 | ADR | Title |
 |---|---|
 | [[0001-fork-strategy\|0001]] | How Subcarchy relates to Omarchy |
+| [[0002-base-distribution\|0002]] | Base distribution |
+| [[0003-cpu-architectures\|0003]] | CPU architectures |
+| [[0004-kernel\|0004]] | Kernel |
+| [[0005-firmware\|0005]] | Firmware and microcode |
 
 Related: [[home|Docs home]]

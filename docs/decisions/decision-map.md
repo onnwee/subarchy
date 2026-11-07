@@ -25,10 +25,10 @@ NVMe.
 
 | # | Decision | Omarchy 4.5 choice | Status |
 |---|---|---|---|
-| F1 | Base distribution and package manager | Arch Linux, pacman | open |
-| F2 | CPU architectures supported | x86_64 plus several aarch64 platforms | open |
-| F3 | Kernel | `linux-omarchy` (BORE CPU scheduler, ADIOS I/O scheduler), no fallback kernel | open |
-| F4 | Firmware and microcode | `linux-firmware` split packages, Intel and AMD microcode | open |
+| F1 | Base distribution and package manager | Arch Linux, pacman | [[0002-base-distribution\|ADR 0002]]: Arch, pacman, rolling |
+| F2 | CPU architectures supported | x86_64 plus several aarch64 platforms | [[0003-cpu-architectures\|ADR 0003]]: x86_64 only |
+| F3 | Kernel | `linux-omarchy` (BORE CPU scheduler, ADIOS I/O scheduler), no fallback kernel | [[0004-kernel\|ADR 0004]]: `linux-zen`, `linux-lts` fallback |
+| F4 | Firmware and microcode | `linux-firmware` split packages, Intel and AMD microcode | [[0005-firmware\|ADR 0005]]: detected vendors, fwupd |
 | F5 | GPU driver policy (Intel, AMD, NVIDIA, hybrid) | Per-vendor install scripts, NVIDIA open DKMS | open |
 
 ## Boot and storage
