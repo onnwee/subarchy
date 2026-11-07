@@ -56,7 +56,7 @@ change.
 | Signal | messenger |  |  | repo | `signal-desktop` |  |
 | Vesktop | chat |  |  | aur | `vesktop` | Discord client; `vesktop-bin` also exists |
 | Halloy | irc |  |  | repo | `halloy` |  |
-| Proton Mail Bridge | mail-bridge |  |  | repo | `protonmail-bridge` | Needs a mail client; none is on the list yet |
+| Proton Mail Bridge | mail-bridge |  |  | repo | `protonmail-bridge` | Pairs with Thunderbird |
 
 ### AI and development
 
@@ -115,6 +115,19 @@ change.
 | Lutris | game-launcher |  |  | repo | `lutris` | Also brings the 32-bit libraries |
 | qBittorrent | torrent |  |  | repo | `qbittorrent` |  |
 
+### Core viewers and tools (gaps filled 2026-11-07)
+
+| App | Role | Preinstalled | Default | Source | Package | Notes |
+|---|---|---|---|---|---|---|
+| Okular | pdf-viewer | yes | yes | repo | `okular` | Annotations, forms, signatures; reuses the KDE libraries Dolphin installs |
+| swayimg | image-viewer | yes | yes | repo | `swayimg` | Wayland-native, gallery mode |
+| grim + slurp + satty | screenshot | yes | yes | repo | `grim`, `slurp`, `satty` | Capture, region pick, annotate; run from a keybinding, nothing in the background |
+| Thunderbird | mail |  | yes | repo | `thunderbird` | Offered; works with Proton Mail Bridge over IMAP/SMTP |
+| Launcher calculator | calculator | yes | yes | repo | `libqalculate` | Sums typed in the shell launcher |
+| Qalculate! | calculator | yes |  | repo | `qalculate-qt` | Same engine: units, history, graphs |
+| btop | system-monitor | yes | yes | repo | `btop` | Opens in kitty; themed from the palette |
+| gpu-screen-recorder | screen-recorder | yes | yes | repo | `gpu-screen-recorder` | Hardware-encoded; started and stopped from a keybinding or the shell |
+
 ### Chromium extensions
 
 Installed automatically with Chromium ([[0042-browser|ADR 0042]]).
@@ -124,18 +137,17 @@ Installed automatically with Chromium ([[0042-browser|ADR 0042]]).
 | Claude | `fcoeoabgfenejglbffodgkkbkcdhcgfn` | Anthropic; paid Claude plan |
 | ChatGPT (Codex browser control) | `hehggadaopoacecdllhhajmbjkdcmajg` | OpenAI; browser control needs the ChatGPT/Codex desktop app. On `sputnik` that is `openai-codex-desktop`, which only `[omarchy]` carries; the AUR has `chatgpt-desktop`. Not on the app list yet |
 
-## Gaps to fill
+## Web apps
 
-Roles the lean core needs ([[0044-default-apps|ADR 0044]]) or the list implies,
-with no app picked yet:
+None are preinstalled. The app installer offers an "install web app" command,
+borrowed from Omarchy's `omarchy-webapp-install`, that opens a site in its own
+Chromium app window with a launcher entry, plus a short catalogue to pick
+from. The catalogue is not chosen yet.
 
-- **PDF viewer**: `sputnik` has Evince and Papers.
-- **Image viewer**: `sputnik` has imv.
-- **Calculator**: `sputnik` has Omacalc.
-- **Screenshot and annotation**: `sputnik` has Omasnap and Wayscriber.
-- **Mail client** for Proton Mail Bridge.
-- **System monitor**: `sputnik` has btop and htop.
-- **Web apps**: which ones. Chromium is now preinstalled, so it can run them in app windows as Omarchy does.
+## Gaps
+
+All core roles have an app as of 2026-11-07. Gaps and better picks get added
+here as they come up.
 
 Apps on `sputnik` that this draft leaves out (from
 [[sputnik-apps|Apps on sputnik]]), in case any were missed: 1Password,
