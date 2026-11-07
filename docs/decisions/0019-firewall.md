@@ -17,6 +17,7 @@ Decision map item S6. Accepted 2026-11-06.
 
 **ufw** with **ufw-docker**: incoming denied and outgoing allowed by default,
 and Docker-published ports filtered through ufw instead of bypassing it.
+Docker itself is decided in [[0055-containers|ADR 0055]].
 
 ## Options considered
 

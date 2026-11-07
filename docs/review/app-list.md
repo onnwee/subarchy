@@ -128,6 +128,27 @@ change.
 | btop | system-monitor | yes | yes | repo | `btop` | Opens in kitty; themed from the palette |
 | gpu-screen-recorder | screen-recorder | yes | yes | repo | `gpu-screen-recorder` | Hardware-encoded; started and stopped from a keybinding or the shell |
 
+### Command-line and terminal apps (2026-11-07)
+
+All preinstalled, all from Arch's repositories. They are system packages so
+every user and Subarchy's own scripts can rely on them; per-user mise versions
+still work ([[0028-developer-toolchains|ADR 0028]]).
+
+| Group | Packages |
+|---|---|
+| Basics (included without asking) | `curl`, `wget`, `rsync`, `unzip`, `7zip`, `less`, `man-db`, `man-pages`, `wl-clipboard`, `git`, `openssh` |
+| Modern shell tools | `bat`, `eza`, `fd`, `ripgrep`, `fzf`, `zoxide`, `jq`, `go-yq` |
+| Terminal apps | `lazygit`, `tmux`, `fastfetch`, `lazydocker` |
+| Git and forges | `github-cli`, `tea`, `git-delta` |
+| Media | `yt-dlp`, `ffmpeg`, `imagemagick` |
+| Disk usage | `dust`, `duf` |
+| Containers | `docker`, `docker-compose`, `docker-buildx` ([[0055-containers\|ADR 0055]]) |
+
+Already decided elsewhere: zsh, starship and atuin
+([[0041-shell-prompt|ADR 0041]]), btop, yazi, Neovim. Not preinstalled:
+`tealdeer`, `plocate` (needs a daily index timer), `zellij`, `direnv`,
+`just`, `hyperfine`, `tokei`.
+
 ### Chromium extensions
 
 Installed automatically with Chromium ([[0042-browser|ADR 0042]]).

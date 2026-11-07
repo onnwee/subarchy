@@ -61,6 +61,7 @@ NVMe.
 | S8 | Printing and device discovery | CUPS, Avahi | [[0022-printing\|ADR 0022]]: CUPS socket-activated, Avahi |
 | S9 | Authentication: PAM, polkit, keyring, fingerprint, FIDO | gnome-keyring, shell polkit agent, optional fprintd | [[0023-authentication\|ADR 0023]]: gnome-keyring, fingerprint/FIDO opt-in |
 | S10 | Time, locale and input methods | tzupdate, fcitx5 | [[0024-time-locale-input\|ADR 0024]]: auto time zone, input methods on demand |
+| S11 | Containers | Docker, socket-activated; user not in `docker` group | [[0055-containers\|ADR 0055]]: same as Omarchy |
 
 ## Packages and updates
 
