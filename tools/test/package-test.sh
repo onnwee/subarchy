@@ -49,6 +49,9 @@ for path in usr/share/icons/subcult-cursor/index.theme usr/share/icons/subcult-c
   usr/share/icons/subcult-cursor/hyprcursors/default.hlc usr/share/icons/subcult-cursor/manifest.hl; do
   grep -qx "$path" <<<"$list" || fail "missing $path"
 done
+grep -qx usr/share/fontconfig/conf.avail/50-subarchy-roles.conf <<<"$list" || fail "missing font roles conf"
+[[ $(bsdtar -tvf "$pkg" etc/fonts/conf.d/50-subarchy-roles.conf 2>/dev/null) == *"-> /usr/share/fontconfig/conf.avail/50-subarchy-roles.conf" ]] ||
+  fail "font roles conf is not linked from /etc/fonts/conf.d"
 grep -qx "icon-theme='Papirus-Dark'" <(bsdtar -xOf "$pkg" usr/share/glib-2.0/schemas/90-subarchy.gschema.override) ||
   fail "GSettings override lacks Papirus-Dark"
 
