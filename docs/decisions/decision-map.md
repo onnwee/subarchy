@@ -88,7 +88,7 @@ NVMe.
 |---|---|---|---|
 | D1 | Shell toolkit | Quickshell (QML) | [[0034-shell-toolkit\|ADR 0034]]: Quickshell, QML |
 | D2 | Plugin API and Omarchy plugin compatibility | Omarchy shell manifest API | [[0035-plugin-api\|ADR 0035]]: own API, port what we keep |
-| D3 | Bar, launcher and menus | Shell plugins | [[0036-shell-components\|ADR 0036]]: in the shell |
+| D3 | Bar, launcher and menus | Shell plugins | [[0036-shell-components\|ADR 0036]]: in the shell; launcher in [[0057-launcher\|ADR 0057]] (Raycast-style) |
 | D4 | Notifications, OSD, lock screen, idle | Shell plugins | [[0036-shell-components\|ADR 0036]]: notifications and OSD in shell; hyprlock, hypridle |
 | D5 | Theming system | `colors.toml` per theme rendered into per-app templates | [[0037-theming\|ADR 0037]]: Theme Tender (palette, templates, catalog, apply); SUBCULT default |
 | D6 | Wallpaper engine | `owe` | [[0038-wallpaper\|ADR 0038]]: shell-drawn, still by default, video opt-in |

@@ -18,7 +18,7 @@ Decision map items D3 and D4. Accepted 2026-11-06.
 Inside the Quickshell shell:
 
 - bar (per-monitor layouts, from `omarchy-monitor-bar`)
-- launcher and menus
+- launcher and menus (Raycast-style, see [[0057-launcher|ADR 0057]])
 - notifications daemon and history
 - on-screen display (volume, brightness, status)
 - polkit authentication dialog ([[0023-authentication|ADR 0023]])
