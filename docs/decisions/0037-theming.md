@@ -74,13 +74,16 @@ writes the registry entries and templates (MIT) and contributes them upstream:
 | Papirus folder colours | user command | [[0039-fonts-icons\|ADR 0039]] |
 | SDDM, Plymouth, Limine | **system**, root-owned | Theme Tender runs as the user. Subarchy's CLI applies these through polkit from a palette Theme Tender exports |
 
-Open items to raise in Theme Tender:
+Raised in Theme Tender on 2026-11-07 (owner's request), unlabelled so the
+owner decides pickup:
 
-1. A way to export the resolved palette (all roles) or render a template
-   without applying it, for the root-owned targets above.
-2. Recognising Subarchy's layered defaults so ownership detection treats the
-   shipped include lines as Subarchy-owned and leaves them alone.
-3. Its ADR 0002 still says "Subcarchy"; the distribution is now Subarchy
+1. [theme-tender#19](https://git.subcult.tv/subculture-collective/theme-tender/issues/19):
+   export the resolved palette or render a template without applying, for the
+   root-owned targets above.
+2. [theme-tender#20](https://git.subcult.tv/subculture-collective/theme-tender/issues/20):
+   recognise Subarchy's layered defaults in ownership detection.
+3. [theme-tender#21](https://git.subcult.tv/subculture-collective/theme-tender/issues/21):
+   rename "Subcarchy" to "Subarchy" in its ADR 0002
    ([[0052-name-identity|ADR 0052]]).
 
 ## Options considered
@@ -102,8 +105,13 @@ which Subarchy does not use.
 
 ## Consequences
 
-- Subarchy's theming depends on Theme Tender's progress. On 2026-11-07 it is
-  at the planning stage: an M1 plan and draft contracts in an open PR, no code.
+- Subarchy's theming depends on Theme Tender's progress. By 2026-11-07 its M1
+  work had merged (PRs #1–#18 on 2026-11-06: colour core, catalog builder,
+  registry, renderer, config editors, change record, ownership detection,
+  Omarchy backend, CLI, terminal UI, signed bundle, packaging). Its README
+  says "M1 in progress": `tender` works with a catalog the user builds; the
+  signed data bundle and packages come later. Commands on `main`: `search`,
+  `apply`, `uninstall`, `list`, `tui`, `doctor`, `version`.
 - Subarchy's Phase 4 theming work becomes registry entries and templates in
   Theme Tender, plus the system-level apply for SDDM, Plymouth and Limine.
 - The palette contract is Theme Tender's, versioned there (`schema: 1`).
