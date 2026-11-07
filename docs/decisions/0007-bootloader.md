@@ -15,7 +15,7 @@ Decision map item B1. Accepted 2026-11-06.
 
 ## Decision
 
-Subcarchy boots with **Limine** on UEFI. The menu lists `linux-zen` first and
+Subarchy boots with **Limine** on UEFI. The menu lists `linux-zen` first and
 as default, `linux-lts` as the fallback, then snapshot entries (B5).
 
 ## Options considered
@@ -29,7 +29,7 @@ as default, `linux-lts` as the fallback, then snapshot entries (B5).
 
 - `default/limine/limine.conf` and `default.conf`: menu layout, `timeout: 1`,
   terminal palette and branding keys (`interface_branding`,
-  `interface_branding_color`), which take Subcarchy's name and colours (R4).
+  `interface_branding_color`), which take Subarchy's name and colours (R4).
 - `limine-mkinitcpio-hook` and `limine-snapper-sync` packaging, pending B2
   and B5.
 
@@ -42,7 +42,7 @@ as default, `linux-lts` as the fallback, then snapshot entries (B5).
   snapshot history. On `sputnik` each Omarchy UKI is about 256 MB and
   `limine-snapper-sync` keeps extra copies; a 2 GB partition already has 784 MB
   used with one kernel. B3 must size the partition for two kernels.
-- Limine needs UEFI or BIOS firmware it supports; Subcarchy targets UEFI only
+- Limine needs UEFI or BIOS firmware it supports; Subarchy targets UEFI only
   unless R3 says otherwise.
 
 Related: [[decision-map|Decision map]] · [[0004-kernel|ADR 0004]] · [[0006-gpu-drivers|ADR 0006]]

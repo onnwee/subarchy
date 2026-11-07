@@ -3,47 +3,69 @@ title: "ADR 0052: Name and identity"
 type: decision
 status: accepted
 adr: 52
-review: pending
 created: 2026-11-06
 updated: 2026-11-06
 tags: [decision, adr, brand]
-aliases: [ADR 0052, R4, Name, os-release]
+aliases: [ADR 0052, R4, Name, os-release, Subarchy]
 ---
 
 # ADR 0052: Name and identity
 
-Decision map item R4. Accepted 2026-11-06 in part; the name is pending.
+Decision map item R4. Accepted 2026-11-06.
 
 ## Decision
 
-- **The product name is not chosen yet.** "Subcarchy" stays the working name
-  for the repository and documents only. No artwork, package name, path or
-  `os-release` value uses it.
-- Until the name exists, specs and code use the placeholder **`<name>`**
-  (paths like `/usr/share/<name>/`, commands like `<name> theme set`).
-- **CLI**: the full product name is installed as the dispatcher
-  ([[0046-distribution-cli|ADR 0046]]), plus a **short alias** of two to four
-  letters for daily use. `sc`, `sub` and `subc` were free on `sputnik`
-  (2026-11-06); recheck against Arch and AUR package names when choosing.
+The distribution is **Subarchy**: sub + Arch + anarchy. What users see on
+screen and type at the prompt is **SUBCULT**.
 
-## Checks for the name
+| Surface | Uses | Example |
+|---|---|---|
+| Boot menu, boot splash, login, lock screen, About screen, shell logo | **SUBCULT** mark and wordmark | Limine `interface_branding: SUBCULT`, Plymouth and SDDM artwork |
+| Commands | **`subcult`** dispatcher ([[0046-distribution-cli\|ADR 0046]]) and `subcult-<group>-<action>` executables | `subcult theme set`, `subcult update` |
+| Short alias | **`sub`** | `sub theme set` |
+| User and system paths, plugin IDs, environment | **subcult** | `/usr/share/subcult/`, `~/.config/subcult/`, `subcult.<plugin>`, `SUBCULT_PATH` |
+| OS identity | **Subarchy** | `/etc/os-release`: `NAME="Subarchy"`, `ID=subarchy`, `ID_LIKE=arch` |
+| Packages and repository | **subarchy** | `subarchy`, `subarchy-keyring`, pacman repository `[subarchy]` |
+| ISO, source repository, documentation | **Subarchy** | `subarchy-<version>-x86_64.iso`, `git.subcult.tv/…/subarchy` |
 
-From [[brand-identity|Brand identity]]:
+## Checks done (2026-11-06)
 
-- It must not suggest an official Omarchy product.
-- It must not collide with **Subcult OS**, the existing event-operations
-  product in `subculture-collective/subcult-os`.
-- It should fit the SUBCULT sub-brand map's commitments: legibility, agency,
-  memory and anti-extraction.
-- It needs a lowercase `ID=` for `os-release` and must work as a package
-  prefix and a command.
+| Check | Result |
+|---|---|
+| Web search for "Subarchy" Linux | No product found; only the kernel's `subarch` build variable |
+| Arch repositories and AUR | No package named `subarchy`, `subcult`, `sub`, `subc` or `scl` |
+| Arch manual pages (man.archlinux.org) | No command `subcult`, `sub`, `subc` or `scl` |
+| `sc` | Taken by an AUR spreadsheet program, so not used as the alias |
+| GitHub user or organisation `subarchy` | Not found |
+| `git.subcult.tv` user `subarchy`, repo `subculture-collective/subarchy` | Not found |
+| Domains | `subarchy.com`, `.net`, `.org`, `.io`, `.sh` returned "no match" or "not found" from whois; `.dev` gave no answer |
+
+This was not a formal trademark search.
+
+## Options considered
+
+| Option | Why not chosen |
+|---|---|
+| Subcarchy (repository working name) | The owner was not keen on it. |
+| Subroot, Undercurrent, Subterra, Undir, Basement | Considered; the owner chose Subarchy. |
+| SUBCULT Linux | Too close to Subcult OS, the event-operations product. |
 
 ## Consequences
 
-Branding work waits for the name: Plymouth splash
-([[0013-boot-splash|ADR 0013]]), SDDM theme ([[0030-login-manager|ADR 0030]]),
-Limine strings ([[0007-bootloader|ADR 0007]]), the editor branding layer
-([[0045-editor|ADR 0045]]) and every row in
-[[branding-surfaces|Branding surfaces]].
+- The `subcult` command and `subcult-*` executables collide with the SUBCULT
+  rice's 61 `subcult-*` commands in `~/.local/bin` on `sputnik`. Installing
+  Subarchy there means removing the rice first, or porting its commands into
+  Subarchy under the same names ([[subcult-rice|SUBCULT rice]]).
+- Two names to explain: Subarchy is the distribution, SUBCULT the brand it
+  carries. The README and About screen say so in one line.
+- `ID_LIKE=arch` lets tools that check for Arch work; Subarchy does not claim
+  `omarchy`.
+- The local checkout is still at `~/Work/Subcarchy`. Renaming the folder also
+  needs the T3 project path changed; the Gitea repository is created as
+  `subarchy` ([[0051-hosting-ci|ADR 0051]]).
+- Branding work can start: Plymouth ([[0013-boot-splash|ADR 0013]]), SDDM
+  ([[0030-login-manager|ADR 0030]]), Limine ([[0007-bootloader|ADR 0007]]),
+  the editor layer ([[0045-editor|ADR 0045]]) and every row in
+  [[branding-surfaces|Branding surfaces]].
 
-Related: [[decision-map|Decision map]] · [[brand-identity|Brand identity]] · [[0053-licence|ADR 0053]]
+Related: [[decision-map|Decision map]] · [[brand-identity|Brand identity]] · [[0046-distribution-cli|ADR 0046]] · [[0053-licence|ADR 0053]]

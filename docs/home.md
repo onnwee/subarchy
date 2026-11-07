@@ -1,5 +1,5 @@
 ---
-title: "Subcarchy documentation"
+title: "Subarchy documentation"
 type: index
 status: active
 created: 2026-11-06
@@ -8,9 +8,9 @@ tags: [index]
 aliases: [Docs home, Home]
 ---
 
-# Subcarchy documentation
+# Subarchy documentation
 
-Subcarchy is a planned SUBCULT-branded distribution built from Omarchy. These
+Subarchy is a planned SUBCULT-branded distribution built from Omarchy. These
 notes describe the state observed on `sputnik` on 2026-11-06 with Omarchy
 4.5.0-3. Treat counts as that snapshot; rerun
 `python3 tools/inventory/collect.py` for current numbers.

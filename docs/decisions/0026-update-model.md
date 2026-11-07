@@ -22,7 +22,7 @@ Two channels:
 | **stable** (default) | A tested snapshot of Arch, advanced after CI installs, boots and checks it | Everyone |
 | **edge** (opt-in) | Arch mirrors directly | Testers and the owner |
 
-Subcarchy's own repository ([[0025-package-repository|ADR 0025]]) follows the
+Subarchy's own repository ([[0025-package-repository|ADR 0025]]) follows the
 same channel split.
 
 One **update command** does, in order:
@@ -32,7 +32,7 @@ One **update command** does, in order:
 3. Check DKMS modules built for both kernels; if not, say so and keep the
    previous kernel bootable.
 4. Run pending **migrations**: timestamped scripts that change user or system
-   configuration between Subcarchy versions, each run once.
+   configuration between Subarchy versions, each run once.
 5. Report what changed and whether a reboot is needed.
 
 ## Options considered

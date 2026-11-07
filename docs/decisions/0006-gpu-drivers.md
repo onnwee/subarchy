@@ -21,7 +21,7 @@ Decision map item F5. Accepted 2026-11-06.
   and `libva-nvidia-driver`.
 - **NVIDIA, GTX 900 and 10-series**: `nvidia-580xx-dkms` with
   `nvidia-580xx-utils`, chosen by detection. Arch does not carry this branch;
-  Omarchy rebuilds it in its repository, so Subcarchy must too (P1).
+  Omarchy rebuilds it in its repository, so Subarchy must too (P1).
 - **Hybrid laptops**: the integrated GPU draws the desktop. The NVIDIA GPU
   powers off when idle (runtime D3, fine-grained) and runs apps on request:
   - a per-app launcher (from `~/.local/bin/gpu-run` on `sputnik`) that sets

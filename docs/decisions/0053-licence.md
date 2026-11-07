@@ -15,7 +15,7 @@ Decision map item R5. Accepted 2026-11-06.
 
 ## Decision
 
-Subcarchy's own code is licensed under the **GNU General Public License,
+Subarchy's own code is licensed under the **GNU General Public License,
 version 3 or later** (`GPL-3.0-or-later`). The text is in `LICENSE` at the
 repository root.
 
@@ -45,7 +45,7 @@ distribution is then under GPL-3.0 terms.
 
 ## Consequences
 
-- Forks and derivatives of Subcarchy's code must stay open under the GPL.
+- Forks and derivatives of Subarchy's code must stay open under the GPL.
 - Copied files need a header recording their origin and original licence.
 - Community shell plugins ported under [[0035-plugin-api|ADR 0035]] need
   GPL-compatible licences.

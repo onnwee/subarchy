@@ -34,7 +34,7 @@ Decision map item F4. Accepted 2026-11-06.
   Omarchy's hardware scripts and the kernel's `modinfo` firmware lists are the
   sources to borrow from.
 - New hardware after install can lack firmware: a new Wi-Fi card, a dock, a
-  USB network adapter. Subcarchy needs a command that re-runs detection and
+  USB network adapter. Subarchy needs a command that re-runs detection and
   installs what is missing, and a notification when the kernel logs a missing
   firmware file. Both belong to R3 (hardware support policy).
 - `linux-firmware-whence` and the licence files always install.

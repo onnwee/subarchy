@@ -15,7 +15,7 @@ Decision map item F2. Accepted 2026-11-06.
 
 ## Decision
 
-Subcarchy supports **x86_64 only** at launch. aarch64 can be added later by a
+Subarchy supports **x86_64 only** at launch. aarch64 can be added later by a
 new decision.
 
 ## Options considered

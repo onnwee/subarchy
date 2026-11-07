@@ -1,10 +1,12 @@
-# Subcarchy
+# Subarchy
 
-Subcarchy is a planned SUBCULT-branded desktop distribution built from
-[Omarchy](https://omarchy.org/) (Arch Linux and Hyprland). "Subcarchy" is the
-working name taken from this repository; it is not a settled brand.
+Subarchy is a planned Arch Linux desktop distribution that carries the
+SUBCULT brand. It is built from scratch, borrowing from
+[Omarchy](https://omarchy.org/) where it fits. Subarchy is the distribution's
+name; on screen it shows SUBCULT, and its command is `subcult`
+([ADR 0052](docs/decisions/0052-name-identity.md)).
 
-The repository is at the inventory stage. Nothing here builds or installs yet.
+The repository is at the decision stage. Nothing here builds or installs yet.
 The documents under [`docs/`](docs/home.md) record what Omarchy 4.5.0 ships,
 what has been added on top of it on the `sputnik` laptop, and the decisions that
 need review before any build work starts.
@@ -30,7 +32,7 @@ path. Each one holds only a README until build work starts.
 
 ```text
 applications/  default desktop entries and web apps      (Omarchy: applications/)
-bin/           subcarchy-* commands                       (Omarchy: /usr/bin/omarchy-*)
+bin/           subarchy-* commands                       (Omarchy: /usr/bin/omarchy-*)
 branding/      logos, os-release, Plymouth, SDDM, Limine  (Omarchy: logo.*, icon.*, etc-overrides/, default/plymouth)
 config/        user config templates copied to ~/.config (Omarchy: config/)
 default/       system defaults sourced at runtime        (Omarchy: default/)

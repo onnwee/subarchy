@@ -15,7 +15,7 @@ Decision map item L2. Accepted 2026-11-06.
 
 ## Decision
 
-**SDDM** with a Subcarchy **QML theme**. After the LUKS passphrase at boot,
+**SDDM** with a Subarchy **QML theme**. After the LUKS passphrase at boot,
 the user logs in with their password, which also unlocks gnome-keyring
 ([[0023-authentication|ADR 0023]]).
 

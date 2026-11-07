@@ -15,11 +15,11 @@ Decision map item A7. Accepted 2026-11-06.
 
 ## Decision
 
-**Shape.** One dispatcher command, named after the product (R4), routes
-`<name> <group> <action>` to individual commands, for example
-`<name> theme set`, `<name> default browser`, `<name> app install`. Every
+**Shape.** One dispatcher command, `subcult` ([[0052-name-identity|ADR 0052]]), routes
+`subcult <group> <action>` to individual commands, for example
+`subcult theme set`, `subcult default browser`, `subcult app install`. Every
 command carries metadata (summary, arguments, examples) that the dispatcher
-reads for `--help`, `<name> commands`, and `<name> commands --json`, which
+reads for `--help`, `subcult commands`, and `subcult commands --json`, which
 shell menus and AI agents use.
 
 **Languages.**
@@ -52,7 +52,7 @@ metadata comment format at the top of each script:
 # omarchy:examples=omarchy theme list | omarchy theme set "Tokyo Night"
 ```
 
-Subcarchy uses the same idea under its own prefix, and the Go binary reports
+Subarchy uses the same idea under its own prefix, and the Go binary reports
 the same fields for its subcommands so the dispatcher lists both alike.
 
 ## Consequences

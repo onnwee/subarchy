@@ -29,7 +29,7 @@ and draws the LUKS passphrase prompt.
 The Plymouth theme structure in `default/plymouth/` (`omarchy.plymouth`,
 `omarchy.script`, progress bar, bullet and lock images) and
 `omarchy plymouth set`, which recolours the splash from the active theme. All
-artwork is replaced with Subcarchy marks (R4); the Omarchy logo is not
+artwork is replaced with Subarchy marks (R4); the Omarchy logo is not
 borrowed.
 
 ## Consequences
@@ -37,7 +37,7 @@ borrowed.
 - The `plymouth` hook sits in the systemd initramfs line
   ([[0008-initramfs|ADR 0008]]).
 - Plymouth's own config must not be overwritten on update the way
-  `omarchy-settings` resets `/etc/plymouth/plymouthd.conf`; Subcarchy owns the
+  `omarchy-settings` resets `/etc/plymouth/plymouthd.conf`; Subarchy owns the
   file through its package instead.
 - Needs SUBCULT splash artwork: logo, progress elements, unlock prompt.
 

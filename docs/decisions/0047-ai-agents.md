@@ -21,11 +21,11 @@ Built into the base system, lighter than Omarchy:
   ([[0044-default-apps|ADR 0044]]), set with the default picker, with a
   launcher command and keybinding.
 - **Usage widget**: the bar widget showing usage, limits and pace per agent,
-  ported to Subcarchy's plugin API ([[0035-plugin-api|ADR 0035]]).
-- **Agent skills** for Subcarchy's own commands, generated from the CLI's
+  ported to Subarchy's plugin API ([[0035-plugin-api|ADR 0035]]).
+- **Agent skills** for Subarchy's own commands, generated from the CLI's
   `commands --json` ([[0046-distribution-cli|ADR 0046]]), so agents can
   operate the system.
-- **Sign-in** stays with each tool (`claude`, `codex` and so on). Subcarchy
+- **Sign-in** stays with each tool (`claude`, `codex` and so on). Subarchy
   does not manage agent accounts.
 
 ## Options considered
@@ -40,7 +40,7 @@ Built into the base system, lighter than Omarchy:
 - The `omarchy.agents` bar widget and the `omarchy agent usage <provider>`
   readers for the providers the owner uses.
 - `default/agents/skills/` (`omarchy`, `omarchy-app`, `diagnose-crash`) as
-  models for Subcarchy's skills.
+  models for Subarchy's skills.
 - `omarchy default agent` and its launcher.
 
 ## Consequences

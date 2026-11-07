@@ -35,7 +35,7 @@ install rather than on every update.
 
 ## Consequences
 
-`sputnik` enables `cups.service` directly; Subcarchy switches it to socket
+`sputnik` enables `cups.service` directly; Subarchy switches it to socket
 activation.
 
 Related: [[decision-map|Decision map]] · [[0020-dns|ADR 0020]]

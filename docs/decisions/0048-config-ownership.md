@@ -15,10 +15,10 @@ Decision map item R1. Accepted 2026-11-06.
 
 ## Decision
 
-**Layered defaults** for every component Subcarchy configures:
+**Layered defaults** for every component Subarchy configures:
 
 1. Defaults live in the package under the system path
-   (`/usr/share/<name>/default/`) and are replaced on update.
+   (`/usr/share/subcult/default/`) and are replaced on update.
 2. Each program loads the defaults first, then a user file in `~/.config`
    that holds only the user's overrides.
 3. Updates never write to `~/.config`. A change users must adopt (a renamed
@@ -46,7 +46,7 @@ defaults without rewriting your ~/.config/hypr files".
 
 - Each themed or configured program needs a load order check: Hyprland
   (`require`), kitty (`include`), zsh (`source`), starship, Neovim, SDDM.
-- `/etc` files Subcarchy owns are package files or drop-ins (`*.conf.d/`),
+- `/etc` files Subarchy owns are package files or drop-ins (`*.conf.d/`),
   never rewritten on upgrade the way `omarchy-settings` resets
   `/etc/os-release`.
 - A `refresh` command can still reset a user file to the empty override, with

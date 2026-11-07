@@ -16,7 +16,7 @@ Decision map item B6. Accepted 2026-11-06.
 ## Decision
 
 - Secure Boot is **opt-in**. Installs boot with it off, as `sputnik` does now.
-- Subcarchy ships **sbctl** and one setup command that, with the firmware in
+- Subarchy ships **sbctl** and one setup command that, with the firmware in
   setup mode, creates and enrolls the machine's own keys, keeps Microsoft's
   keys enrolled for GPU and network option ROMs, signs Limine and the UKIs,
   and enrolls Limine's config hash.

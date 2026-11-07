@@ -17,7 +17,7 @@ owner review.
 
 ## Decision
 
-Subcarchy preinstalls a **full set** of applications, as Omarchy does, rather
+Subarchy preinstalls a **full set** of applications, as Omarchy does, rather
 than a lean core with a catalogue. The set covers office, writing, notes,
 media, graphics, communication and utilities, using the defaults already
 decided:
@@ -25,7 +25,7 @@ decided:
 | Role | App |
 |---|---|
 | Terminal | kitty, WezTerm ([[0040-terminal\|ADR 0040]]) |
-| Editor | Neovim with Subcarchy's LazyVim config ([[0045-editor\|ADR 0045]]) |
+| Editor | Neovim with Subarchy's LazyVim config ([[0045-editor\|ADR 0045]]) |
 | Browser | Zen ([[0042-browser\|ADR 0042]]) |
 | Files | Dolphin, yazi ([[0043-file-manager\|ADR 0043]]) |
 
@@ -33,14 +33,14 @@ decided:
 are preinstalled, which are offered for install, and which is the default for
 each role.
 
-**App installer and default picker.** Like Omarchy, Subcarchy has:
+**App installer and default picker.** Like Omarchy, Subarchy has:
 
 - an **installer** that installs an app from the list with its integration
   steps (theme template, keybinding, firewall rule, config), from a shell menu
   or the CLI;
 - a **default picker** that sets the default app per role from the apps the
   list allows for that role, updating XDG MIME handlers, `xdg-terminal-exec`
-  and Subcarchy's own launchers;
+  and Subarchy's own launchers;
 - a matching **remove** for each install.
 
 The list file is the single source both tools read; adding an app to the
@@ -64,7 +64,7 @@ installer means adding a row and, when needed, an integration script.
 
 Omarchy hard-codes its choices in each command (for example
 `omarchy default terminal` accepts only alacritty, foot, ghostty, kitty).
-Subcarchy reads them from the list instead.
+Subarchy reads them from the list instead.
 
 ## Open
 

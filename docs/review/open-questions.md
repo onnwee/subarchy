@@ -14,7 +14,7 @@ Answer inline and move answered items to the bottom with the date.
 
 ## Identity
 
-1. Is "Subcarchy" the public name, or a working title? See
+1. Is "Subarchy" the public name, or a working title? See
    [[brand-identity|brand identity]] for the clash checks.
 2. Who is the publisher: onnwee personally or the
    `subculture-collective` organisation?
@@ -22,7 +22,7 @@ Answer inline and move answered items to the bottom with the date.
 
 ## Licence and assets
 
-4. Which licence for Subcarchy's own code? MIT matches Omarchy and the rice.
+4. Which licence for Subarchy's own code? MIT matches Omarchy and the rice.
 5. Can the SUBCULT marks and the Oswald and JetBrains Mono fonts be
    redistributed in an image under the rice's `ASSETS_LICENSE.md` terms?
 6. Which community plugins and themes allow redistribution? Not yet checked.
@@ -31,7 +31,7 @@ Answer inline and move answered items to the bottom with the date.
 
 7. Where does the canonical repository live? `git.subcult.tv` (matching the
    rice) is the default. This repository has no remote yet.
-8. Where is the Subcarchy pacman repository hosted, and who holds the signing
+8. Where is the Subarchy pacman repository hosted, and who holds the signing
    key?
 9. Is this repository the Omarchy fork itself, or a separate build repository?
    (ADR 0001 open question.)
@@ -62,12 +62,12 @@ Answer inline and move answered items to the bottom with the date.
 
 ## Answered 2026-11-06
 
-- **1. Public name**: not chosen; "Subcarchy" is the working name only
-  ([[0052-name-identity|ADR 0052]]).
+- **1. Public name**: Subarchy; screens show SUBCULT and the command is
+  `subcult` ([[0052-name-identity|ADR 0052]]).
 - **4. Licence**: GPL-3.0-or-later ([[0053-licence|ADR 0053]]).
 - **7. Canonical repository**: `git.subcult.tv` with a GitHub mirror
   ([[0051-hosting-ci|ADR 0051]]).
-- **9 and 10. Fork questions**: no longer apply; Subcarchy is built from
+- **9 and 10. Fork questions**: no longer apply; Subarchy is built from
   scratch ([[0001-fork-strategy|ADR 0001]]).
 - **11. Targets**: x86_64 only ([[0003-cpu-architectures|ADR 0003]]),
   hardware fixes per [[0050-hardware-support|ADR 0050]].

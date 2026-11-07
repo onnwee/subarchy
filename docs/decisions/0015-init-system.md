@@ -28,7 +28,7 @@ owner did not object.
 
 ## Consequences
 
-Subcarchy services ship as systemd units (system and user), and scheduled jobs
+Subarchy services ship as systemd units (system and user), and scheduled jobs
 use systemd timers rather than cron.
 
 Related: [[decision-map|Decision map]] · [[0008-initramfs|ADR 0008]]

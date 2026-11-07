@@ -10,26 +10,26 @@ aliases: [Brand draft]
 
 # Brand identity (draft)
 
-Status: draft for review. Nothing here is approved.
+Status: draft for review. The name is decided; palette, marks and type are
+not yet approved.
 
 ## Name
 
-"Subcarchy" is the working name, taken from this repository. It combines
-SUBCULT and Omarchy. Before it is used publicly, check:
+The distribution is **Subarchy** (sub + Arch + anarchy). Screens show the
+**SUBCULT** mark and wordmark, and the command is `subcult`, with `sub` as a
+short alias. The full table of where each name appears is in
+[[0052-name-identity|ADR 0052]].
 
-- that the "-archy" ending does not suggest an official Omarchy product (see
-  the trademark note in [[branding-surfaces|branding surfaces]]);
-- how it fits the SUBCULT sub-brand map
+Still worth keeping in mind when writing about it:
+
+- Present Subarchy as SUBCULT's distribution, not as an Omarchy edition (see
+  the trademark note in [[branding-surfaces|branding surfaces]]).
+- Keep it distinct from **Subcult OS**, the event-operations product in
+  `subculture-collective/subcult-os`.
+- The SUBCULT sub-brand map
   (`Strategy/Identity/Canon/SUBCULT Project and Sub-Brand Map.md` in the
-  SUBCULT vault), which requires sub-brands to keep SUBCULT's
-  commitments to legibility, agency, memory and anti-extraction;
-- whether it clashes with **Subcult OS**, the existing event-operations product
-  in `subculture-collective/subcult-os`. A desktop called "Subcult OS" would
-  collide with it.
-
-The OS needs an `ID=` for `os-release` (lowercase, no spaces), for example
-`subcarchy`, and an `ID_LIKE=arch`. Decide whether to keep `ID_LIKE` including
-`omarchy` so tools that check for Omarchy still work.
+  SUBCULT vault) asks sub-brands to keep SUBCULT's commitments to legibility,
+  agency, memory and anti-extraction.
 
 ## Starting palette
 

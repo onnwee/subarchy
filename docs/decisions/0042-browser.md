@@ -28,7 +28,7 @@ owner's default on `sputnik` (`x-scheme-handler/https=zen.desktop`).
 ## Consequences
 
 - `zen-browser-bin` is not in Arch's repositories. On `sputnik` it comes from
-  `[omarchy]`; Subcarchy rebuilds it ([[0025-package-repository|ADR 0025]]).
+  `[omarchy]`; Subarchy rebuilds it ([[0025-package-repository|ADR 0025]]).
 - Zen needs a theme template (`userChrome.css` or Zen's theme settings) for
   [[0037-theming|ADR 0037]]; Omarchy's Chromium template does not apply.
 - **Web apps** (A6): Omarchy runs them as Chromium `--app` windows. With Zen

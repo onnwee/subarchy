@@ -19,7 +19,7 @@ Decision map item F3. Accepted 2026-11-06.
   2026-11-06).
 - Fallback kernel: **`linux-lts`** (6.18.57 on 2026-11-06), installed alongside
   as a second boot entry.
-- Subcarchy does not build its own kernel.
+- Subarchy does not build its own kernel.
 
 ## Options considered
 

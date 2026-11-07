@@ -19,7 +19,7 @@ runs and is checked in CI.
 - [x] Inventory of Omarchy 4.5.0 and `sputnik`
 - [x] Foundation, boot, system, package, session, shell, app and delivery
       decisions (ADRs 0002 to 0053)
-- [ ] Product name ([[0052-name-identity|ADR 0052]])
+- [x] Product name: Subarchy, shown as SUBCULT ([[0052-name-identity|ADR 0052]])
 - [ ] Owner's app list ([[app-list|App list]])
 - [ ] Owner's theme tool repository, to fix the theme format
       ([[0037-theming|ADR 0037]])
@@ -28,7 +28,7 @@ runs and is checked in CI.
 
 - [ ] Create the repository on `git.subcult.tv` with a GitHub mirror
       ([[0051-hosting-ci|ADR 0051]])
-- [ ] Test the Gitea Arch registry with a Subcarchy signing key, or set up a
+- [ ] Test the Gitea Arch registry with a Subarchy signing key, or set up a
       static repository ([[0025-package-repository|ADR 0025]])
 - [ ] Signing key with offline backup; keyring package
 - [ ] CI runner with KVM for package builds and VM boot tests

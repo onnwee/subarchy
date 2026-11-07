@@ -16,10 +16,10 @@ Decision map item P2. Accepted 2026-11-06.
 ## Decision
 
 - **yay** is preinstalled for the AUR, as in Omarchy. AUR packages the user
-  installs are trusted by the user, not vetted by Subcarchy.
+  installs are trusted by the user, not vetted by Subarchy.
 - **Flatpak** is installed with the **Flathub** remote enabled, for sandboxed
   desktop apps.
-- AppImages run if the user downloads them; Subcarchy does not manage them.
+- AppImages run if the user downloads them; Subarchy does not manage them.
 
 ## Options considered
 
@@ -30,7 +30,7 @@ Decision map item P2. Accepted 2026-11-06.
 
 ## Consequences
 
-- `yay` itself is an AUR package, so Subcarchy rebuilds it
+- `yay` itself is an AUR package, so Subarchy rebuilds it
   ([[0025-package-repository|ADR 0025]]). `paru` would work as well; `yay` was
   kept to match Omarchy's scripts.
 - AUR builds use the same Arch snapshot as the system; on the stable channel

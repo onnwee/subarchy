@@ -26,12 +26,12 @@ High Contrast.
 
 - Defaults: `subcult` and `subcult-minimal`, with the rice's five affinity
   palettes (Press, Acid Block, Paper Stock, Violet Field, Ink Run).
-- A short list of popular community palettes rebuilt in Subcarchy's format,
+- A short list of popular community palettes rebuilt in Subarchy's format,
   for example Tokyo Night, Catppuccin, Gruvbox and Nord. Each one's licence is
   checked before it ships.
 
 **Theme switcher.** The owner is building a tool similar to Omarchy's theme
-switcher, and Subcarchy integrates it as the theme switcher rather than
+switcher, and Subarchy integrates it as the theme switcher rather than
 writing its own. The palette and template format must be designed together
 with that tool.
 

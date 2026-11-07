@@ -18,7 +18,7 @@ This page groups them by purpose so they can be reviewed for the distribution.
 `sputnik` carries three kinds of additions, and they need different treatment:
 
 1. **Distribution candidates**: plugins, themes and tools that could ship to
-   every Subcarchy user.
+   every Subarchy user.
 2. **Owner preferences**: apps and settings for one person's workflow. These
    belong in an optional profile, not the default image.
 3. **Host fixes**: workarounds for this laptop's docks, monitors and power

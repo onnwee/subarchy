@@ -12,7 +12,7 @@ aliases: [SUBCULT rice, subcult-omarchy-rice]
 
 # SUBCULT Omarchy Rice
 
-The rice is the closest thing to Subcarchy that already exists. It is an
+The rice is the closest thing to Subarchy that already exists. It is an
 overlay on top of a stock Omarchy install, not a fork.
 
 | Field | Value |
@@ -45,7 +45,7 @@ overlay on top of a stock Omarchy install, not a fork.
 | Tests | 69 test files and visual-regression fixtures | `tests/`, `visual-regression/` |
 | Docs | 46 Markdown documents covering settings, scenes, workspaces, accessibility, privacy, performance and release | repo root |
 
-## Features worth carrying into Subcarchy
+## Features worth carrying into Subarchy
 
 These are described in the rice's own documents; this inventory did not
 re-test them on Omarchy 4.5.

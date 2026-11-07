@@ -15,7 +15,7 @@ Decision map item F1. Accepted 2026-11-06.
 
 ## Decision
 
-Subcarchy builds on **Arch Linux** with **pacman**, as a rolling release.
+Subarchy builds on **Arch Linux** with **pacman**, as a rolling release.
 Packages are installed and updated on the device; the system is not shipped as
 an immutable image.
 
@@ -34,9 +34,9 @@ practices can be read and copied directly.
 
 ## Consequences
 
-- Rolling-release breakage is Subcarchy's to catch. The update model (P3) and
+- Rolling-release breakage is Subarchy's to catch. The update model (P3) and
   snapshots (B5) carry that risk.
-- The AUR is available; how much of it Subcarchy relies on is P2.
+- The AUR is available; how much of it Subarchy relies on is P2.
 - The owner's fleet and the SUBCULT rice already run on Arch.
 
 Related: [[decision-map|Decision map]] · [[0001-fork-strategy|ADR 0001]] · [[0003-cpu-architectures|ADR 0003]]

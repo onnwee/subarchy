@@ -15,7 +15,7 @@ Decision map item R2. Accepted 2026-11-06.
 
 ## Decision
 
-- A **Subcarchy live ISO**, built with **archiso** in CI.
+- A **Subarchy live ISO**, built with **archiso** in CI.
 - A **terminal (TUI) installer** on the ISO: keyboard, disk, LUKS passphrase,
   user, hostname and time zone, then the scripted install of everything the
   decisions above define.

@@ -16,7 +16,7 @@ Decision map item A3. Accepted 2026-11-06.
 ## Decision
 
 - **Neovim** is the default editor, running **stock LazyVim**.
-- Subcarchy **forks only LazyVim's starter config** and adds its own plugin
+- Subarchy **forks only LazyVim's starter config** and adds its own plugin
   layer for branding and defaults: dashboard art, colourscheme from the active
   theme ([[0037-theming|ADR 0037]]), keymaps and chosen LazyVim extras.
 - It ships **prebuilt**, with plugins pinned by a lockfile and cached in the
@@ -38,11 +38,11 @@ Decision map item A3. Accepted 2026-11-06.
 
 ## Consequences
 
-- LazyVim and its plugins update through Subcarchy's lockfile, on the staged
+- LazyVim and its plugins update through Subarchy's lockfile, on the staged
   channel ([[0026-update-model|ADR 0026]]).
 - LazyVim and the starter are Apache-2.0: keep the licence and NOTICE, and
   mark changed files. The LazyVim name is not used as the product name; the
-  branding layer carries a Subcarchy name.
+  branding layer carries a Subarchy name.
 - If a wanted change can only be made inside LazyVim, it goes upstream first;
   a core fork needs a new decision.
 - Other editors (Helix, VS Code, Zed) are available through the app

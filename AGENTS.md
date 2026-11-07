@@ -1,6 +1,6 @@
-# Agent notes for Subcarchy
+# Agent notes for Subarchy
 
-Subcarchy is a planned SUBCULT-branded distribution built from Omarchy. The
+Subarchy is a planned SUBCULT-branded distribution built from Omarchy. The
 repository is at the inventory and review stage; nothing builds yet.
 
 ## Layout

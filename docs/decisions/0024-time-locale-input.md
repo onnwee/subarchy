@@ -40,7 +40,7 @@ Decision map item S10. Accepted 2026-11-06.
 ## Consequences
 
 - Omarchy installs `tzupdate` but this inventory did not find what triggers it
-  automatically. Subcarchy needs a trigger, such as a NetworkManager
+  automatically. Subarchy needs a trigger, such as a NetworkManager
   dispatcher on connect, or an alternative like `automatic-timezoned` with
   geoclue. Decide when implementing.
 - A geo-IP lookup sends the machine's public IP address to the lookup

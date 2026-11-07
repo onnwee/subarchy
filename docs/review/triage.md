@@ -16,8 +16,8 @@ Proposed placement for everything added beyond Omarchy on `sputnik`. Edit the
 
 Placement values:
 
-- **default**: installed and enabled in every Subcarchy image.
-- **optional**: packaged in the Subcarchy repository, off by default.
+- **default**: installed and enabled in every Subarchy image.
+- **optional**: packaged in the Subarchy repository, off by default.
 - **profile**: belongs to the owner's personal profile (estate-config or
   dotfiles), not the distribution.
 - **host**: specific to `sputnik` hardware or the homelab; stays out.
@@ -75,7 +75,7 @@ Placement values:
 | `dizziee.auto-wallpaper` | default | Fits the affinity-palette feature; confirm it cooperates with `owe`. |
 | `io.github.sirjul1337.lock-explorer` | evaluate | Replaces `omarchy.lock` here; a SUBCULT lock design could ship through it. |
 | `taxin.cursor-style` | optional | |
-| `davies-sam.omatheme` | optional | Theme designer; useful for building Subcarchy themes. |
+| `davies-sam.omatheme` | optional | Theme designer; useful for building Subarchy themes. |
 | `io.github.elevate08.qs-bitwarden-cli` | optional | Password manager choice is personal. |
 | `harshith.system-monitor`, `io.github.rickycbanks.osystemd`, `io.github.randazraik.xray`, `devgtv.docker`, `com.github.linuxgameruk.ollama-status`, `yashwanth.link` | optional | System tools; overlap with each other and with stock panels. |
 | `legendik.n8n`, `io.github.luccast.omarr` | profile | Homelab services. |

@@ -18,7 +18,7 @@ Decision map item B5. Accepted 2026-11-06.
 - **snapper** manages snapshots of the root subvolume `@` only. `/home`,
   `/var/log` and the package cache are not rolled back.
 - The **system update command** (P3) takes one snapshot before it upgrades,
-  labelled with the Subcarchy version. Ad-hoc `pacman` runs do not take
+  labelled with the Subarchy version. Ad-hoc `pacman` runs do not take
   snapshots.
 - snapper keeps the last **5** numbered snapshots; no timeline snapshots.
 - **limine-snapper-sync** adds a boot entry for each snapshot, so a broken

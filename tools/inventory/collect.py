@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regenerate the Subcarchy inventory from a running Omarchy system.
+"""Regenerate the Subarchy inventory from a running Omarchy system.
 
 Reads the packaged Omarchy tree, the pacman database and the user's
 Omarchy configuration, then writes Markdown tables under

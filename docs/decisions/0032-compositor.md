@@ -16,7 +16,7 @@ Decision map item L4. Accepted 2026-11-06.
 ## Decision
 
 **Hyprland**, configured in **Lua** (Hyprland 0.56.2 on `sputnik`,
-2026-11-06). Subcarchy ships defaults under its own system path and the user
+2026-11-06). Subarchy ships defaults under its own system path and the user
 overrides them in `~/.config/hypr/` (R1 decides the split).
 
 ## Options considered

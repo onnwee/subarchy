@@ -32,7 +32,7 @@ permanently.
 | Command namespace | 556 `omarchy-*` binaries and the `omarchy` dispatcher | Package | Renaming is the largest single branding cost; see ADR 0001. |
 | Config paths | `~/.config/omarchy/`, `~/.local/state/omarchy/`, `$OMARCHY_PATH` | Package | Every plugin and hook depends on these paths. |
 | Menu and shell text | `shell/` QML strings, `default/omarchy/omarchy-menu.jsonc` | Package, partly user | Menu extensions can add entries; renaming built-in text needs the shell source. |
-| Default web apps | `applications/*.desktop` (Basecamp, HEY and others) | Package | Product choices by Omarchy's maintainers; review for Subcarchy. |
+| Default web apps | `applications/*.desktop` (Basecamp, HEY and others) | Package | Product choices by Omarchy's maintainers; review for Subarchy. |
 | Package repository | `[omarchy]` in `/etc/pacman.conf`, `https://pkgs.omarchy.org`, `omarchy-keyring`, `default/pacman/*` mirrorlists | Package | A distribution needs its own repository and signing key for its own packages. |
 | Kernel name | `linux-omarchy` | Package | Can stay; it is a technical dependency, not a visible brand. |
 | Agent skills and docs links | `default/agents/skills/omarchy/`, references to `omarchy.org` and `learn.omacom.io` | Package | Point users to Omarchy's manual and Discord. |

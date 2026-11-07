@@ -33,7 +33,7 @@ and Docker-published ports filtered through ufw instead of bypassing it.
 
 ## Consequences
 
-- Rules for apps Subcarchy ships (LocalSend if kept, KDE Connect or similar)
+- Rules for apps Subarchy ships (LocalSend if kept, KDE Connect or similar)
   are added by those apps' install steps.
 - No per-network zones: the same rules apply at home and on public Wi-Fi.
 

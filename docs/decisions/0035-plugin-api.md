@@ -15,7 +15,7 @@ Decision map item D2. Accepted 2026-11-06.
 
 ## Decision
 
-- Subcarchy designs **its own plugin API** for the shell. It is not
+- Subarchy designs **its own plugin API** for the shell. It is not
   compatible with Omarchy's `manifest.json` (schemaVersion 1) API.
 - Plugins worth keeping are **ported by hand**: the owner's plugins, the
   SUBCULT rice features that survive review, and selected community plugins.
@@ -25,7 +25,7 @@ Decision map item D2. Accepted 2026-11-06.
 
 | Option | Why not chosen |
 |---|---|
-| Start from Omarchy's shell and keep its API | Community plugins would load for free, but Subcarchy would inherit Omarchy's API shape and paths. |
+| Start from Omarchy's shell and keep its API | Community plugins would load for free, but Subarchy would inherit Omarchy's API shape and paths. |
 | Own API with no plugins at launch | Loses features the owner relies on. |
 
 ## Consequences
