@@ -28,6 +28,9 @@ papirus-icon-theme
 brightnessctl
 libsecret
 mpv
+librsvg
+xorg-xcursorgen
+hyprcursor
 
 # Fonts (ADR 0039). Space Grotesk and Oswald need packaging first.
 ttf-jetbrains-mono-nerd

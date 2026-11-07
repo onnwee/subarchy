@@ -45,6 +45,10 @@ for path in usr/share/glib-2.0/schemas/90-subarchy.gschema.override etc/xdg/gtk-
   mode=$(bsdtar -tvf "$pkg" "$path" 2>/dev/null | cut -c1-10) || true
   [[ $mode == -rw-r--r-- ]] || fail "missing $path or mode ${mode:-none}, want 0644"
 done
+for path in usr/share/icons/subcult-cursor/index.theme usr/share/icons/subcult-cursor/cursors/left_ptr \
+  usr/share/icons/subcult-cursor/hyprcursors/default.hlc usr/share/icons/subcult-cursor/manifest.hl; do
+  grep -qx "$path" <<<"$list" || fail "missing $path"
+done
 grep -qx "icon-theme='Papirus-Dark'" <(bsdtar -xOf "$pkg" usr/share/glib-2.0/schemas/90-subarchy.gschema.override) ||
   fail "GSettings override lacks Papirus-Dark"
 
@@ -61,5 +65,7 @@ bsdtar -xf "$pkg" -C "$work/root" usr
 "$work/root/usr/bin/subcult" --version | grep -qx 'subcult 0.0.0' || fail "subcult --version"
 "$work/root/usr/bin/subcult-app" validate "$work/root/usr/share/subcult/default/apps.toml" >/dev/null ||
   fail "shipped app catalogue does not validate"
+
+"$root/tools/test/cursor-test.sh" "$work/root/usr/bin/subcult-cursor" || fail "cursor test"
 
 echo "package-test: ok ($(basename "$pkg"), $(wc -l <<<"$list") entries)"

@@ -1,0 +1,17 @@
+# Subarchy cursor shapes (shell and look design, "Cursor").
+# shape<TAB>hot_x<TAB>hot_y<TAB>other cursor names (hotspot in the 32-unit SVG grid)
+default	4	3	left_ptr arrow top_left_arrow
+help	3	2	question_arrow whats_this left_ptr_help context-menu
+pointer	13	4	hand1 hand2 pointing_hand
+progress	3	2	left_ptr_watch half-busy
+wait	16	16	watch
+text	16	16	xterm ibeam vertical-text
+crosshair	16	16	cross tcross cell
+not-allowed	16	16	no-drop forbidden circle crossed_circle
+grab	16	16	openhand
+grabbing	16	16	closedhand dnd-move dnd-none dnd-copy dnd-link copy alias
+move	16	16	all-scroll fleur size_all
+ns-resize	16	16	n-resize s-resize row-resize v_double_arrow sb_v_double_arrow size_ver top_side bottom_side
+ew-resize	16	16	e-resize w-resize col-resize h_double_arrow sb_h_double_arrow size_hor left_side right_side
+nwse-resize	16	16	nw-resize se-resize size_fdiag top_left_corner bottom_right_corner
+nesw-resize	16	16	ne-resize sw-resize size_bdiag top_right_corner bottom_left_corner

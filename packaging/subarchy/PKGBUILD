@@ -12,7 +12,7 @@ arch=('x86_64')
 url="https://git.subcult.tv/subculture-collective/subarchy"
 license=('GPL-3.0-or-later')
 depends=('bash' 'glibc' 'pacman-contrib' 'fakeroot')
-makedepends=('go' 'git')
+makedepends=('go' 'git' 'librsvg' 'xorg-xcursorgen' 'hyprcursor')
 options=('!debug')
 backup=(etc/xdg/gtk-3.0/settings.ini etc/xdg/gtk-4.0/settings.ini etc/xdg/kitty/kitty.conf etc/xdg/kitty/subcult-ink.conf etc/xdg/nvim/sysinit.vim)
 
@@ -28,6 +28,9 @@ build() {
   mkdir -p "$srcdir/bin"
   go build -ldflags "-X git.subcult.tv/subculture-collective/subarchy/internal/dispatch.Version=${pkgver}" \
     -o "$srcdir/bin/" ./cmd/...
+  # The default cursor, lavender (shell and look design, "Cursor").
+  "$srcdir/bin/subcult-cursor" build --role lavender --palette "$root/default/theme/palette.json" \
+    --src "$root/default/cursor" --out "$srcdir/subcult-cursor"
 }
 
 check() {
@@ -95,6 +98,9 @@ package() {
   install -Dm644 "$root/default/kitty/subcult-ink.conf" "$pkgdir/etc/xdg/kitty/subcult-ink.conf"
   install -Dm644 "$root/default/nvim/colors/subcult-ink.lua" "$pkgdir/usr/share/nvim/site/colors/subcult-ink.lua"
   install -Dm644 "$root/default/nvim/sysinit.vim" "$pkgdir/etc/xdg/nvim/sysinit.vim"
+
+  install -dm755 "$pkgdir/usr/share/icons"
+  cp -a "$srcdir/subcult-cursor" "$pkgdir/usr/share/icons/subcult-cursor"
 
   # Migrations run once per user by `subcult update` (ADR 0026).
   install -dm755 "$pkgdir/usr/share/subcult/migrations"

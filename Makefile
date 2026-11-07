@@ -26,6 +26,7 @@ smoke: build
 	tools/test/dispatcher-smoke.sh $(BUILD)/subcult
 	tools/test/power-auto-test.sh
 	tools/test/gpu-test.sh
+	tools/test/cursor-test.sh $(BUILD)/subcult-cursor
 
 shellcheck:
 	@if [ -n "$(SHELL_SCRIPTS)" ]; then shellcheck -x $(SHELL_SCRIPTS); fi
