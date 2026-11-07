@@ -1,0 +1,42 @@
+import QtQuick
+import Quickshell
+import Quickshell.Io
+import qs.Commons
+
+// Subarchy's shell (ADR 0034, shell and look design). One bar and one
+// background per output; outputs that come and go get and lose theirs.
+ShellRoot {
+  id: shell
+
+  Variants {
+    id: bars
+    model: Quickshell.screens
+    delegate: Bar {}
+  }
+
+  Variants {
+    model: Quickshell.screens
+    delegate: Background {}
+  }
+
+  IpcHandler {
+    target: "subcult.shell"
+
+    // Used by the tests: which outputs have a bar, the power state, and the
+    // interval each widget timer runs at right now.
+    function status(): string {
+      const intervals = {}
+      for (const id in WidgetIndex.widgets) {
+        const m = WidgetIndex.widgets[id].manifest
+        const timers = (m.cost && m.cost.timers) || []
+        for (const t of timers)
+          intervals[id + "." + t.name] = Power.interval(m, t.name)
+      }
+      return JSON.stringify({
+        bars: bars.instances.map(b => b.screen.name),
+        onBattery: Power.onBattery,
+        intervals: intervals
+      })
+    }
+  }
+}

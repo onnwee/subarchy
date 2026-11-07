@@ -1,3 +1,6 @@
 module qs.Ui
 BarWidget 1.0 BarWidget.qml
 PanelBase 1.0 PanelBase.qml
+IconButton 1.0 IconButton.qml
+Tooltip 1.0 Tooltip.qml
+Popup 1.0 Popup.qml

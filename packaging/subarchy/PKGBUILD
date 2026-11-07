@@ -105,6 +105,18 @@ package() {
   install -dm755 "$pkgdir/usr/share/icons"
   cp -a "$srcdir/subcult-cursor" "$pkgdir/usr/share/icons/subcult-cursor"
 
+  # The desktop shell (shell and look design), started with the session.
+  (
+    cd "$root/shell"
+    find . -type f ! -path './tests/*' ! -name README.md -print0 |
+      while IFS= read -r -d '' f; do
+        install -Dm644 "$f" "$pkgdir/usr/share/subcult/shell/${f#./}"
+      done
+  )
+  install -Dm644 "$sys/subcult-shell.service" "$pkgdir/usr/lib/systemd/user/subcult-shell.service"
+  install -dm755 "$pkgdir/usr/lib/systemd/user/graphical-session.target.wants"
+  ln -s ../subcult-shell.service "$pkgdir/usr/lib/systemd/user/graphical-session.target.wants/subcult-shell.service"
+
   # Migrations run once per user by `subcult update` (ADR 0026).
   install -dm755 "$pkgdir/usr/share/subcult/migrations"
   for f in "$root"/migrations/*.sh; do
