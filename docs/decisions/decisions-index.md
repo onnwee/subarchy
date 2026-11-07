@@ -58,5 +58,8 @@ order.
 | [[0031-session-manager\|0031]] | Session manager |
 | [[0032-compositor\|0032]] | Compositor |
 | [[0033-portals\|0033]] | XDG portals |
+| [[0034-shell-toolkit\|0034]] | Shell toolkit |
+| [[0035-plugin-api\|0035]] | Shell plugin API |
+| [[0036-shell-components\|0036]] | Shell components, lock and idle |
 
 Related: [[home|Docs home]]

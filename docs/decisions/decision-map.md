@@ -82,10 +82,10 @@ NVMe.
 
 | # | Decision | Omarchy 4.5 choice | Status |
 |---|---|---|---|
-| D1 | Shell toolkit | Quickshell (QML) | open |
-| D2 | Plugin API and Omarchy plugin compatibility | Omarchy shell manifest API | open |
-| D3 | Bar, launcher and menus | Shell plugins | open |
-| D4 | Notifications, OSD, lock screen, idle | Shell plugins | open |
+| D1 | Shell toolkit | Quickshell (QML) | [[0034-shell-toolkit\|ADR 0034]]: Quickshell, QML |
+| D2 | Plugin API and Omarchy plugin compatibility | Omarchy shell manifest API | [[0035-plugin-api\|ADR 0035]]: own API, port what we keep |
+| D3 | Bar, launcher and menus | Shell plugins | [[0036-shell-components\|ADR 0036]]: in the shell |
+| D4 | Notifications, OSD, lock screen, idle | Shell plugins | [[0036-shell-components\|ADR 0036]]: notifications and OSD in shell; hyprlock, hypridle |
 | D5 | Theming system | `colors.toml` per theme rendered into per-app templates | open |
 | D6 | Wallpaper engine | `owe` | open |
 | D7 | Fonts and icon theme | JetBrains Mono Nerd, Yaru icons | open |
