@@ -52,7 +52,8 @@ Plymouth, NetworkManager with the DNS trust policy, PipeWire, ufw.
       ([[0048-config-ownership|ADR 0048]])
 - [ ] Plugin API design record ([[0035-plugin-api|ADR 0035]])
 - [ ] Quickshell shell: bar, launcher, notifications, OSD, polkit
-- [ ] hyprlock and hypridle
+- [ ] Standalone QML lock program with the screensaver until input, and
+      hypridle ([[0036-shell-components|ADR 0036]])
 - [ ] Ported rice features ([[rice-port-review|rice port review]]): dock and
       monitor profiles, reduced motion on battery, battery and thermal alerts,
       privacy indicator, settings panel, destructive-action confirmation,

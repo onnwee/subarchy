@@ -51,6 +51,21 @@ full keymap is designed with the shell (D3).
 | Package installer for the official and Subarchy repositories: fuzzy search, multi-select, details preview | menu, launcher | `omarchy pkg install` (`pacman -Slq` into `fzf`, `pacman -Sii` preview) | `fzf` | none |
 | AUR package installer with details and PKGBUILD preview | menu, launcher | `omarchy pkg aur install` (`yay -Slqa`, `yay -Siia` preview, PKGBUILD toggle) | `yay` ([[0027-third-party-software\|ADR 0027]]) | none |
 | Package remover for installed packages | menu, launcher | `omarchy pkg remove` | `fzf` | none |
+| Screensaver: SUBCULT art with text effects, inside the lock screen until any input; still art on battery | idle | `omarchy-screensaver` effects, pre-rendered ([[0036-shell-components\|ADR 0036]]) | `ttfx` (AUR, rebuilt) for re-rendering | none until idle |
+| Lock on suspend | — | `omarchy-sleep-lock.service` | | none |
+| Microphone-mute LED follows mute; switch audio output keeping mute | mic key, Shift+Mute | `omarchy audio input mute`, `omarchy audio output switch` | | none |
+| Kernel picker: which kernel Limine boots by default | menu | `omarchy kernel` ([[0004-kernel\|ADR 0004]]) | | none |
+| Show Wi-Fi password; network speed test | menu | `omarchy network password`, `omarchy network speedtest` | | none |
+| Convert pictures and videos for sharing | Super+Ctrl+. | `omarchy transcode` | `ffmpeg`, `imagemagick` | none |
+| Crash notifications with saved reports, one-click hand-off to the agent, mute per program | — | `omarchy-crash-watch.service`, `omarchy crash mute`, `diagnose-crash` agent skill | | a small watcher service |
+| Reset an app's config to the default, keeping a backup | menu, `subcult refresh <app>` | `omarchy refresh …` ([[0048-config-ownership\|ADR 0048]]) | | none |
+| External monitor brightness over DDC/CI | brightness keys | `omarchy brightness display ddc` | `ddcutil` | none |
+| Text size everywhere: shell, GTK and Qt apps, terminals | settings | `omarchy display text size` | | none |
+| Laptop screen comes back when undocked | — | `omarchy-recover-internal-monitor.service`, made event-driven | | none |
+| Monospace font switcher | menu | `omarchy font set` ([[0039-fonts-icons\|ADR 0039]]) | | none |
+| Captive portal sign-in window; pauses a Tailscale exit node until online | automatic | `omarchy network captive portal` ([[0020-dns\|ADR 0020]]) | | none |
+| Setup wizards: git identity and GitHub sign-in, SSH agent with graphical passphrase prompt, SSH server with firewall rule and key | menu | `omarchy setup git`, `setup security ssh agent`, `setup security sshd` | `github-cli`, `gcr-4`, `openssh` | none |
+| Factory reset to the freshly installed state | menu | `omarchy setup factory reset` | | none |
 
 ## Added beyond Omarchy
 
@@ -76,9 +91,16 @@ launcher ([[0057-launcher|ADR 0057]]). Changes from Omarchy's versions:
   preview is one key away.
 - Flathub search is not included; it could be a third source later.
 
+**Factory reset** works as in Omarchy: the installer keeps an `@factory`
+snapshot of the fresh install outside snapper's rotation; a reset swaps it in
+as the root on the next boot and returns to first-boot setup. Omarchy's
+version removes the user account (for handing a machine on); Subarchy also
+offers a mode that keeps `@home` and the user. Needs the installer changes in
+[[0049-installer|ADR 0049]].
+
 ## Consequences
 
-- Dictation and USB auto-mount are the two items with a standing cost. Both
+- Dictation, USB auto-mount and crash notifications are the items with a standing cost. Both
   get an off switch in settings; dictation's daemon should start on first use
   rather than at login if voxtype allows it.
 - Compose-key snippets with personal data (email, address) live in the

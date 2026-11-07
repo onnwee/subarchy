@@ -64,7 +64,7 @@ writes the registry entries and templates (MIT) and contributes them upstream:
 | Target | Kind | Notes |
 |---|---|---|
 | Hyprland borders and groups | user config | Include into `~/.config/hypr` |
-| hyprlock | user config | [[0036-shell-components\|ADR 0036]] |
+| Lock screen and screensaver | user config | Subarchy's standalone QML lock ([[0036-shell-components\|ADR 0036]]) reads a palette file; the screensaver loops re-render on theme change |
 | Quickshell shell | user config | Subarchy's own shell reads a palette file |
 | Qt and KDE colour scheme | user config | Dolphin, Okular, Ark, VLC (Qt 5) through `kdeglobals` or a Kvantum theme |
 | GTK 3 and 4 | user config | Thunderbird, satty and other GTK apps |

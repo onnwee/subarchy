@@ -33,7 +33,16 @@ One **update command** does, in order:
    previous kernel bootable.
 4. Run pending **migrations**: timestamped scripts that change user or system
    configuration between Subarchy versions, each run once.
-5. Report what changed and whether a reboot is needed.
+5. Update firmware through fwupd, AUR packages through yay, and mise tools.
+6. Offer to remove orphaned packages and prune the package cache
+   (`paccache`, from `pacman-contrib`).
+7. Report what changed, which services need a restart, and whether a reboot
+   is needed.
+
+A daily **update check** (systemd timer) shows an indicator in the bar when
+updates are available; nothing installs on its own. Added 2026-11-07,
+borrowed from `omarchy update` (`firmware`, `aur pkgs`, `mise`,
+`orphan pkgs`, `pkg prune`, `restart`) and `omarchy-update-user-notify`.
 
 ## Options considered
 

@@ -62,6 +62,7 @@ NVMe.
 | S9 | Authentication: PAM, polkit, keyring, fingerprint, FIDO | gnome-keyring, shell polkit agent, optional fprintd | [[0023-authentication\|ADR 0023]]: gnome-keyring, fingerprint/FIDO opt-in |
 | S10 | Time, locale and input methods | tzupdate, fcitx5 | [[0024-time-locale-input\|ADR 0024]]: auto time zone, input methods on demand |
 | S11 | Containers | Docker, socket-activated; user not in `docker` group | [[0055-containers\|ADR 0055]]: same as Omarchy |
+| S12 | VPN and mesh networking | Tailscale panel, Taildrop receive service (optional install) | [[0058-tailscale\|ADR 0058]]: Tailscale preinstalled, panel, Taildrop |
 
 ## Packages and updates
 
@@ -89,7 +90,7 @@ NVMe.
 | D1 | Shell toolkit | Quickshell (QML) | [[0034-shell-toolkit\|ADR 0034]]: Quickshell, QML |
 | D2 | Plugin API and Omarchy plugin compatibility | Omarchy shell manifest API | [[0035-plugin-api\|ADR 0035]]: own API, port what we keep |
 | D3 | Bar, launcher and menus | Shell plugins | [[0036-shell-components\|ADR 0036]]: in the shell; launcher in [[0057-launcher\|ADR 0057]] (Raycast-style) |
-| D4 | Notifications, OSD, lock screen, idle | Shell plugins | [[0036-shell-components\|ADR 0036]]: notifications and OSD in shell; hyprlock, hypridle |
+| D4 | Notifications, OSD, lock screen, idle | Shell plugins | [[0036-shell-components\|ADR 0036]]: notifications and OSD in shell; separate QML lock with screensaver until input; hypridle |
 | D5 | Theming system | `colors.toml` per theme rendered into per-app templates | [[0037-theming\|ADR 0037]]: Theme Tender (palette, templates, catalog, apply); SUBCULT default |
 | D6 | Wallpaper engine | `owe` | [[0038-wallpaper\|ADR 0038]]: shell-drawn, still by default, video opt-in |
 | D7 | Fonts and icon theme | JetBrains Mono Nerd, Yaru icons | [[0039-fonts-icons\|ADR 0039]]: JetBrains Mono, Space Grotesk, Oswald, Papirus |

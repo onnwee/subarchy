@@ -144,7 +144,8 @@ still work ([[0028-developer-toolchains|ADR 0028]]).
 | Media | `yt-dlp`, `ffmpeg`, `imagemagick` |
 | Disk usage | `dust`, `duf` |
 | Containers | `docker`, `docker-compose`, `docker-buildx` ([[0055-containers\|ADR 0055]]) |
-| Quality-of-life tools ([[0056-quality-of-life\|ADR 0056]]) | `wtype`, `hyprpicker`, `hyprsunset`, `tesseract`, `tesseract-data-eng`, `zbar`, `qrencode`, `udiskie`, `localsend` (AUR), `voxtype-bin` (AUR) |
+| Quality-of-life tools ([[0056-quality-of-life\|ADR 0056]]) | `wtype`, `hyprpicker`, `hyprsunset`, `tesseract`, `tesseract-data-eng`, `zbar`, `qrencode`, `udiskie`, `ddcutil`, `gcr-4`, `pacman-contrib`, `localsend` (AUR), `voxtype-bin` (AUR), `ttfx` (AUR) |
+| Networking | `tailscale` ([[0058-tailscale\|ADR 0058]]) |
 
 Already decided elsewhere: zsh, starship and atuin
 ([[0041-shell-prompt|ADR 0041]]), btop, yazi, Neovim. Not preinstalled:

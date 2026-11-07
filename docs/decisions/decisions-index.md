@@ -82,5 +82,6 @@ order.
 | [[0055-containers\|0055]] | Containers |
 | [[0056-quality-of-life\|0056]] | Quality-of-life features |
 | [[0057-launcher\|0057]] | Launcher |
+| [[0058-tailscale\|0058]] | Tailscale |
 
 Related: [[home|Docs home]]

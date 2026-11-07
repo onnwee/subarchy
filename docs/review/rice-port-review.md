@@ -27,7 +27,7 @@ guided by the rice's code, docs and tests in
 | Feature | Rice source | Lands in |
 |---|---|---|
 | Dock and monitor profiles: save, restore and apply layouts on dock and undock, event-driven | `subcult-topology`, `subcult-machine-profile`, `subcult.operating-profile`, `TOPOLOGIES.md`, `MACHINE_PROFILES.md` | Display settings and a session service; replaces `sputnik-dock-workspaces` |
-| Reduced motion on battery: animations, blur and shadows cut on battery, full on AC; also an accessibility setting | `subcult.motion`, `subcult-motion` | Setting read by the shell, Hyprland and hyprlock |
+| Reduced motion on battery: animations, blur and shadows cut on battery, full on AC; also an accessibility setting | `subcult.motion`, `subcult-motion` | Setting read by the shell, Hyprland and the lock screen |
 | Battery and thermal alerts with hysteresis and cooldowns | `subcult.thermal`, `subcult-thermal-alert`, `subcult-battery-alert` | Shell service, triggered by kernel and UPower events |
 | Privacy indicator: microphone, camera, screen sharing, recording | `subcult.privacy`, `subcult-privacy` | Bar widget |
 | Settings panel with preview, apply and one-step undo | `subcult.settings`, `subcult-settings`, `omarchy/settings-schema.json`, `SETTINGS.md` | Shell settings panel |

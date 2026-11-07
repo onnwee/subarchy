@@ -49,6 +49,11 @@ Decision map item R2. Accepted 2026-11-06.
   the installer.
 - The CI boot test ([[0026-update-model|ADR 0026]]) uses the same ISO in a
   VM.
+- The installer takes an `@factory` btrfs snapshot of the finished install,
+  kept outside snapper's rotation, and supports a first-boot owner setup, so
+  factory reset works ([[0056-quality-of-life|ADR 0056]]). Borrowed from
+  Omarchy's `omarchy-system-factory-reset` and
+  `install/provisioning/` (owner setup, LUKS re-key).
 - ISO size grows with the full default app set
   ([[0044-default-apps|ADR 0044]]).
 

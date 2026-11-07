@@ -42,6 +42,6 @@ chosen separately; SUBCULT wallpapers ship with the default theme.
   session should restart the shell automatically ([[0031-session-manager|ADR 0031]]).
 - Video wallpapers cost GPU and battery; on battery the shell should pause
   them or show a still frame ([[0021-power|ADR 0021]]).
-- hyprlock draws its own background ([[0036-shell-components|ADR 0036]]).
+- The lock screen draws its own background and screensaver ([[0036-shell-components|ADR 0036]]).
 
 Related: [[decision-map|Decision map]] · [[0037-theming|ADR 0037]]
