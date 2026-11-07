@@ -100,8 +100,8 @@ NVMe.
 | A4 | Browser | Chromium | [[0042-browser\|ADR 0042]]: Zen |
 | A5 | File manager | Nautilus | [[0043-file-manager\|ADR 0043]]: Dolphin, yazi |
 | A6 | Default app set and web apps | `omarchy-base.packages` apps, 11 web apps | [[0044-default-apps\|ADR 0044]]: full set, installer and default picker; owner writes the list |
-| A7 | Command-line interface for the distribution | `omarchy <group> <action>` over 556 commands | open |
-| A8 | AI agent integration | `omarchy agent`, agents bar widget | open |
+| A7 | Command-line interface for the distribution | `omarchy <group> <action>` over 556 commands | [[0046-distribution-cli\|ADR 0046]]: one dispatcher; Bash glue, Go for complex parts |
+| A8 | AI agent integration | `omarchy agent`, agents bar widget | [[0047-ai-agents\|ADR 0047]]: default agent, usage widget, skills; no account manager |
 
 ## Delivery and identity
 

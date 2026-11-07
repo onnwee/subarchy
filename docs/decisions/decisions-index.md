@@ -70,5 +70,7 @@ order.
 | [[0043-file-manager\|0043]] | File manager |
 | [[0044-default-apps\|0044]] | Default app set |
 | [[0045-editor\|0045]] | Editor |
+| [[0046-distribution-cli\|0046]] | Distribution CLI |
+| [[0047-ai-agents\|0047]] | AI agent integration |
 
 Related: [[home|Docs home]]
