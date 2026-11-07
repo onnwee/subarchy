@@ -24,18 +24,21 @@ the implementation plan.
 - Rebuild only plugins that are active on `sputnik` today, minus Bitwarden, plus
   a few inactive ones that make good defaults. xray, Bitwarden and weather
   radar are left out. HT3 and n8n are kept.
-- A choice of terminal and shell fonts, as Omarchy offers, from a different
-  list ([[#Fonts]]).
+- A choice of fonts, as Omarchy offers, from the owner's own list, with any
+  Nerd Font downloadable and owned fonts importable ([[#Fonts]]).
 - Every widget is written fresh and is Subarchy's own; no plugin or Omarchy
   shell code is copied ([[#Ownership]]).
 - Icons are Papirus (the owner's original pick in
   [[0039-fonts-icons|ADR 0039]]), not Yaru.
 - Battery comes first when off AC ([[0054-lightweight-battery-first|ADR 0054]]);
   on AC nothing is slowed down.
+- Interface text follows the monospace font by default; GTK and Qt follow
+  the system fonts. Owned fonts such as Dank Mono get icons from a fallback,
+  with an opt-in patcher.
 
-Assumed by the agent, open to correction: GTK interface text uses Adwaita
-Sans as on `sputnik` rather than ADR 0039's Space Grotesk; the Subcult Ink
-app colours ship as static files until Theme Tender is packaged.
+Assumed by the agent, open to correction: the Subcult Ink app colours ship as
+static files until Theme Tender is packaged; GTK colours follow the system
+palette once Theme Tender's GTK template exists.
 
 ## Stages
 
@@ -85,7 +88,7 @@ Each stage is one or more PRs; each PR is done when CI is green and it merges.
 | Palette file | Theme Tender's role names. `base` `#100B19`, `mantle` `#0B0812`, `crust` `#06040A`, `surface0` `#1F1830`, `text` `#F0ECE4`, `subtext1` `#DDD6E8`, `subtext0` `#9A92A8`, `overlay0` `#5E5570`, `green` `#00FF88`, `mauve` `#8F4BC8`, `lavender` `#A78BFA`, `selection_bg` `#3B2470`, and ANSI 0–15 from `subcult-minimal`'s `colors.toml` |
 | Theme tokens | `accent` = `green`, `border` = `mauve`, `borderInactive` = `surface0`, `selection` = `selection_bg`, `muted` = `overlay0`, `warning` = `yellow`, `error` = `red` |
 | Compositor | `default/hypr/looknfeel.lua`: gaps 0, border 1 px, rounding 0, opacity 1, no blur, shadow, dimming or animations. Border colours in a separate include that Theme Tender will own |
-| Fonts | JetBrainsMono Nerd Font by default for the shell and terminal, switchable ([[#Fonts]]); Adwaita Sans (`adwaita-fonts`) for GTK; Noto for fallback, CJK and emoji. fontconfig defaults set system-wide |
+| Fonts | Three switchable roles through fontconfig aliases, JetBrains Mono by default for monospace and interface, Alegreya for serif ([[#Fonts]]) |
 | GTK | Adwaita-dark, `prefer-dark`, through a GSettings schema override in the package plus `/etc/xdg/gtk-3.0/settings.ini` and `gtk-4.0/settings.ini` |
 | Icons | Papirus-Dark (`papirus-icon-theme`, `extra`) |
 | Cursor | Catppuccin Latte Mauve, size 24 (`catppuccin-cursors-latte`, AUR, vendored in `packaging/aur/`) |
@@ -98,46 +101,73 @@ list.
 
 ## Fonts
 
-One monospace font drives the shell and the terminal. All are Nerd Font
-builds from Arch's `extra`, so the bar's icon glyphs work in each. The list
-is deliberately not Omarchy's (JetBrains Mono, Cascadia Mono, iA Writer).
+### Roles
 
-Preinstalled (about 410 MB together):
+Three fontconfig aliases are the single source of truth. GTK, Qt, the shell
+and kitty all point at the alias, never at a family name, so changing a font
+changes it everywhere.
 
-| Font | Package | Character |
+| Role | Alias | Default | Used by |
+|---|---|---|---|
+| Monospace | `monospace` | JetBrainsMono Nerd Font | Terminal, shell, editors |
+| Interface | `sans-serif` | Follows monospace (JetBrainsMono Nerd Font Propo) | GTK and Qt interface text |
+| Serif | `serif` | Alegreya | Documents and reading |
+
+The Propo build is the same family with proportional-width icons, which suits
+interface text. GTK's `font-name` and `monospace-font-name` GSettings are set
+to the aliases (`Sans 11`, `Monospace 11`), so GTK follows the system. Noto
+covers CJK and emoji behind every role.
+
+### Preinstalled
+
+| Font | Package | Role | Size |
+|---|---|---|---|
+| JetBrains Mono (default) | `ttf-jetbrains-mono-nerd` | Monospace, interface | 232 MB |
+| 3270 | `ttf-3270-nerd` | Monospace | 24 MB |
+| Adwaita Mono | `ttf-adwaitamono-nerd` | Monospace | 47 MB |
+| Space Mono | `ttf-space-mono-nerd` | Monospace | 28 MB |
+| Share Tech Mono | `ttf-sharetech-mono-nerd` | Monospace | 7 MB |
+| Atkinson Hyperlegible Mono | `otf-atkinsonhyperlegiblemono-nerd` | Monospace | 52 MB |
+| Alegreya Sans | `otf-alegreya-sans` (AUR, vendored in `packaging/aur/`) | Interface | small |
+| Alegreya | `otf-alegreya` (AUR, vendored) | Serif | small |
+| Symbols Nerd Font | `ttf-nerd-fonts-symbols`, `ttf-nerd-fonts-symbols-mono` | Icon fallback for every font | 5 MB |
+| Noto | `noto-fonts`, `noto-fonts-cjk`, `noto-fonts-emoji` | Fallback | already in the base set |
+
+### Choices, installed when picked
+
+| Font (family name) | Package | Size |
 |---|---|---|
-| JetBrains Mono (default) | `ttf-jetbrains-mono-nerd` | Brand font; `sputnik` today |
-| Space Mono | `ttf-space-mono-nerd` | Retro-geometric; the mono partner of the Space Grotesk brand font |
-| Commit Mono | `otf-commit-mono-nerd` | Neutral, calm |
-| Martian Mono | `ttf-martian-mono-nerd` | Wide, technical |
-| Share Tech Mono | `ttf-sharetech-mono-nerd` | Narrow, broadcast and sci-fi |
-| 3270 | `ttf-3270-nerd` | IBM mainframe terminal |
-| Atkinson Hyperlegible Mono | `otf-atkinsonhyperlegiblemono-nerd` | Legibility |
-
-Installed when picked:
-
-| Font | Package | Size |
-|---|---|---|
-| IBM Plex Mono | `ttf-ibmplex-mono-nerd` | 113 MB |
-| Geist Mono | `otf-geist-mono-nerd` | 122 MB |
+| ComicShannsMono | `otf-comicshanns-nerd` | 14 MB |
+| Agave | `ttf-agave-nerd` | 15 MB |
+| Ubuntu Sans | Nerd Fonts release archive (no Arch package) | |
+| CaskaydiaCove | `ttf-cascadia-code-nerd` | 99 MB |
+| BlexMono | `ttf-ibmplex-mono-nerd` | 113 MB |
 | Victor Mono | `ttf-victor-mono-nerd` | 154 MB |
 | Monaspace | `otf-monaspace-nerd` | 393 MB |
 | Iosevka Term | `ttf-iosevkaterm-nerd` | 1.1 GB |
 | OpenDyslexic Mono | `otf-opendyslexic-nerd` | 41 MB |
-| 0xProto | `ttf-0xproto-nerd` | 22 MB |
+| Monofur | `ttf-monofur-nerd` | 23 MB |
+| ProFont | `ttf-profont-nerd` | 14 MB |
+| ProggyClean | `ttf-proggyclean-nerd` | 22 MB |
+| Terminess | `ttf-terminus-nerd` | 32 MB |
 
 Sizes are pacman's installed sizes on 2026-11-07.
 
-- `subcult font list` prints the curated list, marking which are installed
-  and which is current. `subcult font current` prints the family.
-  `subcult font set <family>` installs the package if needed (through the
-  update privilege path, [[0062-privilege-policy|ADR 0062]]), then applies it.
-- Applying writes one user fontconfig file that puts the family first for
-  `monospace`, sets `font_family` in the user's kitty layer and signals kitty
-  to reload. The shell resolves `monospace` through fontconfig and watches
-  that file, so it repaints live.
-- `set` accepts any installed monospace family, not only the curated ones.
-- A graphical picker comes with the launcher ([[0057-launcher|ADR 0057]]).
+### Commands
+
+| Command | Does |
+|---|---|
+| `subcult font list [--all]` | The curated list, marking installed and current; `--all` lists every Nerd Fonts family (72 in v3.5.1) |
+| `subcult font current` | The family behind each role |
+| `subcult font set <family> [--ui \| --serif]` | Checks the font, installs it if needed, points the role's alias at it, sets kitty's `font_family` in the user layer and signals kitty; the shell watches the fontconfig file and repaints live. Without a flag it sets monospace; interface follows unless set separately |
+| `subcult font install <name>` | Any Nerd Fonts family: pacman when Arch packages it (through the privilege path, [[0062-privilege-policy\|ADR 0062]]), otherwise the official release archive, checked against the release's SHA-256 list and unpacked into `~/.local/share/fonts/nerd-fonts/` |
+| `subcult font import <files>` | Copies fonts the user owns (Dank Mono) into `~/.local/share/fonts/subcult/`, user-only, then runs `check` |
+| `subcult font check <family>` | Reports one of: full Nerd Font; works with fallback icons; interface text only (not monospace); breaks TUIs (no box drawing). Reads coverage with fontconfig and fontTools. `set` refuses the last two for the monospace role unless `--force` |
+| `subcult font patch <family>` | Opt-in. Runs Nerd Fonts' `font-patcher` (fetched at a pinned version, checksum-verified; needs `fontforge` from `extra`) and writes a separate "<family> Nerd Font" copy; the original is untouched. Warns that commercial licences may forbid modified copies |
+
+Fonts the user owns are never patched or modified automatically: icons come
+from the Symbols fallback unless the user runs `patch`. A graphical picker
+comes with the launcher ([[0057-launcher|ADR 0057]]).
 
 ## Widgets and plugins
 
@@ -243,8 +273,8 @@ auto-wallpaper (`dizziee.auto-wallpaper`), agents usage (`omarchy.agents`).
 
 ## Doc changes that come with stage 1
 
-- [[0039-fonts-icons|ADR 0039]]: revision note for fonts (switchable
-  monospace list, Adwaita Sans for GTK) and icons (Papirus restored).
+- [[0039-fonts-icons|ADR 0039]]: revision note for fonts (three switchable
+  roles, the owner's list) and icons (Papirus restored).
 - [[0068-shell-plugin-api-v0|ADR 0068]] accepted.
 - [[triage|Triage]]: placements updated to match this note.
 - [[roadmap|Roadmap]] Phase 3: shell item split into the three stages.
