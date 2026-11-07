@@ -41,7 +41,8 @@ pause during captive portal sign-in.
 - `tailscaled` runs all the time once enabled; it is idle when not signed in.
   ([[0054-lightweight-battery-first|ADR 0054]] counts it.)
 - The Taildrop receiver runs only while signed in.
-- Firewall: Tailscale manages its own interface; ufw rules for it follow
-  Omarchy's setup ([[0019-firewall|ADR 0019]]).
+- Firewall: Tailscale manages its own `tailscale0` interface. Omarchy's
+  firewall script has no Tailscale rule; check whether ufw needs one when
+  implementing ([[0019-firewall|ADR 0019]]).
 
 Related: [[decision-map|Decision map]] · [[0020-dns|ADR 0020]] · [[0016-networking|ADR 0016]]
