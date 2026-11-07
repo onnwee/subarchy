@@ -7,7 +7,7 @@ SHELL_SCRIPTS := $(shell git ls-files '*.sh' 'bin/subcult-*' 2>/dev/null)
 QT6BIN ?= /usr/lib/qt6/bin
 .DEFAULT_GOAL := verify
 
-.PHONY: verify fmt-check vet test build smoke shellcheck docs-check package iso iso-test install-test hypr-check shell-test shell-lint
+.PHONY: verify fmt-check vet test build smoke shellcheck docs-check package iso iso-test install-test hypr-check shell-test shell-lint shell-index-check
 
 # Quickshell shell (shell and look design). Pure JavaScript models are tested
 # with Qt 6's qmltestrunner; QML files are linted. Needs qt6-declarative and,
@@ -15,13 +15,18 @@ QT6BIN ?= /usr/lib/qt6/bin
 shell-test:
 	$(QT6BIN)/qmltestrunner -platform offscreen -input shell/tests
 
+# The widget index is generated and committed; this fails when it is stale.
+shell-index-check:
+	python3 tools/shell/test_gen_index.py
+	python3 tools/shell/gen-index.py --check
+
 # Quickshell maps the shell folder to the module prefix qs (import qs.Commons),
 # so the linter gets a qs -> shell link on its import path.
 shell-lint:
 	@mkdir -p $(BUILD)/qml && ln -sfn ../../shell $(BUILD)/qml/qs
 	@files=$$(git ls-files 'shell/*.qml' | sed 's|^|$(CURDIR)/|'); [ -z "$$files" ] || $(QT6BIN)/qmllint -I $(CURDIR)/$(BUILD)/qml $$files
 
-verify: fmt-check vet test build smoke shellcheck docs-check hypr-check
+verify: fmt-check vet test build smoke shellcheck docs-check hypr-check shell-index-check
 
 fmt-check:
 	@out=$$(gofmt -l $$(git ls-files '*.go')); if [ -n "$$out" ]; then echo "gofmt needed:"; echo "$$out"; exit 1; fi
