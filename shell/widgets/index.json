@@ -11,6 +11,36 @@
         "kind": "bar-widget"
       }
     },
+    "subcult.audio": {
+      "dir": "audio",
+      "manifest": {
+        "id": "subcult.audio",
+        "name": "Audio",
+        "version": "1.0.0",
+        "api": 0,
+        "kind": "bar-widget"
+      }
+    },
+    "subcult.battery": {
+      "dir": "battery",
+      "manifest": {
+        "id": "subcult.battery",
+        "name": "Battery and power profile",
+        "version": "1.0.0",
+        "api": 0,
+        "kind": "bar-widget"
+      }
+    },
+    "subcult.bluetooth": {
+      "dir": "bluetooth",
+      "manifest": {
+        "id": "subcult.bluetooth",
+        "name": "Bluetooth",
+        "version": "1.0.0",
+        "api": 0,
+        "kind": "bar-widget"
+      }
+    },
     "subcult.display": {
       "dir": "display",
       "manifest": {
@@ -36,6 +66,36 @@
       "manifest": {
         "id": "subcult.menu",
         "name": "Menu",
+        "version": "1.0.0",
+        "api": 0,
+        "kind": "bar-widget"
+      }
+    },
+    "subcult.microphone": {
+      "dir": "microphone",
+      "manifest": {
+        "id": "subcult.microphone",
+        "name": "Microphone",
+        "version": "1.0.0",
+        "api": 0,
+        "kind": "bar-widget"
+      }
+    },
+    "subcult.network": {
+      "dir": "network",
+      "manifest": {
+        "id": "subcult.network",
+        "name": "Network",
+        "version": "1.0.0",
+        "api": 0,
+        "kind": "bar-widget"
+      }
+    },
+    "subcult.tray": {
+      "dir": "tray",
+      "manifest": {
+        "id": "subcult.tray",
+        "name": "Tray",
         "version": "1.0.0",
         "api": 0,
         "kind": "bar-widget"
