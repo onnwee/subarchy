@@ -1,0 +1,7 @@
+# Subarchy (ADR 0006): stable names for the integrated and discrete GPUs.
+# AQ_DRM_DEVICES separates devices with colons, so the colon-laden
+# /dev/dri/by-path names cannot be used, and cardN numbers can change.
+# Installed to /usr/lib/udev/rules.d/70-subarchy-gpu.rules.
+SUBSYSTEM=="drm", ENV{DEVTYPE}=="drm_minor", KERNEL=="card[0-9]*", ATTRS{vendor}=="0x10de", SYMLINK+="dri/subcult-dgpu"
+SUBSYSTEM=="drm", ENV{DEVTYPE}=="drm_minor", KERNEL=="card[0-9]*", ATTRS{vendor}=="0x8086", SYMLINK+="dri/subcult-igpu"
+SUBSYSTEM=="drm", ENV{DEVTYPE}=="drm_minor", KERNEL=="card[0-9]*", ATTRS{vendor}=="0x1002", ATTRS{boot_vga}=="1", SYMLINK+="dri/subcult-igpu"
