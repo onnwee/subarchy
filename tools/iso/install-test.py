@@ -194,6 +194,8 @@ def boot(disk: Path, vars_file: Path) -> bool:
             "dns": serial.run("resolvectl status | grep -i -m1 dnsovertls; resolvectl query archlinux.org", timeout=60),
             "services": serial.run("systemctl is-active avahi-daemon power-profiles-daemon; systemctl is-enabled bluetooth"),
             "cmdline": serial.run("cat /proc/cmdline"),
+            # Hardware detection (ADR 0005): an Intel host CPU, emulated devices.
+            "hw": serial.run("pacman -Qq | grep -E '^(linux-firmware.*|intel-ucode|amd-ucode|thermald)$'; subcult hw info"),
             "update_timer": serial.run(
                 "systemctl --user list-timers --all --no-legend | grep -c subcult-update-check;"
                 " systemctl --user start subcult-update-check.service; cat ~/.local/state/subcult/update-count",
@@ -276,6 +278,8 @@ def boot(disk: Path, vars_file: Path) -> bool:
         "marker created after the snapshots": "MARKED" in r["marker"],
         "@factory snapshot": any(line.endswith(" path @factory") for line in r["subvols"].splitlines()),
         "system running or degraded": state in ("running", "degraded"),
+        "hardware packages: microcode, no firmware in a VM": "intel-ucode" in r["hw"].split()
+        and "thermald" in r["hw"].split() and "linux-firmware" not in r["hw"] and "VM:        QEMU" in r["hw"],
         "ufw active, incoming denied": "Status: active" in r["ufw"] and "deny (incoming)" in r["ufw"],
         "AppArmor enabled": "apparmor" in r["lsm"] and r["lsm"].strip().endswith("Y"),
         "sysctl hardening": r["sysctl"].split() == ["2", "1", "1"],

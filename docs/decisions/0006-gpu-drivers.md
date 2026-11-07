@@ -116,4 +116,14 @@ Implementation notes:
 - The `nvidia-580xx` branch has a finite support life; R3 must say what
   happens when NVIDIA drops it.
 
+## Progress
+
+- 2026-11-07: detection installs `vulkan-intel` and `intel-media-driver`
+  for Intel graphics, `vulkan-radeon` for AMD, and for NVIDIA from device ID
+  `0x1e00` (Turing) up `nvidia-open-dkms`, `nvidia-utils`,
+  `libva-nvidia-driver` and both kernels' headers. Maxwell and Pascal cards
+  get a note and nouveau until the 580xx branch is packaged. `subcult hw
+  info` reports hybrid machines; the GPU modes, udev symlinks and `gpu-run`
+  are still to do.
+
 Related: [[decision-map|Decision map]] · [[0004-kernel|ADR 0004]] · [[0005-firmware|ADR 0005]]
