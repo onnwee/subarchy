@@ -29,13 +29,13 @@ NVMe.
 | F2 | CPU architectures supported | x86_64 plus several aarch64 platforms | [[0003-cpu-architectures\|ADR 0003]]: x86_64 only |
 | F3 | Kernel | `linux-omarchy` (BORE CPU scheduler, ADIOS I/O scheduler), no fallback kernel | [[0004-kernel\|ADR 0004]]: `linux-zen`, `linux-lts` fallback |
 | F4 | Firmware and microcode | `linux-firmware` split packages, Intel and AMD microcode | [[0005-firmware\|ADR 0005]]: detected vendors, fwupd |
-| F5 | GPU driver policy (Intel, AMD, NVIDIA, hybrid) | Per-vendor install scripts, NVIDIA open DKMS | open |
+| F5 | GPU driver policy (Intel, AMD, NVIDIA, hybrid) | Per-vendor install scripts, NVIDIA open DKMS | [[0006-gpu-drivers\|ADR 0006]]: open DKMS + 580xx legacy, iGPU with on-demand NVIDIA, 32-bit libraries always |
 
 ## Boot and storage
 
 | # | Decision | Omarchy 4.5 choice | Status |
 |---|---|---|---|
-| B1 | Bootloader | Limine | open |
+| B1 | Bootloader | Limine | [[0007-bootloader\|ADR 0007]]: Limine, UEFI |
 | B2 | Initramfs generator and UKI | mkinitcpio, Limine hook | open |
 | B3 | Disk layout and filesystem | btrfs with subvolumes | open |
 | B4 | Disk encryption and unlock | LUKS2, passphrase | open |

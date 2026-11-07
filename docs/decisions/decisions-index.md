@@ -30,5 +30,7 @@ order.
 | [[0003-cpu-architectures\|0003]] | CPU architectures |
 | [[0004-kernel\|0004]] | Kernel |
 | [[0005-firmware\|0005]] | Firmware and microcode |
+| [[0006-gpu-drivers\|0006]] | GPU drivers |
+| [[0007-bootloader\|0007]] | Bootloader |
 
 Related: [[home|Docs home]]
