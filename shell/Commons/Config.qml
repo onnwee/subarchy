@@ -5,8 +5,8 @@ import Quickshell.Io
 import "ConfigModel.js" as ConfigModel
 
 // The bar's layered config (ADR 0048): system defaults under the user's
-// file, which is watched. A broken user file logs one warning and the
-// defaults stay in use.
+// file, which is watched even before it exists. A broken user file logs
+// one warning and the defaults stay in use.
 Singleton {
   id: root
 
@@ -14,9 +14,8 @@ Singleton {
   readonly property string userPath: Quickshell.env("HOME") + "/.config/subcult/shell/bar.json"
 
   property var defaults: ({})
-  property string userText: ""
   property string lastWarning: ""
-  readonly property var parsed: ConfigModel.parse(userText, defaults)
+  readonly property var parsed: ConfigModel.parse(userFile.text, defaults)
   readonly property var bar: parsed.config
 
   onParsedChanged: {
@@ -26,11 +25,12 @@ Singleton {
   }
 
   // Writes one setting of one widget into the user's file, leaving
-  // everything else as it is (the scoped write of ADR 0068).
+  // everything else as it is (the scoped write of ADR 0068). The new
+  // config applies at once; the file watch catches up after.
   function set(widgetId, key, value) {
     let user = {}
     try {
-      const t = userFile.text()
+      const t = userFile.text
       user = t && t.trim() !== "" ? JSON.parse(t) : {}
     } catch (e) {
       console.warn("subcult shell config: not saving over a broken", userPath)
@@ -52,14 +52,8 @@ Singleton {
     }
   }
 
-  FileView {
+  WatchedFile {
     id: userFile
     path: root.userPath
-    watchChanges: true
-    printErrors: false
-    atomicWrites: true
-    onLoaded: root.userText = text()
-    onLoadFailed: root.userText = ""
-    onFileChanged: reload()
   }
 }

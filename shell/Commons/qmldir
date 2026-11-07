@@ -4,3 +4,4 @@ singleton Power 1.0 Power.qml
 singleton Config 1.0 Config.qml
 singleton Style 1.0 Style.qml
 singleton WidgetIndex 1.0 WidgetIndex.qml
+WatchedFile 1.0 WatchedFile.qml

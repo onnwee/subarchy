@@ -6,8 +6,8 @@ import "ThemeModel.js" as ThemeModel
 
 // Colour tokens from the palette (ADR 0037). The system palette is the
 // fallback for every role; the user's palette (Theme Tender writes it) is
-// watched, so a theme change repaints without a restart and rebuilds the
-// cursor in the new colours.
+// watched, even before it exists, so a theme change repaints without a
+// restart and rebuilds the cursor in the new colours.
 Singleton {
   id: root
 
@@ -33,6 +33,8 @@ Singleton {
   readonly property color error: tokens.error || "#D52032"
 
   function colorsOf(text) {
+    if (text.trim() === "")
+      return {}
     try {
       const doc = JSON.parse(text)
       return doc && typeof doc.colors === "object" && doc.colors !== null ? doc.colors : {}
@@ -48,16 +50,12 @@ Singleton {
     onLoaded: root.fallback = root.colorsOf(text())
   }
 
-  FileView {
-    id: userFile
+  WatchedFile {
     path: root.userPath
-    watchChanges: true
-    printErrors: false
-    onLoaded: root.user = root.colorsOf(text())
-    onLoadFailed: root.user = ({})
-    onFileChanged: {
-      reload()
-      Quickshell.execDetached(["subcult", "cursor", "apply"])
+    onChanged: (live) => {
+      root.user = root.colorsOf(text)
+      if (live)
+        Quickshell.execDetached(["subcult", "cursor", "apply"])
     }
   }
 }

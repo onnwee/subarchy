@@ -39,11 +39,12 @@ Singleton {
     }
   }
 
-  FileView {
+  WatchedFile {
     path: Quickshell.env("HOME") + "/.config/subcult/fonts.conf"
-    watchChanges: true
-    printErrors: false
-    onFileChanged: root.resolve()
+    onChanged: (live) => {
+      if (live)
+        root.resolve()
+    }
   }
 
   Component.onCompleted: resolve()
