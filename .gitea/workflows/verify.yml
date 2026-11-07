@@ -25,3 +25,19 @@ jobs:
           fi
       - name: make verify
         run: make verify
+
+  package:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    steps:
+      - name: Install build tools
+        run: pacman -Syu --noconfirm --needed base-devel go git nodejs
+      - uses: actions/checkout@v4
+      - name: Build and check the package as a normal user
+        run: |
+          useradd -m builder
+          git config --global --add safe.directory "$PWD"
+          chown -R builder: "$PWD"
+          su builder -c "git config --global --add safe.directory '$PWD' && make package"

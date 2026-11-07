@@ -1,0 +1,11 @@
+NAME="Subarchy"
+PRETTY_NAME="Subarchy"
+ID=subarchy
+ID_LIKE=arch
+VERSION_ID=@VERSION@
+BUILD_ID=rolling
+ANSI_COLOR="38;2;139;92;246"
+HOME_URL="https://git.subcult.tv/subculture-collective/subarchy"
+DOCUMENTATION_URL="https://git.subcult.tv/subculture-collective/subarchy"
+BUG_REPORT_URL="https://git.subcult.tv/subculture-collective/subarchy/issues"
+LOGO=subarchy

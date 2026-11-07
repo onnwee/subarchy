@@ -1,0 +1,60 @@
+# Maintainer: SUBCULT <info@subcult.tv>
+#
+# Builds the core Subarchy package from this source checkout (two levels
+# above this file), so CI and local builds test exactly what is committed.
+# Release builds will switch to a tagged source archive.
+
+pkgname=subarchy
+pkgver=0.0.0
+pkgrel=1
+pkgdesc="Subarchy: SUBCULT's Arch Linux desktop (subcult CLI, defaults and OS identity)"
+arch=('x86_64')
+url="https://git.subcult.tv/subculture-collective/subarchy"
+license=('GPL-3.0-or-later')
+depends=('bash' 'glibc')
+makedepends=('go' 'git')
+options=('!debug')
+backup=()
+
+_root() {
+  realpath "$startdir/../.."
+}
+
+build() {
+  local root
+  root=$(_root)
+  cd "$root"
+  export CGO_ENABLED=0 GOFLAGS="-trimpath -mod=readonly"
+  go build -ldflags "-X git.subcult.tv/subculture-collective/subarchy/internal/dispatch.Version=${pkgver}" \
+    -o "$srcdir/subcult" ./cmd/subcult
+}
+
+check() {
+  local root
+  root=$(_root)
+  cd "$root"
+  go test -count=1 ./...
+}
+
+package() {
+  local root f
+  root=$(_root)
+
+  install -Dm755 "$srcdir/subcult" "$pkgdir/usr/bin/subcult"
+  ln -s subcult "$pkgdir/usr/bin/sub"
+
+  for f in "$root"/bin/subcult-*; do
+    [[ -e $f ]] || continue
+    install -Dm755 "$f" "$pkgdir/usr/bin/$(basename "$f")"
+  done
+
+  # OS identity (ADR 0052). /etc/os-release takes precedence over the
+  # filesystem package's /usr/lib/os-release.
+  sed "s/@VERSION@/${pkgver}/" "$root/branding/os-release.in" |
+    install -Dm644 /dev/stdin "$pkgdir/etc/os-release"
+
+  # System defaults live here (ADR 0048); populated as components land.
+  install -dm755 "$pkgdir/usr/share/subcult/default"
+
+  install -Dm644 "$root/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

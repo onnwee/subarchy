@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Builds the subarchy package with makepkg into a temporary directory and
+# checks its contents. Needs an Arch system with makepkg; run as a normal user.
+set -euo pipefail
+
+root=$(git rev-parse --show-toplevel)
+work=$(mktemp -d)
+cleanup() { rm -r -- "$work"; }
+trap cleanup EXIT
+
+fail() { echo "package-test: $*" >&2; exit 1; }
+
+# Skip makedepends checks when Go comes from mise rather than pacman.
+nodeps=()
+pacman -T go >/dev/null 2>&1 || nodeps=(--nodeps)
+
+(
+  cd "$root/packaging/subarchy"
+  BUILDDIR="$work/build" PKGDEST="$work/out" SRCDEST="$work/src" \
+    makepkg --force --cleanbuild --noconfirm "${nodeps[@]}" >"$work/makepkg.log" 2>&1
+) || { tail -30 "$work/makepkg.log" >&2; fail "makepkg failed"; }
+
+pkg=$(find "$work/out" -name 'subarchy-*.pkg.tar.zst' | head -1)
+[[ -n $pkg ]] || fail "no package produced"
+
+list=$(bsdtar -tf "$pkg")
+for path in usr/bin/subcult usr/bin/sub etc/os-release usr/share/subcult/default/ usr/share/licenses/subarchy/LICENSE; do
+  grep -qx "$path" <<<"$list" || fail "missing $path"
+done
+
+osr=$(bsdtar -xOf "$pkg" etc/os-release)
+for want in 'NAME="Subarchy"' 'ID=subarchy' 'ID_LIKE=arch' 'VERSION_ID=0.0.0'; do
+  grep -qx "$want" <<<"$osr" || fail "os-release lacks $want"
+done
+
+mkdir "$work/root"
+bsdtar -xf "$pkg" -C "$work/root" usr/bin
+"$work/root/usr/bin/subcult" --version | grep -qx 'subcult 0.0.0' || fail "subcult --version"
+
+echo "package-test: ok ($(basename "$pkg"), $(wc -l <<<"$list") entries)"
