@@ -1,4 +1,55 @@
 {
   "api": 0,
-  "widgets": {}
+  "widgets": {
+    "subcult.active-window": {
+      "dir": "active-window",
+      "manifest": {
+        "id": "subcult.active-window",
+        "name": "Active window",
+        "version": "1.0.0",
+        "api": 0,
+        "kind": "bar-widget"
+      }
+    },
+    "subcult.display": {
+      "dir": "display",
+      "manifest": {
+        "id": "subcult.display",
+        "name": "Display",
+        "version": "1.0.0",
+        "api": 0,
+        "kind": "bar-widget"
+      }
+    },
+    "subcult.keyboard-layout": {
+      "dir": "keyboard-layout",
+      "manifest": {
+        "id": "subcult.keyboard-layout",
+        "name": "Keyboard layout",
+        "version": "1.0.0",
+        "api": 0,
+        "kind": "bar-widget"
+      }
+    },
+    "subcult.menu": {
+      "dir": "menu",
+      "manifest": {
+        "id": "subcult.menu",
+        "name": "Menu",
+        "version": "1.0.0",
+        "api": 0,
+        "kind": "bar-widget"
+      }
+    },
+    "subcult.workspaces": {
+      "dir": "workspaces",
+      "manifest": {
+        "id": "subcult.workspaces",
+        "name": "Workspaces",
+        "version": "1.0.0",
+        "api": 0,
+        "kind": "bar-widget"
+      }
+    }
+  }
 }

@@ -1,0 +1,7 @@
+{
+  "id": "subcult.display",
+  "name": "Display",
+  "version": "1.0.0",
+  "api": 0,
+  "kind": "bar-widget"
+}

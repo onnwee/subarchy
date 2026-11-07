@@ -13,7 +13,13 @@ QT6BIN ?= /usr/lib/qt6/bin
 # with Qt 6's qmltestrunner; QML files are linted. Needs qt6-declarative and,
 # for the shell's imports, quickshell; the CI shell job installs both.
 shell-test:
-	$(QT6BIN)/qmltestrunner -platform offscreen -input shell/tests
+	@mkdir -p $(BUILD)
+	@for d in shell/tests shell/widgets/*/tests; do \
+	  [ -d "$$d" ] || continue; \
+	  echo "shell-test: $$d"; \
+	  $(QT6BIN)/qmltestrunner -platform offscreen -input "$$d" >$(BUILD)/shell-test.log 2>&1 || { cat $(BUILD)/shell-test.log; exit 1; }; \
+	  grep -E '^Totals' $(BUILD)/shell-test.log; \
+	done
 
 # The widget index is generated and committed; this fails when it is stale.
 shell-index-check:
