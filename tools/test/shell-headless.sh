@@ -170,6 +170,12 @@ HOME=$home1 quickshell ipc -p "$shell" call subcult.osd flash brightness >/dev/n
 st=$(status "$home1")
 [[ $(json 'd.get("osd")') == brightness ]] || fail "the OSD did not show: $st"
 
+# Alt-Tab answers its IPC calls (no windows here, so nothing to show).
+for call in next prev cancel; do
+  HOME=$home1 quickshell ipc -p "$shell" call subcult.altswitch "$call" >/dev/null 2>&1 ||
+    fail "Alt-Tab IPC call $call failed"
+done
+
 # 2. A palette written after start applies without a restart.
 mkdir -p "$home1/.config/subcult/theme"
 printf '{"schema": 1, "colors": {"base": "#FF0000", "surface0": "#00FF00"}}\n' >"$home1/.config/subcult/theme/palette.json"

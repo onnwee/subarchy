@@ -42,3 +42,9 @@ sub.bind("XF86AudioMute", "Mute", "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle", 
 sub.bind("XF86AudioMicMute", "Mute microphone", "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle", { locked = true })
 sub.bind("XF86MonBrightnessUp", "Brightness up", "brightnessctl -q set 5%+ && " .. osd .. " brightness", { locked = true, repeating = true })
 sub.bind("XF86MonBrightnessDown", "Brightness down", "brightnessctl -q set 5%- && " .. osd .. " brightness", { locked = true, repeating = true })
+
+-- Alt-Tab across all workspaces, most recent first (the shell's switcher).
+local altswitch = "quickshell ipc -p /usr/share/subcult/shell call subcult.altswitch"
+sub.bind("ALT + TAB", "Next window", altswitch .. " next")
+sub.bind("ALT + SHIFT + TAB", "Previous window", altswitch .. " prev")
+sub.bind("ALT + ALT_L", "Switch to the chosen window", altswitch .. " commit", { release = true })

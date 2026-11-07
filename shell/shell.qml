@@ -28,6 +28,8 @@ ShellRoot {
 
   PolkitDialog {}
 
+  AltSwitch {}
+
   IpcHandler {
     target: "subcult.shell"
 
