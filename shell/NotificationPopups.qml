@@ -66,7 +66,7 @@ PanelWindow { // qmllint disable uncreatable-type
 
           Text {
             width: parent.width
-            text: card.modelData.summary
+            text: Model.plain(card.modelData.summary, Notifications.summaryCap)
             textFormat: Text.PlainText
             color: Theme.text
             elide: Text.ElideRight
@@ -77,7 +77,7 @@ PanelWindow { // qmllint disable uncreatable-type
           Text {
             width: parent.width
             visible: text !== ""
-            text: card.modelData.body
+            text: Model.plain(card.modelData.body, Notifications.bodyCap)
             textFormat: Text.PlainText
             color: Theme.subtext
             wrapMode: Text.Wrap
@@ -116,7 +116,7 @@ PanelWindow { // qmllint disable uncreatable-type
             }
           }
           Text {
-            text: card.modelData.appName
+            text: Model.plain(card.modelData.appName, Notifications.appNameCap)
             textFormat: Text.PlainText
             color: Theme.muted
             font.family: Style.uiFontFamily
