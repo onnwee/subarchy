@@ -12,7 +12,11 @@ set -euo pipefail
 
 src=$(realpath "${1:?path to the shell folder}")
 root=$(git rev-parse --show-toplevel)
-fail() { echo "shell-headless: $*" >&2; exit 1; }
+fail() { # the message, then the shell log's last warnings when it exists
+  echo "shell-headless: $*" >&2
+  [[ -f ${work:-}/qs1.log ]] && grep -E 'WARN|ERROR' "$work/qs1.log" | tail -n 6 | cut -c1-300 >&2
+  exit 1
+}
 
 for tool in sway swaymsg quickshell grim magick python3 dbus-run-session gdbus; do
   if ! command -v "$tool" >/dev/null; then
@@ -48,6 +52,11 @@ cp -r "$src" "$shell"
 mkdir -p "$work/bin"
 cat >"$work/bin/subcult" <<'STUB'
 #!/bin/sh
+# The settings panel reads the font roles and runs the tools it names.
+if [ "$1 $2" = "font current" ]; then
+  printf 'monospace   (default)  resolves to DejaVu Sans Mono\nsans-serif  Inter\nserif       (default)  resolves to DejaVu Serif\n'; exit 0
+fi
+if [ "$1 $2" = "font set" ] || [ "$1 $2" = "cursor apply" ]; then echo "$*" >>"$HOME/settings-actions"; exit 0; fi
 [ "$1 $2" = "commands --json" ] || exit 2
 cat <<'JSON'
 {"ok": true, "commands": [
@@ -163,7 +172,7 @@ json() { # expression over the status JSON in $st
 # 1. Defaults, with the probe on the left.
 home1="$work/home1"
 mkdir -p "$home1/.config/subcult/shell"
-printf '{"layout": {"left": ["subcult.test-probe"]}}\n' >"$home1/.config/subcult/shell/bar.json"
+printf '{"layout": {"left": ["subcult.test-probe", "subcult.menu"]}}\n' >"$home1/.config/subcult/shell/bar.json"
 start_shell "$home1" "$work/qs1.log"
 check_log "$work/qs1.log"
 shot HEADLESS-1
@@ -380,6 +389,45 @@ for _ in $(seq 10); do [[ ! -e "$home1/.local/state/subcult/keep-awake" ]] && br
 st=$(status "$home1")
 [[ $(json '"subcult.media" in d["loaded"]["HEADLESS-1"] and "subcult.media" not in d["shown"]["HEADLESS-1"]') == True ]] ||
   fail "the media widget is not loaded-and-hidden without a player: $st"
+
+# The settings panel (SUBCULT mark): current values, a preview of pending
+# changes, apply to the user files only, undo the last apply.
+settings() { HOME=$home1 quickshell ipc -p "$shell" call subcult.settings "$@"; }
+sfield() { python3 -c "import json,sys; print(json.loads(sys.argv[1])[sys.argv[2]])" "$(settings state)" "$1"; }
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.menu >/dev/null
+sleep 1.5
+st=$(status "$home1")
+[[ $(json 'd.get("panel")') == subcult.menu ]] || fail "the settings panel did not open: $st"
+for _ in $(seq 10); do [[ $(sfield current) == *"'font.ui': 'Inter'"* ]] && break; sleep 0.5; done
+[[ $(sfield current) == *"'font.ui': 'Inter'"* && $(sfield current) == *"'idle.lock': 7"* ]] || fail "settings current values: $(settings state)"
+settings set bar.minimal "subcult.workspaces" >/dev/null
+settings set cursor.size 32 >/dev/null
+settings set idle.lock 5 >/dev/null
+settings set font.ui "Iosevka Aile" >/dev/null
+[[ $(settings set idle.lock 900) == false && $(sfield errors) == *"between 0 and 240"* ]] || fail "a bad value is not refused: $(settings state)"
+settings set idle.lock 5 >/dev/null
+[[ $(python3 -c "import json,sys; print(len(json.loads(sys.argv[1])['preview']))" "$(settings state)") == 4 ]] || fail "four pending changes do not preview: $(settings state)"
+settings apply >/dev/null
+filewait "$home1/.config/subcult/idle.json" '{
+  "lockAfterMinutes": 5
+}' || fail "apply did not write idle.json: $(cat "$home1/.config/subcult/idle.json" 2>/dev/null)"
+[[ $(python3 -c "import json,sys; d=json.load(open(sys.argv[1])); print(d['layout']['minimal'], d.get('widgets', {}))" "$home1/.config/subcult/shell/bar.json") == "['subcult.workspaces'] {}" ]] ||
+  fail "apply did not scope the bar layout write: $(cat "$home1/.config/subcult/shell/bar.json")"
+[[ $(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['size'])" "$home1/.config/subcult/cursor.json") == 32 ]] || fail "apply did not write cursor.json"
+for _ in $(seq 20); do [[ $(grep -c . "$home1/settings-actions" 2>/dev/null) == 2 ]] && break; sleep 0.5; done
+[[ $(sort "$home1/settings-actions" 2>/dev/null | tr '\n' '|') == "cursor apply|font set Iosevka Aile --ui|" ]] || fail "apply did not run the tools: $(cat "$home1/settings-actions" 2>/dev/null)"
+for _ in $(seq 10); do [[ $(sfield canUndo) == True ]] && break; sleep 0.5; done
+[[ $(sfield canUndo) == True ]] || fail "no undo record after apply: $(settings state)"
+settings undo >/dev/null
+filewait "$home1/.config/subcult/idle.json" '{
+  "lockAfterMinutes": 7
+}' || fail "undo did not restore idle.json: $(cat "$home1/.config/subcult/idle.json")"
+[[ $(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['layout']['minimal'])" "$home1/.config/subcult/shell/bar.json") == "['subcult.workspaces', 'subcult.display']" ]] ||
+  fail "undo did not restore the bar layout: $(cat "$home1/.config/subcult/shell/bar.json")"
+for _ in $(seq 10); do [[ $(sfield canUndo) == False ]] && break; sleep 0.5; done
+[[ $(sfield canUndo) == False ]] || fail "undo is not one step: $(settings state)"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
+rm -f "$home1/settings-actions"
 
 # A widget's click-out panel: the audio panel opens on request (no
 # PipeWire here, so it shows no devices), one at a time, and closes.
