@@ -60,4 +60,19 @@ port with them.
 - Vendor add-ons such as Dell power profiles
   ([[0021-power|ADR 0021]]) follow the same detection.
 
+## Progress
+
+- 2026-11-07: `subcult hw` answers the matching questions the fixes ask
+  (issue #66): `subcult hw <question>` exits 0 for yes, `hw match <text>`
+  matches the product name or family, `hw matches` lists every answer, all
+  from sysfs, `/proc` and udev data under a root directory, so fixtures
+  stand in for machines in the tests. The questions follow Omarchy 4.5.0's
+  `omarchy-hw-*` commands as behaviour and name their source; `hw vm` reads
+  DMI and the CPU's hypervisor flag instead of `systemd-detect-virt`,
+  `hw hybrid-gpu` does not ask supergfxctl, `hw touchpad` and
+  `hw touchscreen` read input names and udev tags instead of `hyprctl`, and
+  `hw laptop-closed` reads the ACPI lid only. Not ported: `intel-ptl` (lspci
+  text; needs PCI ids) and so `dell-xps-oled`, the `aarch64` board
+  variants beyond Apple, and the platform `displays.conf` lists.
+
 Related: [[decision-map|Decision map]] · [[0005-firmware|ADR 0005]] · [[0006-gpu-drivers|ADR 0006]] · [[0049-installer|ADR 0049]]

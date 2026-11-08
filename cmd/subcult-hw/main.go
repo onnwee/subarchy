@@ -1,7 +1,9 @@
 // Command subcult-hw serves `subcult hw ...` (ADR 0005, 0006, 0050):
 // `hw packages` lists the microcode, firmware and GPU driver packages this
-// machine needs, which the installer adds to the base set; `hw info`
-// shows what was detected.
+// machine needs, which the installer adds to the base set; `hw info` shows
+// what was detected; `hw <question>` answers one of the matching questions
+// the hardware fixes ask (exit 0 for yes), `hw match <text>` matches the
+// product name or family, and `hw matches` lists every answer.
 package main
 
 import (
@@ -10,19 +12,34 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
+	"strings"
 
 	"git.subcult.tv/subculture-collective/subarchy/internal/dispatch"
 	"git.subcult.tv/subculture-collective/subarchy/internal/hw"
 )
 
-var routes = []dispatch.Described{
-	{Words: []string{"hw", "packages"}, Metadata: dispatch.Metadata{
-		Summary:  "List the firmware, microcode and GPU driver packages this machine needs",
-		Examples: []string{"subcult hw packages"}}},
-	{Words: []string{"hw", "info"}, Metadata: dispatch.Metadata{
-		Summary: "Show the detected CPU, GPUs, radios and notes", Args: "[--json]",
-		Examples: []string{"subcult hw info", "subcult hw info --json"}}},
-}
+var routes = func() []dispatch.Described {
+	r := []dispatch.Described{
+		{Words: []string{"hw", "packages"}, Metadata: dispatch.Metadata{
+			Summary:  "List the firmware, microcode and GPU driver packages this machine needs",
+			Examples: []string{"subcult hw packages"}}},
+		{Words: []string{"hw", "info"}, Metadata: dispatch.Metadata{
+			Summary: "Show the detected CPU, GPUs, radios, notes and matches", Args: "[--json]",
+			Examples: []string{"subcult hw info", "subcult hw info --json"}}},
+		{Words: []string{"hw", "match"}, Metadata: dispatch.Metadata{
+			Summary: "Exit 0 when the product name or family contains the text", Args: "<text>",
+			Examples: []string{"subcult hw match XPS"}}},
+		{Words: []string{"hw", "matches"}, Metadata: dispatch.Metadata{
+			Summary: "Answer every hardware question (yes or no)", Args: "[--json]",
+			Examples: []string{"subcult hw matches"}}},
+	}
+	for _, m := range hw.Matchers {
+		r = append(r, dispatch.Described{Words: []string{"hw", m.Name}, Metadata: dispatch.Metadata{
+			Summary: "Exit 0 on " + m.Name + " hardware (" + m.Source + ")", Hidden: true}})
+	}
+	return r
+}()
 
 func run(args []string, stdout, stderr io.Writer) int {
 	if len(args) == 1 && args[0] == dispatch.MetadataFlag {
@@ -31,8 +48,13 @@ func run(args []string, stdout, stderr io.Writer) int {
 		}
 		return 0
 	}
-	if len(args) == 0 || (args[0] != "packages" && args[0] != "info") {
-		fmt.Fprintln(stderr, "Usage: subcult hw packages | subcult hw info [--json]")
+	if len(args) == 0 {
+		fmt.Fprintln(stderr, "Usage: subcult hw packages | info [--json] | match <text> | matches [--json] | <question>")
+		return 2
+	}
+	matcher, isMatcher := hw.FindMatcher(args[0])
+	if !isMatcher && args[0] != "packages" && args[0] != "info" && args[0] != "match" && args[0] != "matches" {
+		fmt.Fprintf(stderr, "subcult hw: unknown question %q; the questions are: %s\n", args[0], strings.Join(matcherNames(), ", "))
 		return 2
 	}
 	fs := flag.NewFlagSet("subcult hw", flag.ContinueOnError)
@@ -46,6 +68,40 @@ func run(args []string, stdout, stderr io.Writer) int {
 	if err != nil {
 		fmt.Fprintf(stderr, "subcult hw: %v\n", err)
 		return 1
+	}
+	if isMatcher {
+		if matcher.Test(m) {
+			if matcher.Name == "touchpad" || matcher.Name == "touchscreen" || matcher.Name == "display" {
+				fmt.Fprintln(stdout, map[string]string{"touchpad": m.Facts.Touchpad, "touchscreen": m.Facts.Touchscreen, "display": m.Facts.Backlight}[matcher.Name])
+			}
+			return 0
+		}
+		return 1
+	}
+	if args[0] == "match" {
+		if fs.NArg() != 1 {
+			fmt.Fprintln(stderr, "Usage: subcult hw match <text>")
+			return 2
+		}
+		if m.Match(fs.Arg(0)) {
+			return 0
+		}
+		return 1
+	}
+	if args[0] == "matches" {
+		matches := m.Matches()
+		if *asJSON {
+			enc := json.NewEncoder(stdout)
+			enc.SetIndent("", "  ")
+			if err := enc.Encode(matches); err != nil {
+				return 1
+			}
+			return 0
+		}
+		for _, name := range matcherNames() {
+			fmt.Fprintf(stdout, "%-26s%v\n", name, matches[name])
+		}
+		return 0
 	}
 	sel := hw.Select(m)
 	if args[0] == "packages" {
@@ -62,12 +118,17 @@ func run(args []string, stdout, stderr io.Writer) int {
 		enc.SetIndent("", "  ")
 		if err := enc.Encode(map[string]any{
 			"cpu": m.CPUVendor, "vm": m.VM, "hybrid": m.Hybrid(), "packages": sel.Packages, "notes": sel.Notes,
+			"vendor": m.Facts.SysVendor, "product": m.Facts.ProductName, "family": m.Facts.ProductFamily,
+			"matches": m.Matches(),
 		}); err != nil {
 			return 1
 		}
 		return 0
 	}
 	fmt.Fprintf(stdout, "CPU:       %s\n", m.CPUVendor)
+	if m.Facts.SysVendor != "" {
+		fmt.Fprintf(stdout, "Machine:   %s %s\n", m.Facts.SysVendor, m.Facts.ProductName)
+	}
 	for _, d := range m.Devices {
 		if k := d.Kind(); k != "" {
 			fmt.Fprintf(stdout, "%-11s%s %04x:%04x\n", k+":", d.Bus, d.Vendor, d.Device)
@@ -77,10 +138,26 @@ func run(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stdout, "VM:        %s\n", m.VM)
 	}
 	fmt.Fprintf(stdout, "Hybrid:    %v\n", m.Hybrid())
+	var yes []string
+	for name, ok := range m.Matches() {
+		if ok {
+			yes = append(yes, name)
+		}
+	}
+	sort.Strings(yes)
+	fmt.Fprintf(stdout, "Matches:   %s\n", strings.Join(yes, " "))
 	for _, n := range sel.Notes {
 		fmt.Fprintf(stdout, "Note:      %s\n", n)
 	}
 	return 0
+}
+
+func matcherNames() []string {
+	var names []string
+	for _, m := range hw.Matchers {
+		names = append(names, m.Name)
+	}
+	return names
 }
 
 func main() { os.Exit(run(os.Args[1:], os.Stdout, os.Stderr)) }

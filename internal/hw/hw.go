@@ -79,6 +79,7 @@ type Machine struct {
 	Devices   []Device
 	VM        string // hypervisor vendor from DMI, empty on hardware
 	CirrusAmp bool   // Cirrus Logic speaker amplifiers (ACPI CSC3551)
+	Facts     Facts  // what the matchers read (match.go)
 }
 
 // Hybrid reports an integrated GPU together with an NVIDIA GPU.
@@ -235,6 +236,7 @@ func Detect(root string) (Machine, error) {
 	if amps, _ := filepath.Glob(filepath.Join(root, "sys/bus/acpi/devices/CSC3551*")); len(amps) > 0 {
 		m.CirrusAmp = true
 	}
+	m.Facts = readFacts(root)
 	return m, nil
 }
 
