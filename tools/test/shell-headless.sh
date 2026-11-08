@@ -83,7 +83,10 @@ sleep infinity & child=$!
 wait "$child"
 STUB
 chmod +x "$work/bin/systemd-inhibit"
-export PATH="$work/bin:$PATH"
+# System tools before the developer's shims: a mise shim resolves its tool
+# from HOME, and the test's HOME is empty, so `fd` through the shim fails
+# and the launcher's file search finds nothing.
+export PATH="$work/bin:/usr/bin:$PATH"
 mkdir -p "$shell/widgets/test-probe"
 cat >"$shell/widgets/test-probe/manifest.json" <<'EOF'
 {"id": "subcult.test-probe", "name": "Test probe", "version": "0.0.0", "api": 0, "kind": "bar-widget",
