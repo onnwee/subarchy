@@ -42,7 +42,7 @@ func newApp(t *testing.T, f *fake) (*app, *bytes.Buffer) {
 	t.Helper()
 	out := &bytes.Buffer{}
 	return &app{stdout: out, stderr: &bytes.Buffer{}, dir: filepath.Join(t.TempDir(), "clipboard"),
-		now: func() time.Time { return time.Date(2026, 11, 7, 23, 0, 0, 0, time.UTC) },
+		now:    func() time.Time { return time.Date(2026, 11, 7, 23, 0, 0, 0, time.UTC) },
 		output: f.output, detach: f.detach}, out
 }
 
