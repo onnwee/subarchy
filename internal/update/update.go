@@ -29,6 +29,10 @@ type Options struct {
 	// "/usr/bin/subcult-update", "privileged"]; sudoers lets wheel run those
 	// exact command lines without a password (ADR 0062).
 	Privileged []string
+	// ChannelRefresh rewrites the stable channel's mirrorlist from the
+	// snapshot date the installed package ships, so a snapshot advance
+	// applies on the next update (ADR 0026). Empty skips it.
+	ChannelRefresh []string
 }
 
 // PrivilegedSteps are the root steps `subcult-update privileged` accepts,
@@ -95,6 +99,11 @@ func (u *Updater) Run(ctx context.Context) (Report, error) {
 		rep.Snapshot = strings.TrimSpace(num)
 	}
 
+	if len(u.O.ChannelRefresh) > 0 {
+		if err := u.R.Run(ctx, u.O.ChannelRefresh...); err != nil {
+			fmt.Fprintf(u.O.Stdout, "warning: the channel's mirrorlist was not refreshed: %v\n", err)
+		}
+	}
 	shellBefore := u.pkgVersion(ctx, "subarchy")
 	say("upgrading packages")
 	args := u.priv("upgrade")
