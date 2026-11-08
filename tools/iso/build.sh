@@ -36,8 +36,20 @@ pacman -T go >/dev/null 2>&1 || nodeps=(--nodeps)
   BUILDDIR="$mkbuild" PKGDEST="$repo" \
     makepkg --force --cleanbuild --noconfirm "${nodeps[@]}"
 ) >"$root/build/makepkg.log" 2>&1 || { tail -30 "$root/build/makepkg.log" >&2; exit 1; }
-pkg=$(find "$repo" -maxdepth 1 -name 'subarchy-*.pkg.tar.zst' -printf '%T@ %p\n' | sort -n | tail -1 | cut -d' ' -f2-)
-repo-add --quiet "$repo/subarchy.db.tar.gz" "$pkg" >/dev/null
+# Every package in the repository joins the database: the vendored rebuilds
+# (packaging/aur/build.sh) land here too, and pacstrap in the installer sees
+# only what the database lists, not what sits beside it.
+repo-add --quiet "$repo/subarchy.db.tar.gz" "$repo"/*.pkg.tar.zst >/dev/null
+# A package Subarchy builds itself that the install lists name must be in
+# the repository now; otherwise the installer fails late, inside the VM.
+missing=()
+for dir in "$root"/packaging/*/ "$root"/packaging/aur/*/; do
+  [[ -f $dir/PKGBUILD ]] || continue
+  name=$(bash -c "source '$dir/PKGBUILD'; echo \"\${pkgname[0]}\"")
+  sed 's/#.*//; /^[[:space:]]*$/d' "$root"/install/packages/*.txt | grep -qx "$name" || continue
+  compgen -G "$repo/$name-[0-9]*.pkg.tar.zst" >/dev/null || missing+=("$name")
+done
+((${#missing[@]} == 0)) || { echo "build.sh: not in build/repo: ${missing[*]} (run packaging/aur/build.sh ${missing[*]})" >&2; exit 1; }
 ((package_only)) && exit 0
 
 echo ">> preparing the profile"

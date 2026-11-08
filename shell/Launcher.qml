@@ -13,8 +13,11 @@ import "LauncherModel.js" as Model
 // user's script commands and snippets; an empty query shows the favorites.
 // Pinned favorites come first, then frecency from the history file. Math
 // gets an inline qalc answer ("=" asks the calculator alone); "@" and a
-// query with no match search the web. Each alias the user names is also a
-// global shortcut, subcult:alias.<name>, for Hyprland bindings.
+// query with no match search the web; "." searches file names with fd
+// while typing (no index); ":" searches emoji and symbols and copies the
+// pick. A preview pane shows the selected file or symbol. Each alias the
+// user names is also a global shortcut, subcult:alias.<name>, for Hyprland
+// bindings.
 // Quickshell keeps the app list and refreshes it when desktop entries
 // change, but only in folders that existed when it first read them, so the
 // user's applications folder is created first. The window exists only while
@@ -35,6 +38,15 @@ PanelWindow { // qmllint disable uncreatable-type
   property var argValues: []
   property var calcResult: ({ expr: "", answer: "" })
   property bool calcAgain: false
+  // The file search's rows and the text they answer; fd runs on demand.
+  property var fileResult: ({ text: "", rows: [] })
+  property bool fdAgain: false
+  // Emoji from unicode-emoji's emoji-test.txt, read the first time ":" is typed.
+  property bool wantSymbols: false
+  property var emojiItems: []
+  property string systemSymbols: ""
+  property string preview: ""
+  property bool previewAgain: false
 
   readonly property string systemDir: (Quickshell.env("SUBCULT_PATH") || "/usr/share/subcult") + "/default/launcher/"
   readonly property string userDir: Quickshell.env("HOME") + "/.config/subcult/launcher/"
@@ -55,10 +67,13 @@ PanelWindow { // qmllint disable uncreatable-type
   readonly property var snippets: Model.snippets(launcher.systemSnippets, userSnippets.text)
   readonly property var aliasNames: Model.aliases(aliasFile.text)
   readonly property var items: launcher.apps.concat(launcher.commands, launcher.scripts, launcher.snippets)
+  readonly property var symbolItems: Model.symbols(launcher.systemSymbols).concat(launcher.emojiItems)
   readonly property var parsed: Model.parseQuery(launcher.query)
   readonly property string calcExpr: launcher.parsed.mode === "calc"
     || (launcher.parsed.mode === "root" && Model.looksLikeMath(launcher.parsed.text)) ? launcher.parsed.text : ""
   readonly property var results: launcher.open ? launcher.rows(launcher.query) : []
+  readonly property var selected: launcher.results[launcher.index] || null
+  readonly property bool previewing: launcher.selected !== null && (launcher.selected.kind === "file" || launcher.selected.kind === "symbol")
   readonly property bool home: launcher.query.trim() === ""
   readonly property int columns: 4
 
@@ -97,6 +112,10 @@ PanelWindow { // qmllint disable uncreatable-type
       const t = Model.webTarget(launcher.quicklinks, p.text)
       return t ? [launcher.webRow(t)] : []
     }
+    if (p.mode === "files")
+      return launcher.fileResult.text === p.text ? launcher.fileResult.rows : []
+    if (p.mode === "symbols")
+      return Model.rank(launcher.symbolItems, [], launcher.history, p.text, Date.now(), 50)
     if (p.text === "")
       return Model.rank(launcher.apps, launcher.favorites, launcher.history, "", Date.now(), 50)
     let out = calc
@@ -202,6 +221,12 @@ PanelWindow { // qmllint disable uncreatable-type
       launcher.remember(row.id)
     } else if (row.kind === "calc") {
       Quickshell.clipboardText = row.name
+    } else if (row.kind === "symbol") {
+      Quickshell.clipboardText = row.char
+      launcher.remember(row.id)
+    } else if (row.kind === "file") {
+      Quickshell.execDetached(["uwsm-app", "--", "xdg-open", row.path])
+      launcher.remember(row.id)
     } else if (row.kind === "web") {
       Quickshell.execDetached(["uwsm-app", "--", "xdg-open", row.url])
     } else if (row.kind === "command") {
@@ -272,16 +297,99 @@ PanelWindow { // qmllint disable uncreatable-type
     historyFile.setText("{}\n")
   }
 
+  // The file search for the current query, once typing pauses. A search
+  // already running is left to finish and the query searched again after.
+  function findFiles() {
+    if (launcher.parsed.mode !== "files" || launcher.parsed.text === "")
+      return
+    if (fd.running) {
+      launcher.fdAgain = true
+      return
+    }
+    fd.text = launcher.parsed.text
+    fd.command = Model.fdArgv(fd.text, Quickshell.env("HOME"))
+    fd.running = true
+  }
+
+  // The preview of the selected file: images show as they are, the rest
+  // through a short read.
+  function loadPreview() {
+    const row = launcher.selected
+    if (!row || row.kind !== "file" || Model.isImage(row.path)) {
+      launcher.preview = ""
+      return
+    }
+    if (previewRead.running) {
+      launcher.previewAgain = true
+      return
+    }
+    previewRead.path = row.path
+    previewRead.command = Model.previewArgv(row.path)
+    previewRead.running = true
+  }
+
   onVisibleChanged: if (visible) field.forceActiveFocus()
   onResultsChanged: launcher.index = Model.move(0, 0, launcher.results.length)
   onQueryChanged: launcher.pending = null
   onArgForChanged: field.forceActiveFocus()
   onCalcExprChanged: if (launcher.calcExpr !== "") calcDelay.restart()
+  onParsedChanged: {
+    if (launcher.parsed.mode === "files" && launcher.parsed.text !== "")
+      fdDelay.restart()
+    if (launcher.parsed.mode === "symbols")
+      launcher.wantSymbols = true
+  }
+  onSelectedChanged: launcher.loadPreview()
 
   Timer {
     id: calcDelay
     interval: 120
     onTriggered: launcher.calculate()
+  }
+
+  Timer {
+    id: fdDelay
+    interval: 120
+    onTriggered: launcher.findFiles()
+  }
+
+  Process {
+    id: fd
+    property string text: ""
+    stdout: StdioCollector {
+      onStreamFinished: launcher.fileResult = { text: fd.text, rows: Model.files(text, Quickshell.env("HOME")) }
+    }
+    onExited: if (launcher.fdAgain) {
+      launcher.fdAgain = false
+      launcher.findFiles()
+    }
+  }
+
+  Process {
+    id: previewRead
+    property string path: ""
+    stdout: StdioCollector {
+      onStreamFinished: if (launcher.selected && launcher.selected.path === previewRead.path) launcher.preview = text
+    }
+    onExited: if (launcher.previewAgain) {
+      launcher.previewAgain = false
+      launcher.loadPreview()
+    }
+  }
+
+  // Read once, the first time ":" is typed; absent when unicode-emoji is
+  // not installed, leaving the symbols file.
+  FileView {
+    path: launcher.wantSymbols ? "/usr/share/unicode/emoji/emoji-test.txt" : ""
+    printErrors: false
+    onLoaded: launcher.emojiItems = Model.emoji(text())
+  }
+
+  FileView {
+    path: launcher.systemDir + "symbols.json"
+    blockLoading: true
+    printErrors: false
+    onLoaded: launcher.systemSymbols = text()
   }
 
   Process {
@@ -358,7 +466,8 @@ PanelWindow { // qmllint disable uncreatable-type
         pending: launcher.pending ? launcher.pending.id : "",
         argument: launcher.argFor ? launcher.argValues.length + 1 : 0,
         aliases: Object.keys(launcher.aliasNames),
-        rows: launcher.results.map(r => ({ kind: r.kind || "app", id: r.id, name: r.name, url: r.url || "" }))
+        rows: launcher.results.map(r => ({ kind: r.kind || "app", id: r.id, name: r.name, url: r.url || "" })),
+        preview: launcher.previewing ? (launcher.selected.kind === "symbol" ? launcher.selected.char : launcher.preview) : ""
       })
     }
     // The ids a query ranks, as JSON (used by the tests).
@@ -500,7 +609,7 @@ PanelWindow { // qmllint disable uncreatable-type
             visible: field.text === ""
             anchors.verticalCenter: parent.verticalCenter
             text: launcher.argFor ? launcher.argFor.params[launcher.argValues.length].placeholder
-              : "Search apps, commands and snippets, = calculate, @ search the web"
+              : "Search apps, commands and snippets; = calculate, @ web, . files, : emoji"
             color: Theme.muted
             font: field.font
           }
@@ -604,7 +713,19 @@ PanelWindow { // qmllint disable uncreatable-type
             anchors.verticalCenter: parent.verticalCenter
             x: Style.spacing
             implicitSize: 24
-            source: Quickshell.iconPath(row.modelData.icon || "", "application-x-executable")
+            visible: row.modelData.kind !== "symbol"
+            source: visible ? Quickshell.iconPath(row.modelData.icon || "", "application-x-executable") : ""
+          }
+          Text {
+            anchors.verticalCenter: parent.verticalCenter
+            x: Style.spacing
+            width: 24
+            visible: row.modelData.kind === "symbol"
+            horizontalAlignment: Text.AlignHCenter
+            text: visible ? row.modelData.char : ""
+            textFormat: Text.PlainText
+            color: Theme.text
+            font.pixelSize: Style.fontSize + 6
           }
           Column {
             anchors.verticalCenter: parent.verticalCenter
@@ -640,11 +761,62 @@ PanelWindow { // qmllint disable uncreatable-type
         }
       }
 
+      // Preview of the selected file or symbol.
+      Rectangle {
+        visible: launcher.previewing
+        width: parent.width
+        height: visible ? 150 : 0
+        color: Theme.base
+        border.width: 1
+        border.color: Theme.surface
+        clip: true
+
+        Text {
+          visible: launcher.selected !== null && launcher.selected.kind === "symbol"
+          anchors.centerIn: parent
+          text: visible ? launcher.selected.char + "\n" : ""
+          textFormat: Text.PlainText
+          horizontalAlignment: Text.AlignHCenter
+          color: Theme.text
+          font.pixelSize: 56
+        }
+        Image {
+          id: imagePreview
+          readonly property bool wanted: launcher.selected !== null && launcher.selected.kind === "file" && Model.isImage(launcher.selected.path)
+          visible: wanted
+          anchors.fill: parent
+          anchors.margins: 4
+          fillMode: Image.PreserveAspectFit
+          asynchronous: true
+          sourceSize.width: 1024
+          sourceSize.height: 1024
+          source: wanted ? "file://" + launcher.selected.path : ""
+        }
+        Text {
+          visible: launcher.selected !== null && launcher.selected.kind === "file" && !imagePreview.wanted
+          x: Style.spacing
+          y: Style.spacing
+          width: parent.width - 2 * Style.spacing
+          text: launcher.preview
+          textFormat: Text.PlainText
+          wrapMode: Text.NoWrap
+          elide: Text.ElideRight
+          maximumLineCount: 9
+          color: Theme.subtext
+          font.family: Style.fontFamily
+          font.pixelSize: Style.fontSize - 1
+        }
+      }
+
       Text {
         visible: launcher.results.length === 0
         width: parent.width
         text: launcher.home ? "No favorites yet: add app ids to ~/.config/subcult/launcher/favorites.json"
-          : launcher.parsed.mode === "calc" ? "No answer" : "Nothing found"
+          : launcher.parsed.mode === "calc" ? "No answer"
+          : launcher.parsed.mode === "files" ? (launcher.parsed.text === "" ? "Type part of a file name; fd searches your home folder"
+            : launcher.fileResult.text === launcher.parsed.text ? "Nothing found" : "Searching…")
+          : launcher.parsed.mode === "symbols" && launcher.parsed.text === "" ? "Type an emoji or symbol name; Enter copies it"
+          : "Nothing found"
         textFormat: Text.PlainText
         wrapMode: Text.Wrap
         color: Theme.muted
