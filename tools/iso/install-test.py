@@ -16,10 +16,13 @@ Usage: tools/iso/install-test.py ISO [--skip-install] [--timeout-install 2400]
 from __future__ import annotations
 
 import argparse
+import atexit
+import os
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -27,6 +30,17 @@ from vmlib import ANSI, OVMF_CODE, OVMF_VARS, Serial, colours_in, distinct_colou
 
 ROOT = Path(__file__).resolve().parents[2]
 VM = ROOT / "build" / "vm"
+_SOCKETS: Path | None = None
+
+
+def socket_path(name: str) -> Path:
+    """A Unix socket path under the 108-byte limit: build/vm can sit too deep
+    for one, so sockets go to a short runtime directory, removed at exit."""
+    global _SOCKETS
+    if _SOCKETS is None:
+        _SOCKETS = Path(tempfile.mkdtemp(prefix="subarchy-vm-", dir=os.environ.get("XDG_RUNTIME_DIR")))
+        atexit.register(shutil.rmtree, _SOCKETS, True)
+    return _SOCKETS / name
 CACHE = ROOT / "build" / "pkgcache"
 IDLE_BUDGET = ROOT / "tools" / "iso" / "idle-budget.json"
 
@@ -173,8 +187,7 @@ def wait_for(serial: Serial, command: str, seconds: int = 60) -> str:
 
 
 def boot(disk: Path, vars_file: Path) -> bool:
-    qmp = VM / "qmp.sock"
-    qmp.unlink(missing_ok=True)
+    qmp = socket_path("qmp.sock")
     cmd = qemu_command(
         vars_file, "-drive", f"file={disk},if=virtio,format=qcow2",
         "-qmp", f"unix:{qmp},server=on,wait=off",
@@ -534,7 +547,7 @@ def boot_secureboot(disk: Path, vars_file: Path) -> bool:
     tpm_dir = VM / "tpm"
     shutil.rmtree(tpm_dir, ignore_errors=True)
     tpm_dir.mkdir(parents=True)
-    tpm_sock = tpm_dir / "swtpm.sock"
+    tpm_sock = socket_path("swtpm.sock")
     swtpm = subprocess.Popen(
         ["swtpm", "socket", "--tpm2", "--tpmstate", f"dir={tpm_dir}", "--ctrl", f"type=unixio,path={tpm_sock}"],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
