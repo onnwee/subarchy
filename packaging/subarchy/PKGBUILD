@@ -133,6 +133,9 @@ package() {
   # monitor event arrives.
   install -Dm644 "$sys/subcult-display.service" "$pkgdir/usr/lib/systemd/user/subcult-display.service"
   ln -s ../subcult-display.service "$pkgdir/usr/lib/systemd/user/graphical-session.target.wants/subcult-display.service"
+  # Clipboard history for the launcher (ADR 0056); wl-paste sleeps between copies.
+  install -Dm644 "$sys/subcult-clipboard.service" "$pkgdir/usr/lib/systemd/user/subcult-clipboard.service"
+  ln -s ../subcult-clipboard.service "$pkgdir/usr/lib/systemd/user/graphical-session.target.wants/subcult-clipboard.service"
 
   # Migrations run once per user by `subcult update` (ADR 0026).
   install -dm755 "$pkgdir/usr/share/subcult/migrations"

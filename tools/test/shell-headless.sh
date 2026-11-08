@@ -62,6 +62,13 @@ if [ "$1 $2 $3" = "app ask --json" ]; then
   printf '{"id": "stub-agent", "name": "Stub Agent", "argv": ["echo"]}\n'; exit 0
 fi
 if [ "$1 $2" = "app ask" ]; then shift 2; [ "$1" = "--" ] && shift; echo "answer to: $*"; exit 0; fi
+# Clipboard history: two entries; copy and clear leave a note for the test.
+if [ "$1 $2 $3" = "clipboard list --json" ]; then
+  printf '[{"id": "aaaa", "kind": "text", "mime": "text/plain", "size": 11, "time": "2026-11-07T22:00:00Z", "preview": "hello world"},'
+  printf ' {"id": "bbbb", "kind": "text", "mime": "text/plain", "size": 5, "time": "2026-11-07T21:00:00Z", "preview": "older"}]\n'; exit 0
+fi
+if [ "$1 $2" = "clipboard show" ]; then printf 'hello world'; exit 0; fi
+if [ "$1 $2" = "clipboard copy" ] || [ "$1 $2" = "clipboard clear" ]; then echo "$2 $3" >>"$HOME/clipboard-actions"; exit 0; fi
 [ "$1 $2" = "commands --json" ] || exit 2
 cat <<'JSON'
 {"ok": true, "commands": [
@@ -384,6 +391,19 @@ for _ in $(seq 20); do
 done
 [[ $(lfield preview) == "answer to: what is subarchy" ]] || fail "the agent's answer did not reach the preview: $(launcher state)"
 launcher close >/dev/null
+
+# Clipboard history: "$" lists the entries newest first with a clear row
+# last, the preview shows the entry, Enter copies it back.
+lwait '$' '[x["id"] for x in r] == ["clip:aaaa", "clip:bbbb", "clip:clear"]' || fail "the clipboard history is not listed: $ls"
+for _ in $(seq 10); do
+  [[ $(lfield preview) == "hello world" ]] && break
+  sleep 0.5
+done
+[[ $(lfield preview) == "hello world" ]] || fail "the clipboard preview is not the entry: $(launcher state)"
+lwait "\$old" '[x["id"] for x in r] == ["clip:bbbb"]' || fail "typing after \$ does not filter: $ls"
+launcher enter >/dev/null
+filewait "$home1/clipboard-actions" "copy bbbb" || fail "Enter did not copy the entry back: $(cat "$home1/clipboard-actions" 2>/dev/null)"
+[[ $(json 'd.get("launcher")') == False ]] || fail "the launcher stayed open after a copy"
 
 # Script commands with Raycast headers, aliases and snippets. The script
 # runs silently and writes its argument where the test can read it.

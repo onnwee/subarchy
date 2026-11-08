@@ -1,0 +1,17 @@
+[Unit]
+Description=Clipboard history for the launcher (subcult clipboard watch)
+Documentation=https://git.subcult.tv/subculture-collective/subarchy
+PartOf=graphical-session.target
+After=graphical-session.target
+Requisite=graphical-session.target
+
+[Service]
+Type=exec
+# wl-paste sleeps on the Wayland socket and runs `subcult-clipboard store`
+# once per copy; no timers (ADR 0054).
+ExecStart=/usr/bin/subcult-clipboard watch
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target
