@@ -278,6 +278,9 @@ lstate() { # query -> the launcher's state after typing it
 row() { # python expression over the rows of the state in $ls
   python3 -c "import json,sys; r=json.loads(sys.argv[1])['rows']; print($1)" "$ls"
 }
+lfield() { # field of the launcher's state
+  python3 -c "import json,sys; print(json.loads(sys.argv[1])[sys.argv[2]])" "$(launcher state)" "$1"
+}
 # Commands, scripts and qalc answers arrive from processes the launcher
 # starts, so these checks wait for them (up to 10 s) instead of sleeping.
 lwait() { # query, python condition over the rows r; leaves the state in $ls
@@ -321,13 +324,31 @@ else
   [[ -z ${CI:-} ]] || fail "qalc not installed"
   echo "shell-headless: qalc not installed, calculator not checked"
 fi
+# Files ("." runs fd on demand) and symbols (":" reads the emoji data and the
+# symbols file); the preview pane follows the selection.
+mkdir -p "$home1/Documents"
+printf 'needle text\n' >"$home1/Documents/subarchy-needle.txt"
+if command -v fd >/dev/null; then
+  lwait ". subarchy-needle" '[x["name"] for x in r] == ["subarchy-needle.txt"]' || fail "the launcher did not find a file with fd: $ls"
+  lwait ". subarchy-needle" 'True' >/dev/null
+  [[ $(lfield preview) == "needle text" ]] || fail "the file preview is not the file's text: $(launcher state)"
+else
+  [[ -z ${CI:-} ]] || fail "fd not installed"
+  echo "shell-headless: fd not installed, file search not checked"
+fi
+ls=$(lstate ":em dash")
+[[ $(row 'r[0]["id"]') == "symbol:—" ]] || fail "the symbols file is not searched: $ls"
+[[ $(lfield preview) == "—" ]] || fail "the symbol preview is not the character: $(launcher state)"
+if [[ -f /usr/share/unicode/emoji/emoji-test.txt ]]; then
+  lwait ":red heart" 'any(x["id"] == "symbol:\u2764\ufe0f" for x in r)' || fail "emoji are not searched: $ls"
+else
+  [[ -z ${CI:-} ]] || fail "unicode-emoji not installed"
+  echo "shell-headless: unicode-emoji not installed, emoji not checked"
+fi
 launcher close >/dev/null
 
 # Script commands with Raycast headers, aliases and snippets. The script
 # runs silently and writes its argument where the test can read it.
-lfield() { # field of the launcher's state
-  python3 -c "import json,sys; print(json.loads(sys.argv[1])[sys.argv[2]])" "$(launcher state)" "$1"
-}
 mkdir -p "$home1/.config/subcult/commands"
 cat >"$home1/.config/subcult/commands/greet.sh" <<'SCRIPT'
 #!/bin/sh

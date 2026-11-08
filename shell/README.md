@@ -84,6 +84,14 @@ start through `uwsm-app -- <id>.desktop`.
   with words (`gh subarchy`) is offered first in root search too. URLs open
   with `xdg-open`.
 
+- Files: `.` searches file and folder names under home with `fd` once typing
+  pauses (case-insensitive, hidden and ignored files skipped, 60 results);
+  nothing indexes in the background. Enter opens the pick with `xdg-open`.
+- Emoji and symbols: `:` searches the names in unicode-emoji's
+  `emoji-test.txt` (read the first time `:` is typed) and
+  `/usr/share/subcult/default/launcher/symbols.json`; Enter copies the pick.
+- Preview: the pane under the results shows the selected symbol, an image
+  file, a folder's first entries or a text file's first lines.
 - Favorites: `/usr/share/subcult/default/launcher/favorites.json`, replaced
   by `~/.config/subcult/launcher/favorites.json` when that file has a
   `favorites` list of desktop entry ids.

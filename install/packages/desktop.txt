@@ -28,6 +28,9 @@ papirus-icon-theme
 brightnessctl
 libnotify
 wtype
+# Launcher file search (`.`) and emoji picker (`:`), ADR 0056, 0057.
+fd
+unicode-emoji
 libsecret
 mpv
 librsvg
