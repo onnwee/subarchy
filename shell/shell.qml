@@ -44,6 +44,9 @@ ShellRoot {
   // Battery alerts: a singleton with nothing to show; referenced here so
   // it exists for the session.
   readonly property bool alertsReady: Alerts.state !== null
+  // Motion: the setting and the power source, pushed to the compositor on
+  // change; referenced here so it runs for the session.
+  readonly property bool motionReady: Motion.mode !== ""
 
   IpcHandler {
     target: "subcult.shell"
@@ -90,6 +93,8 @@ ShellRoot {
         shown: bars.instances.reduce((acc, b) => { acc[b.screen.name] = (b as Bar).shownIds(); return acc }, {}),
         keepAwake: KeepAwake.enabled,
         onBattery: Power.onBattery,
+        motion: Motion.enabled,
+        motionMode: Motion.mode,
         popups: Notifications.popups.length,
         unread: Notifications.unread,
         history: Notifications.history.slice(0, 5).map(e => ({ id: e.id, summary: e.summary, body: e.body, appName: e.appName })),
