@@ -56,7 +56,7 @@ PanelWindow { // qmllint disable uncreatable-type
   }
 
   Connections {
-    target: dialog.flow
+    target: dialog.flow // qmllint disable unresolved-type
     function onAuthenticationFailed() {
       dialog.wrongPassword = true
       wrongPasswordTimer.restart()
@@ -86,7 +86,7 @@ PanelWindow { // qmllint disable uncreatable-type
   // After a wrong password PAM asks again; the field was disabled while it
   // checked, so give it the focus back.
   Connections {
-    target: dialog.flow
+    target: dialog.flow // qmllint disable unresolved-type
     function onIsResponseRequiredChanged() {
       if (dialog.flow && dialog.flow.isResponseRequired)
         password.forceActiveFocus()
