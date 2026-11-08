@@ -12,6 +12,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strings"
 
 	"git.subcult.tv/subculture-collective/subarchy/internal/channel"
 	"git.subcult.tv/subculture-collective/subarchy/internal/dispatch"
@@ -50,10 +51,11 @@ func (a *app) run(args []string) int {
 	fs.SetOutput(a.stderr)
 	root := fs.String("root", "/", "the filesystem root (tests, the installer's chroot)")
 	quiet := fs.Bool("quiet", false, "say nothing unless something is wrong")
-	if err := fs.Parse(args); err != nil {
+	// Flags may follow the words (`channel set stable --quiet`).
+	flags, rest := splitFlags(args)
+	if err := fs.Parse(flags); err != nil {
 		return 2
 	}
-	rest := fs.Args()
 	if len(rest) == 0 {
 		st, err := channel.Current(*root)
 		if err != nil {
@@ -102,6 +104,23 @@ func (a *app) run(args []string) int {
 	}
 	fmt.Fprintln(a.stderr, "Usage: subcult channel | channel set stable|edge")
 	return 2
+}
+
+// splitFlags separates --flags (and --root's value) from the words, so the
+// flags may come in any position.
+func splitFlags(args []string) (flags, words []string) {
+	for i := 0; i < len(args); i++ {
+		switch {
+		case args[i] == "--root" && i+1 < len(args):
+			flags = append(flags, args[i], args[i+1])
+			i++
+		case strings.HasPrefix(args[i], "-"):
+			flags = append(flags, args[i])
+		default:
+			words = append(words, args[i])
+		}
+	}
+	return flags, words
 }
 
 // asRoot re-runs the command through sudo when it writes to the real root

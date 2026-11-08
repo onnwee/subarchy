@@ -51,6 +51,13 @@ func TestShowSetRefresh(t *testing.T) {
 	if code := a.run([]string{"--root", r, "--quiet", "set", "edge"}); code != 0 || out.Len() != 0 {
 		t.Fatalf("set edge quiet: %d %q", code, out.String())
 	}
+	out.Reset()
+	if code := a.run([]string{"set", "stable", "--quiet", "--root", r}); code != 0 || out.Len() != 0 {
+		t.Fatalf("flags after the words: %d %q", code, out.String())
+	}
+	if code := a.run([]string{"--root", r, "--quiet", "set", "edge"}); code != 0 {
+		t.Fatal(code)
+	}
 	errOut.Reset()
 	if code := a.run([]string{"--root", r, "set", "stable"}); code != 0 || !strings.Contains(errOut.String(), "newer than the snapshot") {
 		t.Fatalf("edge to stable: %d %q", code, errOut.String())
