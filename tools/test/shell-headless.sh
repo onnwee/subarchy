@@ -396,6 +396,13 @@ HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
 sleep 1
 st=$(status "$home1")
 [[ $(json 'd.get("panel")') == "" ]] || fail "the panel did not close: $st"
+# Opening another widget's panel while one is open switches to it.
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.audio >/dev/null
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.notifications >/dev/null
+sleep 1
+st=$(status "$home1")
+[[ $(json 'd.get("panel")') == subcult.notifications ]] || fail "a second widget's panel did not replace the first: $st"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
 check_log "$work/qs1.log"
 
 # 2. A palette written after start applies without a restart.

@@ -16,6 +16,8 @@ import (
 // "(deleted)" (memfd, shared memory, /tmp, /run, System V) do not count,
 // nor do scopes and slices (apps, sessions): those are the user's to
 // restart. User services are marked "(user)". Nothing is restarted here.
+// Run as root (the `privileged services` step): another user's maps are
+// not readable, and system services would otherwise never show.
 func ServicesNeedingRestart(proc string) ([]string, error) {
 	entries, err := os.ReadDir(proc)
 	if err != nil {

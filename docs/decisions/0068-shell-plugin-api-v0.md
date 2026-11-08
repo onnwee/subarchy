@@ -107,5 +107,14 @@ carries them and keeps the battery rules machine-readable
 - Services that are not bar items (the notification daemon, OSD, polkit
   agent, Alt-Tab) live in the shell itself (`shell/services/`, `shell/*.qml`)
   until a loader for `kind: service` widgets exists.
+- Hardening (2026-11-07, Epic A, qualified in the VM on 2026-11-08): the
+  shell registers Hyprland global shortcuts under the app id `subcult`
+  (`launcher-toggle`, `altswitch-*`, `clipboard`, `alias.<name>`), bound
+  from the Hyprland Lua config through `sub.*` helpers, in place of
+  compositor-side `hyprctl dispatch` calls; `subcult.shell` over IPC gains
+  `keepAwake(bool)`, `panel(id|close)`, `widgetProperty(id, name)` and
+  `status()`; keep-awake is a logind idle inhibitor with its state in
+  `~/.local/state/subcult/keep-awake`. A widget's `Panel.qml` is loaded only
+  while its panel is open and replaced when another widget's panel opens.
 
 Related: [[0035-plugin-api|ADR 0035]] · [[0034-shell-toolkit|ADR 0034]] · [[shell-and-look-design|Shell and look design]] · [[decisions-index|Decisions]]
