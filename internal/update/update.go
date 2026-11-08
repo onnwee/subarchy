@@ -18,6 +18,7 @@ type Options struct {
 	NoSnapshot bool   // skip the pre-update snapshot
 	Version    string // Subarchy version, for the snapshot description
 	ModulesDir string // /usr/lib/modules
+	ProcDir    string // /proc; empty skips the restart report
 	Migrations Migrations
 	Stdin      io.Reader
 	Stdout     io.Writer
@@ -59,6 +60,9 @@ type Report struct {
 	// ShellRestarted: the subarchy package changed, so the desktop shell was
 	// restarted to run the new one.
 	ShellRestarted bool
+	// ServicesToRestart still run files the upgrade replaced; "(user)"
+	// marks user services. Nothing restarts them.
+	ServicesToRestart []string
 }
 
 // pkgVersion is `pacman -Q name` ("name version"), or "" when the query
@@ -153,6 +157,14 @@ func (u *Updater) Run(ctx context.Context) (Report, error) {
 		} else {
 			rep.ShellRestarted = true
 		}
+	}
+
+	if u.O.ProcDir != "" {
+		services, err := ServicesNeedingRestart(u.O.ProcDir)
+		if err != nil {
+			fmt.Fprintf(u.O.Stdout, "   services check: %v (continuing)\n", err)
+		}
+		rep.ServicesToRestart = services
 	}
 
 	running, err := u.R.Output(ctx, "uname", "-r")
@@ -275,6 +287,9 @@ func (r Report) Summary() string {
 	}
 	if r.ShellRestarted {
 		b.WriteString("The desktop shell was restarted.\n")
+	}
+	if len(r.ServicesToRestart) > 0 {
+		fmt.Fprintf(&b, "Services using replaced files: %s. Restart them, or reboot.\n", strings.Join(r.ServicesToRestart, ", "))
 	}
 	if r.RebootNeeded {
 		fmt.Fprintf(&b, "Reboot needed: the running kernel %s was upgraded.\n", r.RunningKernel)

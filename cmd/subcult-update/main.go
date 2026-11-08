@@ -145,7 +145,7 @@ func (a *app) update(ctx context.Context, yes, noSnapshot, dryRun bool) int {
 	}
 	u := &update.Updater{R: r, O: update.Options{
 		Yes: yes, NoSnapshot: noSnapshot || dryRun, Version: dispatch.Version,
-		ModulesDir: "/usr/lib/modules", Migrations: m, Stdin: a.stdin, Stdout: a.stdout,
+		ModulesDir: "/usr/lib/modules", ProcDir: "/proc", Migrations: m, Stdin: a.stdin, Stdout: a.stdout,
 		Privileged: []string{"sudo", selfPath, "privileged"},
 	}}
 	rep, err := u.Run(ctx)
