@@ -1,0 +1,7 @@
+# Theme Tender profile (ADR 0037): the default theme for a new user. The
+# installer runs `tender apply -profile` on this file; `tender apply` with
+# it again puts the theme back after an experiment. Apps are not listed, so
+# every registered app that is installed is themed. Fonts stay with
+# fontconfig's roles (`subcult font`), not with the profile.
+schema = 1
+theme = "subcult-minimal.json"
