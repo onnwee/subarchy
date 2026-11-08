@@ -68,4 +68,13 @@ This was not a formal trademark search.
   the editor layer ([[0045-editor|ADR 0045]]) and every row in
   [[branding-surfaces|Branding surfaces]].
 
+## Progress
+
+- 2026-11-08: the brand assets are in `branding/` (issue #62): the SUBCULT
+  marks and lockups from the rice's brand kit, the studio's production logo
+  set with its master mark and tokens, the three brand fonts (OFL) and the
+  seven poster-press backgrounds, each with its source and commit in
+  `branding/README.md`. The owner approved taking them as they are; the
+  splash, greeter and screensaver art are built from them next (#73, #96).
+
 Related: [[decision-map|Decision map]] · [[brand-identity|Brand identity]] · [[0046-distribution-cli|ADR 0046]] · [[0053-licence|ADR 0053]]
