@@ -159,6 +159,11 @@ Singleton {
     save()
   }
 
+  function removeRecord(id) {
+    root.history = Model.removeRecord(root.history, id)
+    save()
+  }
+
   function save() {
     historyFile.setText(JSON.stringify(root.history) + "\n")
   }

@@ -63,6 +63,8 @@ const camera = "\u{F0100}"      // camera
 const screenShare = "\u{F1483}" // monitor_share
 const updates = "\u{F06B0}"     // update
 const calendar = "\u{F00ED}"    // calendar
+const close = "\u{F0156}"       // close
+const clearAll = "\u{F0A7A}"    // delete_sweep
 
 function bell(unread, dnd) {
   if (dnd)

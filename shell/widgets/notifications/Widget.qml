@@ -4,9 +4,10 @@ import qs.Ui
 import qs.services
 import "../../Commons/Glyphs.js" as Glyphs
 
-// The notification bell: unread count; left click marks all read, right
-// click toggles do-not-disturb. The history panel comes in stage 2.
+// The notification bell: unread count. A click opens the history panel and
+// marks everything read; a right click toggles do-not-disturb.
 BarWidget {
+  id: root
   implicitWidth: button.implicitWidth
 
   IconButton {
@@ -19,8 +20,10 @@ BarWidget {
     onClicked: (mouse) => {
       if (mouse.button === Qt.RightButton)
         Notifications.dnd = !Notifications.dnd
-      else
+      else {
         Notifications.markAllRead()
+        root.openPanel()
+      }
     }
   }
 }

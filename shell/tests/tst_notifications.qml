@@ -10,6 +10,14 @@ TestCase {
     return { id: i, appName: "app", summary: "s" + i, body: "", urgency: urgency || "normal", time: i, read: false }
   }
 
+  function test_removeRecord() {
+    const h = [entry(1), entry(2), entry(3)]
+    compare(Model.removeRecord(h, 2).map(e => e.id), [1, 3])
+    compare(Model.removeRecord(h, 9).length, 3)
+    compare(h.length, 3, "does not mutate")
+    compare(Model.removeRecord(null, 1), [])
+  }
+
   function test_pushNewestFirst() {
     let h = []
     h = Model.push(h, entry(1), 100)

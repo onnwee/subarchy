@@ -47,6 +47,11 @@ function shouldPopup(n, dnd) {
   return !dnd || n.urgency === "critical"
 }
 
+// The history without the record of id.
+function removeRecord(history, id) {
+  return (history || []).filter(e => e.id !== id)
+}
+
 function unread(history) {
   return (history || []).filter(e => !e.read).length
 }

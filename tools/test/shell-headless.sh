@@ -499,6 +499,12 @@ for w in network bluetooth; do
   [[ $(json 'd.get("panel")') == "subcult.$w" ]] || fail "the $w panel did not open: $st"
   HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
 done
+# The notification centre opens from the bell and closes like any panel.
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.notifications >/dev/null
+sleep 1
+st=$(status "$home1")
+[[ $(json 'd.get("panel")') == subcult.notifications ]] || fail "the notifications panel did not open: $st"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
 
 # A widget's click-out panel: the audio panel opens on request (no
 # PipeWire here, so it shows no devices), one at a time, and closes.

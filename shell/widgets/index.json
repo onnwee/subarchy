@@ -53,7 +53,8 @@
         "name": "Battery and power profile",
         "version": "1.0.0",
         "api": 0,
-        "kind": "bar-widget"
+        "kind": "bar-widget",
+        "panel": true
       }
     },
     "subcult.bluetooth": {
@@ -183,7 +184,8 @@
         "name": "Notifications",
         "version": "1.0.0",
         "api": 0,
-        "kind": "bar-widget"
+        "kind": "bar-widget",
+        "panel": true
       }
     },
     "subcult.tray": {
