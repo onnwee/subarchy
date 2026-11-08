@@ -45,4 +45,17 @@ Calendar is not reachable from other apps, so it is not a source.
   network job besides the update check and weather.
 - Google sync uses the Google Workspace CLI that the plugin depends on.
 
+## Progress
+
+- 2026-11-07: `subcult calendar sync` (issue #70) reads CalDAV collections
+  (a calendar-query REPORT for the window) and iCal feeds from
+  `~/.config/subcult/calendar.toml` into
+  `~/.local/state/subcult/calendar/events.json`: yesterday to thirty days
+  out, recurrences expanded (daily, weekly, monthly, yearly; COUNT, UNTIL,
+  INTERVAL, EXDATE, overridden occurrences). CalDAV passwords come from the
+  keyring (`secret-tool`, service `subcult-calendar`), never the config,
+  which refuses a `password` field. The user timer runs every quarter hour;
+  on battery a sync younger than an hour is kept. Google sync is still to
+  come (#113).
+
 Related: [[decision-map|Decision map]] · [[0036-shell-components|ADR 0036]] · [[0057-launcher|ADR 0057]]
