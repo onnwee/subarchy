@@ -5,7 +5,7 @@ import qs.Ui
 import "../../Commons/Glyphs.js" as Glyphs
 
 // The connection in use: wired first, then Wi-Fi with its signal. Driven
-// by NetworkManager over D-Bus.
+// by NetworkManager over D-Bus. A click opens the network panel.
 BarWidget {
   id: root
 
@@ -26,5 +26,6 @@ BarWidget {
       : root.wifiDevice ? Glyphs.wifiOff() : Glyphs.ethernet(false)
     color: root.wired || root.wifiNetwork ? Theme.subtext : Theme.muted
     tooltip: root.wired ? "Wired" : root.wifiNetwork ? root.wifiNetwork.name : "Not connected"
+    onClicked: root.openPanel()
   }
 }

@@ -490,6 +490,15 @@ for _ in $(seq 20); do
   sleep 0.5
 done
 [[ $(calendar) == *"Headless standup 10:00" ]] || fail "the calendar widget did not pick up the written cache: $(calendar)"
+# The network and Bluetooth panels open without NetworkManager or BlueZ
+# (nothing to list, nothing scans) and close like any panel.
+for w in network bluetooth; do
+  HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel "subcult.$w" >/dev/null
+  sleep 1
+  st=$(status "$home1")
+  [[ $(json 'd.get("panel")') == "subcult.$w" ]] || fail "the $w panel did not open: $st"
+  HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
+done
 
 # A widget's click-out panel: the audio panel opens on request (no
 # PipeWire here, so it shows no devices), one at a time, and closes.
