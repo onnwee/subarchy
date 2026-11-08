@@ -26,6 +26,22 @@ function plain(text, cap) {
   return cap > 0 && s.length > cap ? s.slice(0, cap) : s
 }
 
+// How long a popup stays, in ms: critical ones until dismissed (0); the
+// app's own timeout within 2..30 s; 5 s when it gave none (-1 or 0).
+function timeoutMs(expireTimeout, urgency) {
+  if (urgency === "critical")
+    return 0
+  const t = Number(expireTimeout)
+  if (!(t > 0))
+    return 5000
+  return Math.max(2000, Math.min(30000, t))
+}
+
+// The history with the record of id changed (a replaced notification).
+function updateRecord(history, id, fields) {
+  return (history || []).map(e => e.id === id ? Object.assign({}, e, fields) : e)
+}
+
 // Do-not-disturb holds back popups, except critical ones.
 function shouldPopup(n, dnd) {
   return !dnd || n.urgency === "critical"
