@@ -1,0 +1,44 @@
+# Maintainer: SUBCULT <info@subcult.tv>
+# Theme Tender (ADR 0037, issue #72), the theming system Subarchy applies
+# at install and later through `tender`. This is the PKGBUILD Theme Tender
+# published with its v0.1.0 release (release asset PKGBUILD.theme-tender,
+# rendered by its scripts/render-packaging.sh), vendored here unchanged
+# below this header; sources are release tarballs, sha256-pinned.
+#
+# Licence: GPL-3.0-only for the code, MIT for the templates (LICENSE and
+# LICENSES/MIT.txt in the source tarball), both installed under
+# /usr/share/licenses/theme-tender/. Checked at v0.1.0.
+pkgname=theme-tender
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='Apply one palette across your terminal apps, and undo every change'
+arch=('x86_64' 'aarch64')
+url='https://git.subcult.tv/subculture-collective/theme-tender'
+license=('GPL-3.0-only' 'MIT')
+makedepends=('go')
+source=("https://git.subcult.tv/subculture-collective/theme-tender/releases/download/v0.1.0/theme-tender-0.1.0-src.tar.gz"
+        "https://git.subcult.tv/subculture-collective/theme-tender/releases/download/v0.1.0/theme-tender-0.1.0-catalog.db.zst")
+noextract=("theme-tender-0.1.0-catalog.db.zst")
+sha256sums=('5ad356b444a36bbcfb8d668991962d0f286f7445f6efddb18bee5d78743af128'
+            'c05372aa5f627d8875d6be499babe73abe30afa909b3557f9d520b356e1c4cc3')
+
+build() {
+  cd "theme-tender-$pkgver"
+  cp "$srcdir/theme-tender-$pkgver-catalog.db.zst" builtin/catalog.db.zst
+  export CGO_ENABLED=0
+  export GOFLAGS='-buildmode=pie -trimpath -mod=readonly -modcacherw'
+  go build -ldflags "-s -w -X main.version=$pkgver -X git.subcult.tv/subculture-collective/theme-tender.BuiltinVersion=2026.11.07.0" -o tender ./cmd/tender
+}
+
+check() {
+  cd "theme-tender-$pkgver"
+  CGO_ENABLED=0 go test ./...
+}
+
+package() {
+  cd "theme-tender-$pkgver"
+  install -Dm755 tender "$pkgdir/usr/bin/tender"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm644 LICENSES/MIT.txt "$pkgdir/usr/share/licenses/$pkgname/MIT.txt"
+  install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
+}

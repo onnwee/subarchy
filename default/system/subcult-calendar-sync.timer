@@ -1,0 +1,11 @@
+[Unit]
+Description=Calendar sync every quarter hour (ADR 0061); on battery a sync younger than an hour is kept
+
+[Timer]
+OnStartupSec=2min
+OnCalendar=*:0/15
+RandomizedDelaySec=1min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

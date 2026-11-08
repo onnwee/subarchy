@@ -12,7 +12,11 @@ set -euo pipefail
 
 src=$(realpath "${1:?path to the shell folder}")
 root=$(git rev-parse --show-toplevel)
-fail() { echo "shell-headless: $*" >&2; exit 1; }
+fail() { # the message, then the shell log's last warnings when it exists
+  echo "shell-headless: $*" >&2
+  [[ -f ${work:-}/qs1.log ]] && grep -E 'WARN|ERROR' "$work/qs1.log" | tail -n 6 | cut -c1-300 >&2
+  exit 1
+}
 
 for tool in sway swaymsg quickshell grim magick python3 dbus-run-session gdbus; do
   if ! command -v "$tool" >/dev/null; then
@@ -48,6 +52,11 @@ cp -r "$src" "$shell"
 mkdir -p "$work/bin"
 cat >"$work/bin/subcult" <<'STUB'
 #!/bin/sh
+# The settings panel reads the font roles and runs the tools it names.
+if [ "$1 $2" = "font current" ]; then
+  printf 'monospace   (default)  resolves to DejaVu Sans Mono\nsans-serif  Inter\nserif       (default)  resolves to DejaVu Serif\n'; exit 0
+fi
+if [ "$1 $2" = "font set" ] || [ "$1 $2" = "cursor apply" ]; then echo "$*" >>"$HOME/settings-actions"; exit 0; fi
 # The default agent for the launcher's Ask row, and its answer.
 if [ "$1 $2 $3" = "app ask --json" ]; then
   printf '{"id": "stub-agent", "name": "Stub Agent", "argv": ["echo"]}\n'; exit 0
@@ -168,7 +177,7 @@ json() { # expression over the status JSON in $st
 # 1. Defaults, with the probe on the left.
 home1="$work/home1"
 mkdir -p "$home1/.config/subcult/shell"
-printf '{"layout": {"left": ["subcult.test-probe"]}}\n' >"$home1/.config/subcult/shell/bar.json"
+printf '{"layout": {"left": ["subcult.test-probe", "subcult.menu"]}}\n' >"$home1/.config/subcult/shell/bar.json"
 start_shell "$home1" "$work/qs1.log"
 check_log "$work/qs1.log"
 shot HEADLESS-1
@@ -404,18 +413,110 @@ inhibitor() { pgrep -u "$(id -u)" -f '[s]ystemd-inhibit --what=idle --who=SUBCUL
 HOME=$home1 quickshell ipc -p "$shell" call subcult.shell keepAwake true >/dev/null
 for _ in $(seq 10); do inhibitor && break; sleep 0.5; done
 inhibitor || fail "keep-awake holds no inhibitor: $(status "$home1")"
+for _ in $(seq 10); do [[ $(cat "$home1/.local/state/subcult/keep-awake" 2>/dev/null) == 1 ]] && break; sleep 0.5; done
 [[ $(cat "$home1/.local/state/subcult/keep-awake" 2>/dev/null) == 1 ]] || fail "keep-awake state not saved"
 st=$(status "$home1")
 [[ $(json 'd.get("keepAwake")') == True ]] || fail "keep-awake not reported on: $st"
 HOME=$home1 quickshell ipc -p "$shell" call subcult.shell keepAwake false >/dev/null
 for _ in $(seq 10); do inhibitor || break; sleep 0.5; done
 ! inhibitor || fail "keep-awake off left the inhibitor: $(pgrep -u "$(id -u)" -af '[s]ystemd-inhibit --what=idle' | head -3); $(status "$home1")"
+for _ in $(seq 10); do [[ ! -e "$home1/.local/state/subcult/keep-awake" ]] && break; sleep 0.5; done
 [[ ! -e "$home1/.local/state/subcult/keep-awake" ]] || fail "keep-awake off left the state file"
 
 # The media widget loads and stays hidden without a player (no MPRIS here).
 st=$(status "$home1")
 [[ $(json '"subcult.media" in d["loaded"]["HEADLESS-1"] and "subcult.media" not in d["shown"]["HEADLESS-1"]') == True ]] ||
   fail "the media widget is not loaded-and-hidden without a player: $st"
+
+# The settings panel (SUBCULT mark): current values, a preview of pending
+# changes, apply to the user files only, undo the last apply.
+settings() { HOME=$home1 quickshell ipc -p "$shell" call subcult.settings "$@"; }
+sfield() { python3 -c "import json,sys; print(json.loads(sys.argv[1])[sys.argv[2]])" "$(settings state)" "$1"; }
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.menu >/dev/null
+sleep 1.5
+st=$(status "$home1")
+[[ $(json 'd.get("panel")') == subcult.menu ]] || fail "the settings panel did not open: $st"
+for _ in $(seq 10); do [[ $(sfield current) == *"'font.ui': 'Inter'"* ]] && break; sleep 0.5; done
+[[ $(sfield current) == *"'font.ui': 'Inter'"* && $(sfield current) == *"'idle.lock': 7"* ]] || fail "settings current values: $(settings state)"
+settings set bar.minimal "subcult.workspaces" >/dev/null
+settings set cursor.size 32 >/dev/null
+settings set idle.lock 5 >/dev/null
+settings set font.ui "Iosevka Aile" >/dev/null
+[[ $(settings set idle.lock 900) == false && $(sfield errors) == *"between 0 and 240"* ]] || fail "a bad value is not refused: $(settings state)"
+settings set idle.lock 5 >/dev/null
+[[ $(python3 -c "import json,sys; print(len(json.loads(sys.argv[1])['preview']))" "$(settings state)") == 4 ]] || fail "four pending changes do not preview: $(settings state)"
+settings apply >/dev/null
+filewait "$home1/.config/subcult/idle.json" '{
+  "lockAfterMinutes": 5
+}' || fail "apply did not write idle.json: $(cat "$home1/.config/subcult/idle.json" 2>/dev/null)"
+[[ $(python3 -c "import json,sys; d=json.load(open(sys.argv[1])); print(d['layout']['minimal'], d.get('widgets', {}))" "$home1/.config/subcult/shell/bar.json") == "['subcult.workspaces'] {}" ]] ||
+  fail "apply did not scope the bar layout write: $(cat "$home1/.config/subcult/shell/bar.json")"
+[[ $(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['size'])" "$home1/.config/subcult/cursor.json") == 32 ]] || fail "apply did not write cursor.json"
+for _ in $(seq 20); do [[ $(grep -c . "$home1/settings-actions" 2>/dev/null) == 2 ]] && break; sleep 0.5; done
+[[ $(sort "$home1/settings-actions" 2>/dev/null | tr '\n' '|') == "cursor apply|font set Iosevka Aile --ui|" ]] || fail "apply did not run the tools: $(cat "$home1/settings-actions" 2>/dev/null)"
+for _ in $(seq 10); do [[ $(sfield canUndo) == True ]] && break; sleep 0.5; done
+[[ $(sfield canUndo) == True ]] || fail "no undo record after apply: $(settings state)"
+settings undo >/dev/null
+filewait "$home1/.config/subcult/idle.json" '{
+  "lockAfterMinutes": 7
+}' || fail "undo did not restore idle.json: $(cat "$home1/.config/subcult/idle.json")"
+[[ $(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['layout']['minimal'])" "$home1/.config/subcult/shell/bar.json") == "['subcult.workspaces', 'subcult.display']" ]] ||
+  fail "undo did not restore the bar layout: $(cat "$home1/.config/subcult/shell/bar.json")"
+for _ in $(seq 10); do [[ $(sfield canUndo) == False ]] && break; sleep 0.5; done
+[[ $(sfield canUndo) == False ]] || fail "undo is not one step: $(settings state)"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
+rm -f "$home1/settings-actions"
+
+# A widget's click-out panel: the audio panel opens on request (no
+# PipeWire here, so it shows no devices), one at a time, and closes.
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.audio >/dev/null
+sleep 1
+st=$(status "$home1")
+[[ $(json 'd.get("panel")') == subcult.audio ]] || fail "the audio panel did not open: $st"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.audio >/dev/null
+sleep 1
+st=$(status "$home1")
+[[ $(json 'd.get("panel")') == "" ]] || fail "a second request did not close the panel: $st"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.audio >/dev/null
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
+sleep 1
+st=$(status "$home1")
+[[ $(json 'd.get("panel")') == "" ]] || fail "the panel did not close: $st"
+
+# The auto-wallpaper widget, off by default: enabled in bar.json with a
+# folder of two images, it loads, reports its timer, and its IPC call
+# writes the next image to the wallpaper state file, which the background
+# shows at once.
+mkdir -p "$home1/walls"
+magick -size 64x64 xc:'#FF0000' "$home1/walls/a.png"
+magick -size 64x64 xc:'#0000FF' "$home1/walls/b.png"
+printf '{"layout": {"left": ["subcult.test-probe", "subcult.auto-wallpaper"]}, "widgets": {"subcult.auto-wallpaper": {"directory": "%s"}}}\n' "$home1/walls" >"$home1/.config/subcult/shell/bar.json"
+sleep 2
+st=$(status "$home1")
+[[ $(json '"subcult.auto-wallpaper" in d["loaded"]["HEADLESS-1"]') == True ]] || fail "auto-wallpaper did not load when enabled: $st"
+[[ $(json 'd["intervals"].get("subcult.auto-wallpaper.rotate", {}).get("interval")') == 1800000 ]] || fail "auto-wallpaper timer not reported: $st"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.wallpaper next >/dev/null || fail "auto-wallpaper IPC failed"
+sleep 2
+[[ $(cat "$home1/.local/state/subcult/wallpaper" 2>/dev/null) == "$home1/walls/a.png" ]] || fail "auto-wallpaper did not write the first image: $(cat "$home1/.local/state/subcult/wallpaper" 2>/dev/null)"
+shot HEADLESS-1
+[[ $(pixel 640 300) == FF0000 ]] || fail "the background does not show the chosen wallpaper (got $(pixel 640 300))"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.wallpaper next >/dev/null
+sleep 2
+[[ $(cat "$home1/.local/state/subcult/wallpaper") == "$home1/walls/b.png" ]] || fail "auto-wallpaper did not go to the next image"
+rm -f "$home1/.local/state/subcult/wallpaper"
+check_log "$work/qs1.log"
+
+# Workspace names written after start reach the bar's labels; the switch
+# overlay answers its OSD call.
+mkdir -p "$home1/.config/subcult/shell"
+printf '{"workspaces": [{"id": 3, "name": "Workbench", "short": "wrk"}]}\n' >"$home1/.config/subcult/shell/workspaces.json"
+sleep 2
+st=$(status "$home1")
+[[ $(json 'd["workspaceLabels"].get("3")') == WRK ]] || fail "a workspace name did not reach the bar: $st"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.osd flash workspace >/dev/null 2>&1 || fail "the OSD has no workspace kind"
+st=$(status "$home1")
+[[ $(json 'd.get("osd")') == workspace ]] || fail "the workspace OSD did not show: $st"
+sleep 2
 
 # 2. A palette written after start applies without a restart.
 mkdir -p "$home1/.config/subcult/theme"

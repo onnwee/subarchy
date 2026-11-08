@@ -66,6 +66,31 @@ var sputnik = fixture{
 	usb: [][3]uint32{{0x8087, 0x0033, 0xe0}, {0x0c45, 0x6732, 0xef}, {0x27c6, 0x63ac, 0xef}, {0x1d6b, 0x0002, 0x09}},
 }
 
+func TestSelectDisplayLink(t *testing.T) {
+	dock := fixture{cpu: "GenuineIntel", pci: [][3]uint32{{0x8086, 0x46a6, 0x030000}}, usb: [][3]uint32{{0x17e9, 0x4301, 0x00}}}
+	m, err := Detect(dock.write(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !m.DisplayLink() {
+		t.Fatal("a 17e9 USB device is a DisplayLink adapter")
+	}
+	sel := Select(m)
+	for _, want := range []string{"evdi-dkms", "displaylink", "linux-zen-headers"} {
+		if !slices.Contains(sel.Packages, want) {
+			t.Errorf("packages %v lack %s", sel.Packages, want)
+		}
+	}
+	if !slices.Equal(sel.Services, []string{"displaylink"}) {
+		t.Errorf("services = %v", sel.Services)
+	}
+	plain := fixture{cpu: "GenuineIntel", usb: [][3]uint32{{0x046d, 0xc52b, 0x00}}}
+	m2, _ := Detect(plain.write(t))
+	if sel2 := Select(m2); m2.DisplayLink() || len(sel2.Services) != 0 || slices.Contains(sel2.Packages, "displaylink") {
+		t.Errorf("a Logitech receiver is not DisplayLink: %+v", sel2)
+	}
+}
+
 func TestSelect(t *testing.T) {
 	tests := []struct {
 		name   string

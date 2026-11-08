@@ -10,9 +10,12 @@ this directory to `/usr/share/subcult/default/`. Omarchy counterpart:
 | `apps.toml` | App catalogue read by `subcult app` (ADR 0044) |
 | `hypr/` | Hyprland Lua defaults (ADR 0032). `user-hyprland.lua` is the user's `~/.config/hypr/hyprland.lua` as the installer writes it: it runs `bootstrap.lua`, loads `subcult.lua`, then the user's overrides. Helpers live in the global `sub` table (`sub.bind`, `sub.launch`, `sub.alias` for a launcher alias's hotkey). |
 | `theme/subcult-minimal.json` | The default theme, `subcult-minimal`, in Theme Tender's palette-file format (schema 1, 26 roles, ANSI 0–15, terminal specials); what `tender apply` reads (ADR 0037) |
+| `theme/subarchy.toml` | The Theme Tender profile the installer applies for a new user (`tender apply -profile`): the default theme, every installed app |
 | `theme/palette.json` | The shell's palette, generated from `subcult-minimal.json` by `tools/theme/gen-palette.py` (`make verify` checks they agree); the user's `~/.config/subcult/theme/palette.json` overrides roles |
 | `shell/bar.json` | The bar layout; the user's `~/.config/subcult/shell/bar.json` overrides keys. `primary` and `full` name outputs by connector (`DP-3`) or by part of the monitor's description (`LG ULTRAGEAR`), so a monitor keeps its Full bar when it moves to another connector |
 | `chromium/extensions/` | Chromium external extension files (→ `/usr/share/chromium/extensions/`): Vencord Web for the Discord web app (ADR 0042) |
+
+| `shell/workspaces.json` | Workspace names: `{"workspaces": [{"id": 3, "name": "Workbench", "short": "WRK"}]}`; the user's `~/.config/subcult/shell/workspaces.json` replaces entries by id. The bar shows the token (or the number), the OSD shows the name on a switch |
 | `launcher/snippets.json` | The launcher's default snippets; the user's `~/.config/subcult/launcher/snippets.json` adds to them (ADR 0057) |
 | `launcher/quicklinks.json` | The launcher's web search engines and quicklinks; the user's `~/.config/subcult/launcher/quicklinks.json` adds or replaces them by keyword (ADR 0057) |
 | `launcher/favorites.json` | The launcher's home-screen favorites, by desktop entry id; the user's `~/.config/subcult/launcher/favorites.json` replaces the list (ADR 0057) |

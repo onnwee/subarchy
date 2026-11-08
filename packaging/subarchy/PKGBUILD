@@ -84,6 +84,10 @@ package() {
   install -Dm644 "$sys/subcult-update-check.timer" "$pkgdir/usr/lib/systemd/user/subcult-update-check.timer"
   install -dm755 "$pkgdir/usr/lib/systemd/user/timers.target.wants"
   ln -s ../subcult-update-check.timer "$pkgdir/usr/lib/systemd/user/timers.target.wants/subcult-update-check.timer"
+  # Calendar sync (ADR 0061); the command exits at once without a config.
+  install -Dm644 "$sys/subcult-calendar-sync.service" "$pkgdir/usr/lib/systemd/user/subcult-calendar-sync.service"
+  install -Dm644 "$sys/subcult-calendar-sync.timer" "$pkgdir/usr/lib/systemd/user/subcult-calendar-sync.timer"
+  ln -s ../subcult-calendar-sync.timer "$pkgdir/usr/lib/systemd/user/timers.target.wants/subcult-calendar-sync.timer"
   install -Dm644 "$sys/power-profile.rules" "$pkgdir/usr/lib/udev/rules.d/90-subarchy-power.rules"
   install -Dm644 "$sys/subcult-power-auto.service" "$pkgdir/usr/lib/systemd/system/subcult-power-auto.service"
   # GPU modes on hybrid laptops (ADR 0006).
@@ -125,6 +129,10 @@ package() {
   install -Dm644 "$sys/subcult-shell.service" "$pkgdir/usr/lib/systemd/user/subcult-shell.service"
   install -dm755 "$pkgdir/usr/lib/systemd/user/graphical-session.target.wants"
   ln -s ../subcult-shell.service "$pkgdir/usr/lib/systemd/user/graphical-session.target.wants/subcult-shell.service"
+  # Monitor layout profiles on dock and undock (rice port); idle until a
+  # monitor event arrives.
+  install -Dm644 "$sys/subcult-display.service" "$pkgdir/usr/lib/systemd/user/subcult-display.service"
+  ln -s ../subcult-display.service "$pkgdir/usr/lib/systemd/user/graphical-session.target.wants/subcult-display.service"
 
   # Migrations run once per user by `subcult update` (ADR 0026).
   install -dm755 "$pkgdir/usr/share/subcult/migrations"
