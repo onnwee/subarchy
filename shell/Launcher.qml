@@ -15,9 +15,11 @@ import "LauncherModel.js" as Model
 // gets an inline qalc answer ("=" asks the calculator alone); "@" and a
 // query with no match search the web; "." searches file names with fd
 // while typing (no index); ":" searches emoji and symbols and copies the
-// pick. A preview pane shows the selected file or symbol. Each alias the
-// user names is also a global shortcut, subcult:alias.<name>, for Hyprland
-// bindings.
+// pick. A preview pane shows the selected file or symbol. The last row of a
+// root search asks the default agent (`subcult app ask`); it says the text
+// leaves the machine, and the answer shows in the preview pane. Each alias
+// the user names is also a global shortcut, subcult:alias.<name>, for
+// Hyprland bindings.
 // Quickshell keeps the app list and refreshes it when desktop entries
 // change, but only in folders that existed when it first read them, so the
 // user's applications folder is created first. The window exists only while
@@ -47,6 +49,11 @@ PanelWindow { // qmllint disable uncreatable-type
   property string systemSymbols: ""
   property string preview: ""
   property bool previewAgain: false
+  // The default agent ({id, name}) from `subcult app ask --json`, read when
+  // the launcher opens; null hides the Ask row. A question being asked and
+  // its answer so far.
+  property var agent: null
+  property var asking: null
 
   readonly property string systemDir: (Quickshell.env("SUBCULT_PATH") || "/usr/share/subcult") + "/default/launcher/"
   readonly property string userDir: Quickshell.env("HOME") + "/.config/subcult/launcher/"
@@ -73,7 +80,7 @@ PanelWindow { // qmllint disable uncreatable-type
     || (launcher.parsed.mode === "root" && Model.looksLikeMath(launcher.parsed.text)) ? launcher.parsed.text : ""
   readonly property var results: launcher.open ? launcher.rows(launcher.query) : []
   readonly property var selected: launcher.results[launcher.index] || null
-  readonly property bool previewing: launcher.selected !== null && (launcher.selected.kind === "file" || launcher.selected.kind === "symbol")
+  readonly property bool previewing: launcher.selected !== null && (launcher.selected.kind === "file" || launcher.selected.kind === "symbol" || launcher.selected.kind === "ask")
   readonly property bool home: launcher.query.trim() === ""
   readonly property int columns: 4
 
@@ -100,6 +107,8 @@ PanelWindow { // qmllint disable uncreatable-type
   function rows(q) {
     if (launcher.argFor)
       return [launcher.argumentRow()]
+    if (launcher.asking)
+      return [Object.assign({}, launcher.asking.row, { name: launcher.asking.row.name, genericName: launcher.asking.answer === "" ? "Asking…" : "Answered; Enter copies the answer" })]
     const p = Model.parseQuery(q)
     const calc = launcher.calcResult.answer !== "" && launcher.calcResult.expr === launcher.calcExpr && launcher.calcExpr !== ""
       ? [{ kind: "calc", id: "calc", name: launcher.calcResult.answer, genericName: "= " + launcher.calcExpr + "   Enter copies the answer", icon: "accessories-calculator" }]
@@ -132,7 +141,8 @@ PanelWindow { // qmllint disable uncreatable-type
     out = out.concat(Model.rank(launcher.items, launcher.favorites, launcher.history, p.text, Date.now(), 50))
     if (out.length === 0 && t)
       out = [launcher.webRow(t)]
-    return out
+    const ask = Model.askRow(launcher.agent, p.text)
+    return ask ? out.concat([ask]) : out
   }
 
   // An alias's item, with the rest of the line as its arguments.
@@ -170,6 +180,7 @@ PanelWindow { // qmllint disable uncreatable-type
     launcher.index = 0
     commandList.running = true
     scriptList.running = true
+    agentInfo.running = true
     place.open()
     launcher.open = true
   }
@@ -177,6 +188,7 @@ PanelWindow { // qmllint disable uncreatable-type
   function hide() {
     launcher.open = false
     launcher.pending = null
+    launcher.asking = null
     launcher.argFor = null
     launcher.argValues = []
     launcher.query = ""
@@ -224,6 +236,20 @@ PanelWindow { // qmllint disable uncreatable-type
     } else if (row.kind === "symbol") {
       Quickshell.clipboardText = row.char
       launcher.remember(row.id)
+    } else if (row.kind === "ask") {
+      // The launcher stays open: the answer arrives in the preview pane.
+      // Enter on the answered row copies the answer.
+      if (launcher.asking && launcher.asking.answer !== "") {
+        Quickshell.clipboardText = launcher.asking.answer
+        launcher.hide()
+        return
+      }
+      if (launcher.asking)
+        return
+      launcher.asking = { row: row, answer: "" }
+      askRun.command = ["subcult", "app", "ask", "--", row.text]
+      askRun.running = true
+      return
     } else if (row.kind === "file") {
       Quickshell.execDetached(["uwsm-app", "--", "xdg-open", row.path])
       launcher.remember(row.id)
@@ -330,7 +356,10 @@ PanelWindow { // qmllint disable uncreatable-type
 
   onVisibleChanged: if (visible) field.forceActiveFocus()
   onResultsChanged: launcher.index = Model.move(0, 0, launcher.results.length)
-  onQueryChanged: launcher.pending = null
+  onQueryChanged: {
+    launcher.pending = null
+    launcher.asking = null
+  }
   onArgForChanged: field.forceActiveFocus()
   onCalcExprChanged: if (launcher.calcExpr !== "") calcDelay.restart()
   onParsedChanged: {
@@ -362,6 +391,24 @@ PanelWindow { // qmllint disable uncreatable-type
     onExited: if (launcher.fdAgain) {
       launcher.fdAgain = false
       launcher.findFiles()
+    }
+  }
+
+  Process {
+    id: askRun
+    stdout: StdioCollector {
+      onStreamFinished: if (launcher.asking) launcher.asking = { row: launcher.asking.row, answer: text.trim() === "" ? "(no answer)" : text.trim() }
+    }
+  }
+
+  // The default agent, read each time the launcher opens (the default
+  // picker may have changed it).
+  Process {
+    id: agentInfo
+    running: true
+    command: ["subcult", "app", "ask", "--json"]
+    stdout: StdioCollector {
+      onStreamFinished: launcher.agent = Model.agent(text)
     }
   }
 
@@ -458,6 +505,7 @@ PanelWindow { // qmllint disable uncreatable-type
     // Used by the tests: type a query, press Enter, read the state.
     function type(text: string): void { launcher.show(); launcher.query = text }
     function enter(): void { launcher.launch(launcher.pending || launcher.results[launcher.index], launcher.pending !== null) }
+    function last(): void { launcher.index = Model.move(launcher.results.length - 1, 0, launcher.results.length) }
     // What an alias's global shortcut does.
     function hotkey(name: string): void { launcher.runAlias(name) }
     function state(): string {
@@ -467,7 +515,8 @@ PanelWindow { // qmllint disable uncreatable-type
         argument: launcher.argFor ? launcher.argValues.length + 1 : 0,
         aliases: Object.keys(launcher.aliasNames),
         rows: launcher.results.map(r => ({ kind: r.kind || "app", id: r.id, name: r.name, url: r.url || "" })),
-        preview: launcher.previewing ? (launcher.selected.kind === "symbol" ? launcher.selected.char : launcher.preview) : ""
+        preview: launcher.previewing ? (launcher.selected.kind === "symbol" ? launcher.selected.char
+          : launcher.selected.kind === "ask" ? (launcher.asking ? launcher.asking.answer : "") : launcher.preview) : ""
       })
     }
     // The ids a query ranks, as JSON (used by the tests).
@@ -581,6 +630,8 @@ PanelWindow { // qmllint disable uncreatable-type
             const down = launcher.home ? launcher.columns : 1
             if (event.key === Qt.Key_Escape && launcher.pending)
               launcher.pending = null
+            else if (event.key === Qt.Key_Escape && launcher.asking)
+              launcher.asking = null
             else if (event.key === Qt.Key_Escape && launcher.argFor) {
               launcher.argFor = null
               launcher.argValues = []
@@ -805,6 +856,21 @@ PanelWindow { // qmllint disable uncreatable-type
           color: Theme.subtext
           font.family: Style.fontFamily
           font.pixelSize: Style.fontSize - 1
+        }
+        Text {
+          visible: launcher.selected !== null && launcher.selected.kind === "ask"
+          x: Style.spacing
+          y: Style.spacing
+          width: parent.width - 2 * Style.spacing
+          text: launcher.asking ? (launcher.asking.answer === "" ? "Asking " + launcher.agent.name + "…" : launcher.asking.answer)
+            : "Enter sends the text to " + (launcher.agent ? launcher.agent.name : "the agent") + "'s provider. It leaves this machine."
+          textFormat: Text.PlainText
+          wrapMode: Text.Wrap
+          elide: Text.ElideRight
+          maximumLineCount: 9
+          color: launcher.asking ? Theme.text : Theme.warning
+          font.family: Style.uiFontFamily
+          font.pixelSize: Style.fontSize
         }
       }
 
