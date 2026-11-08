@@ -224,6 +224,9 @@ zram-size = ram / 2
 compression-algorithm = zstd
 EOF
 
+  # Trust the Subarchy repository's key (ADR 0025); pacstrap -K initialised
+  # the keyring before the keyring package's install script could.
+  arch-chroot "$target" pacman-key --populate subarchy >/dev/null
   arch-chroot "$target" systemctl enable --quiet NetworkManager systemd-timesyncd sddm \
     systemd-resolved ufw apparmor avahi-daemon bluetooth power-profiles-daemon subcult-power-auto
   # thermald comes with Intel CPUs from hardware detection (ADR 0021).

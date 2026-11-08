@@ -45,16 +45,22 @@ AUR packages the decisions so far need, all currently served only by
 First candidate: the package registry on `git.subcult.tv`. On 2026-11-06 it
 reported version `28.3.0`. Gitea's documentation describes an Arch registry
 at `/api/packages/{owner}/arch/{repository}/{arch}`, uploads by `PUT`, and a
-verification key at `/api/packages/{owner}/arch/repository.key`. The
-documentation does not say whether a Subarchy-owned key can sign the
-database. If it cannot, Gitea's own key becomes the trust root, or the
-repository moves to a static host with `repo-add` and our key. Test this
-before building on it.
+verification key at `/api/packages/{owner}/arch/repository.key`. Answered
+2026-11-08 (issue #44): the registry signs the database and every package it
+serves with a key of its own, generated per instance and published at
+`repository.key`; nothing a client uploads carries our signature into the
+repository. On `git.subcult.tv` that key is `CCE8 B0F3 BCDD 601D 9097 73E4
+466A A6E8 2414 53D2` ("Arch Registry", RSA 2048, created 2026-11-07). So the
+trust root for the package repository is the registry's key, carried by
+`subarchy-keyring`; the owner's own signing key stays for what Subarchy
+publishes outside the registry (release images and their checksums). A new
+registry key, or a move to a static host with `repo-add`, means a new
+keyring release.
 
 ## Consequences
 
-- A `subarchy-keyring` package installs and trusts the signing key, like
-  `omarchy-keyring`.
+- A `subarchy-keyring` package installs and trusts the registry's key, like
+  `omarchy-keyring` does for Omarchy's.
 - CI must rebuild DKMS and AUR packages when their upstream changes, and
   rebuild against the staged Arch snapshot ([[0026-update-model|ADR 0026]]).
 - The owner holds the signing key; it is on `soyuz` (2026-11-07), and the
@@ -67,5 +73,10 @@ before building on it.
   `packaging/aur/build.sh` builds them in a clean `archlinux` container into
   the local, unsigned test repository `build/repo`. Signing and hosting are
   still open.
+- 2026-11-08: `packaging/subarchy-keyring` (issue #64) ships the registry's
+  key as the `subarchy` pacman keyring with full trust; its install script
+  and the installer run `pacman-key --populate subarchy`, so a system is
+  ready for `SigLevel = Required` on the `[subarchy]` repository the moment
+  packages are published there (#67).
 
 Related: [[decision-map|Decision map]] · [[0026-update-model|ADR 0026]] · [[0027-third-party-software|ADR 0027]]
