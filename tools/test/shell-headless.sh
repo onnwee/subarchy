@@ -374,6 +374,11 @@ for _ in $(seq 10); do inhibitor || break; sleep 0.5; done
 ! inhibitor || fail "keep-awake off left the inhibitor: $(pgrep -u "$(id -u)" -af '[s]ystemd-inhibit --what=idle' | head -3); $(status "$home1")"
 [[ ! -e "$home1/.local/state/subcult/keep-awake" ]] || fail "keep-awake off left the state file"
 
+# The media widget loads and stays hidden without a player (no MPRIS here).
+st=$(status "$home1")
+[[ $(json '"subcult.media" in d["loaded"]["HEADLESS-1"] and "subcult.media" not in d["shown"]["HEADLESS-1"]') == True ]] ||
+  fail "the media widget is not loaded-and-hidden without a player: $st"
+
 # 2. A palette written after start applies without a restart.
 mkdir -p "$home1/.config/subcult/theme"
 printf '{"schema": 1, "colors": {"base": "#FF0000", "surface0": "#00FF00"}}\n' >"$home1/.config/subcult/theme/palette.json"

@@ -81,6 +81,17 @@
         "kind": "bar-widget"
       }
     },
+    "subcult.media": {
+      "dir": "media",
+      "manifest": {
+        "id": "subcult.media",
+        "name": "Media",
+        "version": "1.0.0",
+        "api": 0,
+        "kind": "bar-widget",
+        "panel": true
+      }
+    },
     "subcult.menu": {
       "dir": "menu",
       "manifest": {
