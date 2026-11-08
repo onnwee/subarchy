@@ -67,6 +67,19 @@ any window. The state is `~/.local/state/subcult/keep-awake` (`1`, or
 absent), so a shell restart keeps it; `subcult.shell keepAwake true|false`
 sets it over IPC.
 
+## Alerts
+
+`shell/services/Alerts.qml` sends two kinds of notification, both event-driven.
+Battery: low at 20 % and critical at 10 % while on battery, once per crossing,
+re-armed five points above the threshold or by a charge (UPower property
+changes). Temperature: a `hot` or `critical` trip point crossed, from the
+kernel's thermal netlink events through `subcult thermal watch`, a process
+that sleeps on the socket and prints one JSON line per crossing. A trip
+alerts once per excursion (it must come back down first) and a zone keeps a
+cooldown of 20 minutes (hot) or 5 minutes (critical). `subcult thermal zones`
+lists the zones and trips a machine defines. The governor's `passive` and
+`active` trips are ignored.
+
 ## Privacy marks
 
 The indicators show, in the error colour, a microphone, a camera and a
