@@ -39,6 +39,10 @@ ShellRoot {
     id: launcher
   }
 
+  // Battery alerts: a singleton with nothing to show; referenced here so
+  // it exists for the session.
+  readonly property bool alertsReady: Alerts.state !== null
+
   IpcHandler {
     target: "subcult.shell"
 
