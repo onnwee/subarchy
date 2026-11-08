@@ -62,9 +62,10 @@ var radioFirmware = map[uint16]string{
 var btUSBVendors = map[uint16]bool{0x8087: true, 0x0cf3: true}
 
 const (
-	vendorIntel  = 0x8086
-	vendorAMD    = 0x1002
-	vendorNVIDIA = 0x10de
+	vendorIntel       = 0x8086
+	vendorAMD         = 0x1002
+	vendorNVIDIA      = 0x10de
+	vendorDisplayLink = 0x17e9 // USB graphics adapters (the evdi driver)
 )
 
 // NVIDIA driver generations by PCI device ID (ADR 0006).
@@ -99,9 +100,21 @@ func (m Machine) Hybrid() bool {
 	return integrated && nvidia
 }
 
-// Selection is the package set and the reasons for it.
+// DisplayLink reports a DisplayLink USB graphics adapter (sputnik's dock).
+func (m Machine) DisplayLink() bool {
+	for _, d := range m.Devices {
+		if d.Bus == "usb" && d.Vendor == vendorDisplayLink {
+			return true
+		}
+	}
+	return false
+}
+
+// Selection is the package set, the system services the installer enables
+// for it, and the reasons.
 type Selection struct {
 	Packages []string
+	Services []string
 	Notes    []string
 }
 
@@ -158,6 +171,13 @@ func Select(m Machine) Selection {
 	if m.CirrusAmp {
 		add("linux-firmware-cirrus")
 	}
+	var services []string
+	if m.DisplayLink() {
+		// The evdi module is built by DKMS, so the kernel headers come too.
+		add("evdi-dkms", "displaylink", "linux-zen-headers", "linux-lts-headers")
+		services = append(services, "displaylink")
+		notes = append(notes, "DisplayLink adapter: evdi (DKMS) and the DisplayLink manager; displaylink.service is enabled")
+	}
 	if fullFirmware {
 		for p := range set {
 			if strings.HasPrefix(p, "linux-firmware-") {
@@ -177,7 +197,7 @@ func Select(m Machine) Selection {
 		pkgs = append(pkgs, p)
 	}
 	sort.Strings(pkgs)
-	return Selection{Packages: pkgs, Notes: notes}
+	return Selection{Packages: pkgs, Services: services, Notes: notes}
 }
 
 // virtualVendor reports emulated devices that need no firmware.

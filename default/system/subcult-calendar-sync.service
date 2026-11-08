@@ -1,0 +1,8 @@
+[Unit]
+Description=Sync CalDAV and iCal calendars into the shell's cache (ADR 0061)
+Documentation=https://git.subcult.tv/subculture-collective/subarchy
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/subcult-calendar sync

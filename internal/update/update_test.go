@@ -201,6 +201,14 @@ func TestOrphans(t *testing.T) {
 	}
 }
 
+func TestCheckDKMSCoversEvdi(t *testing.T) {
+	status := "evdi/1.15.1, 7.2.14-zen1-1-zen, x86_64: installed\nnvidia/580.196.07, 7.2.14-zen1-1-zen, x86_64: installed\nnvidia/580.196.07, 6.18.60-1-lts, x86_64: installed\n"
+	got := CheckDKMS(status, []string{"7.2.14-zen1-1-zen", "6.18.60-1-lts"})
+	if !slices.Equal(got, []string{"evdi/1.15.1 for 6.18.60-1-lts"}) {
+		t.Errorf("got %q", got)
+	}
+}
+
 func TestCheckDKMS(t *testing.T) {
 	kernels := []string{"6.18.60-1-lts", "7.2.14-zen1-1-zen"}
 	status := "nvidia/580.95.05, 7.2.14-zen1-1-zen, x86_64: installed\n" +

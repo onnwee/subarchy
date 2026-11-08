@@ -282,6 +282,9 @@ def boot(disk: Path, vars_file: Path) -> bool:
         results["discord"] = serial.run(
             "test -f /usr/share/applications/discord.desktop"
             " && test -f /usr/share/chromium/extensions/cbghhgpcnddeihccjmnadmkaejncjndb.json && echo WEBAPP_OK")
+
+        # Theme Tender applied the default theme for the new user (ADR 0037).
+        results["tender"] = serial.run("tender doctor 2>&1; echo TENDER_RC=$?", timeout=60)
         results["cursor"] = serial.run("ls /usr/share/icons/subcult-cursor/cursors/left_ptr /usr/share/icons/subcult-cursor/hyprcursors/default.hlc")
         # The bar and the idle sample come first, before any window is open.
         screendump(qmp, VM / "bar.png")
@@ -415,6 +418,8 @@ def boot(disk: Path, vars_file: Path) -> bool:
         "GTK icons and cursor": "'Papirus-Dark'" in r["gtk"] and "'subcult-cursor'" in r["gtk"],
         "cursor theme installed": "No such file" not in r["cursor"] and "left_ptr" in r["cursor"],
         "Discord web app and Vencord Web installed": "WEBAPP_OK" in r["discord"],
+
+        "tender doctor passes with subcult-minimal applied": "TENDER_RC=0" in r["tender"] and "subcult-minimal" in r["tender"],
         "shell sees battery power": '"onBattery":true' in r["battery"],
         "shell back on AC with the real UPower": '"onBattery":false' in r["ac_again"],
         "keep-awake inhibits idle, survives a shell restart, releases": r["keep_awake"].split() == ["1", "1", "0"],

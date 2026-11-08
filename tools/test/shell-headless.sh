@@ -424,18 +424,37 @@ inhibitor() { pgrep -u "$(id -u)" -f '[s]ystemd-inhibit --what=idle --who=SUBCUL
 HOME=$home1 quickshell ipc -p "$shell" call subcult.shell keepAwake true >/dev/null
 for _ in $(seq 10); do inhibitor && break; sleep 0.5; done
 inhibitor || fail "keep-awake holds no inhibitor: $(status "$home1")"
+for _ in $(seq 10); do [[ $(cat "$home1/.local/state/subcult/keep-awake" 2>/dev/null) == 1 ]] && break; sleep 0.5; done
 [[ $(cat "$home1/.local/state/subcult/keep-awake" 2>/dev/null) == 1 ]] || fail "keep-awake state not saved"
 st=$(status "$home1")
 [[ $(json 'd.get("keepAwake")') == True ]] || fail "keep-awake not reported on: $st"
 HOME=$home1 quickshell ipc -p "$shell" call subcult.shell keepAwake false >/dev/null
 for _ in $(seq 10); do inhibitor || break; sleep 0.5; done
 ! inhibitor || fail "keep-awake off left the inhibitor: $(pgrep -u "$(id -u)" -af '[s]ystemd-inhibit --what=idle' | head -3); $(status "$home1")"
+for _ in $(seq 10); do [[ ! -e "$home1/.local/state/subcult/keep-awake" ]] && break; sleep 0.5; done
 [[ ! -e "$home1/.local/state/subcult/keep-awake" ]] || fail "keep-awake off left the state file"
 
 # The media widget loads and stays hidden without a player (no MPRIS here).
 st=$(status "$home1")
 [[ $(json '"subcult.media" in d["loaded"]["HEADLESS-1"] and "subcult.media" not in d["shown"]["HEADLESS-1"]') == True ]] ||
   fail "the media widget is not loaded-and-hidden without a player: $st"
+
+# A widget's click-out panel: the audio panel opens on request (no
+# PipeWire here, so it shows no devices), one at a time, and closes.
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.audio >/dev/null
+sleep 1
+st=$(status "$home1")
+[[ $(json 'd.get("panel")') == subcult.audio ]] || fail "the audio panel did not open: $st"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.audio >/dev/null
+sleep 1
+st=$(status "$home1")
+[[ $(json 'd.get("panel")') == "" ]] || fail "a second request did not close the panel: $st"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.audio >/dev/null
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
+sleep 1
+st=$(status "$home1")
+[[ $(json 'd.get("panel")') == "" ]] || fail "the panel did not close: $st"
+check_log "$work/qs1.log"
 
 # 2. A palette written after start applies without a restart.
 mkdir -p "$home1/.config/subcult/theme"
