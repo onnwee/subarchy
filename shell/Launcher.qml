@@ -9,10 +9,13 @@ import qs.Commons
 import "LauncherModel.js" as Model
 
 // The launcher (ADR 0057), opened with Super+Space through a global
-// shortcut. Typing searches the desktop entries and the subcult commands;
-// an empty query shows the favorites. Pinned favorites come first, then
-// frecency from the history file. Math gets an inline qalc answer ("=" asks
-// the calculator alone); "@" and a query with no match search the web. Quickshell keeps the app list and refreshes it when desktop entries
+// shortcut. Typing searches the desktop entries, the subcult commands, the
+// user's script commands and snippets; an empty query shows the favorites.
+// Pinned favorites come first, then frecency from the history file. Math
+// gets an inline qalc answer ("=" asks the calculator alone); "@" and a
+// query with no match search the web. Each alias the user names is also a
+// global shortcut, subcult:alias.<name>, for Hyprland bindings.
+// Quickshell keeps the app list and refreshes it when desktop entries
 // change, but only in folders that existed when it first read them, so the
 // user's applications folder is created first. The window exists only while
 // open.
@@ -27,16 +30,22 @@ PanelWindow { // qmllint disable uncreatable-type
   // A dangerous command waiting for Enter to confirm it.
   property var pending: null
   property var commands: []
+  property var scripts: []
+  // A script command asking for its arguments, and those typed so far.
+  property var argFor: null
+  property var argValues: []
   property var calcResult: ({ expr: "", answer: "" })
   property bool calcAgain: false
 
   readonly property string systemDir: (Quickshell.env("SUBCULT_PATH") || "/usr/share/subcult") + "/default/launcher/"
   readonly property string userDir: Quickshell.env("HOME") + "/.config/subcult/launcher/"
+  readonly property string scriptDir: Quickshell.env("HOME") + "/.config/subcult/commands"
   readonly property string dataHome: Quickshell.env("XDG_DATA_HOME") || Quickshell.env("HOME") + "/.local/share"
   readonly property string historyPath: (Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/subcult/launcher/history.json"
 
   property var systemFavorites: []
   property string systemQuicklinks: ""
+  property string systemSnippets: ""
   property bool entriesReady: false
   readonly property var favorites: Model.favorites(userFavorites.text) || launcher.systemFavorites
   readonly property var history: Model.parseHistory(historyFile.text)
@@ -44,6 +53,9 @@ PanelWindow { // qmllint disable uncreatable-type
     .filter(e => !e.noDisplay)
     .map(e => ({ id: e.id, name: e.name, genericName: e.genericName, keywords: e.keywords, icon: e.icon }))
   readonly property var quicklinks: Model.quicklinks(launcher.systemQuicklinks, userQuicklinks.text)
+  readonly property var snippets: Model.snippets(launcher.systemSnippets, userSnippets.text)
+  readonly property var aliasNames: Model.aliases(aliasFile.text)
+  readonly property var items: launcher.apps.concat(launcher.commands, launcher.scripts, launcher.snippets)
   readonly property var parsed: Model.parseQuery(launcher.query)
   readonly property string calcExpr: launcher.parsed.mode === "calc"
     || (launcher.parsed.mode === "root" && Model.looksLikeMath(launcher.parsed.text)) ? launcher.parsed.text : ""
@@ -72,6 +84,8 @@ PanelWindow { // qmllint disable uncreatable-type
   // The rows for a query: apps and commands, plus a calculator answer, a
   // command with its arguments, or a web search, as the query asks.
   function rows(q) {
+    if (launcher.argFor)
+      return [launcher.argumentRow()]
     const p = Model.parseQuery(q)
     const calc = launcher.calcResult.answer !== "" && launcher.calcResult.expr === launcher.calcExpr && launcher.calcExpr !== ""
       ? [{ kind: "calc", id: "calc", name: launcher.calcResult.answer, genericName: "= " + launcher.calcExpr + "   Enter copies the answer", icon: "accessories-calculator" }]
@@ -87,6 +101,9 @@ PanelWindow { // qmllint disable uncreatable-type
     if (p.text === "")
       return Model.rank(launcher.apps, launcher.favorites, launcher.history, "", Date.now(), 50)
     let out = calc
+    const alias = Model.resolveAlias(launcher.aliasNames, launcher.items, p.text)
+    if (alias)
+      out = out.concat([launcher.aliasRow(alias)])
     const call = Model.commandCall(launcher.commands, p.text)
     if (call && call.args.length > 0)
       out = out.concat([{ kind: "command", id: call.command.id, name: call.command.name + " " + call.args.join(" "), genericName: "Run " + call.command.id + " with these arguments", icon: "utilities-terminal", args: call.args, dangerous: call.command.dangerous }])
@@ -94,10 +111,31 @@ PanelWindow { // qmllint disable uncreatable-type
     const t = Model.webTarget(launcher.quicklinks, p.text)
     if (t && launcher.quicklinks.links[first] && t.key === first)
       out = out.concat([launcher.webRow(t)])
-    out = out.concat(Model.rank(launcher.apps.concat(launcher.commands), launcher.favorites, launcher.history, p.text, Date.now(), 50))
+    out = out.concat(Model.rank(launcher.items, launcher.favorites, launcher.history, p.text, Date.now(), 50))
     if (out.length === 0 && t)
       out = [launcher.webRow(t)]
     return out
+  }
+
+  // An alias's item, with the rest of the line as its arguments.
+  function aliasRow(a) {
+    const it = a.item
+    if (it.kind === "command" && a.rest !== "") {
+      const args = a.rest.split(/\s+/)
+      return Object.assign({}, it, { name: it.name + " " + args.join(" "), args: args })
+    }
+    if (it.kind === "script")
+      return Object.assign({}, it, { given: Model.splitArgs(a.rest, (it.params || []).length) })
+    return it
+  }
+
+  function argumentRow() {
+    const s = launcher.argFor
+    const i = launcher.argValues.length
+    const param = s.params[i]
+    return { kind: "argument", id: s.id, name: s.name, icon: s.icon,
+      genericName: "Argument " + (i + 1) + " of " + s.params.length + ": " + param.placeholder
+        + (param.optional ? " (optional)" : "") + "   Enter continues, Escape goes back" }
   }
 
   function webRow(t) {
@@ -109,8 +147,11 @@ PanelWindow { // qmllint disable uncreatable-type
       return
     launcher.query = ""
     launcher.pending = null
+    launcher.argFor = null
+    launcher.argValues = []
     launcher.index = 0
     commandList.running = true
+    scriptList.running = true
     launcher.openScreen = Quickshell.screens.find(s => Hyprland.focusedMonitor && s.name === Hyprland.focusedMonitor.name) || Quickshell.screens[0]
     launcher.open = true
   }
@@ -118,6 +159,8 @@ PanelWindow { // qmllint disable uncreatable-type
   function hide() {
     launcher.open = false
     launcher.pending = null
+    launcher.argFor = null
+    launcher.argValues = []
     launcher.query = ""
   }
 
@@ -130,7 +173,35 @@ PanelWindow { // qmllint disable uncreatable-type
       launcher.query = "@" + row.id + " "
       return
     }
-    if (row.kind === "calc") {
+    if (row.kind === "argument") {
+      const values = launcher.argValues.concat([launcher.query.trim()])
+      const script = launcher.argFor
+      if (values[values.length - 1] === "" && !script.params[values.length - 1].optional)
+        return
+      if (values.length < script.params.length) {
+        launcher.argValues = values
+        launcher.query = ""
+        return
+      }
+      launcher.runScript(script, values)
+    } else if (row.kind === "script") {
+      if (row.dangerous && !confirmed) {
+        launcher.pending = row
+        return
+      }
+      const given = row.given || []
+      if (given.length < Model.requiredArgs(row)) {
+        launcher.show()
+        launcher.query = ""
+        launcher.argValues = given
+        launcher.argFor = row
+        return
+      }
+      launcher.runScript(row, given)
+    } else if (row.kind === "snippet") {
+      launcher.paste(Model.expand(row.text, new Date(), Quickshell.clipboardText))
+      launcher.remember(row.id)
+    } else if (row.kind === "calc") {
       Quickshell.clipboardText = row.name
     } else if (row.kind === "web") {
       Quickshell.execDetached(["uwsm-app", "--", "xdg-open", row.url])
@@ -149,6 +220,36 @@ PanelWindow { // qmllint disable uncreatable-type
       launcher.remember(row.id)
     }
     launcher.hide()
+  }
+
+  function runScript(script, values) {
+    while (values.length > 0 && values[values.length - 1] === "")
+      values = values.slice(0, -1)
+    Quickshell.execDetached(Model.scriptArgv(script, values, Quickshell.env("HOME")))
+    launcher.remember(script.id)
+  }
+
+  // Types the text into the window that had the focus, once the launcher
+  // has closed and given it back.
+  function paste(text) {
+    Quickshell.execDetached(["sh", "-c", 'sleep 0.2; exec wtype -- "$1"', "sh", text])
+  }
+
+  // A hotkey bound to an alias: run its item as Enter would, opening the
+  // launcher only to confirm or to ask for arguments.
+  function runAlias(name) {
+    const target = launcher.aliasNames[name]
+    const item = launcher.items.find(i => i.id === target)
+    if (!item) {
+      console.warn("subcult launcher: alias", name, "names nothing:", target)
+      return
+    }
+    if (item.dangerous) {
+      launcher.show()
+      launcher.pending = item
+      return
+    }
+    launcher.launch(item, false)
   }
 
   function remember(id) {
@@ -175,6 +276,7 @@ PanelWindow { // qmllint disable uncreatable-type
   onVisibleChanged: if (visible) field.forceActiveFocus()
   onResultsChanged: launcher.index = Model.move(0, 0, launcher.results.length)
   onQueryChanged: launcher.pending = null
+  onArgForChanged: field.forceActiveFocus()
   onCalcExprChanged: if (launcher.calcExpr !== "") calcDelay.restart()
 
   Timer {
@@ -195,12 +297,37 @@ PanelWindow { // qmllint disable uncreatable-type
     }
   }
 
-  // Read again each time the launcher opens, so new commands show up.
+  // Read at start (aliases may name them) and again each time the launcher
+  // opens, so new commands and scripts show up.
   Process {
     id: commandList
+    running: true
     command: ["subcult", "commands", "--json"]
     stdout: StdioCollector {
       onStreamFinished: launcher.commands = Model.commands(text)
+    }
+  }
+
+  // The script commands: each executable file's path and first lines.
+  Process {
+    id: scriptList
+    running: true
+    command: ["sh", "-c", 'for f in "$1"/*; do [ -f "$f" ] && [ -x "$f" ] || continue; printf "\\036%s\\n" "$f"; head -n 40 -- "$f"; done', "sh", launcher.scriptDir]
+    stdout: StdioCollector {
+      onStreamFinished: launcher.scripts = Model.scripts(text)
+    }
+  }
+
+  // One global shortcut per alias, for Hyprland bindings:
+  //   sub.bind("SUPER + ALT + U", "Update", sub.alias("up"))
+  Variants {
+    model: Object.keys(launcher.aliasNames)
+    delegate: GlobalShortcut {
+      required property string modelData
+      appid: "subcult"
+      name: "alias." + modelData
+      description: "Launcher alias " + modelData
+      onPressed: launcher.runAlias(modelData)
     }
   }
 
@@ -220,10 +347,14 @@ PanelWindow { // qmllint disable uncreatable-type
     // Used by the tests: type a query, press Enter, read the state.
     function type(text: string): void { launcher.show(); launcher.query = text }
     function enter(): void { launcher.launch(launcher.pending || launcher.results[launcher.index], launcher.pending !== null) }
+    // What an alias's global shortcut does.
+    function hotkey(name: string): void { launcher.runAlias(name) }
     function state(): string {
       return JSON.stringify({
         query: launcher.query,
         pending: launcher.pending ? launcher.pending.id : "",
+        argument: launcher.argFor ? launcher.argValues.length + 1 : 0,
+        aliases: Object.keys(launcher.aliasNames),
         rows: launcher.results.map(r => ({ kind: r.kind || "app", id: r.id, name: r.name, url: r.url || "" }))
       })
     }
@@ -259,6 +390,23 @@ PanelWindow { // qmllint disable uncreatable-type
   WatchedFile {
     id: userQuicklinks
     path: launcher.userDir + "quicklinks.json"
+  }
+
+  FileView {
+    path: launcher.systemDir + "snippets.json"
+    blockLoading: true
+    printErrors: false
+    onLoaded: launcher.systemSnippets = text()
+  }
+
+  WatchedFile {
+    id: userSnippets
+    path: launcher.userDir + "snippets.json"
+  }
+
+  WatchedFile {
+    id: aliasFile
+    path: launcher.userDir + "aliases.json"
   }
 
   WatchedFile {
@@ -321,6 +469,11 @@ PanelWindow { // qmllint disable uncreatable-type
             const down = launcher.home ? launcher.columns : 1
             if (event.key === Qt.Key_Escape && launcher.pending)
               launcher.pending = null
+            else if (event.key === Qt.Key_Escape && launcher.argFor) {
+              launcher.argFor = null
+              launcher.argValues = []
+              launcher.query = ""
+            }
             else if (event.key === Qt.Key_Escape)
               launcher.hide()
             else if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && launcher.pending)
@@ -343,7 +496,8 @@ PanelWindow { // qmllint disable uncreatable-type
           Text {
             visible: field.text === ""
             anchors.verticalCenter: parent.verticalCenter
-            text: "Search apps and commands, = calculate, @ search the web"
+            text: launcher.argFor ? launcher.argFor.params[launcher.argValues.length].placeholder
+              : "Search apps, commands and snippets, = calculate, @ search the web"
             color: Theme.muted
             font: field.font
           }

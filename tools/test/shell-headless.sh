@@ -262,6 +262,46 @@ else
 fi
 launcher close >/dev/null
 
+# Script commands with Raycast headers, aliases and snippets. The script
+# runs silently and writes its argument where the test can read it.
+lfield() { # field of the launcher's state
+  python3 -c "import json,sys; print(json.loads(sys.argv[1])[sys.argv[2]])" "$(launcher state)" "$1"
+}
+mkdir -p "$home1/.config/subcult/commands"
+cat >"$home1/.config/subcult/commands/greet.sh" <<'SCRIPT'
+#!/bin/sh
+# @raycast.schemaVersion 1
+# @raycast.title Greet someone
+# @raycast.mode silent
+# @raycast.argument1 { "type": "text", "placeholder": "Name" }
+printf '%s\n' "$1" >"$HOME/greet-out"
+SCRIPT
+chmod +x "$home1/.config/subcult/commands/greet.sh"
+printf '{"aliases": {"hi": "script:greet.sh", "fs": "subcult font set"}}\n' >"$home1/.config/subcult/launcher/aliases.json"
+printf '{"snippets": [{"name": "Sign-off", "keyword": "sig", "text": "Best, {date}"}]}\n' >"$home1/.config/subcult/launcher/snippets.json"
+sleep 1
+ls=$(lstate "greet")
+[[ $(row '(r[0]["kind"], r[0]["id"])') == "('script', 'script:greet.sh')" ]] || fail "a Raycast script is not a command: $ls"
+launcher enter >/dev/null
+[[ $(lfield argument) == 1 ]] || fail "the script did not ask for its argument: $(launcher state)"
+launcher type "world" >/dev/null
+launcher enter >/dev/null
+sleep 1
+[[ $(cat "$home1/greet-out" 2>/dev/null) == world ]] || fail "the script did not run with its argument"
+ls=$(lstate "hi there friend")
+[[ $(row 'r[0]["id"]') == "script:greet.sh" ]] || fail "an alias does not lead: $ls"
+launcher enter >/dev/null
+sleep 1
+[[ $(cat "$home1/greet-out" 2>/dev/null) == "there friend" ]] || fail "an alias did not pass its arguments"
+launcher close >/dev/null
+[[ $(lfield aliases) == "['hi', 'fs']" ]] || fail "the aliases are not registered: $(launcher state)"
+launcher hotkey hi >/dev/null
+[[ $(lfield argument) == 1 ]] || fail "an alias hotkey for a script with an argument did not ask for it: $(launcher state)"
+launcher close >/dev/null
+ls=$(lstate "sig")
+[[ $(row '(r[0]["kind"], r[0]["name"])') == "('snippet', 'Sign-off')" ]] || fail "snippets are not searched: $ls"
+launcher close >/dev/null
+
 # 2. A palette written after start applies without a restart.
 mkdir -p "$home1/.config/subcult/theme"
 printf '{"schema": 1, "colors": {"base": "#FF0000", "surface0": "#00FF00"}}\n' >"$home1/.config/subcult/theme/palette.json"

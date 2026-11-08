@@ -26,6 +26,8 @@ kitty
 quickshell
 papirus-icon-theme
 brightnessctl
+libnotify
+wtype
 libsecret
 mpv
 librsvg

@@ -42,14 +42,14 @@ off with `systemctl --user mask subcult-shell`, not `disable`.
 Keys reach the shell as Hyprland global shortcuts with the appid `subcult`:
 `default/hypr/bindings.lua` binds them with `hl.dsp.global("subcult:<name>")`
 and Quickshell `GlobalShortcut` objects receive them, so a key press starts
-no process. The names are `launcher-toggle`, `altswitch-next`,
+no process. The names are `launcher-toggle`, `alias.<name>`, `altswitch-next`,
 `altswitch-prev`, `altswitch-commit`, `brightness-up` and `brightness-down`; `hyprctl dispatch
 'hl.dsp.global("subcult:altswitch-next")'` sends one by hand.
 
 IPC: `quickshell ipc -p /usr/share/subcult/shell show` lists the targets
 (`subcult.shell status`, `subcult.osd flash <volume|brightness|capslock>`,
 `subcult.altswitch next|prev|commit|cancel`,
-`subcult.launcher open|close|toggle|clearHistory|search <query>|type <query>|enter|state`).
+`subcult.launcher open|close|toggle|clearHistory|search <query>|type <query>|enter|hotkey <alias>|state`).
 Tests and scripts use it; the key bindings do not.
 
 ## Launcher
@@ -76,6 +76,26 @@ start through `uwsm-app -- <id>.desktop`.
 - Favorites: `/usr/share/subcult/default/launcher/favorites.json`, replaced
   by `~/.config/subcult/launcher/favorites.json` when that file has a
   `favorites` list of desktop entry ids.
+- Script commands: executable files in `~/.config/subcult/commands/` with a
+  `@raycast.title` (or `@subcult.title`) comment, read each time the
+  launcher opens. Raycast's `mode`, `argument1`–`argument3` (`placeholder`,
+  `optional`, `percentEncoded`), `description`, `packageName`,
+  `needsConfirmation` and `currentDirectoryPath` keys work as in Raycast, so
+  Raycast script commands run unchanged. `fullOutput` runs in a terminal,
+  `compact` shows the last output line as a notification, `silent` shows
+  nothing; `inline` runs as `compact` (no refresh timers). Missing arguments
+  are asked for one at a time.
+- Snippets: `/usr/share/subcult/default/launcher/snippets.json` and the
+  user's `snippets.json` (`{"snippets": [{"name", "keyword", "text"}]}`).
+  Enter fills `{date}`, `{time}` and `{clipboard}` and types the text into
+  the focused window with `wtype`.
+- Aliases: `~/.config/subcult/launcher/aliases.json`
+  (`{"aliases": {"up": "subcult update", "hi": "script:greet.sh"}}`) names
+  any item by its id: an app id, a command route, `script:<file>` or
+  `snippet:<name>`. Typing the alias puts its item first, and words after
+  it become arguments. Each alias is also the global shortcut
+  `subcult:alias.<name>`; bind a key to it in `~/.config/hypr/hyprland.lua`
+  with `sub.bind("SUPER + ALT + U", "Update", sub.alias("up"))`.
 - Quicklinks: `/usr/share/subcult/default/launcher/quicklinks.json`
   (`default` engine, DuckDuckGo, plus `g`, `yt`, `gh`, `aur`, `wiki`, `aw`);
   `~/.config/subcult/launcher/quicklinks.json` adds or replaces links by

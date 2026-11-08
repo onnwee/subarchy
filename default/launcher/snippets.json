@@ -1,0 +1,6 @@
+{
+  "snippets": [
+    { "name": "Today's date", "keyword": "date", "text": "{date}" },
+    { "name": "Current time", "keyword": "time", "text": "{time}" }
+  ]
+}

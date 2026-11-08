@@ -189,4 +189,87 @@ TestCase {
     compare(Model.webTarget(ql, "  "), null)
     compare(Model.webTarget(Model.quicklinks("", ""), "x"), null, "no engine, no target")
   }
+
+  // --- Script commands, aliases and snippets
+
+  readonly property string raycastScript: [
+    "#!/bin/bash",
+    "# Required parameters:",
+    "# @raycast.schemaVersion 1",
+    "# @raycast.title Search Arch packages",
+    "# @raycast.mode fullOutput",
+    "# Optional parameters:",
+    "# @raycast.packageName Arch",
+    '# @raycast.argument1 { "type": "text", "placeholder": "Package", "percentEncoded": true }',
+    '# @raycast.argument2 { "type": "text", "placeholder": "Repo", "optional": true }',
+    "# @raycast.needsConfirmation true",
+    "# @raycast.currentDirectoryPath ~/src",
+    "echo hi"
+  ].join("\n")
+
+  function test_scriptHeaders() {
+    const list = Model.scripts("\x1e/home/u/.config/subcult/commands/pkg.sh\n" + raycastScript
+      + "\x1e/home/u/.config/subcult/commands/plain.sh\n#!/bin/sh\necho no header\n"
+      + "\x1e/home/u/.config/subcult/commands/inline.py\n#!/usr/bin/env python3\n# @subcult.title Clock\n# @raycast.mode inline\n")
+    compare(list.length, 2, "a script without a title is not a command")
+    const s = list[0]
+    compare(s.id, "script:pkg.sh")
+    compare(s.name, "Search Arch packages")
+    compare(s.mode, "fullOutput")
+    compare(s.genericName, "Arch")
+    compare(s.dangerous, true, "needsConfirmation asks first")
+    compare(s.dir, "~/src")
+    compare(s.params, [{ placeholder: "Package", optional: false, percentEncoded: true }, { placeholder: "Repo", optional: true, percentEncoded: false }])
+    compare(Model.requiredArgs(s), 1)
+    compare(list[1].mode, "compact", "inline runs as compact")
+    compare(list[1].dir, "/home/u/.config/subcult/commands", "the script's folder by default")
+  }
+
+  function test_splitArgs() {
+    compare(Model.splitArgs("linux zen kernel", 2), ["linux", "zen kernel"], "the last argument takes the rest")
+    compare(Model.splitArgs("one", 3), ["one"])
+    compare(Model.splitArgs("  ", 2), [])
+    compare(Model.splitArgs("a b", 0), [])
+  }
+
+  function test_scriptArgv() {
+    const s = Model.scripts("\x1e/c/pkg.sh\n" + raycastScript)[0]
+    const full = Model.scriptArgv(s, ["a b&c"], "/home/u")
+    compare(full.slice(0, 4), ["uwsm-app", "--", "xdg-terminal-exec", "sh"])
+    compare(full.slice(-3), ["/home/u/src", "/c/pkg.sh", "a%20b%26c"], "the home folder and percent encoding")
+    const silent = Model.scriptArgv(Object.assign({}, s, { mode: "silent", dir: "/w" }), ["x"], "/home/u")
+    compare(silent[0], "sh")
+    compare(silent.slice(-3), ["/w", "/c/pkg.sh", "x"])
+    const compact = Model.scriptArgv(Object.assign({}, s, { mode: "compact", dir: "/w" }), [], "/home/u")
+    compare(compact.slice(-3), ["/w", "Search Arch packages", "/c/pkg.sh"])
+    verify(compact[2].indexOf("notify-send") >= 0)
+  }
+
+  function test_aliases() {
+    const names = Model.aliases('{"aliases": {"up": "subcult update", "bad name": "x", "e": "", "pkg": "script:pkg.sh"}}')
+    compare(names, { up: "subcult update", pkg: "script:pkg.sh" })
+    compare(Model.aliases("{broken"), {})
+    const items = [{ id: "subcult update", name: "update" }, { id: "script:pkg.sh", name: "Search" }]
+    const r = Model.resolveAlias(names, items, "pkg linux zen")
+    compare(r.item.id, "script:pkg.sh")
+    compare(r.rest, "linux zen")
+    compare(Model.resolveAlias(names, items, "upx"), null)
+    compare(Model.resolveAlias({ gone: "nothing" }, items, "gone"), null, "an alias to a missing item")
+    compare(Model.resolveAlias(names, items, "toString"), null, "only the user's own names")
+  }
+
+  function test_snippets() {
+    const list = Model.snippets('{"snippets": [{"name": "Date", "keyword": "dt", "text": "{date}"}]}',
+      '{"snippets": [{"name": "Sign-off", "text": "Best,\\n  Pat"}, {"name": "", "text": "x"}, {"name": "No text"}]}')
+    compare(list.map(x => x.id), ["snippet:Date", "snippet:Sign-off"])
+    compare(list[0].keywords, ["dt"])
+    compare(list[1].genericName, "Best, Pat")
+    compare(Model.snippets("{broken", "").length, 0)
+  }
+
+  function test_expand() {
+    const d = new Date(2026, 10, 7, 9, 5)
+    compare(Model.expand("{date} {time} [{clipboard}] {other}", d, "copied"), "2026-11-07 09:05 [copied] {other}")
+    compare(Model.expand("{clipboard}", d, null), "")
+  }
 }
