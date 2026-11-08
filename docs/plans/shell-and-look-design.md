@@ -223,7 +223,7 @@ Every widget below is written fresh for Subarchy. "Reference" names the
 |---|---|---|---|
 | Menu | None (SUBCULT mark) | None | None |
 | Workspaces, active window | `omarchy.workspaces`, `monitor-bar` | `Quickshell.Hyprland` events | None |
-| Indicators | `omarchy.indicators` | Do-not-disturb from the notification server, idle inhibit (`IdleInhibitor`), screen recording from a PipeWire capture node | None |
+| Indicators | `omarchy.indicators` | Do-not-disturb from the notification server, keep-awake as a logind idle inhibitor (`systemd-inhibit`, state in a file), screen recording from a PipeWire capture node | None |
 | Microphone, audio | `omarchy.microphone`, `omarchy.audio` | `Quickshell.Services.Pipewire` | None |
 | Keyboard layout, display | `omarchy.keyboard-layout`, `omarchy.monitor` | Hyprland events | None |
 | Network | `omarchy.network` | `Quickshell.Networking` | None |

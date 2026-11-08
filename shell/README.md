@@ -52,6 +52,14 @@ IPC: `quickshell ipc -p /usr/share/subcult/shell show` lists the targets
 `subcult.launcher open|close|toggle|clearHistory|search <query>|type <query>|enter|hotkey <alias>|state`).
 Tests and scripts use it; the key bindings do not.
 
+## Keep-awake
+
+The indicators' keep-awake toggle holds a logind idle inhibitor
+(`systemd-inhibit --what=idle --who=SUBCULT`), which hypridle honours under
+any window. The state is `~/.local/state/subcult/keep-awake` (`1`, or
+absent), so a shell restart keeps it; `subcult.shell keepAwake true|false`
+sets it over IPC.
+
 ## Launcher
 
 Super+Space opens it ([ADR 0057](../docs/decisions/0057-launcher.md)). An

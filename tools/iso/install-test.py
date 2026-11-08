@@ -335,6 +335,13 @@ def boot(disk: Path, vars_file: Path) -> bool:
             " && busctl get-property org.freedesktop.UPower /org/freedesktop/UPower org.freedesktop.UPower OnBattery"
             " && systemctl --user restart subcult-shell.service && sleep 8"
             f" && {shell_ipc}", timeout=300)
+        # Keep-awake: a logind idle inhibitor that a shell restart keeps.
+        shell_call = "quickshell ipc --any-display -p /usr/share/subcult/shell call subcult.shell"
+        inhibited = "systemd-inhibit --list --no-legend 2>/dev/null | grep -c SUBCULT"
+        results["keep_awake"] = serial.run(
+            f"{shell_call} keepAwake true; sleep 1; {inhibited};"
+            f" systemctl --user restart subcult-shell.service; sleep 8; {inhibited};"
+            f" {shell_call} keepAwake false; sleep 1; {inhibited}", timeout=120)
         results["ac_again"] = serial.run(
             f"{sudo} pkill -f '[d]busmock --system --template upower'; {sudo} systemctl start upower.service"
             f" && sleep 2 && systemctl --user restart subcult-shell.service && sleep 8 && {shell_ipc}")
@@ -406,6 +413,7 @@ def boot(disk: Path, vars_file: Path) -> bool:
         "cursor theme installed": "No such file" not in r["cursor"] and "left_ptr" in r["cursor"],
         "shell sees battery power": '"onBattery":true' in r["battery"],
         "shell back on AC with the real UPower": '"onBattery":false' in r["ac_again"],
+        "keep-awake inhibits idle, survives a shell restart, releases": r["keep_awake"].split() == ["1", "1", "0"],
         "workspace dispatch (Lua expression)": '"id": 3' in r["dispatch"],
         "Alt-Tab switches to the previous window (global shortcuts)": "SWITCHED_GLOBAL" in r["altswitch"].splitlines(),
         "Alt-Tab switches back (IPC)": "SWITCHED_IPC" in r["altswitch"].splitlines(),

@@ -56,6 +56,15 @@ cat <<'JSON'
 JSON
 STUB
 chmod +x "$work/bin/subcult"
+# A stand-in for systemd-inhibit (no logind here) that holds like it does:
+# its command line stays visible and SIGTERM ends it.
+cat >"$work/bin/systemd-inhibit" <<'STUB'
+#!/bin/sh
+trap 'kill "$child" 2>/dev/null; exit 0' TERM INT
+sleep infinity & child=$!
+wait "$child"
+STUB
+chmod +x "$work/bin/systemd-inhibit"
 export PATH="$work/bin:$PATH"
 mkdir -p "$shell/widgets/test-probe"
 cat >"$shell/widgets/test-probe/manifest.json" <<'EOF'
@@ -314,6 +323,20 @@ launcher close >/dev/null
 ls=$(lstate "sig")
 [[ $(row '(r[0]["kind"], r[0]["name"])') == "('snippet', 'Sign-off')" ]] || fail "snippets are not searched: $ls"
 launcher close >/dev/null
+
+# Keep-awake holds a logind idle inhibitor (the stub here) and writes its
+# state file; off releases it and removes the file.
+inhibitor() { pgrep -u "$(id -u)" -f '[s]ystemd-inhibit --what=idle --who=SUBCULT' >/dev/null; }
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell keepAwake true >/dev/null
+for _ in $(seq 10); do inhibitor && break; sleep 0.5; done
+inhibitor || fail "keep-awake holds no inhibitor: $(status "$home1")"
+[[ $(cat "$home1/.local/state/subcult/keep-awake" 2>/dev/null) == 1 ]] || fail "keep-awake state not saved"
+st=$(status "$home1")
+[[ $(json 'd.get("keepAwake")') == True ]] || fail "keep-awake not reported on: $st"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell keepAwake false >/dev/null
+for _ in $(seq 10); do inhibitor || break; sleep 0.5; done
+! inhibitor || fail "keep-awake off left the inhibitor: $(pgrep -u "$(id -u)" -af '[s]ystemd-inhibit --what=idle' | head -3); $(status "$home1")"
+[[ ! -e "$home1/.local/state/subcult/keep-awake" ]] || fail "keep-awake off left the state file"
 
 # 2. A palette written after start applies without a restart.
 mkdir -p "$home1/.config/subcult/theme"
