@@ -1,0 +1,14 @@
+{
+  "id": "subcult.agents",
+  "name": "Agents usage",
+  "version": "1.0.0",
+  "api": 0,
+  "kind": "bar-widget",
+  "panel": true,
+  "cost": {
+    "timers": [{ "name": "refresh", "ac": 600, "battery": 1800 }]
+  },
+  "settings": {
+    "agents": ["claude", "codex"]
+  }
+}

@@ -69,6 +69,16 @@ if [ "$1 $2 $3" = "clipboard list --json" ]; then
 fi
 if [ "$1 $2" = "clipboard show" ]; then printf 'hello world'; exit 0; fi
 if [ "$1 $2" = "clipboard copy" ] || [ "$1 $2" = "clipboard clear" ]; then echo "$2 $3" >>"$HOME/clipboard-actions"; exit 0; fi
+# The agents' usage, as the command reads it from local files.
+if [ "$1 $2 $3" = "agent usage --json" ]; then
+  cat <<'JSON'
+{"scannedAt": "2026-11-08T15:00:00Z", "agents": [
+  {"id": "claude", "name": "Claude Code", "found": true, "today": {"input": 1515, "output": 300, "total": 1815}, "week": {"total": 4116}, "paceHour": 1210, "sessions": 1, "limits": []},
+  {"id": "codex", "name": "Codex", "found": true, "today": {"total": 5700, "output": 700}, "week": {"total": 13400}, "paceHour": 2300, "sessions": 1, "plan": "pro",
+   "limits": [{"name": "primary", "usedPercent": 54.2, "windowMinutes": 300, "resetsAt": "2026-11-08T17:10:00Z"}]}]}
+JSON
+  exit 0
+fi
 [ "$1 $2" = "commands --json" ] || exit 2
 cat <<'JSON'
 {"ok": true, "commands": [
@@ -604,6 +614,20 @@ dl=$(HOME=$home1 quickshell ipc -p "$shell" call subcult.downloads state)
   fail "the download did not finish as expected: $dl"
 st=$(status "$home1")
 [[ $(json '"subcult.downloads" in d["shown"]["HEADLESS-1"]') == False ]] || fail "downloads still shown when idle: $st"
+# The agents widget, off by default: enabled in bar.json it loads, reports
+# its timer, shows the (stub) usage and opens its panel.
+printf '{"layout": {"left": ["subcult.test-probe", "subcult.agents"]}}\n' >"$home1/.config/subcult/shell/bar.json"
+sleep 2
+st=$(status "$home1")
+[[ $(json '"subcult.agents" in d["shown"]["HEADLESS-1"]') == True ]] || fail "agents did not load when enabled: $st"
+[[ $(json 'd["intervals"].get("subcult.agents.refresh", {}).get("interval")') == 600000 ]] || fail "agents timer not reported: $st"
+[[ $(HOME=$home1 quickshell ipc -p "$shell" call subcult.shell widgetProperty subcult.agents label) == "C 1.8k · X 54%" ]] ||
+  fail "agents label: $(HOME=$home1 quickshell ipc -p "$shell" call subcult.shell widgetProperty subcult.agents label)"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.agents >/dev/null
+sleep 1
+st=$(status "$home1")
+[[ $(json 'd.get("panel")') == subcult.agents ]] || fail "the agents panel did not open: $st"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
 # Opening another widget's panel while one is open switches to it.
 HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.audio >/dev/null
 HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.notifications >/dev/null
