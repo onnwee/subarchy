@@ -262,6 +262,15 @@ def boot(disk: Path, vars_file: Path) -> bool:
             ),
             "power_auto": serial.run("systemctl show -p Result --value subcult-power-auto; journalctl -b -u subcult-power-auto -o cat"),
             "plymouth": serial.run(f"{sudo} journalctl -b -o cat | grep -c 'Show Plymouth Boot Screen'"),
+            # Channels (ADR 0026): a new install is on stable; edge includes
+            # Arch's mirrorlist; back to stable warns about newer packages.
+            "channel": serial.run(
+                "subcult channel; echo ---; sudo subcult channel set edge; subcult channel; echo ---;"
+                " grep -c 'Include = /etc/pacman.d/mirrorlist' /etc/pacman.d/subcult-mirrorlist; echo ---;"
+                " sudo subcult channel set stable; echo ---; grep -c archive.archlinux.org /etc/pacman.d/subcult-mirrorlist;"
+                " grep -c subcult-mirrorlist /etc/pacman.conf",
+                timeout=60,
+            ),
             # subcult update: snapshot, pacman -Syu, migrations, report.
             "update": serial.run(
                 # sudo -k and no stdin: the update must not need a password (ADR 0062).
@@ -432,6 +441,7 @@ def boot(disk: Path, vars_file: Path) -> bool:
         "snapshot boot entry": "rootflags=subvol=/@/.snapshots/" in r["snapshot"],
         "no self-referencing EFI entry": "/EFI/BOOT/BOOTX64.EFI" not in r["snapshot"],
         "subcult update ran without a password": "UPDATE_EXIT=0" in r["update"] and "eboot needed" in r["update"],
+        "new install on the stable channel, switches to edge and back": channel_ok(r["channel"]),
         "daily update check timer and count": r["update_timer"].splitlines()[0:1] == ["1"]
         and r["update_timer"].strip().splitlines()[-1].isdigit(),
         "power profile service (no battery: unchanged)": r["power_auto"].splitlines()[0:1] == ["success"]
@@ -666,6 +676,21 @@ def boot_secureboot(disk: Path, vars_file: Path) -> bool:
     for name, ok in checks.items():
         print(f"install-test: {'ok  ' if ok else 'FAIL'} {name}")
     return all(checks.values())
+
+
+def channel_ok(out: str) -> bool:
+    """`subcult channel` output: stable first, edge with Arch's mirrorlist, back with the warning."""
+    parts = [p.strip() for p in out.split("---")]
+    if len(parts) < 5:
+        return False
+    first, edge, include, back, stable = parts[0], parts[1], parts[2], parts[3], parts[4]
+    return (
+        first.startswith("stable (snapshot ")
+        and edge.splitlines()[-1].startswith("edge")
+        and include.splitlines()[-1] == "1"
+        and "newer than the snapshot" in back
+        and stable.splitlines()[0] == "1" and stable.splitlines()[-1] == "2"
+    )
 
 
 def main() -> int:

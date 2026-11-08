@@ -83,7 +83,9 @@ func TestUpdateYes(t *testing.T) {
 	if code := a.main(context.Background(), []string{"--yes", "--no-snapshot"}); code != 0 {
 		t.Fatalf("exit %d: %s", code, errOut)
 	}
-	if len(r.ran) == 0 || r.ran[0] != "sudo /usr/bin/subcult-update privileged upgrade --noconfirm" {
+	// The stable mirrorlist is refreshed first, then the upgrade runs.
+	if len(r.ran) < 2 || r.ran[0] != "sudo /usr/bin/subcult-channel refresh --quiet" ||
+		r.ran[1] != "sudo /usr/bin/subcult-update privileged upgrade --noconfirm" {
 		t.Errorf("ran %q", r.ran)
 	}
 	if !strings.Contains(out.String(), "reboot") {

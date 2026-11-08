@@ -42,6 +42,10 @@ Not yet: the
 Quickshell shell and themes, hardware detection, and a Limine entry that
 chainloads another disk's bootloader.
 
+A new system is on the stable channel: Arch packages come from the Arch
+Linux Archive at the snapshot date the package ships; `subcult channel set
+edge` follows the mirrors directly (ADR 0026).
+
 With no network the install runs from the repository on the image alone,
 which carries the whole install set (`make iso` downloads it); with network
 the Arch mirrors come first and the image's copies serve as a cache.
