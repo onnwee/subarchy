@@ -8,3 +8,4 @@ WatchedFile 1.0 WatchedFile.qml
 singleton Clock 1.0 Clock.qml
 singleton KeepAwake 1.0 KeepAwake.qml
 OverlayScreen 1.0 OverlayScreen.qml
+singleton Panels 1.0 Panels.qml

@@ -50,6 +50,17 @@ PanelWindow { // qmllint disable uncreatable-type
     return ids
   }
 
+  // The host of one widget on this bar, or null.
+  function hostFor(id) {
+    for (const section of [left, center, right])
+      for (let i = 0; i < section.hosts.count; i++) {
+        const h = section.hosts.itemAt(i) as WidgetHost
+        if (h && h.widgetId === id)
+          return h
+      }
+    return null
+  }
+
   // The loaded widgets that are not hidden (no device, no data).
   function shownIds() {
     const ids = []

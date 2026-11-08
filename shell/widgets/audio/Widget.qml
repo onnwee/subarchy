@@ -4,8 +4,9 @@ import qs.Commons
 import qs.Ui
 import "../../Commons/Glyphs.js" as Glyphs
 
-// The default output's volume. Scroll changes it by 5 %, click mutes.
-// PipeWire pushes changes; nothing polls.
+// The default output's volume. Scroll changes it by 5 %, a middle click
+// mutes, a click opens the audio panel (devices, volumes, mute). PipeWire
+// pushes changes; nothing polls.
 BarWidget {
   id: root
 
@@ -25,7 +26,12 @@ BarWidget {
     glyph: root.audio ? Glyphs.volume(root.audio.volume, root.audio.muted) : ""
     color: Theme.subtext
     tooltip: root.audio ? (root.sink.description || root.sink.name) + " " + Math.round(root.audio.volume * 100) + "%" : ""
-    onClicked: if (root.audio) root.audio.muted = !root.audio.muted
+    onClicked: (mouse) => {
+      if (mouse.button === Qt.MiddleButton && root.audio)
+        root.audio.muted = !root.audio.muted
+      else
+        root.openPanel()
+    }
     onScrolled: (delta) => {
       if (root.audio)
         root.audio.volume = Math.max(0, Math.min(1, root.audio.volume + (delta > 0 ? 0.05 : -0.05)))

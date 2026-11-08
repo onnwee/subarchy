@@ -5,15 +5,16 @@ import qs.Ui
 import "Commons/ConfigModel.js" as ConfigModel
 
 // One widget slot in the bar (ADR 0068). Loads widgets/<dir>/Widget.qml,
-// hands it mode, screen, settings and the shell services, and owns its
-// panel: Panel.qml is loaded only while the panel is open.
+// hands it mode, screen, settings and the shell services. Its panel is
+// shown by PanelOverlay (one at a time, on this bar's output): Panel.qml
+// is loaded only while the panel is open.
 Item {
   id: host
 
   property string widgetId
   property string mode: "full"
   property var screen
-  property bool panelOpen: false
+  readonly property bool panelOpen: Panels.host === host
 
   readonly property var entry: WidgetIndex.entry(widgetId)
   readonly property var manifest: entry ? entry.manifest : null
@@ -41,7 +42,6 @@ Item {
   }
 
   readonly property BarWidget widgetItem: widget.item as BarWidget
-  readonly property PanelBase panelItem: panelLoader.item as PanelBase
 
   implicitWidth: widgetItem ? widgetItem.implicitWidth : 0
   implicitHeight: Style.barHeight
@@ -82,37 +82,7 @@ Item {
       w.screen = Qt.binding(() => host.screen)
       w.settings = Qt.binding(() => host.settings)
       w.shell = host.shellServices
-      w.openPanel.connect(() => host.panelOpen = !host.panelOpen)
-    }
-  }
-
-  PopupWindow {
-    id: panel
-    visible: host.panelOpen && panelLoader.status === Loader.Ready
-    anchor.item: host // qmllint disable missing-property
-    anchor.rect.y: host.height // qmllint disable unqualified unresolved-type
-    implicitWidth: host.panelItem ? host.panelItem.implicitWidth : 1
-    implicitHeight: host.panelItem ? host.panelItem.implicitHeight : 1
-    color: "transparent"
-
-    Loader {
-      id: panelLoader
-      active: host.panelOpen && host.entry !== null && host.manifest.panel === true
-      onActiveChanged: {
-        if (active)
-          setSource(Qt.resolvedUrl("widgets/" + host.entry.dir + "/Panel.qml"),
-            { settings: host.settings, shell: host.shellServices })
-      }
-      onLoaded: {
-        const p = item as PanelBase
-        if (!p) {
-          console.warn("subcult shell:", host.widgetId, "Panel.qml is not a PanelBase")
-          return
-        }
-        p.settings = Qt.binding(() => host.settings)
-        p.shell = host.shellServices
-        p.closePanel.connect(() => host.panelOpen = false)
-      }
+      w.openPanel.connect(() => Panels.toggle(host))
     }
   }
 }

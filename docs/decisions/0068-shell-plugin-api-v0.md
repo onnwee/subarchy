@@ -95,6 +95,15 @@ carries them and keeps the battery rules machine-readable
   with these as initial properties.
 - `tools/shell/gen-index.py` writes `shell/widgets/index.json` from the
   manifests; `make verify` fails when it is stale.
+- Panels (stage 2, from 2026-11-07): a widget with `"panel": true` in its
+  manifest and a `Panel.qml` (a `PanelBase`) gets one when it emits
+  `openPanel()`. `shell/PanelOverlay.qml` shows it: one panel at a time for
+  the whole shell, on the output of the bar that opened it, under the
+  widget; a transparent layer over that output, so a click outside or
+  Escape closes it. `Panel.qml` is loaded only while open and receives
+  `settings` and `shell` like the widget; `closePanel()` closes it. The
+  first is the audio panel. `subcult.shell panel <id>|close` drives it for
+  the tests.
 - Services that are not bar items (the notification daemon, OSD, polkit
   agent, Alt-Tab) live in the shell itself (`shell/services/`, `shell/*.qml`)
   until a loader for `kind: service` widgets exists.
