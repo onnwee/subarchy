@@ -92,6 +92,36 @@ TestCase {
     compare(LayoutModel.modeFor("DP-1", { primary: "DP-9", full: [] }, ["DP-1"]), "full")
   }
 
+  function test_modeForDescription() {
+    // sputnik's dock: the LG moves between connectors, so the config names
+    // the monitor, not the connector. Outputs carry their description.
+    const outs = [{ name: "DP-3", description: "LG Electronics LG ULTRAGEAR 0x0001" },
+                  { name: "DP-2", description: "ONN 100002487 0x0002" }]
+    compare(LayoutModel.modeFor(outs[0], { primary: "LG ULTRAGEAR", full: [] }, outs), "full")
+    compare(LayoutModel.modeFor(outs[1], { primary: "LG ULTRAGEAR", full: [] }, outs), "minimal")
+    compare(LayoutModel.modeFor(outs[1], { primary: "", full: ["onn 100002487"] }, outs), "full", "case does not matter")
+    compare(LayoutModel.modeFor(outs[0], { primary: "DP-3", full: [] }, outs), "full", "connector names still work")
+    compare(LayoutModel.modeFor(outs[1], { primary: "LG ULTRAGEAR", full: [] }, [outs[1]]), "full",
+            "with the named primary unplugged, the first output is Full")
+  }
+
+  function test_fallbackIgnored() {
+    verify(LayoutModel.isReal("DP-3"))
+    verify(!LayoutModel.isReal("FALLBACK"))
+    verify(!LayoutModel.isReal(""))
+    verify(!LayoutModel.isReal(undefined))
+    const outs = [{ name: "FALLBACK", description: "" }, { name: "DP-1", description: "X" }]
+    compare(LayoutModel.modeFor(outs[1], { primary: "", full: [] }, outs), "full", "FALLBACK is not the first output")
+  }
+
+  function test_describe() {
+    compare(LayoutModel.describe({ name: "DP-3", model: "LG ULTRAGEAR", serialNumber: "0x1" },
+                                 [{ name: "DP-3", description: "LG Electronics LG ULTRAGEAR 0x1" }]),
+            "LG Electronics LG ULTRAGEAR 0x1", "Hyprland's description when it has the monitor")
+    compare(LayoutModel.describe({ name: "DP-3", model: "LG ULTRAGEAR", serialNumber: "0x1" }, []), "LG ULTRAGEAR 0x1")
+    compare(LayoutModel.describe({ name: "HEADLESS-1", model: "", serialNumber: "" }, null), "")
+  }
+
   function test_widgetsFull() {
     const layout = { left: ["a", "b"], center: ["c"], right: ["d"], minimal: ["b"] }
     const w = LayoutModel.widgetsFor(layout, "full")

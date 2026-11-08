@@ -4,20 +4,25 @@ import Quickshell.Io
 import Quickshell.Wayland
 import qs.Commons
 import qs.services
+import "Commons/LayoutModel.js" as LayoutModel
 
 // Subarchy's shell (ADR 0034, shell and look design). One bar and one
 // background per output; outputs that come and go get and lose theirs.
+// Hyprland's FALLBACK output (shown when no monitor is connected) gets
+// neither.
 ShellRoot {
   id: shell
 
+  readonly property var screens: Quickshell.screens.filter(s => LayoutModel.isReal(s.name))
+
   Variants {
     id: bars
-    model: Quickshell.screens
+    model: shell.screens
     delegate: Bar {}
   }
 
   Variants {
-    model: Quickshell.screens
+    model: shell.screens
     delegate: Background {}
   }
 

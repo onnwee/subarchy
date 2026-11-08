@@ -2,19 +2,23 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Hyprland
 import qs.Commons
 import "Commons/LayoutModel.js" as LayoutModel
 
 // The bar on one output: opaque base colour, a 1 px line underneath, three
 // sections of widgets. Full on the primary output and the laptop panel,
-// Minimal elsewhere (sputnik's monitor-bar behaviour).
+// Minimal elsewhere (sputnik's monitor-bar behaviour). The configured
+// outputs match a connector name or the monitor's description.
 PanelWindow { // qmllint disable uncreatable-type
   id: bar
 
   required property var modelData
   screen: modelData
 
-  readonly property string mode: LayoutModel.modeFor(modelData.name, Config.bar, Quickshell.screens.map(s => s.name))
+  readonly property var monitors: Hyprland.monitors.values.map(m => ({ name: m.name, description: m.description }))
+  readonly property var outputs: Quickshell.screens.map(s => ({ name: s.name, description: LayoutModel.describe(s, bar.monitors) }))
+  readonly property string mode: LayoutModel.modeFor({ name: modelData.name, description: LayoutModel.describe(modelData, bar.monitors) }, Config.bar, bar.outputs)
   readonly property var sections: LayoutModel.widgetsFor(Config.bar.layout, mode)
 
   WlrLayershell.namespace: "subcult-bar"
