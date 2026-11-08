@@ -14,9 +14,9 @@ PanelBase {
 
   readonly property var device: UPower.displayDevice
   readonly property int percent: device ? Model.percent(device.percentage) : 0
-  readonly property int state: device ? Number(device.state) : 0
-  readonly property string remaining: device ? Model.remainingText(state, device.timeToEmpty, device.timeToFull) : ""
-  readonly property string rate: device ? Model.rateText(device.changeRate, state) : ""
+  readonly property int deviceState: device ? Number(device.state) : 0
+  readonly property string remaining: device ? Model.remainingText(deviceState, device.timeToEmpty, device.timeToFull) : ""
+  readonly property string rate: device ? Model.rateText(device.changeRate, deviceState) : ""
   readonly property string health: device ? Model.healthText(device.healthPercentage) : ""
   readonly property string current: PowerProfiles.profile === PowerProfile.PowerSaver ? "power-saver"
     : PowerProfiles.profile === PowerProfile.Performance ? "performance" : "balanced"
@@ -37,8 +37,8 @@ PanelBase {
       spacing: 10
       Text {
         anchors.verticalCenter: parent.verticalCenter
-        text: Glyphs.battery(panel.percent, panel.state === Model.CHARGING)
-        color: panel.percent <= 10 && panel.state !== Model.CHARGING ? Theme.error : Theme.text
+        text: Glyphs.battery(panel.percent, panel.deviceState === Model.CHARGING)
+        color: panel.percent <= 10 && panel.deviceState !== Model.CHARGING ? Theme.error : Theme.text
         font.family: Style.fontFamily
         font.pixelSize: Style.fontSize + 14
       }
@@ -52,7 +52,7 @@ PanelBase {
           font.bold: true
         }
         Text {
-          text: Model.stateText(panel.state) + (panel.remaining ? ", " + panel.remaining : "")
+          text: Model.stateText(panel.deviceState) + (panel.remaining ? ", " + panel.remaining : "")
           color: Theme.subtext
           font.family: Style.uiFontFamily
           font.pixelSize: Style.fontSize
