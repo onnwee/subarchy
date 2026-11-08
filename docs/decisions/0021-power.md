@@ -55,5 +55,14 @@ Decision map item S7. Accepted 2026-11-06.
   holds until the next change. Machines without a system battery are left
   alone. `tools/test/power-auto-test.sh` covers the detection; the VM has no
   battery, so switching itself is untested.
+- 2026-11-08: thermal alerts (rice port, issue #98). Quickshell's UPower has
+  no temperature and sysfs has no inotify for one, so the alert source is
+  the kernel's thermal generic-netlink events: `subcult thermal watch`
+  (`internal/thermal`, on `golang.org/x/sys/unix`, no new dependency)
+  subscribes to the `event` group and prints each `hot` or `critical` trip
+  crossed; the shell alerts once per excursion with a cooldown per zone.
+  No event can be provoked without touching the kernel's trip points, so
+  the live tests stop at resolving the family; parsing is covered with
+  built messages.
 
 Related: [[decision-map|Decision map]] · [[0014-swap-hibernation|ADR 0014]]

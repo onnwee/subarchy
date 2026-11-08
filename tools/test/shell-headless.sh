@@ -69,6 +69,17 @@ if [ "$1 $2 $3" = "clipboard list --json" ]; then
 fi
 if [ "$1 $2" = "clipboard show" ]; then printf 'hello world'; exit 0; fi
 if [ "$1 $2" = "clipboard copy" ] || [ "$1 $2" = "clipboard clear" ]; then echo "$2 $3" >>"$HOME/clipboard-actions"; exit 0; fi
+# The thermal watch: a hot trip crossed when the test asks for it (a
+# trigger file), then the same trip again, down and up, which stays quiet.
+if [ "$1 $2" = "thermal watch" ]; then
+  while [ ! -e "$HOME/thermal-trip" ]; do sleep 0.2; done
+  printf '{"zone":0,"type":"SKIN","trip":3,"kind":"hot","tripTemp":82050,"temp":83000,"direction":"up"}\n'
+  while [ ! -e "$HOME/thermal-trip-again" ]; do sleep 0.2; done
+  printf '{"zone":0,"type":"SKIN","trip":3,"kind":"hot","tripTemp":82050,"temp":84000,"direction":"up"}\n'
+  printf '{"zone":0,"type":"SKIN","trip":3,"kind":"hot","tripTemp":82050,"temp":79000,"direction":"down"}\n'
+  printf '{"zone":0,"type":"SKIN","trip":3,"kind":"hot","tripTemp":82050,"temp":83000,"direction":"up"}\n'
+  exec sleep infinity
+fi
 [ "$1 $2" = "commands --json" ] || exit 2
 cat <<'JSON'
 {"ok": true, "commands": [
@@ -540,6 +551,20 @@ sleep 2
 st=$(status "$home1")
 [[ $(json 'd.get("motion")') == True ]] || fail "motion on did not apply live: $st"
 rm "$home1/.config/subcult/motion.json"
+# Thermal alerts: a hot trip crossed (from the stub `subcult thermal watch`)
+# is one notification; the same trip again, and down and up within the
+# cooldown, add none.
+st=$(status "$home1")
+before=$(json 'd.get("unread")')
+touch "$home1/thermal-trip"
+for _ in $(seq 20); do st=$(status "$home1"); [[ $(json 'd["history"][0]["summary"] if d["history"] else ""') == "Running hot" ]] && break; sleep 0.5; done
+[[ $(json 'd["history"][0]["summary"] if d["history"] else ""') == "Running hot" && $(json 'd.get("unread")') == $((before + 1)) ]] ||
+  fail "a hot trip did not alert once: $st"
+[[ $(json 'd["history"][0]["body"]') == "SKIN at 83 °C, past its hot trip at 82 °C. Ease the load or check the airflow." ]] || fail "thermal alert text: $st"
+touch "$home1/thermal-trip-again"
+sleep 2
+st=$(status "$home1")
+[[ $(json 'd.get("unread")') == $((before + 1)) ]] || fail "a repeated trip alerted again within the cooldown: $st"
 
 # The notification centre opens from the bell and closes like any panel.
 HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.notifications >/dev/null
