@@ -8,20 +8,20 @@ import "Model.js" as Model
 import "../../Commons/Glyphs.js" as Glyphs
 
 // Small status marks: keep-awake (click to toggle) and screen capture in
-// progress. Both are driven by events.
+// progress. Both are driven by events. Only the PipeWire nodes that could
+// be a video stream are tracked (see Model.js), not every stream.
 BarWidget {
   id: root
 
-  readonly property var streams: Pipewire.nodes ? Pipewire.nodes.values.filter(n => n.isStream) : [] // qmllint disable missing-property
-  readonly property bool recording: Model.recording(streams.map(n => ({
-    isStream: n.isStream,
+  readonly property var candidates: Pipewire.nodes ? Pipewire.nodes.values.filter(n => Model.candidate({ type: n.type, name: n.name })) : [] // qmllint disable missing-property
+  readonly property bool recording: Model.recording(candidates.map(n => ({
     mediaClass: n.properties ? n.properties["media.class"] : ""
   })))
 
   implicitWidth: row.implicitWidth
 
   PwObjectTracker {
-    objects: root.streams
+    objects: root.candidates
   }
 
   Row {
