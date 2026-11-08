@@ -49,20 +49,38 @@ no process. The names are `launcher-toggle`, `altswitch-next`,
 IPC: `quickshell ipc -p /usr/share/subcult/shell show` lists the targets
 (`subcult.shell status`, `subcult.osd flash <volume|brightness|capslock>`,
 `subcult.altswitch next|prev|commit|cancel`,
-`subcult.launcher open|close|toggle|clearHistory|search <query>`). Tests and
-scripts use it; the key bindings do not.
+`subcult.launcher open|close|toggle|clearHistory|search <query>|type <query>|enter|state`).
+Tests and scripts use it; the key bindings do not.
 
 ## Launcher
 
 Super+Space opens it ([ADR 0057](../docs/decisions/0057-launcher.md)). An
 empty query shows the favorites; typing searches desktop entries by name,
-generic name, keywords and id. Favorites come first in their own order, then
-apps by frecency, then by how well they match. Apps start through
-`uwsm-app -- <id>.desktop`.
+generic name, keywords and id, and the commands `subcult commands --json`
+lists (read each time the launcher opens). Favorites come first in their own
+order, then apps and commands by frecency, then by how well they match. Apps
+start through `uwsm-app -- <id>.desktop`.
+
+- Commands run in a terminal that stays open until Enter. A query that
+  starts with a whole command passes the rest as its arguments
+  (`font set Iosevka`). Commands marked `dangerous` ask first: Enter runs,
+  Escape goes back.
+- Calculator: `=` asks `qalc` alone; root search shows its answer for
+  anything that looks like math (a digit with an operator, or `5 km to mi`).
+  Enter copies the answer. Exchange rates are never fetched.
+- Web: `@` lists the quicklinks, `@yt cats` searches one, `@anything` uses
+  the default engine, and so does a query with no match. A quicklink keyword
+  with words (`gh subarchy`) is offered first in root search too. URLs open
+  with `xdg-open`.
 
 - Favorites: `/usr/share/subcult/default/launcher/favorites.json`, replaced
   by `~/.config/subcult/launcher/favorites.json` when that file has a
   `favorites` list of desktop entry ids.
+- Quicklinks: `/usr/share/subcult/default/launcher/quicklinks.json`
+  (`default` engine, DuckDuckGo, plus `g`, `yt`, `gh`, `aur`, `wiki`, `aw`);
+  `~/.config/subcult/launcher/quicklinks.json` adds or replaces links by
+  keyword and may set `default`. A link is `{"name": …, "url": …}`; `{query}`
+  in the URL makes it a search, otherwise the keyword alone opens it.
 - History: `~/.local/state/subcult/launcher/history.json` (or under
   `$XDG_STATE_HOME`). Clear it with
   `quickshell ipc -p /usr/share/subcult/shell call subcult.launcher clearHistory`

@@ -1,0 +1,12 @@
+{
+  "default": "ddg",
+  "quicklinks": {
+    "ddg": { "name": "DuckDuckGo", "url": "https://duckduckgo.com/?q={query}" },
+    "g": { "name": "Google", "url": "https://www.google.com/search?q={query}" },
+    "yt": { "name": "YouTube", "url": "https://www.youtube.com/results?search_query={query}" },
+    "gh": { "name": "GitHub", "url": "https://github.com/search?q={query}" },
+    "aur": { "name": "AUR", "url": "https://aur.archlinux.org/packages?K={query}" },
+    "wiki": { "name": "Wikipedia", "url": "https://en.wikipedia.org/w/index.php?search={query}" },
+    "aw": { "name": "ArchWiki", "url": "https://wiki.archlinux.org/index.php?search={query}" }
+  }
+}

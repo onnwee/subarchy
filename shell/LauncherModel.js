@@ -120,3 +120,127 @@ function move(index, step, count) {
     return -1
   return Math.max(0, Math.min(count - 1, index + step))
 }
+
+// --- Commands, calculator and web search ---------------------------------
+
+// What a query asks for: "=" is the calculator, "@" web search; anything
+// else is root search.
+function parseQuery(query) {
+  const q = String(query || "")
+  if (q.startsWith("="))
+    return { mode: "calc", text: q.slice(1).trim() }
+  if (q.startsWith("@"))
+    return { mode: "web", text: q.slice(1).trim() }
+  return { mode: "root", text: q.trim() }
+}
+
+// Root search asks the calculator only for what looks like math: a digit
+// and an operator, or a unit conversion ("5 km to mi").
+function looksLikeMath(text) {
+  const t = String(text || "")
+  return /[0-9]/.test(t) && (/[-+*/^%×÷()]/.test(t) || /\s(to|in)\s+\S/i.test(t))
+}
+
+// qalc's terse answer, or "" when it has none: an error, or the
+// expression handed back unevaluated ("1 / 0").
+function calcAnswer(output, expr) {
+  const lines = String(output || "").split("\n").map(l => l.trim()).filter(l => l !== "")
+  if (lines.length === 0)
+    return ""
+  const last = lines[lines.length - 1]
+  if (/^(error|warning):/i.test(last) || lines.some(l => /^error:/i.test(l)))
+    return ""
+  const bare = s => s.replace(/\s+/g, "")
+  return bare(last) === bare(String(expr || "")) ? "" : last
+}
+
+// Launcher items from `subcult commands --json`. Each is ranked like an
+// app; its id is the route ("subcult font set").
+function commands(text) {
+  try {
+    const d = JSON.parse(text)
+    if (!d || !Array.isArray(d.commands))
+      return []
+    return d.commands.filter(c => c && typeof c.route === "string" && c.route.startsWith("subcult ") && !c.hidden)
+      .map(c => ({
+        kind: "command",
+        id: c.route,
+        name: c.route.slice("subcult ".length),
+        genericName: c.summary || "",
+        keywords: ["subcult"].concat(c.group ? [c.group] : []),
+        args: c.args || "",
+        dangerous: c.dangerous === true,
+        icon: "utilities-terminal"
+      }))
+  } catch (e) {
+    return []
+  }
+}
+
+// A query that starts with a whole command's words runs that command, with
+// the rest as its arguments ("font set Iosevka"). The longest route wins.
+function commandCall(cmds, query) {
+  const words = String(query || "").trim().split(/\s+/).filter(w => w !== "")
+  if (words.length > 0 && words[0] === "subcult")
+    words.shift()
+  let best = null
+  for (const c of cmds || []) {
+    const route = c.name.split(" ")
+    if (route.length > words.length)
+      continue
+    if (route.every((w, i) => words[i] === w) && (!best || route.length > best.route.length))
+      best = { command: c, route: route, args: words.slice(route.length) }
+  }
+  return best ? { command: best.command, args: best.args } : null
+}
+
+// The quicklinks: the system file's, then the user's added or replacing
+// them by keyword. Each is { name, url }; a url with {query} searches.
+function quicklinks(systemText, userText) {
+  const read = t => {
+    try {
+      const d = JSON.parse(t)
+      return d && typeof d === "object" ? d : {}
+    } catch (e) {
+      return {}
+    }
+  }
+  const sys = read(systemText)
+  const user = read(userText)
+  const links = {}
+  for (const src of [sys.quicklinks, user.quicklinks]) {
+    if (!src || typeof src !== "object")
+      continue
+    for (const key of Object.keys(src)) {
+      const l = src[key]
+      if (l && typeof l.url === "string" && /^https?:\/\//.test(l.url))
+        links[key] = { name: typeof l.name === "string" && l.name !== "" ? l.name : key, url: l.url }
+    }
+  }
+  const def = [user.default, sys.default].find(k => typeof k === "string" && links[k] && links[k].url.indexOf("{query}") >= 0)
+  return { default: def || "", links: links }
+}
+
+function fill(url, query) {
+  return url.split("{query}").join(encodeURIComponent(query))
+}
+
+// Where a web query goes: a keyword and words search that quicklink
+// ("yt cats"); a keyword alone opens a plain link; anything else searches
+// the default engine. null when there is nothing to open.
+function webTarget(ql, text) {
+  const t = String(text || "").trim()
+  if (t === "" || !ql)
+    return null
+  const words = t.split(/\s+/)
+  const link = ql.links[words[0]]
+  const rest = words.slice(1).join(" ")
+  if (link && link.url.indexOf("{query}") >= 0 && rest !== "")
+    return { key: words[0], name: link.name, query: rest, url: fill(link.url, rest) }
+  if (link && link.url.indexOf("{query}") < 0 && rest === "")
+    return { key: words[0], name: link.name, query: "", url: link.url }
+  const def = ql.links[ql.default]
+  if (!def)
+    return null
+  return { key: ql.default, name: def.name, query: t, url: fill(def.url, t) }
+}
