@@ -37,6 +37,10 @@ Separate programs:
 - The screensaver is **pre-rendered loops**: `ttfx` text effects on the
   SUBCULT art rendered to short video files when the art or theme changes,
   then played by the lock screen.
+- **Motion follows one setting.** `~/.config/subcult/motion.json` (`auto`,
+  `on`, `off`; `auto` is on on AC and off on battery) is read by the shell,
+  by the Hyprland defaults and by the lock screen, so the screensaver and
+  the lock's own transitions stop on battery too (2026-11-08).
 - **hypridle** for idle handling: lock with screensaver, display off,
   suspend.
 

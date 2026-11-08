@@ -95,6 +95,13 @@ sleep infinity & child=$!
 wait "$child"
 STUB
 chmod +x "$work/bin/systemd-inhibit"
+# A stand-in for hyprctl (no Hyprland here) that records what the shell
+# sends the compositor.
+cat >"$work/bin/hyprctl" <<'STUB'
+#!/bin/sh
+printf '%s\n' "$*" >>"$HOME/hyprctl-log"
+STUB
+chmod +x "$work/bin/hyprctl"
 # System tools before the developer's shims: a mise shim resolves its tool
 # from HOME, and the test's HOME is empty, so `fd` through the shim fails
 # and the launcher's file search finds nothing.
@@ -519,6 +526,21 @@ for w in network bluetooth; do
   [[ $(json 'd.get("panel")') == "subcult.$w" ]] || fail "the $w panel did not open: $st"
   HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
 done
+# Motion: the setting file is read live and the compositor is told. With no
+# battery here, `auto` means on.
+st=$(status "$home1")
+[[ $(json 'd.get("motion")') == True && $(json 'd.get("motionMode")') == auto ]] || fail "motion is not on by default: $st"
+printf '{"mode": "off"}\n' >"$home1/.config/subcult/motion.json"
+sleep 2
+st=$(status "$home1")
+[[ $(json 'd.get("motion")') == False && $(json 'd.get("motionMode")') == off ]] || fail "motion off did not apply live: $st"
+grep -q 'eval dofile(\[==\[.*/default/hypr/looknfeel.lua\]==\])' "$home1/hyprctl-log" 2>/dev/null || fail "the motion change did not reach the compositor: $(cat "$home1/hyprctl-log" 2>/dev/null)"
+printf '{"mode": "on"}\n' >"$home1/.config/subcult/motion.json"
+sleep 2
+st=$(status "$home1")
+[[ $(json 'd.get("motion")') == True ]] || fail "motion on did not apply live: $st"
+rm "$home1/.config/subcult/motion.json"
+
 # The notification centre opens from the bell and closes like any panel.
 HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.notifications >/dev/null
 sleep 1
