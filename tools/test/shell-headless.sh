@@ -56,6 +56,15 @@ cat <<'JSON'
 JSON
 STUB
 chmod +x "$work/bin/subcult"
+# A stand-in for yt-dlp: progress lines, then the file it "wrote".
+cat >"$work/bin/yt-dlp" <<'STUB'
+#!/bin/sh
+dir=""; while [ $# -gt 0 ]; do case $1 in -P) dir=$2; shift 2;; --) shift; break;; *) shift;; esac; done
+echo "[download]  40.0% of 10.00MiB at 2.00MiB/s ETA 00:03"; sleep 1
+echo "[download] 100% of 10.00MiB in 00:00:02 at 5.00MiB/s"
+mkdir -p "$dir" && : >"$dir/Clip [abc].mp4" && echo "$dir/Clip [abc].mp4"
+STUB
+chmod +x "$work/bin/yt-dlp"
 # A stand-in for systemd-inhibit (no logind here) that holds like it does:
 # its command line stays visible and SIGTERM ends it.
 cat >"$work/bin/systemd-inhibit" <<'STUB'
@@ -396,6 +405,26 @@ HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
 sleep 1
 st=$(status "$home1")
 [[ $(json 'd.get("panel")') == "" ]] || fail "the panel did not close: $st"
+
+# The downloads widget, off by default: enabled in bar.json it loads and
+# stays hidden; a queued URL runs the (stub) yt-dlp, shows while running,
+# finishes with the file, and hides again.
+printf '{"layout": {"left": ["subcult.test-probe", "subcult.downloads"]}, "widgets": {"subcult.downloads": {"directory": "%s/dl"}}}\n' "$home1" >"$home1/.config/subcult/shell/bar.json"
+sleep 2
+st=$(status "$home1")
+[[ $(json '"subcult.downloads" in d["loaded"]["HEADLESS-1"] and "subcult.downloads" not in d["shown"]["HEADLESS-1"]') == True ]] ||
+  fail "downloads did not load hidden when enabled: $st"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.downloads add "https://x.test/v/1" >/dev/null || fail "downloads IPC failed"
+sleep 0.5
+st=$(status "$home1")
+[[ $(json '"subcult.downloads" in d["shown"]["HEADLESS-1"]') == True ]] || fail "downloads not shown while a job runs: $st"
+for _ in $(seq 10); do [[ -e "$home1/dl/Clip [abc].mp4" ]] && break; sleep 0.5; done
+sleep 1
+dl=$(HOME=$home1 quickshell ipc -p "$shell" call subcult.downloads state)
+[[ $(python3 -c "import json,sys; j=json.loads(sys.argv[1]); print(j[0]['status'], j[0]['percent'], j[0]['file'].endswith('Clip [abc].mp4'))" "$dl") == "done 100 True" ]] ||
+  fail "the download did not finish as expected: $dl"
+st=$(status "$home1")
+[[ $(json '"subcult.downloads" in d["shown"]["HEADLESS-1"]') == False ]] || fail "downloads still shown when idle: $st"
 check_log "$work/qs1.log"
 
 # 2. A palette written after start applies without a restart.

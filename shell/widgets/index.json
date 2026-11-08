@@ -62,6 +62,21 @@
         "kind": "bar-widget"
       }
     },
+    "subcult.downloads": {
+      "dir": "downloads",
+      "manifest": {
+        "id": "subcult.downloads",
+        "name": "Downloads",
+        "version": "1.0.0",
+        "api": 0,
+        "kind": "bar-widget",
+        "panel": true,
+        "settings": {
+          "directory": "~/Downloads",
+          "audioOnly": false
+        }
+      }
+    },
     "subcult.indicators": {
       "dir": "indicators",
       "manifest": {
