@@ -46,6 +46,23 @@ TestCase {
     compare(Model.unread([]), 0)
   }
 
+  function test_plain() {
+    compare(Model.plain("a &amp; <b>b</b>", 100), "a & b")
+    compare(Model.plain("&lt;tag&gt; &quot;q&quot; &#39;s&#39; &#65;&#x42;", 100), "<tag> \"q\" 's' AB")
+    compare(Model.plain("  many \n\n   spaces\tand <br/> breaks ", 100), "many spaces and breaks")
+    compare(Model.plain("<a href=\"x\">link</a><img src='y'/>", 100), "link")
+    compare(Model.plain("&amp;lt;", 100), "&lt;", "entities decode once")
+    compare(Model.plain(null, 10), "")
+    compare(Model.plain(12, 10), "12")
+  }
+
+  function test_plainCaps() {
+    compare(Model.plain("x".repeat(300), 200).length, 200, "summary cap")
+    compare(Model.plain("x".repeat(3000), 2000).length, 2000, "body cap")
+    compare(Model.plain("x".repeat(100), 64).length, 64, "app name cap")
+    compare(Model.plain("short", 64), "short")
+  }
+
   function test_restore() {
     compare(Model.restore('[{"id":1,"summary":"a","read":true}]', 100).length, 1)
     compare(Model.restore("broken", 100), [])

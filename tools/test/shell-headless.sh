@@ -183,6 +183,17 @@ st=$(status "$home1")
 [[ $(json 'd.get("popups")') == 0 && $(json 'd.get("unread")') == 1 ]] ||
   fail "the popup did not go after five seconds, or its record was lost: $st"
 
+# Markup and entities arrive as capped plain text in the history.
+DBUS_SESSION_BUS_ADDRESS=unix:path=$work/bus gdbus call --session --dest org.freedesktop.Notifications \
+  --object-path /org/freedesktop/Notifications --method org.freedesktop.Notifications.Notify \
+  "$(printf 'app%.0s' $(seq 40))" 0 "" "x &amp; <b>y</b>" "$(printf 'b%.0s' $(seq 2100))" "[]" "{}" 1000 >/dev/null
+sleep 1
+st=$(status "$home1")
+[[ $(json 'd["history"][0]["summary"]') == "x & y" ]] || fail "history summary is not plain text: $st"
+[[ $(json 'len(d["history"][0]["body"])') == 2000 && $(json 'len(d["history"][0]["appName"])') == 64 ]] ||
+  fail "history body or app name not capped: $(json 'len(d["history"][0]["body"]), len(d["history"][0]["appName"])')"
+sleep 2
+
 # Without UPower (CI) there is no battery: the battery widget is not shown.
 if [[ -n ${CI:-} ]]; then
   [[ $(json '"subcult.battery" in d["shown"]["HEADLESS-1"]') == False && $(json 'd["onBattery"]') == False ]] ||

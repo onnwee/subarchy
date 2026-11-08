@@ -6,6 +6,26 @@ function push(history, entry, cap) {
   return [entry].concat(history || []).slice(0, cap)
 }
 
+// Text from any app or web page, as plain text: entities decoded once
+// (named and numeric), tags stripped, whitespace collapsed, cut to cap.
+// Caps: summary 200, body 2000, app name 64.
+const NAMED = { amp: "&", lt: "<", gt: ">", quot: "\"", apos: "'", nbsp: " " }
+
+function plain(text, cap) {
+  if (text === null || text === undefined)
+    return ""
+  let s = String(text).replace(/<[^>]*>/g, " ")
+  s = s.replace(/&(#x[0-9a-fA-F]+|#[0-9]+|[a-zA-Z]+);/g, (m, e) => {
+    if (e[0] === "#") {
+      const code = e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10)
+      return code > 0 && code <= 0x10FFFF ? String.fromCodePoint(code) : ""
+    }
+    return Object.prototype.hasOwnProperty.call(NAMED, e) ? NAMED[e] : m
+  })
+  s = s.replace(/\s+/g, " ").trim()
+  return cap > 0 && s.length > cap ? s.slice(0, cap) : s
+}
+
 // Do-not-disturb holds back popups, except critical ones.
 function shouldPopup(n, dnd) {
   return !dnd || n.urgency === "critical"

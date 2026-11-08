@@ -57,6 +57,7 @@ ShellRoot {
         onBattery: Power.onBattery,
         popups: Notifications.popups.length,
         unread: Notifications.unread,
+        history: Notifications.history.slice(0, 5).map(e => ({ id: e.id, summary: e.summary, body: e.body, appName: e.appName })),
         osd: osd.kind,
         launcher: launcher.open,
         intervals: Power.report()
