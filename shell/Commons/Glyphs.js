@@ -79,3 +79,5 @@ const mediaPause = "\u{F03E4}"    // pause
 const mediaNext = "\u{F04AD}"     // skip_next
 const mediaPrevious = "\u{F04AE}" // skip_previous
 const mediaNote = "\u{F075A}"     // music
+
+const wallpaper = "\u{F02E9}" // image

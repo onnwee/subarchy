@@ -396,6 +396,28 @@ HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
 sleep 1
 st=$(status "$home1")
 [[ $(json 'd.get("panel")') == "" ]] || fail "the panel did not close: $st"
+
+# The auto-wallpaper widget, off by default: enabled in bar.json with a
+# folder of two images, it loads, reports its timer, and its IPC call
+# writes the next image to the wallpaper state file, which the background
+# shows at once.
+mkdir -p "$home1/walls"
+magick -size 64x64 xc:'#FF0000' "$home1/walls/a.png"
+magick -size 64x64 xc:'#0000FF' "$home1/walls/b.png"
+printf '{"layout": {"left": ["subcult.test-probe", "subcult.auto-wallpaper"]}, "widgets": {"subcult.auto-wallpaper": {"directory": "%s"}}}\n' "$home1/walls" >"$home1/.config/subcult/shell/bar.json"
+sleep 2
+st=$(status "$home1")
+[[ $(json '"subcult.auto-wallpaper" in d["loaded"]["HEADLESS-1"]') == True ]] || fail "auto-wallpaper did not load when enabled: $st"
+[[ $(json 'd["intervals"].get("subcult.auto-wallpaper.rotate", {}).get("interval")') == 1800000 ]] || fail "auto-wallpaper timer not reported: $st"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.wallpaper next >/dev/null || fail "auto-wallpaper IPC failed"
+sleep 2
+[[ $(cat "$home1/.local/state/subcult/wallpaper" 2>/dev/null) == "$home1/walls/a.png" ]] || fail "auto-wallpaper did not write the first image: $(cat "$home1/.local/state/subcult/wallpaper" 2>/dev/null)"
+shot HEADLESS-1
+[[ $(pixel 640 300) == FF0000 ]] || fail "the background does not show the chosen wallpaper (got $(pixel 640 300))"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.wallpaper next >/dev/null
+sleep 2
+[[ $(cat "$home1/.local/state/subcult/wallpaper") == "$home1/walls/b.png" ]] || fail "auto-wallpaper did not go to the next image"
+rm -f "$home1/.local/state/subcult/wallpaper"
 check_log "$work/qs1.log"
 
 # Workspace names written after start reach the bar's labels; the switch
