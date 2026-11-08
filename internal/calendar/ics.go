@@ -280,8 +280,10 @@ func Occurrences(calendar string, events []vevent, w Window) []Event {
 
 var weekdays = map[string]time.Weekday{"SU": time.Sunday, "MO": time.Monday, "TU": time.Tuesday, "WE": time.Wednesday, "TH": time.Thursday, "FR": time.Friday, "SA": time.Saturday}
 
-// expand lists a recurring event's starts up to the window's end, capped
-// at 1000 occurrences.
+// expand lists a recurring event's starts that reach into the window, up
+// to its end: occurrences that ended before the window are stepped over
+// (they still count for COUNT), so a series that began years ago reaches
+// today. At most 1000 starts are kept and 200 000 occurrences stepped.
 func expand(e vevent, w Window) []time.Time {
 	rule := map[string]string{}
 	for _, kv := range strings.Split(e.rrule, ";") {
@@ -309,15 +311,23 @@ func expand(e vevent, w Window) []time.Time {
 			days = append(days, wd)
 		}
 	}
+	dur := e.end.Sub(e.start)
+	if dur < 0 {
+		dur = 0
+	}
 	var starts []time.Time
+	total := 0 // occurrences generated, kept or stepped over
 	emit := func(t time.Time) bool {
-		if count >= 0 && len(starts) >= count {
+		if count >= 0 && total >= count {
 			return false
 		}
-		if !t.Before(until) {
+		if !t.Before(until) || total >= 200000 {
 			return false
 		}
-		starts = append(starts, t)
+		total++
+		if t.Add(dur).After(w.From) {
+			starts = append(starts, t)
+		}
 		return len(starts) < 1000
 	}
 	switch rule["FREQ"] {
@@ -352,10 +362,10 @@ func expand(e vevent, w Window) []time.Time {
 			}
 		}
 	case "MONTHLY":
-		for t := e.start; emit(t); t = e.start.AddDate(0, interval*(len(starts)), 0) {
+		for t := e.start; emit(t); t = e.start.AddDate(0, interval*total, 0) {
 		}
 	case "YEARLY":
-		for t := e.start; emit(t); t = e.start.AddDate(interval*len(starts), 0, 0) {
+		for t := e.start; emit(t); t = e.start.AddDate(interval*total, 0, 0) {
 		}
 	default:
 		starts = append(starts, e.start)

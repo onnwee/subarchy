@@ -88,6 +88,37 @@ func TestRecurrenceKinds(t *testing.T) {
 	}
 }
 
+// A series that began years before the window still reaches it (review
+// finding after the Epic A qualification): the cap counts kept starts.
+func TestOldRecurrenceReachesWindow(t *testing.T) {
+	loc := time.UTC
+	w := Window{From: time.Date(2026, 11, 6, 0, 0, 0, 0, loc), To: time.Date(2026, 12, 7, 0, 0, 0, 0, loc)}
+	cases := map[string]int{
+		"FREQ=DAILY":                        31,
+		"FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR":  21,
+		"FREQ=MONTHLY":                      1,
+		"FREQ=YEARLY":                       0,
+		"FREQ=DAILY;COUNT=10":               0, // ended in January 2023
+		"FREQ=DAILY;UNTIL=20261110T000000Z": 4,
+	}
+	for rule, want := range cases {
+		start := time.Date(2023, 1, 3, 9, 0, 0, 0, loc)
+		e := vevent{uid: "old", summary: rule, start: start, end: start.Add(time.Hour), rrule: rule, exdates: map[string]bool{}}
+		got := Occurrences("c", []vevent{e}, w)
+		if len(got) != want {
+			t.Errorf("%s: %d occurrences, want %d", rule, len(got), want)
+		}
+	}
+	// A multi-day occurrence that straddles the window start is kept (and
+	// the next one inside the window follows).
+	start := time.Date(2026, 10, 1, 0, 0, 0, 0, loc)
+	e := vevent{uid: "span", summary: "trip", start: start, end: start.AddDate(0, 0, 10), rrule: "FREQ=MONTHLY", exdates: map[string]bool{}}
+	got := Occurrences("c", []vevent{e}, w)
+	if len(got) != 2 || !got[0].Start.Equal(time.Date(2026, 11, 1, 0, 0, 0, 0, loc)) {
+		t.Errorf("straddling: %+v", got)
+	}
+}
+
 func TestParseDuration(t *testing.T) {
 	for in, want := range map[string]time.Duration{"PT1H30M": 90 * time.Minute, "P1D": 24 * time.Hour, "P1W": 7 * 24 * time.Hour, "-PT15M": -15 * time.Minute, "PT45S": 45 * time.Second} {
 		if got, ok := parseDuration(in); !ok || got != want {

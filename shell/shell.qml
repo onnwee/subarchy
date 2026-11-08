@@ -69,6 +69,17 @@ ShellRoot {
       }
     }
 
+    // Used by the tests: a loaded widget's property, as text ("" when the
+    // widget or property is not there).
+    function widgetProperty(id: string, name: string): string {
+      for (const b of bars.instances) {
+        const h = (b as Bar).hostFor(id)
+        if (h && h.widgetItem && h.widgetItem[name] !== undefined)
+          return String(h.widgetItem[name])
+      }
+      return ""
+    }
+
     // Used by the tests: which outputs have a bar, the power state, and the
     // interval each widget timer runs at right now.
     function status(): string {

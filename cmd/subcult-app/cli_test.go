@@ -140,3 +140,40 @@ func TestSetDefaultPersists(t *testing.T) {
 		t.Errorf("default not persisted:\n%s", h.out)
 	}
 }
+
+func TestAsk(t *testing.T) {
+	h := newHarness(t)
+	if code := h.run("ask", "--json"); code != 0 {
+		t.Fatalf("exit %d: %s", code, h.errOut)
+	}
+	var got struct {
+		ID   string
+		Name string
+		Argv []string
+	}
+	if err := json.Unmarshal(h.out.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.ID != "claude-code" || got.Name != "Claude Code" || strings.Join(got.Argv, " ") != "claude -p" {
+		t.Errorf("agent %+v", got)
+	}
+	if len(h.ran) != 0 {
+		t.Errorf("--json ran %q", h.ran)
+	}
+	if code := h.run("ask", "--", "what", "does", "--dry-run", "do"); code != 0 {
+		t.Fatalf("exit %d: %s", code, h.errOut)
+	}
+	if want := []string{"claude -p what does --dry-run do"}; strings.Join(h.ran, "|") != strings.Join(want, "|") {
+		t.Errorf("ran %q, want %q", h.ran, want)
+	}
+	if code := h.run("ask"); code != 2 {
+		t.Errorf("no question: exit %d", code)
+	}
+	if code := h.run("default", "agent", "codex"); code != 0 {
+		t.Fatalf("exit %d: %s", code, h.errOut)
+	}
+	h.run("ask", "hello")
+	if want := "codex exec hello"; len(h.ran) != 1 || h.ran[0] != want {
+		t.Errorf("after changing the default: ran %q, want %q", h.ran, want)
+	}
+}

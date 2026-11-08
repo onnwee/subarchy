@@ -64,7 +64,19 @@
         "name": "Bluetooth",
         "version": "1.0.0",
         "api": 0,
-        "kind": "bar-widget"
+        "kind": "bar-widget",
+        "panel": true
+      }
+    },
+    "subcult.calendar": {
+      "dir": "calendar",
+      "manifest": {
+        "id": "subcult.calendar",
+        "name": "Calendar",
+        "version": "1.0.0",
+        "api": 0,
+        "kind": "bar-widget",
+        "panel": true
       }
     },
     "subcult.clock": {
@@ -85,6 +97,21 @@
         "version": "1.0.0",
         "api": 0,
         "kind": "bar-widget"
+      }
+    },
+    "subcult.downloads": {
+      "dir": "downloads",
+      "manifest": {
+        "id": "subcult.downloads",
+        "name": "Downloads",
+        "version": "1.0.0",
+        "api": 0,
+        "kind": "bar-widget",
+        "panel": true,
+        "settings": {
+          "directory": "~/Downloads",
+          "audioOnly": false
+        }
       }
     },
     "subcult.indicators": {
@@ -146,7 +173,8 @@
         "name": "Network",
         "version": "1.0.0",
         "api": 0,
-        "kind": "bar-widget"
+        "kind": "bar-widget",
+        "panel": true
       }
     },
     "subcult.notifications": {

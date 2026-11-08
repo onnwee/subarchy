@@ -57,6 +57,11 @@ if [ "$1 $2" = "font current" ]; then
   printf 'monospace   (default)  resolves to DejaVu Sans Mono\nsans-serif  Inter\nserif       (default)  resolves to DejaVu Serif\n'; exit 0
 fi
 if [ "$1 $2" = "font set" ] || [ "$1 $2" = "cursor apply" ]; then echo "$*" >>"$HOME/settings-actions"; exit 0; fi
+# The default agent for the launcher's Ask row, and its answer.
+if [ "$1 $2 $3" = "app ask --json" ]; then
+  printf '{"id": "stub-agent", "name": "Stub Agent", "argv": ["echo"]}\n'; exit 0
+fi
+if [ "$1 $2" = "app ask" ]; then shift 2; [ "$1" = "--" ] && shift; echo "answer to: $*"; exit 0; fi
 [ "$1 $2" = "commands --json" ] || exit 2
 cat <<'JSON'
 {"ok": true, "commands": [
@@ -65,6 +70,15 @@ cat <<'JSON'
 JSON
 STUB
 chmod +x "$work/bin/subcult"
+# A stand-in for yt-dlp: progress lines, then the file it "wrote".
+cat >"$work/bin/yt-dlp" <<'STUB'
+#!/bin/sh
+dir=""; while [ $# -gt 0 ]; do case $1 in -P) dir=$2; shift 2;; --) shift; break;; *) shift;; esac; done
+echo "[download]  40.0% of 10.00MiB at 2.00MiB/s ETA 00:03"; sleep 1
+echo "[download] 100% of 10.00MiB in 00:00:02 at 5.00MiB/s"
+mkdir -p "$dir" && : >"$dir/Clip [abc].mp4" && echo "$dir/Clip [abc].mp4"
+STUB
+chmod +x "$work/bin/yt-dlp"
 # A stand-in for systemd-inhibit (no logind here) that holds like it does:
 # its command line stays visible and SIGTERM ends it.
 cat >"$work/bin/systemd-inhibit" <<'STUB'
@@ -323,7 +337,7 @@ ls=$(launcher state)
 [[ $(python3 -c "import json,sys; print(json.loads(sys.argv[1])['pending'])" "$ls") == "subcult app remove" ]] ||
   fail "a dangerous command did not ask for confirmation: $ls"
 ls=$(lstate "zzqx nothing here")
-[[ $(row '[(x["kind"], x["url"]) for x in r]') == "[('web', 'https://duckduckgo.com/?q=zzqx%20nothing%20here')]" ]] ||
+[[ $(row '[(x["kind"], x["url"]) for x in r if x["kind"] != "ask"]') == "[('web', 'https://duckduckgo.com/?q=zzqx%20nothing%20here')]" ]] ||
   fail "no match does not fall back to web search: $ls"
 ls=$(lstate "@yt cats")
 [[ $(row 'r[0]["url"]') == "https://www.youtube.com/results?search_query=cats" ]] || fail "@yt is not a quicklink: $ls"
@@ -357,6 +371,18 @@ else
   [[ -z ${CI:-} ]] || fail "unicode-emoji not installed"
   echo "shell-headless: unicode-emoji not installed, emoji not checked"
 fi
+# Ask AI: the last row of a root search names the agent and says the text
+# leaves the machine; Enter on it asks, and the answer lands in the preview.
+ls=$(lstate "what is subarchy")
+[[ $(row 'r[-1]["kind"]') == ask && $(row 'r[-1]["name"].startswith("Ask Stub Agent: ") and "what is subarchy" in r[-1]["name"]') == True ]] ||
+  fail "the Ask row is not the last root result: $ls"
+launcher last >/dev/null
+launcher enter >/dev/null
+for _ in $(seq 20); do
+  [[ $(lfield preview) == "answer to: what is subarchy" ]] && break
+  sleep 0.5
+done
+[[ $(lfield preview) == "answer to: what is subarchy" ]] || fail "the agent's answer did not reach the preview: $(launcher state)"
 launcher close >/dev/null
 
 # Script commands with Raycast headers, aliases and snippets. The script
@@ -452,6 +478,27 @@ for _ in $(seq 10); do [[ $(sfield canUndo) == False ]] && break; sleep 0.5; don
 [[ $(sfield canUndo) == False ]] || fail "undo is not one step: $(settings state)"
 HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
 rm -f "$home1/settings-actions"
+# The calendar widget reads the sync cache, watched (no polling): written
+# after start, it is picked up; the widget shows with or without it.
+mkdir -p "$home1/.local/state/subcult/calendar"
+printf '{"version": 1, "syncedAt": "2026-11-07T09:30:00Z", "events": [{"id": "x", "calendar": "Test", "title": "Headless standup", "start": "2099-01-01T10:00:00", "end": "2099-01-01T10:30:00", "allDay": false}]}\n' \
+  >"$home1/.local/state/subcult/calendar/events.json"
+[[ $(json '"subcult.calendar" in d["shown"]["HEADLESS-1"]') == True ]] || fail "the calendar widget is not shown: $st"
+calendar() { HOME=$home1 quickshell ipc -p "$shell" call subcult.shell widgetProperty subcult.calendar label; }
+for _ in $(seq 20); do
+  [[ $(calendar) == *"Headless standup 10:00" ]] && break
+  sleep 0.5
+done
+[[ $(calendar) == *"Headless standup 10:00" ]] || fail "the calendar widget did not pick up the written cache: $(calendar)"
+# The network and Bluetooth panels open without NetworkManager or BlueZ
+# (nothing to list, nothing scans) and close like any panel.
+for w in network bluetooth; do
+  HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel "subcult.$w" >/dev/null
+  sleep 1
+  st=$(status "$home1")
+  [[ $(json 'd.get("panel")') == "subcult.$w" ]] || fail "the $w panel did not open: $st"
+  HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
+done
 # The notification centre opens from the bell and closes like any panel.
 HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.notifications >/dev/null
 sleep 1
@@ -496,6 +543,32 @@ HOME=$home1 quickshell ipc -p "$shell" call subcult.wallpaper next >/dev/null
 sleep 2
 [[ $(cat "$home1/.local/state/subcult/wallpaper") == "$home1/walls/b.png" ]] || fail "auto-wallpaper did not go to the next image"
 rm -f "$home1/.local/state/subcult/wallpaper"
+# The downloads widget, off by default: enabled in bar.json it loads and
+# stays hidden; a queued URL runs the (stub) yt-dlp, shows while running,
+# finishes with the file, and hides again.
+printf '{"layout": {"left": ["subcult.test-probe", "subcult.downloads"]}, "widgets": {"subcult.downloads": {"directory": "%s/dl"}}}\n' "$home1" >"$home1/.config/subcult/shell/bar.json"
+sleep 2
+st=$(status "$home1")
+[[ $(json '"subcult.downloads" in d["loaded"]["HEADLESS-1"] and "subcult.downloads" not in d["shown"]["HEADLESS-1"]') == True ]] ||
+  fail "downloads did not load hidden when enabled: $st"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.downloads add "https://x.test/v/1" >/dev/null || fail "downloads IPC failed"
+sleep 0.5
+st=$(status "$home1")
+[[ $(json '"subcult.downloads" in d["shown"]["HEADLESS-1"]') == True ]] || fail "downloads not shown while a job runs: $st"
+for _ in $(seq 10); do [[ -e "$home1/dl/Clip [abc].mp4" ]] && break; sleep 0.5; done
+sleep 1
+dl=$(HOME=$home1 quickshell ipc -p "$shell" call subcult.downloads state)
+[[ $(python3 -c "import json,sys; j=json.loads(sys.argv[1]); print(j[0]['status'], j[0]['percent'], j[0]['file'].endswith('Clip [abc].mp4'))" "$dl") == "done 100 True" ]] ||
+  fail "the download did not finish as expected: $dl"
+st=$(status "$home1")
+[[ $(json '"subcult.downloads" in d["shown"]["HEADLESS-1"]') == False ]] || fail "downloads still shown when idle: $st"
+# Opening another widget's panel while one is open switches to it.
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.audio >/dev/null
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.notifications >/dev/null
+sleep 1
+st=$(status "$home1")
+[[ $(json 'd.get("panel")') == subcult.notifications ]] || fail "a second widget's panel did not replace the first: $st"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
 check_log "$work/qs1.log"
 
 # Workspace names written after start reach the bar's labels; the switch
