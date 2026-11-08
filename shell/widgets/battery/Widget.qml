@@ -6,7 +6,8 @@ import "Model.js" as Model
 import "../../Commons/Glyphs.js" as Glyphs
 
 // Battery level and the power profile. Hidden without a laptop battery.
-// Click cycles power-saver, balanced and performance.
+// A click opens the power panel (charge, time left, rate, health, profile);
+// a right click cycles power-saver, balanced and performance.
 BarWidget {
   id: root
 
@@ -26,10 +27,13 @@ BarWidget {
     label: root.percent + "%"
     color: root.percent <= 10 && !root.charging ? Theme.error : Theme.subtext
     tooltip: root.profile + (root.charging ? ", charging" : "")
-    onClicked: {
-      PowerProfiles.profile = PowerProfiles.profile === PowerProfile.PowerSaver ? PowerProfile.Balanced
-        : PowerProfiles.profile === PowerProfile.Balanced && PowerProfiles.hasPerformanceProfile ? PowerProfile.Performance
-        : PowerProfile.PowerSaver
+    onClicked: (mouse) => {
+      if (mouse.button === Qt.RightButton)
+        PowerProfiles.profile = PowerProfiles.profile === PowerProfile.PowerSaver ? PowerProfile.Balanced
+          : PowerProfiles.profile === PowerProfile.Balanced && PowerProfiles.hasPerformanceProfile ? PowerProfile.Performance
+          : PowerProfile.PowerSaver
+      else
+        root.openPanel()
     }
   }
 }

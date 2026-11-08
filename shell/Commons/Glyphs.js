@@ -61,6 +61,8 @@ function powerProfile(name) {
 const idleInhibit = "\u{F0176}" // coffee
 const recording = "\u{F044A}"   // record
 const updates = "\u{F06B0}"     // update
+const close = "\u{F0156}"       // close
+const clearAll = "\u{F0A7A}"    // delete_sweep
 
 function bell(unread, dnd) {
   if (dnd)

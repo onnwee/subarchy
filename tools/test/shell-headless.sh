@@ -381,6 +381,13 @@ st=$(status "$home1")
 [[ $(json '"subcult.media" in d["loaded"]["HEADLESS-1"] and "subcult.media" not in d["shown"]["HEADLESS-1"]') == True ]] ||
   fail "the media widget is not loaded-and-hidden without a player: $st"
 
+# The notification centre opens from the bell and closes like any panel.
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.notifications >/dev/null
+sleep 1
+st=$(status "$home1")
+[[ $(json 'd.get("panel")') == subcult.notifications ]] || fail "the notifications panel did not open: $st"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
+
 # A widget's click-out panel: the audio panel opens on request (no
 # PipeWire here, so it shows no devices), one at a time, and closes.
 HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.audio >/dev/null
