@@ -51,6 +51,17 @@ function modeFor(output, cfg, outputs) {
   return "minimal"
 }
 
+// The output an overlay shows on: the one it is on while that exists,
+// else the focused output, else the first. names holds the real outputs.
+function pickScreen(names, focused, current) {
+  const all = (names || []).filter(isReal)
+  if (current && all.indexOf(current) >= 0)
+    return current
+  if (focused && all.indexOf(focused) >= 0)
+    return focused
+  return all.length > 0 ? all[0] : ""
+}
+
 // A screen's description: Hyprland's for that output when it reports one
 // ("make model serial"), else the screen's own model and serial.
 function describe(screen, hyprMonitors) {

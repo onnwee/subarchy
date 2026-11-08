@@ -3,7 +3,6 @@ import QtQuick
 import QtQuick.Controls
 import Quickshell
 import Quickshell.Wayland
-import Quickshell.Hyprland
 import Quickshell.Services.Polkit
 import qs.Commons
 
@@ -16,7 +15,7 @@ PanelWindow { // qmllint disable uncreatable-type
   readonly property var flow: agent.flow // qmllint disable unresolved-type
 
   visible: agent.isActive && flow !== null
-  screen: Quickshell.screens.find(s => Hyprland.focusedMonitor && s.name === Hyprland.focusedMonitor.name) || Quickshell.screens[0]
+  screen: place.screen
   WlrLayershell.namespace: "subcult-polkit"
   WlrLayershell.layer: WlrLayer.Overlay
   WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
@@ -35,8 +34,14 @@ PanelWindow { // qmllint disable uncreatable-type
 
   onVisibleChanged: {
     password.text = ""
-    if (visible)
+    if (visible) {
+      place.open()
       password.forceActiveFocus()
+    }
+  }
+
+  OverlayScreen {
+    id: place
   }
 
   // After a wrong password PAM asks again; the field was disabled while it

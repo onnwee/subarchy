@@ -12,7 +12,7 @@ import "Commons/Glyphs.js" as Glyphs
 // output. Volume shows on its own when PipeWire reports a change. The
 // brightness keys arrive as global shortcuts: brightnessctl sets the level,
 // then the OSD reads it back from sysfs. Hidden after 1.5 s; the window
-// exists only while shown.
+// exists only while shown, on the output that was focused when it opened.
 PanelWindow { // qmllint disable uncreatable-type
   id: osd
 
@@ -26,7 +26,9 @@ PanelWindow { // qmllint disable uncreatable-type
   readonly property var sink: Pipewire.defaultAudioSink
 
   visible: kind !== ""
-  screen: Quickshell.screens.find(s => Hyprland.focusedMonitor && s.name === Hyprland.focusedMonitor.name) || Quickshell.screens[0]
+  screen: place.screen
+  // No clicks: the OSD sits over whatever the pointer is on.
+  mask: Region {}
   WlrLayershell.namespace: "subcult-osd"
   WlrLayershell.layer: WlrLayer.Overlay
   exclusionMode: ExclusionMode.Ignore
@@ -37,6 +39,8 @@ PanelWindow { // qmllint disable uncreatable-type
   color: "transparent"
 
   function show(k) {
+    if (osd.kind === "")
+      place.open()
     if (k === "brightness") {
       const v = osd.brightnessLevel()
       if (v === null)
@@ -49,6 +53,10 @@ PanelWindow { // qmllint disable uncreatable-type
     }
     osd.kind = k
     hide.restart()
+  }
+
+  OverlayScreen {
+    id: place
   }
 
   PwObjectTracker {

@@ -2,20 +2,25 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import Quickshell.Hyprland
 import Quickshell.Services.Notifications
 import qs.Commons
 import qs.services
 import "services/NotificationsModel.js" as Model
 
-// Popups at the top right of the focused output, under the bar. They go
-// after five seconds; critical ones stay until dismissed. The window
-// exists only while there is something to show.
+// Popups at the top right, under the bar, on the output that was focused
+// when the first of them appeared. They go after five seconds; critical
+// ones stay until dismissed. The window exists only while there is
+// something to show.
 PanelWindow { // qmllint disable uncreatable-type
   id: window
 
   visible: Notifications.popups.length > 0
-  screen: Quickshell.screens.find(s => Hyprland.focusedMonitor && s.name === Hyprland.focusedMonitor.name) || Quickshell.screens[0]
+  screen: place.screen
+  onVisibleChanged: if (visible) place.open()
+
+  OverlayScreen {
+    id: place
+  }
 
   WlrLayershell.namespace: "subcult-notifications"
   WlrLayershell.layer: WlrLayer.Overlay

@@ -28,13 +28,17 @@ PanelWindow { // qmllint disable uncreatable-type
   }
 
   visible: index >= 0
-  screen: Quickshell.screens.find(s => Hyprland.focusedMonitor && s.name === Hyprland.focusedMonitor.name) || Quickshell.screens[0]
+  screen: place.screen
   WlrLayershell.namespace: "subcult-altswitch"
   WlrLayershell.layer: WlrLayer.Overlay
   exclusionMode: ExclusionMode.Ignore
   implicitWidth: Math.min(sw.order.length * 168 + Style.spacing, 900)
   implicitHeight: 52 + 2 * Style.spacing
   color: "transparent"
+
+  OverlayScreen {
+    id: place
+  }
 
   Connections {
     target: Hyprland
@@ -46,6 +50,7 @@ PanelWindow { // qmllint disable uncreatable-type
 
   function step(n) {
     if (sw.index < 0) {
+      place.open()
       Hyprland.refreshToplevels()
       sw.order = Model.order(Hyprland.toplevels.values.map(t => t.address), sw.history)
       sw.index = Model.start(sw.order, n)
