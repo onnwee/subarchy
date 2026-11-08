@@ -30,10 +30,3 @@ function start(order, step) {
     return 0
   return step > 0 ? 1 : order.length - 1
 }
-
-// Each Alt-Tab key press and the Alt release arrive as separate processes,
-// so on a quick tap the release (commit) can land before the first step.
-// A step within windowMs after such an empty commit applies at once.
-function autoCommit(lastEmptyCommitMs, nowMs, windowMs) {
-  return lastEmptyCommitMs >= 0 && nowMs - lastEmptyCommitMs <= windowMs
-}

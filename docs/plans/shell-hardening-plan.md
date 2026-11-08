@@ -145,11 +145,11 @@ daemon (not needed; see the owner thread of 2026-11-07).
   'hl.dsp.global("subcult:altswitch-next")'` then `…commit` (the path real
   keys take), keeps the IPC variant as a second check.
 
-- [ ] Change the VM Alt-Tab check to the global dispatcher; remove
+- [x] Change the VM Alt-Tab check to the global dispatcher; remove
   `test_altSwitchAutoCommit`.
-- [ ] `make hypr-check` and `make shell-test shell-lint` → PASS after the
+- [x] `make hypr-check` and `make shell-test shell-lint` → PASS after the
   change; the VM check is run in Task 9.
-- [ ] Commit `fix(shell): Alt-Tab and brightness through global shortcuts`.
+- [x] Commit `fix(shell): Alt-Tab and brightness through global shortcuts`.
 
 ### Task 4: Keep-awake through logind
 

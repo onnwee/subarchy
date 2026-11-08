@@ -2,7 +2,6 @@ import QtQuick
 import QtTest
 
 import "../Commons/HyprDispatch.js" as Dispatch
-import "../AltSwitchModel.js" as AltSwitch
 import "../services/NotificationsModel.js" as Notifications
 
 TestCase {
@@ -21,12 +20,6 @@ TestCase {
 
   function test_windowRejectsInjection() {
     compare(Dispatch.window('0x1") }) os.execute("x'), "")
-  }
-
-  function test_altSwitchAutoCommit() {
-    verify(AltSwitch.autoCommit(1000, 1100, 300), "a commit that came first, just before, applies to this switch")
-    verify(!AltSwitch.autoCommit(1000, 1500, 300))
-    verify(!AltSwitch.autoCommit(-1, 1100, 300))
   }
 
   function test_defaultAction() {

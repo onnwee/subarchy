@@ -6,11 +6,18 @@ import "../OsdModel.js" as Model
 TestCase {
   name: "Osd"
 
-  function test_brightnessFromMachine() {
-    compare(Model.brightness("intel_backlight,backlight,12000,50%,24000"), 0.5)
-    compare(Model.brightness("intel_backlight,backlight,24000,100%,24000\n"), 1)
-    compare(Model.brightness(""), null)
-    compare(Model.brightness("garbage"), null)
+  function test_brightnessFromSysfs() {
+    compare(Model.level("12000\n", "24000\n"), 0.5)
+    compare(Model.level("24000", "24000"), 1)
+    compare(Model.level("30000", "24000"), 1)
+    compare(Model.level("0", "24000"), 0)
+  }
+
+  function test_brightnessUnreadable() {
+    compare(Model.level("", "24000"), null, "an empty read is not zero")
+    compare(Model.level("garbage", "24000"), null)
+    compare(Model.level("100", "0"), null)
+    compare(Model.level("100", ""), null)
   }
 
   function test_volumeChangeShows() {

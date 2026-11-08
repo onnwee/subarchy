@@ -5,6 +5,7 @@ VERSION ?= 0.0.0
 LDFLAGS := -X git.subcult.tv/subculture-collective/subarchy/internal/dispatch.Version=$(VERSION)
 SHELL_SCRIPTS := $(shell git ls-files '*.sh' 'bin/subcult-*' 2>/dev/null)
 QT6BIN ?= /usr/lib/qt6/bin
+QT6QML ?= /usr/lib/qt6/qml
 .DEFAULT_GOAL := verify
 
 .PHONY: verify fmt-check vet test build smoke shellcheck docs-check package iso iso-test install-test hypr-check shell-test shell-lint shell-index-check
@@ -27,10 +28,16 @@ shell-index-check:
 	python3 tools/shell/gen-index.py --check
 
 # Quickshell maps the shell folder to the module prefix qs (import qs.Commons),
-# so the linter gets a qs -> shell link on its import path.
+# so the linter gets a qs -> shell link on its import path. Quickshell 0.3.2's
+# Hyprland._GlobalShortcuts qmldir lacks `depends Quickshell`, so qmllint
+# cannot resolve GlobalShortcut's base type; the linter reads a copy with that
+# line, placed ahead of the system modules ($(QT6QML)).
 shell-lint:
 	@mkdir -p $(BUILD)/qml && ln -sfn ../../shell $(BUILD)/qml/qs
-	@files=$$(git ls-files 'shell/*.qml' | sed 's|^|$(CURDIR)/|'); [ -z "$$files" ] || $(QT6BIN)/qmllint --max-warnings 0 -I $(CURDIR)/$(BUILD)/qml $$files
+	@gs=$(BUILD)/qml/Quickshell/Hyprland/_GlobalShortcuts; src=$(QT6QML)/Quickshell/Hyprland/_GlobalShortcuts; \
+	  if [ -f "$$src/qmldir" ]; then mkdir -p "$$gs" && cp "$$src"/*.qmltypes "$$gs"/ && \
+	  { cat "$$src/qmldir"; grep -qx 'depends Quickshell' "$$src/qmldir" || echo 'depends Quickshell'; } >"$$gs/qmldir"; fi
+	@files=$$(git ls-files 'shell/*.qml' | sed 's|^|$(CURDIR)/|'); [ -z "$$files" ] || $(QT6BIN)/qmllint --bare --max-warnings 0 -I $(CURDIR)/$(BUILD)/qml -I $(QT6QML) $$files
 
 verify: fmt-check vet test build smoke shellcheck docs-check hypr-check shell-index-check
 
