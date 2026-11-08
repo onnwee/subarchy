@@ -62,15 +62,21 @@ borrowed from `omarchy update` (`firmware`, `aur pkgs`, `mise`,
 - The pacman hooks that guard updates (`00-omarchy-update-guard.hook`) and
   pause compositor reloads during a transaction.
 
-## Open implementation choice
+## How the stable snapshot is served
 
-How the stable snapshot is served:
-
-- **Own mirror**: sync Arch's `core`, `extra` and `multilib` for x86_64 at a
-  tested point, as Omarchy does. Needs storage and bandwidth.
-- **Arch Linux Archive date pin**: point stable at
-  `archive.archlinux.org/repos/YYYY/MM/DD/`. No storage, but check whether
-  Arch accepts the archive as a regular mirror before relying on it.
+Decided 2026-11-08 by the owner: the **Arch Linux Archive date pin**. Stable
+points `core`, `extra` and `multilib` at
+`https://archive.archlinux.org/repos/YYYY/MM/DD/$repo/os/$arch`; the date
+is `default/pacman/snapshot`, shipped in the `subarchy` package and advanced
+by a commit once CI has installed and booted that day. `subcult channel set
+stable|edge` writes `/etc/pacman.d/subcult-mirrorlist` (the archive line, or
+an include of Arch's mirrorlist for edge) and `/etc/pacman.d/subcult-repo`
+(the Subarchy repository's server for that channel), and `subcult update`
+refreshes the stable mirrorlist from the shipped date before upgrading. The
+other option, an own mirror as Omarchy runs, needs storage and bandwidth on
+Almaz for the same result. The Archive documents this use (a dated
+`Server` line) and serves every day's state; it is one host, so an outage
+delays stable updates rather than breaking them.
 
 ## Consequences
 
@@ -94,6 +100,12 @@ How the stable snapshot is served:
   `checkupdates`. The VM install test runs it on a fresh install. Not yet:
   the channels, the daily check timer and bar indicator, and service restart
   detection.
+- 2026-11-08: the channels (issue #69): `subcult channel`, `subcult channel
+  set stable|edge` (`cmd/subcult-channel`, `internal/channel`), the
+  installer puts new systems on stable, and `subcult update` refreshes the
+  stable mirrorlist from the shipped snapshot date. The Subarchy repository
+  server per channel is written to `/etc/pacman.d/subcult-repo`, which
+  `pacman.conf` includes once packages are published there (#67).
 - 2026-11-07, later: the daily check is a user timer
   (`subcult-update-check.timer`, enabled for every user by the package) that
   writes the count to `~/.local/state/subcult/update-count` for the bar to
