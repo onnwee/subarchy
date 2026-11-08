@@ -11,3 +11,4 @@ OverlayScreen 1.0 OverlayScreen.qml
 singleton Panels 1.0 Panels.qml
 
 singleton Workspaces 1.0 Workspaces.qml
+singleton Motion 1.0 Motion.qml

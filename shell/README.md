@@ -77,6 +77,16 @@ anything but a camera (the screencast producer); video streams carry no
 flags in Quickshell 0.3.2, so only the nodes that could be one are
 tracked. A paused client still holds the device and keeps its mark; a
 desktop-audio capture links from a sink and shows nothing.
+## Motion
+
+One setting, `~/.config/subcult/motion.json` with `{"mode": "auto"}`, `"on"`
+or `"off"`, decides whether the interface moves (the Motion group in the
+settings panel). `auto` is on while on AC and off on battery. The shell's
+`Motion` singleton (`Motion.enabled`, `Motion.duration`, 0 when off) follows
+the file and UPower; on a change it re-runs `default/hypr/looknfeel.lua`
+through `hyprctl eval`, which keeps Hyprland's animations, blur and shadows
+off whatever the theme asked for. The lock screen reads the same file.
+
 ## Calendar
 
 The calendar widget shows the next event from the sync cache

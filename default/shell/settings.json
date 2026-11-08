@@ -13,6 +13,6 @@
     {"id": "idle.lock", "group": "Idle", "label": "Lock after (minutes, 0 never)", "kind": "number", "min": 0, "max": 240, "file": "idle.json", "path": ["lockAfterMinutes"], "default": 7},
     {"id": "idle.displayOff", "group": "Idle", "label": "Display off after (minutes, 0 never)", "kind": "number", "min": 0, "max": 240, "file": "idle.json", "path": ["displayOffAfterMinutes"], "default": 10},
     {"id": "idle.suspend", "group": "Idle", "label": "Suspend after (minutes, 0 never)", "kind": "number", "min": 0, "max": 720, "file": "idle.json", "path": ["suspendAfterMinutes"], "default": 15},
-    {"id": "motion.mode", "group": "Motion", "label": "Interface motion", "kind": "choice", "choices": ["full", "reduced", "off"], "file": "motion.json", "path": ["mode"], "default": "full"}
+    {"id": "motion.mode", "group": "Motion", "label": "Interface motion", "kind": "choice", "choices": ["auto", "on", "off"], "file": "motion.json", "path": ["mode"], "default": "auto"}
   ]
 }

@@ -62,6 +62,7 @@ smoke: build
 	tools/test/cursor-test.sh $(BUILD)/subcult-cursor
 	tools/test/fontconfig-test.sh
 	tools/test/hypr-theme-test.sh
+	tools/test/hypr-motion-test.sh
 
 shellcheck:
 	@if [ -n "$(SHELL_SCRIPTS)" ]; then shellcheck -x $(SHELL_SCRIPTS); fi
