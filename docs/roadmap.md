@@ -14,6 +14,12 @@ Built from scratch ([[0001-fork-strategy|ADR 0001]]), in the order of the
 [[decision-map|decision map]]. Each phase ends with something that boots or
 runs and is checked in CI.
 
+The open items below are tracked as Gitea issues under
+[roadmap issue #29](https://git.subcult.tv/subculture-collective/subarchy/issues/29),
+one issue per PR in dependency order. The issue plan is
+`tools/roadmap/subarchy-roadmap.json`; edit it and republish with the
+`roadmap-slicer` skill when this page changes.
+
 ## Phase 0: inventory and decisions
 
 - [x] Inventory of Omarchy 4.5.0 and `sputnik`
