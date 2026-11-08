@@ -39,7 +39,7 @@ PanelWindow { // qmllint disable uncreatable-type
     // The identity to authenticate as, chosen before the first response:
     // the current user when several admins are offered.
     onAuthenticationRequestStarted: {
-      const f = agent.flow
+      const f = agent.flow // qmllint disable unresolved-type
       const ids = f ? Array.from(f.identities || []) : []
       if (ids.length > 0)
         f.selectedIdentity = ids[Model.pickIdentity(ids, dialog.userName)]
