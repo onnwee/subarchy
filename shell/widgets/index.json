@@ -39,7 +39,8 @@
         "name": "Bluetooth",
         "version": "1.0.0",
         "api": 0,
-        "kind": "bar-widget"
+        "kind": "bar-widget",
+        "panel": true
       }
     },
     "subcult.clock": {
@@ -120,7 +121,8 @@
         "name": "Network",
         "version": "1.0.0",
         "api": 0,
-        "kind": "bar-widget"
+        "kind": "bar-widget",
+        "panel": true
       }
     },
     "subcult.notifications": {
