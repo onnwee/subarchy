@@ -366,12 +366,14 @@ inhibitor() { pgrep -u "$(id -u)" -f '[s]ystemd-inhibit --what=idle --who=SUBCUL
 HOME=$home1 quickshell ipc -p "$shell" call subcult.shell keepAwake true >/dev/null
 for _ in $(seq 10); do inhibitor && break; sleep 0.5; done
 inhibitor || fail "keep-awake holds no inhibitor: $(status "$home1")"
+for _ in $(seq 10); do [[ $(cat "$home1/.local/state/subcult/keep-awake" 2>/dev/null) == 1 ]] && break; sleep 0.5; done
 [[ $(cat "$home1/.local/state/subcult/keep-awake" 2>/dev/null) == 1 ]] || fail "keep-awake state not saved"
 st=$(status "$home1")
 [[ $(json 'd.get("keepAwake")') == True ]] || fail "keep-awake not reported on: $st"
 HOME=$home1 quickshell ipc -p "$shell" call subcult.shell keepAwake false >/dev/null
 for _ in $(seq 10); do inhibitor || break; sleep 0.5; done
 ! inhibitor || fail "keep-awake off left the inhibitor: $(pgrep -u "$(id -u)" -af '[s]ystemd-inhibit --what=idle' | head -3); $(status "$home1")"
+for _ in $(seq 10); do [[ ! -e "$home1/.local/state/subcult/keep-awake" ]] && break; sleep 0.5; done
 [[ ! -e "$home1/.local/state/subcult/keep-awake" ]] || fail "keep-awake off left the state file"
 
 # The media widget loads and stays hidden without a player (no MPRIS here).
