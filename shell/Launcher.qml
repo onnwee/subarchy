@@ -17,7 +17,9 @@ import "LauncherModel.js" as Model
 // while typing (no index); ":" searches emoji and symbols and copies the
 // pick. A preview pane shows the selected file or symbol. The last row of a
 // root search asks the default agent (`subcult app ask`); it says the text
-// leaves the machine, and the answer shows in the preview pane. Each alias
+// leaves the machine, and the answer shows in the preview pane. "$" (and
+// Super+Ctrl+V) lists the clipboard history `subcult clipboard` keeps;
+// Enter copies an entry back. Each alias
 // the user names is also a global shortcut, subcult:alias.<name>, for
 // Hyprland bindings.
 // Quickshell keeps the app list and refreshes it when desktop entries
@@ -54,6 +56,8 @@ PanelWindow { // qmllint disable uncreatable-type
   // its answer so far.
   property var agent: null
   property var asking: null
+  // The clipboard history, read when "$" is typed and after a copy or clear.
+  property var clips: []
 
   readonly property string systemDir: (Quickshell.env("SUBCULT_PATH") || "/usr/share/subcult") + "/default/launcher/"
   readonly property string userDir: Quickshell.env("HOME") + "/.config/subcult/launcher/"
@@ -80,7 +84,7 @@ PanelWindow { // qmllint disable uncreatable-type
     || (launcher.parsed.mode === "root" && Model.looksLikeMath(launcher.parsed.text)) ? launcher.parsed.text : ""
   readonly property var results: launcher.open ? launcher.rows(launcher.query) : []
   readonly property var selected: launcher.results[launcher.index] || null
-  readonly property bool previewing: launcher.selected !== null && (launcher.selected.kind === "file" || launcher.selected.kind === "symbol" || launcher.selected.kind === "ask")
+  readonly property bool previewing: launcher.selected !== null && ["file", "symbol", "ask", "clip"].indexOf(launcher.selected.kind) >= 0
   readonly property bool home: launcher.query.trim() === ""
   readonly property int columns: 4
 
@@ -125,6 +129,11 @@ PanelWindow { // qmllint disable uncreatable-type
       return launcher.fileResult.text === p.text ? launcher.fileResult.rows : []
     if (p.mode === "symbols")
       return Model.rank(launcher.symbolItems, [], launcher.history, p.text, Date.now(), 50)
+    if (p.mode === "clipboard") {
+      if (p.text === "")
+        return launcher.clips.length > 0 ? launcher.clips.concat([Model.clipClear]) : []
+      return launcher.clips.filter(c => Model.match(c, p.text) > 0)
+    }
     if (p.text === "")
       return Model.rank(launcher.apps, launcher.favorites, launcher.history, "", Date.now(), 50)
     let out = calc
@@ -250,6 +259,13 @@ PanelWindow { // qmllint disable uncreatable-type
       askRun.command = ["subcult", "app", "ask", "--", row.text]
       askRun.running = true
       return
+    } else if (row.kind === "clip") {
+      clipAction.command = ["subcult", "clipboard", "copy", row.clipId]
+      clipAction.running = true
+    } else if (row.kind === "clipclear") {
+      clipAction.command = ["subcult", "clipboard", "clear"]
+      clipAction.running = true
+      return
     } else if (row.kind === "file") {
       Quickshell.execDetached(["uwsm-app", "--", "xdg-open", row.path])
       launcher.remember(row.id)
@@ -341,6 +357,16 @@ PanelWindow { // qmllint disable uncreatable-type
   // through a short read.
   function loadPreview() {
     const row = launcher.selected
+    if (row && row.kind === "clip" && !row.isImage) {
+      if (previewRead.running) {
+        launcher.previewAgain = true
+        return
+      }
+      previewRead.path = row.id
+      previewRead.command = ["subcult", "clipboard", "show", row.clipId]
+      previewRead.running = true
+      return
+    }
     if (!row || row.kind !== "file" || Model.isImage(row.path)) {
       launcher.preview = ""
       return
@@ -367,6 +393,8 @@ PanelWindow { // qmllint disable uncreatable-type
       fdDelay.restart()
     if (launcher.parsed.mode === "symbols")
       launcher.wantSymbols = true
+    if (launcher.parsed.mode === "clipboard" && !clipList.running)
+      clipList.running = true
   }
   onSelectedChanged: launcher.loadPreview()
 
@@ -395,6 +423,25 @@ PanelWindow { // qmllint disable uncreatable-type
   }
 
   Process {
+    id: clipList
+    command: ["subcult", "clipboard", "list", "--json"]
+    stdout: StdioCollector {
+      onStreamFinished: launcher.clips = Model.clipboard(text)
+    }
+  }
+
+  // copy puts an entry back and closes; clear empties the list and stays.
+  Process {
+    id: clipAction
+    onExited: {
+      if (clipAction.command[2] === "copy")
+        launcher.hide()
+      else
+        clipList.running = true
+    }
+  }
+
+  Process {
     id: askRun
     stdout: StdioCollector {
       onStreamFinished: if (launcher.asking) launcher.asking = { row: launcher.asking.row, answer: text.trim() === "" ? "(no answer)" : text.trim() }
@@ -416,7 +463,7 @@ PanelWindow { // qmllint disable uncreatable-type
     id: previewRead
     property string path: ""
     stdout: StdioCollector {
-      onStreamFinished: if (launcher.selected && launcher.selected.path === previewRead.path) launcher.preview = text
+      onStreamFinished: if (launcher.selected && (launcher.selected.path === previewRead.path || launcher.selected.id === previewRead.path)) launcher.preview = text
     }
     onExited: if (launcher.previewAgain) {
       launcher.previewAgain = false
@@ -496,6 +543,16 @@ PanelWindow { // qmllint disable uncreatable-type
     onPressed: launcher.open ? launcher.hide() : launcher.show()
   }
 
+  GlobalShortcut {
+    appid: "subcult"
+    name: "clipboard"
+    description: "Open the launcher on the clipboard history"
+    onPressed: {
+      launcher.show()
+      launcher.query = "$"
+    }
+  }
+
   IpcHandler {
     target: "subcult.launcher"
     function open(): void { launcher.show() }
@@ -516,7 +573,8 @@ PanelWindow { // qmllint disable uncreatable-type
         aliases: Object.keys(launcher.aliasNames),
         rows: launcher.results.map(r => ({ kind: r.kind || "app", id: r.id, name: r.name, url: r.url || "" })),
         preview: launcher.previewing ? (launcher.selected.kind === "symbol" ? launcher.selected.char
-          : launcher.selected.kind === "ask" ? (launcher.asking ? launcher.asking.answer : "") : launcher.preview) : ""
+          : launcher.selected.kind === "ask" ? (launcher.asking ? launcher.asking.answer : "")
+          : launcher.selected.kind === "clip" && launcher.selected.isImage ? launcher.selected.file : launcher.preview) : ""
       })
     }
     // The ids a query ranks, as JSON (used by the tests).
@@ -660,7 +718,7 @@ PanelWindow { // qmllint disable uncreatable-type
             visible: field.text === ""
             anchors.verticalCenter: parent.verticalCenter
             text: launcher.argFor ? launcher.argFor.params[launcher.argValues.length].placeholder
-              : "Search apps, commands and snippets; = calculate, @ web, . files, : emoji"
+              : "Search apps, commands and snippets; = calculate, @ web, . files, : emoji, $ clipboard"
             color: Theme.muted
             font: field.font
           }
@@ -833,7 +891,8 @@ PanelWindow { // qmllint disable uncreatable-type
         }
         Image {
           id: imagePreview
-          readonly property bool wanted: launcher.selected !== null && launcher.selected.kind === "file" && Model.isImage(launcher.selected.path)
+          readonly property bool wanted: launcher.selected !== null && ((launcher.selected.kind === "file" && Model.isImage(launcher.selected.path))
+            || (launcher.selected.kind === "clip" && launcher.selected.isImage))
           visible: wanted
           anchors.fill: parent
           anchors.margins: 4
@@ -841,10 +900,10 @@ PanelWindow { // qmllint disable uncreatable-type
           asynchronous: true
           sourceSize.width: 1024
           sourceSize.height: 1024
-          source: wanted ? "file://" + launcher.selected.path : ""
+          source: wanted ? "file://" + (launcher.selected.kind === "clip" ? launcher.selected.file : launcher.selected.path) : ""
         }
         Text {
-          visible: launcher.selected !== null && launcher.selected.kind === "file" && !imagePreview.wanted
+          visible: launcher.selected !== null && (launcher.selected.kind === "file" || launcher.selected.kind === "clip") && !imagePreview.wanted
           x: Style.spacing
           y: Style.spacing
           width: parent.width - 2 * Style.spacing
@@ -882,6 +941,7 @@ PanelWindow { // qmllint disable uncreatable-type
           : launcher.parsed.mode === "files" ? (launcher.parsed.text === "" ? "Type part of a file name; fd searches your home folder"
             : launcher.fileResult.text === launcher.parsed.text ? "Nothing found" : "Searching…")
           : launcher.parsed.mode === "symbols" && launcher.parsed.text === "" ? "Type an emoji or symbol name; Enter copies it"
+          : launcher.parsed.mode === "clipboard" ? (launcher.clips.length === 0 ? "Clipboard history is empty" : "Nothing found")
           : "Nothing found"
         textFormat: Text.PlainText
         wrapMode: Text.Wrap

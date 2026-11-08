@@ -95,9 +95,17 @@ start through `uwsm-app -- <id>.desktop`.
   ADR 0047). The row says the text leaves the machine; Enter runs
   `subcult app ask -- <text>` and the answer shows in the preview pane,
   where Enter copies it. The launcher makes no other network use.
+- Clipboard history: `$` and Super+Ctrl+V list what `subcult clipboard`
+  keeps: text and PNG copies, newest first, 200 entries, under
+  `~/.local/state/subcult/clipboard`. Typing after `$` filters; Enter puts
+  the entry back on the clipboard; the last row clears the history. The
+  watcher is `subcult-clipboard.service` (`wl-paste --watch`, which sleeps
+  on the Wayland socket between copies; no timers). Copies marked
+  `x-kde-passwordManagerHint` are never stored and are cleared from the
+  clipboard after 30 s.
 - Preview: the pane under the results shows the selected symbol, an image
-  file, a folder's first entries, a text file's first lines or the agent's
-  answer.
+  file, a folder's first entries, a text file's first lines, a clipboard
+  entry or the agent's answer.
 - Favorites: `/usr/share/subcult/default/launcher/favorites.json`, replaced
   by `~/.config/subcult/launcher/favorites.json` when that file has a
   `favorites` list of desktop entry ids.

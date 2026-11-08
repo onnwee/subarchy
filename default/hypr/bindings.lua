@@ -49,6 +49,7 @@ sub.bind("XF86MonBrightnessDown", "Brightness down", shell_key("brightness-down"
 
 -- The launcher (ADR 0057).
 sub.bind("SUPER + SPACE", "Launcher", shell_key("launcher-toggle"))
+sub.bind("SUPER + CTRL + V", "Clipboard history", shell_key("clipboard"))
 
 -- Alt-Tab across all workspaces, most recent first (the shell's switcher).
 sub.bind("ALT + TAB", "Next window", shell_key("altswitch-next"))

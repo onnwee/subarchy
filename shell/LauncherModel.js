@@ -124,7 +124,8 @@ function move(index, step, count) {
 // --- Commands, calculator and web search ---------------------------------
 
 // What a query asks for: "=" is the calculator, "@" web search, "." files,
-// ":" symbols and emoji; anything else is root search.
+// ":" symbols and emoji, "$" the clipboard history; anything else is root
+// search.
 function parseQuery(query) {
   const q = String(query || "")
   if (q.startsWith("="))
@@ -135,6 +136,8 @@ function parseQuery(query) {
     return { mode: "files", text: q.slice(1).trim() }
   if (q.startsWith(":"))
     return { mode: "symbols", text: q.slice(1).trim() }
+  if (q.startsWith("$"))
+    return { mode: "clipboard", text: q.slice(1).trim() }
   return { mode: "root", text: q.trim() }
 }
 
@@ -521,3 +524,40 @@ function askRow(agent, text) {
   return { kind: "ask", id: "ask:" + agent.id, name: "Ask " + agent.name + ": \u201c" + text + "\u201d",
     genericName: "Sends the text to " + agent.name + "'s provider: it leaves this machine. Enter asks", icon: "dialog-question", text: text }
 }
+
+// --- Clipboard history -----------------------------------------------------
+
+// Rows from `subcult clipboard list --json`, newest first: text entries
+// with their first line, image entries with their file for the preview.
+function clipboard(text) {
+  let d
+  try {
+    d = JSON.parse(text)
+  } catch (e) {
+    return []
+  }
+  if (!Array.isArray(d))
+    return []
+  return d.filter(e => e && typeof e.id === "string" && e.id !== "").map(e => {
+    const w = when(e.time)
+    return {
+      kind: "clip", id: "clip:" + e.id, clipId: e.id, name: String(e.preview || ""),
+      genericName: (e.kind === "image" ? "Image" : "Text") + (w ? ", " + w : ""),
+      icon: e.kind === "image" ? "image-x-generic" : "edit-paste", file: e.file || "", isImage: e.kind === "image"
+    }
+  })
+}
+
+// "14:05" today, else "Nov 7 14:05".
+function when(iso) {
+  const d = new Date(iso)
+  if (isNaN(d.getTime()))
+    return ""
+  const now = new Date()
+  const hm = pad(d.getHours()) + ":" + pad(d.getMinutes())
+  if (d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate())
+    return hm
+  return ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][d.getMonth()] + " " + d.getDate() + " " + hm
+}
+
+const clipClear = { kind: "clipclear", id: "clip:clear", name: "Clear clipboard history", genericName: "Drops every entry and its image files", icon: "edit-clear" }

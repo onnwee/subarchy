@@ -116,5 +116,9 @@ was proposed by the agent and confirmed by the owner on 2026-11-07.
   shortcut the shell registers, as Omarchy binds its shell shortcuts; Raycast
   modes `fullOutput`, `compact` and `silent` are supported and `inline` runs
   as `compact`.
+- 2026-11-07: `.` files through `fd`, `:` emoji and symbols, the preview pane
+  (issue #93); Ask AI as the last root row through `subcult app ask` (issue
+  #116); `$` clipboard history kept by `subcult clipboard` with the secret
+  rule of ADR 0056 (issue #94).
 
 Related: [[decision-map|Decision map]] · [[0036-shell-components|ADR 0036]] · [[0056-quality-of-life|ADR 0056]] · [[0046-distribution-cli|ADR 0046]]

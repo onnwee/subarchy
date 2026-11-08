@@ -338,6 +338,24 @@ TestCase {
     compare(Model.askRow({ id: "a", name: "A" }, ""), null)
   }
 
+  function test_clipboard() {
+    const list = Model.clipboard('[{"id": "aaaa", "kind": "text", "mime": "text/plain", "size": 11, "time": "2026-11-07T22:00:00Z", "preview": "hello world"},'
+      + ' {"id": "bbbb", "kind": "image", "mime": "image/png", "size": 5, "time": "bad", "preview": "Image, 5 bytes", "file": "/s/bbbb.png"}, {"kind": "text"}]')
+    compare(list.map(c => c.id), ["clip:aaaa", "clip:bbbb"])
+    compare(list[0].clipId, "aaaa")
+    compare(list[0].name, "hello world")
+    compare(list[0].icon, "edit-paste")
+    verify(list[0].genericName.indexOf("Text, ") === 0)
+    compare(list[1].isImage, true)
+    compare(list[1].file, "/s/bbbb.png")
+    compare(list[1].genericName, "Image", "an unreadable time is left out")
+    compare(Model.clipboard("not json"), [])
+    compare(Model.clipboard('{"x": 1}'), [])
+    compare(Model.clipClear.kind, "clipclear")
+    compare(Model.parseQuery("$old"), { mode: "clipboard", text: "old" })
+    compare(Model.match(list[0], "hello"), 4, "entries filter by their text")
+  }
+
   function test_symbols() {
     const list = Model.symbols('{"symbols": [{"char": "—", "name": "em dash", "group": "Punctuation"}, {"char": "→", "name": "right arrow"}, {"char": "", "name": "x"}, {"name": "no char"}]}')
     compare(list.map(x => x.char), ["—", "→"])
