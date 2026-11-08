@@ -5,3 +5,4 @@
 %wheel ALL=(root) NOPASSWD: /usr/bin/subcult-update privileged upgrade
 %wheel ALL=(root) NOPASSWD: /usr/bin/subcult-update privileged upgrade --noconfirm
 %wheel ALL=(root) NOPASSWD: /usr/bin/subcult-update privileged prune
+%wheel ALL=(root) NOPASSWD: /usr/bin/subcult-update privileged services

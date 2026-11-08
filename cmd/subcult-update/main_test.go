@@ -175,6 +175,13 @@ func TestPrivileged(t *testing.T) {
 	if code := a.main(context.Background(), []string{"privileged", "snapshot"}); code != 0 || out.String() != "12\n" {
 		t.Errorf("snapshot: exit %d, out %q", code, out)
 	}
+	// The services step scans /proc itself (as root) and runs no command.
+	a.procDir = t.TempDir()
+	r.ran = nil
+	out.Reset()
+	if code := a.main(context.Background(), []string{"privileged", "services"}); code != 0 || len(r.ran) != 0 || out.String() != "" {
+		t.Errorf("services: exit %d, ran %q, out %q", code, r.ran, out)
+	}
 	for _, bad := range [][]string{{"privileged", "upgrade", "--overwrite=*"}, {"privileged"}, {"privileged", "rm"}} {
 		if code := a.main(context.Background(), bad); code != 2 {
 			t.Errorf("%q accepted: exit %d", bad, code)

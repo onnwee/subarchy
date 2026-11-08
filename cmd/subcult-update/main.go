@@ -46,6 +46,7 @@ type app struct {
 	runner         update.Runner
 	migrations     func() (update.Migrations, error)
 	euid           int
+	procDir        string // /proc, for the services step
 	stateDir       func() (string, error)
 }
 
@@ -57,6 +58,7 @@ func main() {
 		runner:     update.ExecRunner{Stdin: os.Stdin, Stdout: os.Stdout, Stderr: os.Stderr},
 		migrations: update.DefaultMigrations,
 		euid:       os.Geteuid(),
+		procDir:    "/proc",
 		stateDir:   stateDir,
 	}
 	os.Exit(a.main(ctx, os.Args[1:]))
@@ -162,11 +164,21 @@ func (a *app) update(ctx context.Context, yes, noSnapshot, dryRun bool) int {
 // command lines for wheel without a password (ADR 0062).
 func (a *app) privileged(ctx context.Context, step string) int {
 	argv, ok := update.PrivilegedSteps(dispatch.Version)[step]
-	if !ok {
+	if !ok && step != "services" {
 		return a.usage(fmt.Errorf("unknown privileged step %q", step))
 	}
 	if a.euid != 0 {
 		return a.fail(errors.New("privileged steps run as root, through sudo"))
+	}
+	if step == "services" {
+		services, err := update.ServicesNeedingRestart(a.procDir)
+		if err != nil {
+			return a.fail(err)
+		}
+		for _, s := range services {
+			fmt.Fprintln(a.stdout, s)
+		}
+		return 0
 	}
 	if step == "snapshot" {
 		out, err := a.runner.Output(ctx, argv...)

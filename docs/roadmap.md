@@ -67,6 +67,11 @@ Plymouth, NetworkManager with the DNS trust policy, PipeWire, ufw.
         roles and `subcult font`, Subarchy cursor, shell core, event-driven
         bar widgets, notifications, OSD, polkit dialog, Alt-Tab, VM checks
         (2026-11-07)
+  - [x] Hardening (Epic A, findings F1–F11 from the Omarchy and dux
+        comparison): global shortcuts, logind keep-awake, event-driven
+        keyboard layout and recording marks, notification replacement and
+        plain text, overlay placement, polkit focus; qualified by the full
+        VM install test on 2026-11-08 (62 checks, main-thread idle budget)
   - [ ] Plan 2: weather (with `linecast`), Soma, n8n, HT3
   - [ ] Plan 3: calendar sync and widget
 - [ ] Shell stage 2: a panel per widget

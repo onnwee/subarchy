@@ -556,6 +556,13 @@ dl=$(HOME=$home1 quickshell ipc -p "$shell" call subcult.downloads state)
   fail "the download did not finish as expected: $dl"
 st=$(status "$home1")
 [[ $(json '"subcult.downloads" in d["shown"]["HEADLESS-1"]') == False ]] || fail "downloads still shown when idle: $st"
+# Opening another widget's panel while one is open switches to it.
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.audio >/dev/null
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.notifications >/dev/null
+sleep 1
+st=$(status "$home1")
+[[ $(json 'd.get("panel")') == subcult.notifications ]] || fail "a second widget's panel did not replace the first: $st"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
 check_log "$work/qs1.log"
 
 # Workspace names written after start reach the bar's labels; the switch

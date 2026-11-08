@@ -18,7 +18,10 @@ type Options struct {
 	NoSnapshot bool   // skip the pre-update snapshot
 	Version    string // Subarchy version, for the snapshot description
 	ModulesDir string // /usr/lib/modules
-	ProcDir    string // /proc; empty skips the restart report
+	// ProcDir is /proc; empty skips the restart report. With Privileged set,
+	// the scan runs as root (`privileged services`): another user's
+	// /proc/<pid>/maps is not readable, so system services would never show.
+	ProcDir    string
 	Migrations Migrations
 	Stdin      io.Reader
 	Stdout     io.Writer
@@ -30,6 +33,8 @@ type Options struct {
 
 // PrivilegedSteps are the root steps `subcult-update privileged` accepts,
 // mapped to the commands they run. Nothing in them comes from the caller.
+// The `services` step runs no command: it is ServicesNeedingRestart on
+// /proc as root, printed one unit per line.
 func PrivilegedSteps(version string) map[string][]string {
 	return map[string][]string{
 		"snapshot": {"snapper", "-c", "root", "create", "--cleanup-algorithm", "number",
@@ -160,7 +165,19 @@ func (u *Updater) Run(ctx context.Context) (Report, error) {
 	}
 
 	if u.O.ProcDir != "" {
-		services, err := ServicesNeedingRestart(u.O.ProcDir)
+		var services []string
+		var err error
+		if u.O.Privileged != nil {
+			var out string
+			out, err = u.R.Output(ctx, u.priv("services")...)
+			for _, line := range strings.Split(out, "\n") {
+				if line = strings.TrimSpace(line); line != "" {
+					services = append(services, line)
+				}
+			}
+		} else {
+			services, err = ServicesNeedingRestart(u.O.ProcDir)
+		}
 		if err != nil {
 			fmt.Fprintf(u.O.Stdout, "   services check: %v (continuing)\n", err)
 		}
