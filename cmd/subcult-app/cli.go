@@ -37,6 +37,10 @@ var routes = []dispatch.Described{
 	{Words: []string{"app", "default"}, Metadata: dispatch.Metadata{
 		Summary: "Show or set the default app per role", Args: "[<role> [<id>]] [--dry-run]",
 		Examples: []string{"subcult app default", "subcult app default browser", "subcult app default browser chromium"}}},
+	{Words: []string{"app", "webapp"}, Metadata: dispatch.Metadata{
+		Summary:  "Open a site as an app (a Chromium app window with its own desktop entry)",
+		Args:     "install <name> <url> [--icon FILE] | remove <name>",
+		Examples: []string{"subcult app webapp install \"Google Maps\" maps.google.com", "subcult app webapp remove \"Google Maps\""}}},
 	{Words: []string{"app", "validate"}, Metadata: dispatch.Metadata{
 		Summary: "Check the system and user catalogue files", Args: "[file]"}},
 }
@@ -45,6 +49,7 @@ type options struct {
 	dryRun, json bool
 	role         string
 	args         []string
+	icon         string // --icon FILE for webapp install
 }
 
 func parseOptions(args []string) (options, error) {
@@ -63,6 +68,14 @@ func parseOptions(args []string) (options, error) {
 			o.role = args[i]
 		case strings.HasPrefix(a, "--role="):
 			o.role = strings.TrimPrefix(a, "--role=")
+		case a == "--icon":
+			if i+1 >= len(args) {
+				return o, errors.New("--icon needs a file")
+			}
+			i++
+			o.icon = args[i]
+		case strings.HasPrefix(a, "--icon="):
+			o.icon = strings.TrimPrefix(a, "--icon=")
 		case strings.HasPrefix(a, "-") && a != "-":
 			return o, fmt.Errorf("unknown option %s", a)
 		default:
@@ -105,14 +118,53 @@ func (c *cli) main(args []string) int {
 	case "show":
 		return c.show(cat, o)
 	case "install":
-		return c.change(cat, o, apps.InstallPlan)
+		return c.change(cat, o, func(a apps.App) ([]apps.Step, error) { return apps.InstallPlanAt(a, paths) })
 	case "remove":
-		return c.change(cat, o, apps.RemovePlan)
+		return c.change(cat, o, func(a apps.App) ([]apps.Step, error) { return apps.RemovePlanAt(a, paths) })
+	case "webapp":
+		return c.webapp(paths, o)
 	case "default":
 		return c.setDefault(cat, paths, o)
 	default:
 		return c.usageError(fmt.Errorf("unknown subcommand %q", sub))
 	}
+}
+
+// webapp installs or removes a site as a Chromium app window (ADR 0042):
+// `webapp install <name> <url> [--icon FILE]`, `webapp remove <name>`.
+func (c *cli) webapp(paths apps.Paths, o options) int {
+	if len(o.args) == 0 {
+		return c.usageError(errors.New("webapp needs install <name> <url> or remove <name>"))
+	}
+	var steps []apps.Step
+	var err error
+	switch o.args[0] {
+	case "install":
+		if len(o.args) != 3 {
+			return c.usageError(errors.New("webapp install needs a name and a URL"))
+		}
+		steps, err = apps.WebappPlan(paths.Applications, paths.Icons, o.args[1], o.args[2], o.icon)
+	case "remove":
+		if len(o.args) != 2 {
+			return c.usageError(errors.New("webapp remove needs a name"))
+		}
+		steps, err = apps.WebappRemovePlan(paths.Applications, paths.Icons, o.args[1])
+	default:
+		return c.usageError(fmt.Errorf("webapp: unknown action %q", o.args[0]))
+	}
+	if err != nil {
+		return c.fail(err)
+	}
+	for _, s := range steps {
+		if o.dryRun {
+			fmt.Fprintln(c.stdout, s)
+			continue
+		}
+		if err := c.run(s); err != nil {
+			return c.fail(err)
+		}
+	}
+	return 0
 }
 
 func (c *cli) usage(w io.Writer) {

@@ -77,6 +77,10 @@ type Paths struct {
 	System   string
 	User     string
 	Defaults string
+	// Applications and Icons are the user's desktop entries and icon theme
+	// (XDG_DATA_HOME), where web apps are installed.
+	Applications string
+	Icons        string
 }
 
 // DefaultPaths returns the standard locations, honouring XDG_CONFIG_HOME
@@ -91,10 +95,20 @@ func DefaultPaths() (Paths, error) {
 		return Paths{}, fmt.Errorf("config directory: %w", err)
 	}
 	dir := filepath.Join(config, "subcult")
+	data := os.Getenv("XDG_DATA_HOME")
+	if data == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return Paths{}, fmt.Errorf("home directory: %w", err)
+		}
+		data = filepath.Join(home, ".local", "share")
+	}
 	return Paths{
-		System:   system,
-		User:     filepath.Join(dir, "apps.toml"),
-		Defaults: filepath.Join(dir, "defaults.toml"),
+		System:       system,
+		User:         filepath.Join(dir, "apps.toml"),
+		Defaults:     filepath.Join(dir, "defaults.toml"),
+		Applications: filepath.Join(data, "applications"),
+		Icons:        filepath.Join(data, "icons"),
 	}, nil
 }
 

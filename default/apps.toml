@@ -99,7 +99,8 @@ default_for = ["chat"]
 preinstalled = true
 source = "webapp"
 url = "https://discord.com/channels/@me"
-notes = "Chromium app window with the Vencord Web extension"
+desktop = "discord.desktop"
+notes = "Chromium app window with the Vencord Web extension (applications/discord.desktop, default/chromium/extensions/)"
 
 [[app]]
 id = "vesktop"

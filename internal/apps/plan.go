@@ -42,9 +42,21 @@ var mimeTypes = map[string][]string{
 // MIMETypes returns the MIME types the default picker sets for role.
 func MIMETypes(role string) []string { return mimeTypes[role] }
 
-// InstallPlan returns the steps that install a.
+// InstallPlan returns the steps that install a. Web apps need the user's
+// folders: see InstallPlanAt.
 func InstallPlan(a App) ([]Step, error) {
+	return InstallPlanAt(a, Paths{})
+}
+
+// InstallPlanAt returns the steps that install a, with web apps written
+// into p.Applications.
+func InstallPlanAt(a App, p Paths) ([]Step, error) {
 	switch a.Source {
+	case SourceWebapp:
+		if p.Applications == "" {
+			return nil, fmt.Errorf("%s: no applications folder to install a web app into", a.ID)
+		}
+		return WebappPlan(p.Applications, p.Icons, a.Name, a.URL, "")
 	case SourceRepo, SourceAUR:
 		// AUR apps are rebuilt into Subarchy's repository, so pacman serves both.
 		return []Step{{Argv: append([]string{"sudo", "pacman", "-S", "--needed"}, a.Packages...)}}, nil
@@ -57,9 +69,19 @@ func InstallPlan(a App) ([]Step, error) {
 	}
 }
 
-// RemovePlan returns the steps that remove a.
+// RemovePlan returns the steps that remove a. Web apps: see RemovePlanAt.
 func RemovePlan(a App) ([]Step, error) {
+	return RemovePlanAt(a, Paths{})
+}
+
+// RemovePlanAt returns the steps that remove a, web apps from p.Applications.
+func RemovePlanAt(a App, p Paths) ([]Step, error) {
 	switch a.Source {
+	case SourceWebapp:
+		if p.Applications == "" {
+			return nil, fmt.Errorf("%s: no applications folder to remove a web app from", a.ID)
+		}
+		return WebappRemovePlan(p.Applications, p.Icons, a.Name)
 	case SourceRepo, SourceAUR:
 		return []Step{{Argv: append([]string{"sudo", "pacman", "-Rns"}, a.Packages...)}}, nil
 	case SourceMise:
