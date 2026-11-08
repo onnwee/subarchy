@@ -1,0 +1,91 @@
+# Maintainer: SUBCULT <info@subcult.tv>
+# Neovim with stock LazyVim, prebuilt (ADR 0045, issue #74): the LazyVim
+# starter config at a pinned commit plus every plugin at the commit in
+# lazy-lock.json, cached in the package and copied into new home
+# directories from /etc/skel, so the first launch needs no network.
+#
+# build() runs Neovim once to fetch the plugins named in lazy-lock.json
+# (`Lazy! restore` installs exactly those commits); it needs the network,
+# unlike an ordinary PKGBUILD. To update: bump _starter and sha256sums,
+# refresh lazy-lock.json (see packaging/subarchy-nvim/README.md), rebuild.
+#
+# Licence: the starter and LazyVim are Apache-2.0 (LICENSE kept; NOTICE
+# written here, naming the one changed file). Plugins carry their own
+# licences inside their directories.
+pkgname=subarchy-nvim
+pkgver=2024.12.11
+pkgrel=1
+pkgdesc="Neovim with LazyVim, prebuilt: the starter config and pinned plugins for new users"
+arch=('any')
+url="https://github.com/LazyVim/starter"
+license=('Apache-2.0')
+depends=('neovim' 'git' 'ripgrep' 'fd' 'lazygit')
+makedepends=('neovim' 'git' 'python')
+options=('!strip')
+_starter=803bc181d7c0d6d5eeba9274d9be49b287294d99
+source=("starter-$_starter.tar.gz::https://github.com/LazyVim/starter/archive/$_starter.tar.gz"
+        lazy-lock.json
+        subarchy-lazy.lua
+        NOTICE)
+sha256sums=('b580d0bdb1654342dcf9f24fa1d4584bb91046a06dc1b6c866cbd06719b9dc7a'
+            'SKIP'
+            'SKIP'
+            'SKIP')
+
+prepare() {
+  local cfg="$srcdir/home/.config/nvim"
+  rm -rf "$srcdir/home"
+  mkdir -p "$cfg"
+  cp -r "starter-$_starter"/. "$cfg/"
+  rm -rf "$cfg/.git" "$cfg/.gitignore"
+  # Subarchy's copy of lua/config/lazy.lua: no update checker (updates come
+  # with the package), no bootstrap clone (lazy.nvim is in the cache).
+  install -m644 subarchy-lazy.lua "$cfg/lua/config/lazy.lua"
+  install -m644 lazy-lock.json "$cfg/lazy-lock.json"
+}
+
+build() {
+  local home="$srcdir/home" lazy="$srcdir/home/.local/share/nvim/lazy/lazy.nvim"
+  # lazy.nvim itself first, at the lockfile's commit (the starter's bootstrap
+  # clone is gone from Subarchy's lazy.lua); then every other plugin.
+  local lazy_commit
+  lazy_commit=$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["lazy.nvim"]["commit"])' "$home/.config/nvim/lazy-lock.json")
+  rm -rf "$lazy"
+  git clone -q --filter=blob:none https://github.com/folke/lazy.nvim.git "$lazy"
+  git -C "$lazy" checkout -q "$lazy_commit"
+  HOME="$home" XDG_CONFIG_HOME="$home/.config" XDG_DATA_HOME="$home/.local/share" \
+    XDG_STATE_HOME="$home/.local/state" XDG_CACHE_HOME="$home/.cache" \
+    nvim --headless "+Lazy! restore" +qa
+  # Every plugin the lockfile names must be there.
+  local missing
+  missing=$(python3 - "$home/.config/nvim/lazy-lock.json" "$home/.local/share/nvim/lazy" <<'PY'
+import json, os, sys
+lock = json.load(open(sys.argv[1]))
+print(" ".join(n for n in lock if not os.path.isdir(os.path.join(sys.argv[2], n))))
+PY
+)
+  [[ -z $missing ]] || { echo "plugins missing after restore: $missing" >&2; return 1; }
+}
+
+check() {
+  local home="$srcdir/home"
+  # First launch without the network: nothing to fetch.
+  HOME="$home" XDG_CONFIG_HOME="$home/.config" XDG_DATA_HOME="$home/.local/share" \
+    XDG_STATE_HOME="$home/.local/state" XDG_CACHE_HOME="$home/.cache" \
+    nvim --headless "+lua require('lazy').stats()" +qa
+}
+
+package() {
+  local home="$srcdir/home" skel="$pkgdir/etc/skel"
+  install -dm755 "$skel/.config" "$skel/.local/share/nvim"
+  cp -r "$home/.config/nvim" "$skel/.config/nvim"
+  cp -r "$home/.local/share/nvim/lazy" "$skel/.local/share/nvim/lazy"
+  # Git metadata of the cached clones stays, so Lazy can show commits and
+  # the user can update by hand; the package's own copies are not needed
+  # for the first launch.
+  find "$skel" -type d -name '.git' -prune -exec rm -rf {} +
+  find "$skel" -type f -exec chmod 644 {} +
+  find "$skel" -type d -exec chmod 755 {} +
+  install -Dm644 "starter-$_starter/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm644 NOTICE "$pkgdir/usr/share/licenses/$pkgname/NOTICE"
+}

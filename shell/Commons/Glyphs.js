@@ -59,7 +59,8 @@ function powerProfile(name) {
 }
 
 const idleInhibit = "\u{F0176}" // coffee
-const recording = "\u{F044A}"   // record
+const camera = "\u{F0100}"      // camera
+const screenShare = "\u{F1483}" // monitor_share
 const updates = "\u{F06B0}"     // update
 const close = "\u{F0156}"       // close
 const clearAll = "\u{F0A7A}"    // delete_sweep
@@ -80,3 +81,5 @@ const mediaPause = "\u{F03E4}"    // pause
 const mediaNext = "\u{F04AD}"     // skip_next
 const mediaPrevious = "\u{F04AE}" // skip_previous
 const mediaNote = "\u{F075A}"     // music
+
+const wallpaper = "\u{F02E9}" // image

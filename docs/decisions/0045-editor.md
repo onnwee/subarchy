@@ -48,4 +48,13 @@ Decision map item A3. Accepted 2026-11-06.
 - Other editors (Helix, VS Code, Zed) are available through the app
   installer ([[0044-default-apps|ADR 0044]]).
 
+## Progress
+
+- 2026-11-07: `packaging/subarchy-nvim` ships the LazyVim starter at a
+  pinned commit with every plugin at the commit in `lazy-lock.json`, cached
+  under `/etc/skel/.local/share/nvim/lazy`, so a new user's first `nvim`
+  needs no network (issue #74). One starter file is changed and marked in
+  `NOTICE`: the update checker is off and the bootstrap clone is gone. The
+  branding layer is #121.
+
 Related: [[decision-map|Decision map]] · [[0044-default-apps|ADR 0044]] · [[0037-theming|ADR 0037]]
