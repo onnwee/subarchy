@@ -90,6 +90,15 @@ package() {
   install -Dm644 "$sys/gpu.rules" "$pkgdir/usr/lib/udev/rules.d/70-subarchy-gpu.rules"
   install -Dm644 "$sys/uwsm-gpu-env" "$pkgdir/usr/share/uwsm/env-hyprland.d/50-subarchy-gpu"
 
+  # Web apps (ADR 0042, app list): Discord's entry and the Vencord Web
+  # extension, installed through Chromium's external extension files.
+  for f in "$root"/applications/*.desktop; do
+    install -Dm644 "$f" "$pkgdir/usr/share/applications/$(basename "$f")"
+  done
+  for f in "$root"/default/chromium/extensions/*.json; do
+    install -Dm644 "$f" "$pkgdir/usr/share/chromium/extensions/$(basename "$f")"
+  done
+
   # Look layer (shell and look design): GTK, kitty and Neovim defaults.
   install -Dm644 "$root/default/gtk/90-subarchy.gschema.override" "$pkgdir/usr/share/glib-2.0/schemas/90-subarchy.gschema.override"
   install -Dm644 "$root/default/gtk/settings.ini" "$pkgdir/etc/xdg/gtk-3.0/settings.ini"

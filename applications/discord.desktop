@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Discord
+Comment=Discord as a Chromium app window, with Vencord Web
+Exec=chromium --app=https://discord.com/channels/@me
+Icon=discord
+StartupWMClass=chrome-discord.com__channels_@me-Default
+StartupNotify=true
+Terminal=false
+Categories=Network;InstantMessaging;

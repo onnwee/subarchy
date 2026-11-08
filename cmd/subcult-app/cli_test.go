@@ -25,9 +25,11 @@ func newHarness(t *testing.T) *harness {
 	config := filepath.Join(t.TempDir(), "config")
 	h := &harness{out: &bytes.Buffer{}, errOut: &bytes.Buffer{}}
 	h.paths = apps.Paths{
-		System:   "../../default/apps.toml",
-		User:     filepath.Join(config, "subcult", "apps.toml"),
-		Defaults: filepath.Join(config, "subcult", "defaults.toml"),
+		System:       "../../default/apps.toml",
+		User:         filepath.Join(config, "subcult", "apps.toml"),
+		Defaults:     filepath.Join(config, "subcult", "defaults.toml"),
+		Applications: "/home/u/.local/share/applications",
+		Icons:        "/home/u/.local/share/icons",
 	}
 	h.cli = &cli{
 		stdout: h.out,
@@ -79,7 +81,14 @@ func TestCommands(t *testing.T) {
 		{args: []string{"show", "nope"}, code: 1, errOut: `no app "nope"`},
 		{args: []string{"install", "steam", "--dry-run"}, out: "sudo pacman -S --needed steam", noSteps: true},
 		{args: []string{"install", "steam"}, ran: "sudo pacman -S --needed steam"},
-		{args: []string{"install", "discord"}, code: 1, errOut: "webapp apps is not supported"},
+		{args: []string{"install", "discord", "--dry-run"}, out: "write /home/u/.local/share/applications/discord.desktop", noSteps: true},
+		{args: []string{"remove", "discord", "--dry-run"}, out: "rm -f /home/u/.local/share/applications/discord.desktop", noSteps: true},
+		{args: []string{"webapp", "install", "Google Maps", "maps.google.com", "--dry-run"}, out: "write /home/u/.local/share/applications/google-maps.desktop", noSteps: true},
+		{args: []string{"webapp", "install", "Maps", "https://maps.google.com", "--icon", "/tmp/maps.png", "--dry-run"}, out: "install -Dm644 /tmp/maps.png /home/u/.local/share/icons/hicolor/256x256/apps/maps.png\nwrite /home/u/.local/share/applications/maps.desktop", noSteps: true},
+		{args: []string{"webapp", "remove", "Maps", "-n"}, out: "rm -f /home/u/.local/share/applications/maps.desktop", noSteps: true},
+		{args: []string{"webapp", "install", "Bad", "not a url"}, code: 1, errOut: "whitespace"},
+		{args: []string{"webapp", "install", "Bad"}, code: 2, errOut: "needs a name and a URL"},
+		{args: []string{"webapp", "frob", "x"}, code: 2, errOut: "unknown action"},
 		{args: []string{"remove", "-n", "lutris"}, out: "sudo pacman -Rns lutris", noSteps: true},
 		{args: []string{"install"}, code: 2, errOut: "at least one app"},
 		{args: []string{"default"}, out: "browser"},
