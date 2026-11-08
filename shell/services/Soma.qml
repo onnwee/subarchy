@@ -19,6 +19,9 @@ Singleton {
   readonly property var channel: Model.find(channels, channelId)
   readonly property bool playing: mpv.running
   property string song: ""
+  property string playError: ""
+  property string pendingUrl: ""
+  property bool stopping: false
   property int attempts: 0
 
   readonly property string socketPath: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/subcult-soma.sock"
@@ -33,21 +36,37 @@ Singleton {
     const url = Model.streamUrl(c, root.format)
     if (url === "")
       return false
-    root.stop()
     root.channelId = id
     root.song = ""
+    root.playError = ""
+    if (mpv.running) {
+      // The old mpv must be gone before the new one starts, or its exit
+      // would tear down the new one's socket: start from onExited.
+      root.pendingUrl = url
+      connectTimer.stop()
+      ipc.connected = false
+      mpv.running = false
+      return true
+    }
+    root.start(url)
+    return true
+  }
+
+  function start(url) {
     mpv.command = Model.mpvCommand(url, root.socketPath)
     mpv.running = true
     root.attempts = 0
     connectTimer.start()
-    return true
   }
 
   function stop() {
+    root.pendingUrl = ""
     connectTimer.stop()
     ipc.connected = false
-    if (mpv.running)
+    if (mpv.running) {
+      root.stopping = true
       mpv.running = false
+    }
     root.song = ""
   }
 
@@ -80,10 +99,19 @@ Singleton {
 
   Process {
     id: mpv
-    onExited: {
+    onExited: (code) => {
       connectTimer.stop()
       ipc.connected = false
       root.song = ""
+      const wasStopping = root.stopping
+      root.stopping = false
+      if (root.pendingUrl !== "") {
+        const url = root.pendingUrl
+        root.pendingUrl = ""
+        root.start(url)
+      } else if (!wasStopping && code !== 0) {
+        root.playError = (root.channel ? root.channel.title : "The stream") + " did not play (mpv exit " + code + ")"
+      }
     }
   }
 
@@ -129,7 +157,7 @@ Singleton {
     function stop(): void { root.stop() }
     function toggle(): void { root.toggle() }
     function state(): string {
-      return JSON.stringify({ playing: root.playing, channel: root.channelId, song: root.song, channels: root.channels.length })
+      return JSON.stringify({ playing: root.playing, channel: root.channelId, song: root.song, channels: root.channels.length, error: root.playError })
     }
   }
 }

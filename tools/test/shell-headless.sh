@@ -759,6 +759,12 @@ for _ in $(seq 30); do so=$(HOME=$home1 quickshell ipc -p "$shell" call subcult.
 grep -q -- '--input-ipc-server=.*subcult-soma.sock -- https://api.somafm.com/groovesalad130.pls' "$home1/mpv-args" || fail "mpv was not given the aac stream: $(cat "$home1/mpv-args")"
 [[ $(HOME=$home1 quickshell ipc -p "$shell" call subcult.shell widgetProperty subcult.soma label) == "Groove Salad · Stub Artist - Stub Song" ]] ||
   fail "soma label: $(HOME=$home1 quickshell ipc -p "$shell" call subcult.shell widgetProperty subcult.soma label)"
+# Switching channels while playing: the old mpv ends first, the new one
+# plays and its song arrives.
+[[ $(HOME=$home1 quickshell ipc -p "$shell" call subcult.soma play dronezone) == true ]] || fail "switching channels refused"
+for _ in $(seq 30); do so=$(HOME=$home1 quickshell ipc -p "$shell" call subcult.soma state); [[ $(python3 -c "import json,sys; j=json.loads(sys.argv[1]); print(j['channel'], j['song'])" "$so") == "dronezone Stub Artist - Stub Song" ]] && break; sleep 0.5; done
+[[ $(python3 -c "import json,sys; j=json.loads(sys.argv[1]); print(j['playing'], j['channel'], j['song'], j['error'])" "$so") == "True dronezone Stub Artist - Stub Song " ]] || fail "the channel switch did not play: $so"
+[[ $(grep -c -- 'dronezone.pls' "$home1/mpv-args") == 1 && $(wc -l <"$home1/mpv-args") == 2 ]] || fail "mpv runs after the switch: $(cat "$home1/mpv-args")"
 HOME=$home1 quickshell ipc -p "$shell" call subcult.soma stop >/dev/null
 sleep 1
 so=$(HOME=$home1 quickshell ipc -p "$shell" call subcult.soma state)

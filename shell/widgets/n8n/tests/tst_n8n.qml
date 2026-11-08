@@ -26,6 +26,7 @@ TestCase {
     verify(c[2].indexOf("-K -") >= 0, "the key reaches curl through its config on stdin")
     verify(c[2].indexOf("$1/api/v1/workflows") >= 0 && c[2].indexOf("$1/api/v1/executions?status=error") >= 0)
     verify(c[2].indexOf("---subcult---") >= 0)
+    verify(c[2].indexOf("-eq 22 ] && exit 5") >= 0, "an HTTP error (curl 22) is a refused key")
   }
 
   function test_parse() {
@@ -53,6 +54,7 @@ TestCase {
     compare(Model.workflowName(d, "zz"), "workflow zz")
     compare(Model.errorText(3), "No API key in the keyring")
     compare(Model.errorText(4), "The server did not answer")
+    compare(Model.errorText(5), "The server refused the key")
     compare(Model.errorText(0), "")
     verify(Model.errorText(7).indexOf("7") > 0)
     verify(Model.storeHint().indexOf("secret-tool store") === 0)

@@ -19,8 +19,10 @@ Singleton {
   property var almanac: null // { forecast, sun, moon, tides }
   property double almanacAt: 0
   property string error: ""
+  property string almanacError: ""
   property var matches: []
   property bool searching: false
+  property string searchError: ""
 
   function configure(settings) {
     const loc = Model.location(settings)
@@ -64,9 +66,17 @@ Singleton {
   function search(query) {
     if (String(query).trim() === "" || searchQuery.running)
       return
+    root.matches = []
+    root.searchError = ""
     root.searching = true
     searchQuery.command = Model.searchCommand(query.trim())
     searchQuery.running = true
+  }
+
+  // The panel closing: its matches do not outlive it.
+  function clearMatches() {
+    root.matches = []
+    root.searchError = ""
   }
 
   Process {
@@ -92,20 +102,37 @@ Singleton {
     stdout: StdioCollector {
       onStreamFinished: {
         const a = Model.parseAlmanac(text)
-        if (a) {
+        if (Model.almanacHasData(a)) {
           root.almanac = a
           root.almanacAt = Date.now()
+          root.almanacError = ""
+        } else {
+          // Nothing came through: linecast is missing or every part failed.
+          // almanacAt stays, so the next panel opening tries again.
+          root.almanacError = "linecast gave no forecast (is it installed?)"
         }
       }
+    }
+    onExited: (code) => {
+      if (code !== 0)
+        root.almanacError = "linecast gave no forecast (is it installed?)"
     }
   }
 
   Process {
     id: searchQuery
     stdout: StdioCollector {
-      onStreamFinished: root.matches = Model.parseSearch(text)
+      onStreamFinished: {
+        root.matches = Model.parseSearch(text)
+        if (root.matches.length === 0)
+          root.searchError = "No place found"
+      }
     }
-    onExited: root.searching = false
+    onExited: (code) => {
+      root.searching = false
+      if (code !== 0)
+        root.searchError = "linecast did not answer (is it installed?)"
+    }
   }
 
   IpcHandler {
@@ -113,7 +140,7 @@ Singleton {
     function search(query: string): void { root.search(query) }
     function state(): string {
       return JSON.stringify({
-        location: root.location, current: root.current, error: root.error,
+        location: root.location, current: root.current, error: root.error, almanacError: root.almanacError, searchError: root.searchError,
         almanac: root.almanac ? Object.keys(root.almanac).filter(k => root.almanac[k] !== null) : [],
         matches: root.matches
       })

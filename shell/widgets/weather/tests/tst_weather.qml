@@ -84,6 +84,16 @@ TestCase {
     verify(Model.dayName("2026-11-09", 1).length === 3)
   }
 
+  function test_timerAndAlmanacData() {
+    const manifest = { cost: { timers: [{ name: "current", ac: 600, battery: 1800 }] } }
+    compare(Model.timerMs(manifest, "current", 900000), 600000)
+    compare(Model.timerMs(manifest, "almanac", 7200000), 7200000, "an undeclared timer keeps the fallback")
+    compare(Model.timerMs(null, "current", 900000), 900000)
+    verify(Model.almanacHasData({ forecast: null, sun: { x: 1 }, moon: null, tides: null }))
+    verify(!Model.almanacHasData({ forecast: null, sun: null, moon: null, tides: null }))
+    verify(!Model.almanacHasData(null))
+  }
+
   function test_staleAndTides() {
     verify(Model.stale(0, 1000, 5000))
     verify(Model.stale(1000, 1000, 5000))

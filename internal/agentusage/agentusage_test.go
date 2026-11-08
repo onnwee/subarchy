@@ -168,12 +168,12 @@ func TestNoProviders(t *testing.T) {
 
 func TestParseRejects(t *testing.T) {
 	for _, line := range []string{"", "{", `{"type":"user","message":{"usage":{}}}`, `{"type":"assistant","timestamp":"bad","message":{"usage":{}}}`} {
-		if _, _, _, _, _, ok := parseClaude(line); ok {
+		if _, _, _, _, _, ok := parseClaude(line, map[string]bool{}); ok {
 			t.Errorf("claude accepted %q", line)
 		}
 	}
 	for _, line := range []string{"", `{"type":"event_msg","payload":{"type":"token_count"}}`, `{"timestamp":"2026-11-08T14:00:00Z","type":"response_item","payload":{"type":"token_count"}}`} {
-		if _, _, _, _, _, ok := parseCodex(line); ok {
+		if _, _, _, _, _, ok := parseCodex(line, nil); ok {
 			t.Errorf("codex accepted %q", line)
 		}
 	}
