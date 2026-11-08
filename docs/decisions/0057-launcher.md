@@ -106,5 +106,9 @@ was proposed by the agent and confirmed by the owner on 2026-11-07.
 - 2026-11-07: Super+Space opens the launcher in the shell with app search,
   the favorites grid and frecency ranking (issue #61). Commands, calculator,
   web search and the other sources follow in their own issues.
+- 2026-11-07: root search includes the `subcult` commands (dangerous ones
+  ask first), an inline `qalc` answer and `=`, and web search through `@`,
+  quicklinks and the no-match fallback (issue #71). The default engine is
+  DuckDuckGo, chosen by the agent; `quicklinks.json` changes it.
 
 Related: [[decision-map|Decision map]] · [[0036-shell-components|ADR 0036]] · [[0056-quality-of-life|ADR 0056]] · [[0046-distribution-cli|ADR 0046]]

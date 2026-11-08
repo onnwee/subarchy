@@ -42,6 +42,21 @@ trap cleanup EXIT
 # The shell under test, plus the probe widget.
 shell="$work/shell"
 cp -r "$src" "$shell"
+
+# A stand-in for `subcult commands --json` on the shell's PATH: two
+# commands, one marked dangerous.
+mkdir -p "$work/bin"
+cat >"$work/bin/subcult" <<'STUB'
+#!/bin/sh
+[ "$1 $2" = "commands --json" ] || exit 2
+cat <<'JSON'
+{"ok": true, "commands": [
+  {"route": "subcult font set", "group": "font", "summary": "Use a font", "args": "<family>", "dangerous": false},
+  {"route": "subcult app remove", "group": "app", "summary": "Remove apps", "args": "<id>...", "dangerous": true}]}
+JSON
+STUB
+chmod +x "$work/bin/subcult"
+export PATH="$work/bin:$PATH"
 mkdir -p "$shell/widgets/test-probe"
 cat >"$shell/widgets/test-probe/manifest.json" <<'EOF'
 {"id": "subcult.test-probe", "name": "Test probe", "version": "0.0.0", "api": 0, "kind": "bar-widget",
@@ -208,6 +223,44 @@ if [[ -n ${SHELL_HEADLESS_LAUNCHER_SHOT:-} ]]; then shot HEADLESS-1; cp "$work/s
 launcher close >/dev/null
 st=$(status "$home1")
 [[ $(json 'd.get("launcher")') == False ]] || fail "the launcher did not close: $st"
+
+# Commands, the calculator and web search, through the launcher's state.
+lstate() { # query -> the launcher's state after typing it
+  launcher type "$1" >/dev/null
+  sleep 1
+  launcher state
+}
+row() { # python expression over the rows of the state in $ls
+  python3 -c "import json,sys; r=json.loads(sys.argv[1])['rows']; print($1)" "$ls"
+}
+ls=$(lstate "remove")
+[[ $(row '[x["id"] for x in r if x["kind"] == "command"]') == "['subcult app remove']" ]] ||
+  fail "subcult commands are not searched: $ls"
+ls=$(lstate "font set Iosevka")
+[[ $(row '(r[0]["kind"], r[0]["name"])') == "('command', 'font set Iosevka')" ]] ||
+  fail "a command with arguments is not offered first: $ls"
+ls=$(lstate "app remove")
+launcher enter >/dev/null
+ls=$(launcher state)
+[[ $(python3 -c "import json,sys; print(json.loads(sys.argv[1])['pending'])" "$ls") == "subcult app remove" ]] ||
+  fail "a dangerous command did not ask for confirmation: $ls"
+ls=$(lstate "zzqx nothing here")
+[[ $(row '[(x["kind"], x["url"]) for x in r]') == "[('web', 'https://duckduckgo.com/?q=zzqx%20nothing%20here')]" ]] ||
+  fail "no match does not fall back to web search: $ls"
+ls=$(lstate "@yt cats")
+[[ $(row 'r[0]["url"]') == "https://www.youtube.com/results?search_query=cats" ]] || fail "@yt is not a quicklink: $ls"
+ls=$(lstate "gh subarchy")
+[[ $(row 'r[0]["url"]') == "https://github.com/search?q=subarchy" ]] || fail "a quicklink keyword in root search: $ls"
+if command -v qalc >/dev/null; then
+  ls=$(lstate "=2+2*3")
+  [[ $(row '[(x["kind"], x["name"]) for x in r]') == "[('calc', '8')]" ]] || fail "= does not calculate: $ls"
+  ls=$(lstate "sqrt(16)")
+  [[ $(row '(r[0]["kind"], r[0]["name"])') == "('calc', '4')" ]] || fail "inline math has no answer: $ls"
+else
+  [[ -z ${CI:-} ]] || fail "qalc not installed"
+  echo "shell-headless: qalc not installed, calculator not checked"
+fi
+launcher close >/dev/null
 
 # 2. A palette written after start applies without a restart.
 mkdir -p "$home1/.config/subcult/theme"

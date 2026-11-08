@@ -11,6 +11,7 @@ this directory to `/usr/share/subcult/default/`. Omarchy counterpart:
 | `hypr/` | Hyprland Lua defaults (ADR 0032). `user-hyprland.lua` is the user's `~/.config/hypr/hyprland.lua` as the installer writes it: it runs `bootstrap.lua`, loads `subcult.lua`, then the user's overrides. Helpers live in the global `sub` table (`sub.bind`, `sub.launch`). |
 | `theme/palette.json` | The `subcult-minimal` palette in Theme Tender's role names; the user's `~/.config/subcult/theme/palette.json` overrides roles (ADR 0037) |
 | `shell/bar.json` | The bar layout; the user's `~/.config/subcult/shell/bar.json` overrides keys |
+| `launcher/quicklinks.json` | The launcher's web search engines and quicklinks; the user's `~/.config/subcult/launcher/quicklinks.json` adds or replaces them by keyword (ADR 0057) |
 | `launcher/favorites.json` | The launcher's home-screen favorites, by desktop entry id; the user's `~/.config/subcult/launcher/favorites.json` replaces the list (ADR 0057) |
 | `fontconfig/` | The three font roles (→ `/usr/share/fontconfig/conf.avail/`, linked from `/etc/fonts/conf.d/`); includes the user's `~/.config/subcult/fonts.conf` first |
 | `cursor/` | The Subarchy cursor's SVG shapes and `shapes.tsv`; `subcult cursor` builds them (the package ships the lavender theme in `/usr/share/icons/subcult-cursor/`) |

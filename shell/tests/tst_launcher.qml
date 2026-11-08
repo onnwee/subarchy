@@ -104,4 +104,89 @@ TestCase {
     compare(Model.move(2, 1, 3), 2)
     compare(Model.move(0, 1, 0), -1)
   }
+
+  // --- Commands, calculator and web search
+
+  readonly property string commandsJson: JSON.stringify({ ok: true, commands: [
+    { route: "subcult font set", group: "font", summary: "Use a font", args: "<family>", dangerous: false },
+    { route: "subcult font", group: "font", summary: "Fonts", args: "", dangerous: false },
+    { route: "subcult app remove", group: "app", summary: "Remove apps", args: "<id>...", dangerous: true },
+    { route: "subcult secret", group: "secret", summary: "", hidden: true },
+    { route: "other thing", group: "x" }
+  ] })
+
+  readonly property string systemLinks: JSON.stringify({ default: "ddg", quicklinks: {
+    ddg: { name: "DuckDuckGo", url: "https://duckduckgo.com/?q={query}" },
+    yt: { name: "YouTube", url: "https://www.youtube.com/results?search_query={query}" }
+  } })
+
+  function test_parseQuery() {
+    compare(Model.parseQuery("=2+2"), { mode: "calc", text: "2+2" })
+    compare(Model.parseQuery("@ yt cats "), { mode: "web", text: "yt cats" })
+    compare(Model.parseQuery(" firefox "), { mode: "root", text: "firefox" })
+  }
+
+  function test_looksLikeMath() {
+    verify(Model.looksLikeMath("2+2"))
+    verify(Model.looksLikeMath("sqrt(16)"))
+    verify(Model.looksLikeMath("5 km to mi"))
+    verify(!Model.looksLikeMath("firefox"))
+    verify(!Model.looksLikeMath("hello world"), "words alone are not math, though qalc reads them as units")
+    verify(!Model.looksLikeMath("vlc 3"))
+  }
+
+  function test_calcAnswer() {
+    compare(Model.calcAnswer("8\n", "2+2*3"), "8")
+    compare(Model.calcAnswer("1 / 0\n", "1/0"), "", "unevaluated")
+    compare(Model.calcAnswer("error: Unmatched parenthesis.\n2\n", "(2+"), "")
+    compare(Model.calcAnswer("", "2+"), "")
+  }
+
+  function test_commands() {
+    const c = Model.commands(commandsJson)
+    compare(c.map(x => x.id), ["subcult font set", "subcult font", "subcult app remove"], "hidden and foreign routes left out")
+    compare(c[0].name, "font set")
+    compare(c[2].dangerous, true)
+    compare(c[0].kind, "command")
+    compare(Model.commands("{broken"), [])
+    verify(Model.match(c[0], "font") > 0, "commands rank like apps")
+  }
+
+  function test_commandCall() {
+    const c = Model.commands(commandsJson)
+    const call = Model.commandCall(c, "font set Iosevka Term")
+    compare(call.command.id, "subcult font set", "the longest route wins")
+    compare(call.args, ["Iosevka", "Term"])
+    compare(Model.commandCall(c, "subcult font").args, [])
+    compare(Model.commandCall(c, "fon"), null)
+    compare(Model.commandCall(c, ""), null)
+  }
+
+  function test_quicklinksLayered() {
+    const user = JSON.stringify({ default: "g", quicklinks: {
+      g: { url: "https://www.google.com/search?q={query}" },
+      yt: { name: "Tube", url: "https://example.org/?q={query}" },
+      mail: { name: "Mail", url: "https://mail.proton.me" },
+      bad: { name: "Bad", url: "javascript:alert(1)" }
+    } })
+    const ql = Model.quicklinks(systemLinks, user)
+    compare(ql.default, "g")
+    compare(ql.links.g.name, "g", "the keyword names a link without one")
+    compare(ql.links.yt.name, "Tube", "the user's link replaces the system's")
+    compare(ql.links.bad, undefined, "only http and https links")
+    compare(Model.quicklinks(systemLinks, "{broken").default, "ddg")
+    compare(Model.quicklinks(systemLinks, JSON.stringify({ default: "mail" })).default, "ddg",
+            "a default must be a search link")
+  }
+
+  function test_webTarget() {
+    const ql = Model.quicklinks(systemLinks, JSON.stringify({ quicklinks: { mail: { name: "Mail", url: "https://mail.proton.me" } } }))
+    compare(Model.webTarget(ql, "yt cat videos").url, "https://www.youtube.com/results?search_query=cat%20videos")
+    compare(Model.webTarget(ql, "a&b=c").url, "https://duckduckgo.com/?q=a%26b%3Dc", "the default engine, encoded")
+    compare(Model.webTarget(ql, "yt").url, "https://duckduckgo.com/?q=yt", "a search keyword alone is a query")
+    compare(Model.webTarget(ql, "mail").url, "https://mail.proton.me")
+    compare(Model.webTarget(ql, "mail me").url, "https://duckduckgo.com/?q=mail%20me")
+    compare(Model.webTarget(ql, "  "), null)
+    compare(Model.webTarget(Model.quicklinks("", ""), "x"), null, "no engine, no target")
+  }
 }
