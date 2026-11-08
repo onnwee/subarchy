@@ -5,14 +5,18 @@ import Quickshell.Wayland
 import qs.Commons
 
 // The desktop background (ADR 0038): the palette's base colour, and the
-// default wallpaper once the subarchy-wallpapers package has installed it.
+// default wallpaper once the subarchy-wallpapers package has installed it,
+// or the image named in ~/.local/state/subcult/wallpaper (the auto-wallpaper
+// widget writes it; watched, so a change shows at once).
 PanelWindow { // qmllint disable uncreatable-type
   id: background
 
   required property var modelData
   screen: modelData
 
-  readonly property string wallpaper: "/usr/share/backgrounds/subarchy/01-acid-negative-space.png"
+  readonly property string defaultWallpaper: "/usr/share/backgrounds/subarchy/01-acid-negative-space.png"
+  readonly property string chosen: chosenFile.text.trim()
+  readonly property string wallpaper: chosen !== "" ? chosen : defaultWallpaper
   property bool hasWallpaper: false
 
   WlrLayershell.layer: WlrLayer.Background
@@ -40,7 +44,20 @@ PanelWindow { // qmllint disable uncreatable-type
     sourceSize.height: Math.ceil(background.modelData.height * background.modelData.devicePixelRatio)
   }
 
+  WatchedFile {
+    id: chosenFile
+    path: (Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/subcult/wallpaper"
+  }
+
+  // The command is set here, not bound: a binding could still hold the
+  // old path when this handler runs.
+  onWallpaperChanged: {
+    check.command = ["test", "-r", background.wallpaper]
+    check.running = true
+  }
+
   Process {
+    id: check
     running: true
     command: ["test", "-r", background.wallpaper]
     onExited: (code) => background.hasWallpaper = code === 0
