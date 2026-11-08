@@ -314,6 +314,11 @@ def boot(disk: Path, vars_file: Path) -> bool:
 
         # Theme Tender applied the default theme for the new user (ADR 0037).
         results["tender"] = serial.run("tender doctor 2>&1; echo TENDER_RC=$?", timeout=60)
+
+        # Neovim's first launch needs no network (ADR 0045): run it in a
+        # network namespace as the user, with the config from /etc/skel.
+        results["nvim"] = serial.run(
+            f"{sudo} unshare -n runuser -u $(id -un) -- nvim --headless '+lua print(require(\"lazy\").stats().count)' +qa 2>&1; echo NVIM_RC=$?", timeout=120)
         results["cursor"] = serial.run("ls /usr/share/icons/subcult-cursor/cursors/left_ptr /usr/share/icons/subcult-cursor/hyprcursors/default.hlc")
         # The bar and the idle sample come first, before any window is open.
         screendump(qmp, VM / "bar.png")
@@ -456,6 +461,7 @@ def boot(disk: Path, vars_file: Path) -> bool:
         "font roles": r["fonts"].split("\n")[:3] == ["JetBrainsMono Nerd Font", "JetBrainsMono Nerd Font Propo", "Libertinus Mono"],
         "GTK icons and cursor": "'Papirus-Dark'" in r["gtk"] and "'subcult-cursor'" in r["gtk"],
         "cursor theme installed": "No such file" not in r["cursor"] and "left_ptr" in r["cursor"],
+        "Neovim starts offline with its plugins": "NVIM_RC=0" in r["nvim"] and "Failed" not in r["nvim"],
         "Discord web app and Vencord Web installed": "WEBAPP_OK" in r["discord"],
 
         "tender doctor passes with subcult-minimal applied": "TENDER_RC=0" in r["tender"] and "subcult-minimal" in r["tender"],
