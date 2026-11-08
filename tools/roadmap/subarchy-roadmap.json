@@ -1,0 +1,1818 @@
+{
+  "slug": "subarchy-roadmap",
+  "roadmap": {
+    "title": "Subarchy: from bare install to first release",
+    "goal": "Finish the open items of the project roadmap (docs/roadmap.md, Phases 1–5): signed packages and CI that builds and boots the ISO, update channels, a hardened shell with every planned widget, panel and launcher, the standalone lock, the rice ports, theming through Theme Tender, the editor and apps, hardware fixes, the install on sputnik, and the first stable release.",
+    "plan": "docs/roadmap.md at commit cf9b102, with docs/plans/shell-hardening-plan.md, docs/plans/shell-and-look-design.md, docs/review/rice-port-review.md and the ADRs each issue cites",
+    "decisions": [
+      "Shell hardening changes stay inside the existing shell, its systemd user unit, the Hyprland bindings and `subcult update`.",
+      "Shell keys (Alt-Tab, brightness, later the launcher) reach the shell through Hyprland global shortcuts (`hl.dsp.global` → Quickshell `GlobalShortcut`), not a `quickshell ipc` process per key press.",
+      "Keep-awake becomes a logind idle inhibitor (`systemd-inhibit --what=idle`), not a Wayland idle inhibitor on the bar window.",
+      "Built from scratch (ADR 0001); nothing is copied from Omarchy, dux-shell, the rice or community plugins. They are references for behaviour only.",
+      "Laptop first and battery first (ADR 0054): no avoidable polling; every feature states its idle cost.",
+      "Layered configuration (ADR 0048): defaults under `/usr/share/subcult/default/`, user overrides in `~/.config`, migrations for changes users must adopt.",
+      "Theme Tender is the theming system (ADR 0037); Subarchy writes registry entries and templates and contributes them upstream.",
+      "Own signed pacman repository with AUR rebuilds (ADR 0025); stable and edge channels (ADR 0026).",
+      "Stack: Quickshell 0.3.2, Qt 6.12, Hyprland 0.56 (Lua config), Go 1.27, Python 3 for VM tests."
+    ],
+    "rules": [
+      "One PR per issue, closing it with `Closes #n`. The plan's single-PR rule is replaced by this roadmap; the fresh review moves to the final qualification issue.",
+      "Battery rules of ADR 0054 and ADR 0068 hold: no new polling; windows and helpers exist only while needed.",
+      "`make verify`, `make shell-test shell-lint shell-index-check`, `tools/test/shell-headless.sh shell` and the CI `shell` job stay green on every PR.",
+      "Commits as `SUBCULT Agent <info@subcult.tv>`, unsigned, with the Co-Authored-By line.",
+      "Several issues touch the same QML files (`AltSwitch.qml`, `Osd.qml`, `NotificationPopups.qml`, `PolkitDialog.qml`, `tools/iso/install-test.py`). Rebase on main before merging; these overlaps are not dependencies.",
+      "Issue #27 lists deferred minor findings. This roadmap covers its Phase D items on the recording indicator's stream nodes, replaced notifications, and dialogs or the switcher following focus live. Tick those on #27 when the matching issue closes; leave the rest of #27 open.",
+      "Issues marked `hitl` need the owner: agents may prepare the work but do not close them alone.",
+      "When an issue changes an ADR's status or progress, add to its Progress section; never rewrite an accepted ADR.",
+      "Tick the matching `docs/roadmap.md` item in the PR that finishes it."
+    ],
+    "out_of_scope": [
+      "Counted service references (they come with plan 2's network widgets).",
+      "A `subcult shell call` wrapper (keys no longer need it).",
+      "A Go daemon for the shell.",
+      "The other deferred minor findings in #27.",
+      "Accepted ADRs that `docs/roadmap.md` does not list yet, such as backups (ADR 0060), Tailscale (ADR 0058) and the user manual (ADR 0067). Add them to docs/roadmap.md first, then republish this roadmap.",
+      "Rice ports not on docs/roadmap.md: installer and migration safety, and the accessibility standard.",
+      "The full keymap (next decisions W2)."
+    ]
+  },
+  "epics": [
+    {
+      "key": "hardening",
+      "title": "Harden the stage 1 shell",
+      "summary": "Fix findings F1–F11 from comparing the stage 1 shell with Omarchy's shell and dux-shell (docs/plans/shell-hardening-plan.md).",
+      "exit": [
+        "`make install-test` passes from a fresh disk with the global-shortcut Alt-Tab and logind keep-awake checks.",
+        "The owner confirmed the polkit retry on sputnik."
+      ]
+    },
+    {
+      "key": "infra",
+      "title": "Signed packages and CI that builds and boots the ISO",
+      "summary": "Phase 1: GitHub mirror, signing, keyring, AUR rebuilds, publishing, KVM runner, ISO and install test in CI.",
+      "exit": [
+        "A fresh install verifies Subarchy packages with `SigLevel = Required`.",
+        "CI builds the ISO and runs the install test on main."
+      ]
+    },
+    {
+      "key": "base",
+      "title": "Finish the base system and update model",
+      "summary": "Phase 2 leftovers: the stable snapshot, channels, restart detection, budgets and the offline cache."
+    },
+    {
+      "key": "widgets",
+      "title": "Remaining bar widgets with their panels",
+      "summary": "Shell stage 1 plans 2 and 3 (weather, Soma, n8n, HT3, calendar) and stage 2's click-out panels."
+    },
+    {
+      "key": "plugins",
+      "title": "Shell plugins shipped off by default",
+      "summary": "Shell stage 3: Dell power, downloads, auto-wallpaper and agents usage.",
+      "exit": [
+        "Each loads without errors when enabled from config."
+      ]
+    },
+    {
+      "key": "launcher",
+      "title": "Raycast-style launcher in the shell",
+      "summary": "ADR 0057, apps first, then commands, files, clipboard, scripts and Ask AI."
+    },
+    {
+      "key": "lock",
+      "title": "Standalone lock with the SUBCULT screensaver",
+      "summary": "ADR 0036: a separate QML lock program, hypridle, fingerprint and pre-rendered screensaver loops."
+    },
+    {
+      "key": "rice",
+      "title": "Ported rice features",
+      "summary": "The rice port review's features on docs/roadmap.md, rewritten through Subarchy's plugin API and CLI."
+    },
+    {
+      "key": "theming",
+      "title": "Theming through Theme Tender and the SUBCULT screens",
+      "summary": "ADR 0037 targets, the brand assets, greeter and splash, and system-level apply."
+    },
+    {
+      "key": "apps",
+      "title": "Editor, web apps and the CLI command set",
+      "summary": "Phase 4: LazyVim, web apps and the Bash command list."
+    },
+    {
+      "key": "hardware",
+      "title": "Hardware fixes, sputnik install and the first release",
+      "summary": "Phase 5: ADR 0050 hardware ports, DisplayLink, the real install on sputnik and the first stable release."
+    }
+  ],
+  "issues": [
+    {
+      "key": "clock",
+      "title": "Align the shell clock to epoch minutes instead of SystemClock",
+      "summary": "F1: `shell/Commons/Clock.qml` uses Quickshell's `SystemClock`, which re-arms at 1 ms through the repeated hour when daylight saving ends. Replace it with a single-shot timer re-armed from a pure model after each tick.",
+      "size": "S",
+      "acceptance": [
+        "New `shell/Commons/ClockModel.js` exports `nextDelayMs(nowMs)`: milliseconds to the next whole minute of epoch time plus 50 ms slack, always between 50 and 60050.",
+        "`Clock` keeps `readonly property date now`; a single-shot `Timer` re-armed from `nextDelayMs(Date.now())` after each tick replaces `SystemClock`.",
+        "`shell/tests/tst_clock.qml`: `test_nextDelay` (at `...:59.990` gives 60; at a whole minute gives 60050) and `test_neverNegative` (any `nowMs`, including one an hour earlier than a previous tick, gives at least 50).",
+        "The test fails before the model exists (write it first)."
+      ],
+      "verify": [
+        "`make shell-test shell-lint`",
+        "`tools/test/shell-headless.sh shell`"
+      ],
+      "paths": [
+        "shell/Commons/Clock.qml",
+        "shell/Commons/ClockModel.js",
+        "shell/tests/"
+      ],
+      "notes": "Idea from Omarchy `plugins/panels/clock/WallClock.qml`; reimplement, do not copy. Suggested commit: `fix(shell): clock aligned to epoch minutes, not SystemClock`.",
+      "epic": "hardening"
+    },
+    {
+      "key": "supervision",
+      "title": "Keep the shell running across package upgrades and restart it after one",
+      "summary": "F2: Quickshell watches its own files, so a package upgrade that replaces `/usr/share/subcult/shell` reloads a half-written tree. Nothing restarts the shell after an update, and Quickshell's crash handler competes with `Restart=on-failure`. Turn off the watcher and crash handler in the unit and have `subcult update` restart the shell when the `subarchy` package version changed.",
+      "acceptance": [
+        "`default/system/subcult-shell.service` adds `Environment=QS_DISABLE_FILE_WATCHER=1`, `Environment=QS_DISABLE_CRASH_HANDLER=1` and `Before=xdg-desktop-autostart.target` (tray apps start after the shell's tray watcher), and keeps `Restart=on-failure`.",
+        "`Updater.Run` records `pacman -Q subarchy` before and after the upgrade. When the version changed it runs `systemctl --user try-restart subcult-shell.service` (unprivileged) and sets `Report.ShellRestarted`.",
+        "`Report.Summary()` says \"The desktop shell was restarted.\" when it did.",
+        "Tests with the existing fake runner: `TestRunRestartsShellWhenSubarchyChanged` and `TestRunLeavesShellWhenSubarchyUnchanged`, written first and failing before the change."
+      ],
+      "verify": [
+        "`go test -race ./internal/update/`",
+        "`systemd-analyze --user verify default/system/subcult-shell.service`",
+        "`make verify`"
+      ],
+      "paths": [
+        "default/system/subcult-shell.service",
+        "internal/update/"
+      ],
+      "notes": "Ideas from Omarchy `bin/omarchy-launch-shell` and dux `assets/systemd/dms.service`. The restart runs as the user, not through the update's sudo path. Suggested commit: `fix: shell survives upgrades and restarts after one`.",
+      "epic": "hardening"
+    },
+    {
+      "key": "global-keys",
+      "title": "Send Alt-Tab and brightness keys to the shell through Hyprland global shortcuts",
+      "summary": "F3: Alt-Tab and the brightness keys start a `quickshell ipc` process per key press, and Alt-Tab needs a race guard (`autoCommit`). Bind them to Hyprland global shortcuts that Quickshell `GlobalShortcut` objects receive, so a quick Alt-Tab tap switches windows and leaves no overlay open.",
+      "risk": "high",
+      "acceptance": [
+        "`default/hypr/bindings.lua`: `ALT + TAB` → `hl.dsp.global(\"subcult:altswitch-next\")`, `ALT + SHIFT + TAB` → `subcult:altswitch-prev`, the Alt release bind (same flags as now) → `subcult:altswitch-commit`; brightness keys → `subcult:brightness-up` and `subcult:brightness-down`. Volume keys stay on `wpctl`.",
+        "`shell/AltSwitch.qml` has three `GlobalShortcut { appid: \"subcult\"; name: ... }` acting on `onPressed`; each name's action does not depend on whether Hyprland reports press or release. `autoCommit` and `test_altSwitchAutoCommit` are removed; the IPC handler stays for tests.",
+        "`shell/Osd.qml` has two `GlobalShortcut`s that run `brightnessctl -q set 5%+` or `5%-` in a `Process`, and reads the level from `/sys/class/backlight/*/brightness` and `max_brightness` through `FileView` (path found once at start). No `brightnessctl -m`, no `quickshell ipc`.",
+        "`tools/iso/install-test.py`: the Alt-Tab check drives `hyprctl dispatch 'hl.dsp.global(\"subcult:altswitch-next\")'` then the commit shortcut (the path real keys take), and keeps the IPC variant as a second check.",
+        "`shell/README.md` says keys arrive through global shortcuts."
+      ],
+      "verify": [
+        "`make hypr-check shell-test shell-lint`",
+        "`tools/test/shell-headless.sh shell`",
+        "`python3 -m py_compile tools/iso/install-test.py`; the VM check itself runs in the qualification issue"
+      ],
+      "paths": [
+        "default/hypr/bindings.lua",
+        "shell/AltSwitch.qml",
+        "shell/AltSwitchModel.js",
+        "shell/Osd.qml",
+        "shell/tests/tst_dispatch.qml",
+        "tools/iso/install-test.py"
+      ],
+      "out_of_scope": [
+        "Pinning the switcher and OSD to one output (overlay issue)."
+      ],
+      "notes": "Ideas from Omarchy `default/hypr/helpers.lua` (`hl.dsp.global`) and `shell.qml` (`GlobalShortcut`). `make hypr-check` only runs where Hyprland is installed (it is on sputnik). Suggested commit: `fix(shell): Alt-Tab and brightness through global shortcuts`.",
+      "epic": "hardening"
+    },
+    {
+      "key": "keep-awake",
+      "title": "Hold keep-awake as a logind idle inhibitor that survives shell restarts",
+      "summary": "F4: keep-awake holds a Wayland idle inhibitor on the first bar's window, which goes inactive when a fullscreen window covers the bar, so a fullscreen video can still blank the screen. The state is also lost on shell restart. Hold a logind inhibitor through `systemd-inhibit` and persist the state in a file.",
+      "risk": "high",
+      "acceptance": [
+        "While `KeepAwake.enabled` is true, a `Process` runs `systemd-inhibit --what=idle --who=SUBCULT --why=\"Keep awake\" --mode=block sleep infinity`; turning it off stops the process and releases the inhibitor.",
+        "The state persists in `~/.local/state/subcult/keep-awake` (`WatchedFile`, `1` or absent), so a shell restart keeps it.",
+        "The `IdleInhibitor` is removed from `shell/shell.qml`.",
+        "`IpcHandler subcult.shell` gains `keepAwake(on: bool): void` for tests.",
+        "`tools/test/shell-headless.sh`: `keepAwake true` then `pgrep -f 'systemd-inhibit --what=idle --who=SUBCULT'` finds it; `keepAwake false` and it is gone.",
+        "`tools/iso/install-test.py`: `keepAwake true` → `systemd-inhibit --list` shows `SUBCULT`; after a shell restart it is still listed; `keepAwake false` → gone.",
+        "`shell/README.md` says keep-awake uses a logind inhibitor."
+      ],
+      "verify": [
+        "`make shell-test shell-lint`",
+        "`tools/test/shell-headless.sh shell`",
+        "`python3 -m py_compile tools/iso/install-test.py`; the VM check itself runs in the qualification issue"
+      ],
+      "paths": [
+        "shell/Commons/KeepAwake.qml",
+        "shell/shell.qml",
+        "tools/test/shell-headless.sh",
+        "tools/iso/install-test.py"
+      ],
+      "notes": "hypridle honours logind idle inhibitors unless `ignore_systemd_inhibit` is set; Subarchy's config does not set it. Idea from dux `Services/IdleService.qml`. Suggested commit: `fix(shell): keep-awake as a logind inhibitor that survives restarts`.",
+      "epic": "hardening"
+    },
+    {
+      "key": "notify-text",
+      "title": "Store notification text as capped plain text",
+      "summary": "F5 (text part): notification popups and history store bodies of any length with markup tags in them. Decode entities, strip tags and cap each field before the service stores or shows it.",
+      "size": "S",
+      "acceptance": [
+        "`NotificationsModel.plain(text, cap)` decodes `&amp; &lt; &gt; &quot; &#39;` and numeric entities, strips tags, collapses whitespace and cuts to `cap`.",
+        "The service applies it with caps of 200 (summary), 2000 (body) and 64 (app name) before storing history and showing popups.",
+        "`test_plain` in `shell/tests/tst_notifications.qml`: `\"a &amp; <b>b</b>\"` gives `\"a & b\"`; each cap is enforced."
+      ],
+      "verify": [
+        "`make shell-test shell-lint`",
+        "`tools/test/shell-headless.sh shell`"
+      ],
+      "paths": [
+        "shell/services/NotificationsModel.js",
+        "shell/services/Notifications.qml",
+        "shell/tests/tst_notifications.qml"
+      ],
+      "out_of_scope": [
+        "Timeouts, hover pause and replacement (separate issue)."
+      ],
+      "notes": "Ideas from Omarchy `plugins/notifications/Service.qml` and `Security.js`; reimplement.",
+      "epic": "hardening"
+    },
+    {
+      "key": "notify-lifetime",
+      "title": "Make notification popups honour app timeouts, hover and replacement",
+      "summary": "F5 (lifetime part): popups ignore the app's timeout, do not pause on hover, and miss replaced notifications (`replaces_id`), so a download's progress notification shows stale text. Move each popup's timer into the service, pause it on hover, and follow replacements in the popup and history.",
+      "acceptance": [
+        "`NotificationsModel.timeoutMs(expireTimeout, urgency)`: critical → 0 (stays); `expireTimeout` ≤ 0 → 5000; otherwise clamped to 2000–30000.",
+        "Each popup's timer lives on a per-popup entry in the service, not in the delegate.",
+        "Hovering a card pauses its timer; leaving restarts it with the remaining time.",
+        "A replaced notification (`summaryChanged`/`bodyChanged` on the live object) updates its popup and history record and restarts its timer.",
+        "`test_timeoutMs`: critical gives 0, -1 gives 5000, 500 gives 2000, 600000 gives 30000.",
+        "`tools/test/shell-headless.sh`: replace a notification through `Notify` with the returned id and check that `status()` history shows the new summary."
+      ],
+      "verify": [
+        "`make shell-test shell-lint`",
+        "`tools/test/shell-headless.sh shell`"
+      ],
+      "paths": [
+        "shell/services/Notifications.qml",
+        "shell/services/NotificationsModel.js",
+        "shell/NotificationPopups.qml",
+        "shell/tests/tst_notifications.qml",
+        "tools/test/shell-headless.sh"
+      ],
+      "out_of_scope": [
+        "Text sanitizing and caps (separate issue).",
+        "Which output popups appear on (overlay issue)."
+      ],
+      "notes": "Review focus from the plan: a notification replaced while shown must update text and history and restart its timer. Ideas from dux `NotificationService.qml`. Suggested commit: `fix(shell): notifications honour app timeouts, hover and replacement`.",
+      "epic": "hardening"
+    },
+    {
+      "key": "polkit",
+      "title": "Keep the polkit dialog focused after a wrong password and pick the right identity",
+      "summary": "F6: the polkit field is disabled while PAM checks, which drops its focus, so after a wrong password the user must click before typing again. Escape works only with the field focused, the failure signal is unused, nothing warns when another agent holds the session, and the identity is not chosen when several admins exist.",
+      "acceptance": [
+        "New `shell/PolkitModel.js` exports `pickIdentity(identities, userName)`: the index of the identity whose name equals the current user, else 0.",
+        "The password field is `readOnly` while PAM checks, never disabled.",
+        "A top-level `FocusScope` with `Keys.priority: Keys.BeforeItem` handles Escape and Enter wherever focus is.",
+        "On `authenticationFailed` the dialog shows \"Wrong password, try again.\" for 2 s and refocuses the field (`Qt.callLater`).",
+        "When `PolkitAgent.isRegistered` stays false, the shell logs one warning naming the likely cause (another agent holds the session).",
+        "The identity is set through `flow.selectedIdentity` before the first response.",
+        "`test_pickIdentity` in `shell/tests/tst_polkit.qml`: current user second gives 1; absent gives 0; empty list gives 0."
+      ],
+      "verify": [
+        "`make shell-test shell-lint`",
+        "`tools/test/shell-headless.sh shell`"
+      ],
+      "paths": [
+        "shell/PolkitDialog.qml",
+        "shell/PolkitModel.js",
+        "shell/tests/"
+      ],
+      "out_of_scope": [
+        "Which output the dialog appears on (overlay issue).",
+        "The owner's check on sputnik (separate issue)."
+      ],
+      "notes": "Ideas from Omarchy `PolkitAgent.qml` and dux `PolkitService.qml`. Suggested commit: `fix(shell): polkit dialog keeps focus and picks the right identity`.",
+      "epic": "hardening"
+    },
+    {
+      "key": "polkit-owner-check",
+      "title": "Check the polkit wrong-password flow on sputnik",
+      "summary": "The model tests cannot prove focus behaviour after a real PAM failure. The owner runs the merged polkit change on sputnik and confirms that typing again works without clicking.",
+      "size": "S",
+      "blocked_by": [
+        "polkit"
+      ],
+      "mode": "hitl",
+      "hitl_reason": "Needs the owner's password and a real PAM failure on sputnik.",
+      "acceptance": [
+        "With the shell from main running on sputnik, `pkexec true` opens the dialog; a wrong password shows the retry message, and typing the right password without clicking succeeds.",
+        "Escape cancels the dialog while focus is elsewhere in it.",
+        "The result is recorded on this issue."
+      ],
+      "verify": [
+        "Owner's comment on this issue with the result"
+      ],
+      "epic": "hardening"
+    },
+    {
+      "key": "overlay-screen",
+      "title": "Keep overlays on the output they opened on",
+      "summary": "F7: the OSD, notification popups, polkit dialog and Alt-Tab switcher follow the focused output live, so moving the pointer recreates them, and the OSD takes clicks. Choose an overlay's output when it opens or when outputs change, not on every focus move.",
+      "acceptance": [
+        "`LayoutModel.pickScreen(names, focused, current)` keeps `current` while it exists, else the focused output, else the first.",
+        "`Osd.qml`, `NotificationPopups.qml`, `PolkitDialog.qml` and `AltSwitch.qml` bind `screen` to `pickScreen`, evaluated when they open and when outputs change, not on focus moves.",
+        "`Osd.qml` sets `mask: Region {}` so it takes no clicks.",
+        "Overlays skip outputs named `FALLBACK` or with no name.",
+        "`shell/tests/tst_models.qml`: `test_pickScreenKeepsCurrent` and `test_pickScreenFallsBack`."
+      ],
+      "verify": [
+        "`make shell-test shell-lint`",
+        "`tools/test/shell-headless.sh shell`"
+      ],
+      "paths": [
+        "shell/Commons/LayoutModel.js",
+        "shell/Osd.qml",
+        "shell/NotificationPopups.qml",
+        "shell/PolkitDialog.qml",
+        "shell/AltSwitch.qml",
+        "shell/tests/tst_models.qml"
+      ],
+      "out_of_scope": [
+        "Choosing the Full bar (separate issue)."
+      ],
+      "notes": "Ideas from Omarchy `Ui/OverlayWindow.qml` and `plugins/osd/Osd.qml`. Covers the #27 Phase D item \"dialog/switcher screen follows focus live\".",
+      "epic": "hardening"
+    },
+    {
+      "key": "full-bar",
+      "title": "Choose the Full bar by monitor description and give FALLBACK no bar",
+      "summary": "F8: the Full bar is chosen by connector name only, but connectors move between monitors on sputnik's dock, and Hyprland's `FALLBACK` output gets a bar. Match the configured primary and Full outputs against the monitor description as well, and skip `FALLBACK`.",
+      "size": "S",
+      "acceptance": [
+        "`LayoutModel.modeFor(output, cfg, outputs)` matches `cfg.primary` and `cfg.full` against the output's name or its description (monitor make and model); outputs are passed as `{name, description}`.",
+        "`shell.qml` and `Bar.qml` create no bar for outputs named `FALLBACK` or with no name.",
+        "`shell/tests/tst_models.qml`: `test_modeForDescription` and `test_fallbackIgnored`; existing connector-name tests still pass."
+      ],
+      "verify": [
+        "`make shell-test shell-lint`",
+        "`tools/test/shell-headless.sh shell`"
+      ],
+      "paths": [
+        "shell/Commons/LayoutModel.js",
+        "shell/Bar.qml",
+        "shell/shell.qml",
+        "shell/tests/tst_models.qml"
+      ],
+      "out_of_scope": [
+        "Overlay output choice (separate issue)."
+      ],
+      "notes": "Review focus from the plan: a monitor moved to another connector keeps the Full bar. Ideas from dux `Common/ShellLayout.qml` and `LayoutResolver.js`. Suggested commit: `fix(shell): Full bar by monitor`.",
+      "epic": "hardening"
+    },
+    {
+      "key": "wallpaper",
+      "title": "Decode the wallpaper at device pixels so it is sharp at fractional scale",
+      "summary": "F9: the wallpaper decodes at logical size, so it is blurry at sputnik's scale of 1.6.",
+      "size": "S",
+      "acceptance": [
+        "`shell/Background.qml` sets `sourceSize` to the screen size times the screen's `devicePixelRatio`, with `cache: false`.",
+        "At scale 1 the decoded size is unchanged."
+      ],
+      "verify": [
+        "`make shell-lint`",
+        "`tools/test/shell-headless.sh shell`"
+      ],
+      "paths": [
+        "shell/Background.qml"
+      ],
+      "notes": "Idea from Omarchy `plugins/background/Background.qml`. The headless harness runs at scale 1; a scaled check is optional.",
+      "epic": "hardening"
+    },
+    {
+      "key": "recording-spike",
+      "kind": "spike",
+      "title": "Find the PipeWire node flags that mark a screen recording",
+      "summary": "The recording indicator should drop `PwObjectTracker` and decide from Quickshell `PwNodeType` flags alone, but the plan has not confirmed which flag combination a screen recorder's node carries, as against a webcam or an audio stream.",
+      "question": "Which Quickshell `PwNode.type` flags (`Video`, `Stream`, `VideoSink`, `VideoSource`, ...) does a running screen recorder's node carry through xdg-desktop-portal-hyprland, and how does that differ from a webcam viewer and an audio player? Is `Video` + `Stream` with the sink bit as a consumer enough to light the indicator for screencasts only?",
+      "timebox": "one working session",
+      "risk": "high",
+      "paths": [
+        "shell/widgets/indicators/"
+      ],
+      "notes": "Probe on an installed VM (`make install-test` leaves one) or on sputnik with a recorder running (for example `wf-recorder` or an OBS screencast) and a small Quickshell script that prints each node's `type` flags. Record the flags for each case and the chosen rule as a comment here. Covers part of the #27 Phase D item on the recording indicator.",
+      "epic": "hardening"
+    },
+    {
+      "key": "recording",
+      "title": "Light the recording indicator from node flags without tracking every stream",
+      "summary": "F10: the recording indicator binds every PipeWire stream node through `PwObjectTracker`, which costs work for each audio stream and lights for webcams. Decide from the node type flags found by the spike.",
+      "size": "S",
+      "blocked_by": [
+        "recording-spike"
+      ],
+      "acceptance": [
+        "`Model.recording(nodes)` takes `{type}` flags and returns true only for the screencast combination recorded on the spike.",
+        "`PwObjectTracker` is removed from `shell/widgets/indicators/Widget.qml`.",
+        "Model tests cover a screencast node (true), a webcam node (false) and an audio stream (false)."
+      ],
+      "verify": [
+        "`make shell-test shell-lint shell-index-check`",
+        "`tools/test/shell-headless.sh shell`"
+      ],
+      "paths": [
+        "shell/widgets/indicators/"
+      ],
+      "notes": "Read the spike's recorded flags before writing the tests.",
+      "epic": "hardening"
+    },
+    {
+      "key": "keyboard-layout",
+      "title": "Show the layout of the keyboard actually typing, refreshed on config reload",
+      "summary": "F11: the keyboard-layout widget trusts Hyprland's `main` flag, which power and lid buttons can hold, and ignores config reloads.",
+      "size": "S",
+      "acceptance": [
+        "`Model.fromDevices(json, eventKeyboard)` prefers the keyboard named in the last `activelayout` event, skips names matching `power|lid|video-bus|sleep|button|hid-events|virtual`, then takes the first one left.",
+        "The widget refreshes on `configreloaded` as well as `activelayout`.",
+        "Model tests: the event keyboard wins; a power button marked `main` is skipped."
+      ],
+      "verify": [
+        "`make shell-test shell-lint shell-index-check`",
+        "`tools/test/shell-headless.sh shell`"
+      ],
+      "paths": [
+        "shell/widgets/keyboard-layout/"
+      ],
+      "notes": "Idea from Omarchy `KeyboardLayoutModel.js`.",
+      "epic": "hardening"
+    },
+    {
+      "key": "qualify",
+      "title": "Qualify the hardened shell in a fresh VM install and close out the docs",
+      "summary": "Rebuild the package and ISO, run the full VM install test including the new global-shortcut Alt-Tab and logind keep-awake checks, run one fresh review across the roadmap's merged changes, and update the roadmap docs.",
+      "size": "L",
+      "blocked_by": [
+        "clock",
+        "supervision",
+        "global-keys",
+        "keep-awake",
+        "notify-text",
+        "notify-lifetime",
+        "polkit",
+        "overlay-screen",
+        "full-bar",
+        "wallpaper",
+        "recording",
+        "keyboard-layout"
+      ],
+      "acceptance": [
+        "`make install-test` from a fresh disk passes all checks, including the global-dispatch Alt-Tab check and the logind keep-awake check across a shell restart.",
+        "A fresh reviewer reads the diff from `df63155` to the head of main for this roadmap; Critical and Important findings get one fix pass in this PR, and minor ones are listed in a follow-up issue.",
+        "ADR 0068 gets an \"As built\" note if the shell contract changed (global shortcuts, `keepAwake` IPC); `docs/roadmap.md` records shell hardening as done.",
+        "The covered #27 items are ticked there."
+      ],
+      "verify": [
+        "`make package iso install-test`",
+        "`make verify shell-test shell-lint shell-index-check`",
+        "`python3 tools/obsidian/check-vault.py`"
+      ],
+      "paths": [
+        "tools/iso/",
+        "docs/decisions/",
+        "docs/roadmap.md",
+        "shell/README.md"
+      ],
+      "notes": "`make iso` needs archiso and sudo (see `iso/README.md`). Size L because the VM run is long, not because the diff is large; it stays one issue so the review and VM evidence land together. Accept an ADR edit only as an addition; accepted ADRs are not rewritten.",
+      "epic": "hardening"
+    },
+    {
+      "key": "gh-mirror",
+      "epic": "infra",
+      "title": "Mirror the repository read-only to GitHub",
+      "summary": "ADR 0051 wants a read-only GitHub mirror of `git.subcult.tv/subculture-collective/subarchy` for visibility, with GitHub Actions disabled. The repository and CI exist; the mirror does not.",
+      "acceptance": [
+        "A Gitea push mirror keeps a GitHub repository under the publisher's account current on every push to main.",
+        "GitHub Actions is disabled on the mirror; its description points back to Gitea for issues and PRs.",
+        "`docs/roadmap.md` Phase 1 marks the mirror done with the date."
+      ],
+      "verify": [
+        "A push to main appears on GitHub within the mirror interval"
+      ],
+      "size": "S",
+      "mode": "hitl",
+      "hitl_reason": "Needs a GitHub token or account choice from the owner.",
+      "paths": [
+        "docs/roadmap.md"
+      ]
+    },
+    {
+      "key": "registry-spike",
+      "epic": "infra",
+      "kind": "spike",
+      "title": "Find out whether Gitea's Arch registry can sign with Subarchy's key",
+      "summary": "ADR 0025 picks the Gitea package registry on git.subcult.tv as the first host for Subarchy's pacman repository, but Gitea's docs do not say whether a Subarchy-owned key can sign the database. Everything about the keyring and publishing depends on the answer.",
+      "question": "Can Gitea 28.3's Arch registry (`/api/packages/{owner}/arch/{repository}/{arch}`) serve a database and packages signed with our own key, so `pacman.conf` can use `SigLevel = Required` against `subarchy-keyring`? If not, is Gitea's own key acceptable as the trust root, or do we need a static repository built with `repo-add`?",
+      "risk": "high",
+      "timebox": "one working session",
+      "notes": "Use a throwaway test key and a throwaway package owner, never the owner's real signing key. Record the commands, what pacman accepted and the recommendation as a comment, then update ADR 0025's Progress section."
+    },
+    {
+      "key": "key-backup",
+      "epic": "infra",
+      "title": "Keep a second copy of the signing key and write its rotation plan",
+      "summary": "ADR 0025: the owner holds Subarchy's signing key on `soyuz` and will copy it to a second place; a rotation plan is still needed.",
+      "acceptance": [
+        "The signing key exists in a second, offline place the owner chose.",
+        "A rotation and revocation procedure is written in the repository (no key material, only fingerprints and steps).",
+        "ADR 0025's consequences point to the procedure."
+      ],
+      "verify": [
+        "Owner confirms the second copy on this issue",
+        "`python3 tools/obsidian/check-vault.py`"
+      ],
+      "size": "S",
+      "mode": "hitl",
+      "hitl_reason": "Only the owner holds the key.",
+      "paths": [
+        "docs/decisions/0025-package-repository.md"
+      ]
+    },
+    {
+      "key": "keyring",
+      "epic": "infra",
+      "title": "Ship a subarchy-keyring package that trusts the signing key",
+      "summary": "pacman needs Subarchy's public key trusted before `SigLevel = Required` works (ADR 0025), like `omarchy-keyring` does for Omarchy.",
+      "acceptance": [
+        "`packaging/subarchy-keyring/` builds a package that installs the public key and its trust level for `pacman-key --populate subarchy`.",
+        "The ISO and installer populate it before installing Subarchy packages.",
+        "The trust root follows the registry spike's answer (our key or Gitea's)."
+      ],
+      "verify": [
+        "`makepkg` in the package-test container",
+        "`make install-test` installs with the keyring populated"
+      ],
+      "size": "S",
+      "blocked_by": [
+        "registry-spike"
+      ],
+      "paths": [
+        "packaging/",
+        "iso/",
+        "install/"
+      ]
+    },
+    {
+      "key": "aur-rebuilds",
+      "epic": "infra",
+      "title": "Rebuild the remaining AUR dependencies in packaging/aur",
+      "summary": "ADR 0025 lists AUR packages Subarchy needs that only `[omarchy]` serves today. `packaging/aur/` has two of them (limine-mkinitcpio-hook, limine-snapper-sync).",
+      "acceptance": [
+        "Reviewed, pinned PKGBUILDs for `nvidia-580xx-dkms`, `nvidia-580xx-utils`, `lib32-nvidia-580xx-utils`, `ufw-docker`, `tzupdate` and `yay` under `packaging/aur/`.",
+        "`packaging/aur/build.sh` builds all of them in the clean container into `build/repo`.",
+        "Each PKGBUILD records its AUR source commit."
+      ],
+      "verify": [
+        "`packaging/aur/build.sh`",
+        "`make verify`"
+      ],
+      "paths": [
+        "packaging/aur/"
+      ]
+    },
+    {
+      "key": "publish-packages",
+      "epic": "infra",
+      "title": "Build, sign and publish Subarchy packages from CI",
+      "summary": "Packages build in CI today but go nowhere. Publish the `subarchy` package, the keyring and the AUR rebuilds to the repository chosen in the registry spike, signed with the Subarchy key.",
+      "acceptance": [
+        "A CI job on main builds the packages, signs them with the key from a CI secret and uploads them.",
+        "`pacman -Sy` on a fresh install with the keyring verifies the database and packages with `SigLevel = Required`.",
+        "Builds on PR branches do not publish."
+      ],
+      "verify": [
+        "CI run on main shows the upload",
+        "`pacman -Sy subarchy` in the VM verifies the signature"
+      ],
+      "blocked_by": [
+        "keyring"
+      ],
+      "mode": "hitl",
+      "hitl_reason": "The owner installs the signing key as a CI secret.",
+      "paths": [
+        ".gitea/workflows/",
+        "packaging/"
+      ]
+    },
+    {
+      "key": "kvm-runner",
+      "epic": "infra",
+      "title": "Register a CI runner with KVM for ISO builds and VM tests",
+      "summary": "ADR 0051: package builds, the ISO and VM boot tests need a runner with KVM and enough disk. Kuznya's Gitea runner capacity is unchecked.",
+      "acceptance": [
+        "A Gitea Actions runner with `/dev/kvm`, privileged containers and at least 60 GB free serves the subarchy repository under a label such as `kvm`.",
+        "A test job on that label runs `qemu-system-x86_64 -enable-kvm` successfully.",
+        "The runner's host, label and limits are recorded in the repository docs and in Machinum's service notes."
+      ],
+      "verify": [
+        "Test workflow run on the `kvm` label"
+      ],
+      "size": "S",
+      "mode": "hitl",
+      "hitl_reason": "Changes a homelab host outside this repository.",
+      "paths": [
+        ".gitea/workflows/"
+      ]
+    },
+    {
+      "key": "ci-iso",
+      "epic": "infra",
+      "title": "Build the ISO in CI",
+      "summary": "`make iso` works only locally with sudo (ADR 0049). Build it in CI on the KVM runner and keep the image as an artifact.",
+      "acceptance": [
+        "A CI job on the `kvm` runner runs `make iso iso-test` on main and on demand.",
+        "The image is kept as a workflow artifact for at least 7 days."
+      ],
+      "verify": [
+        "CI run producing the ISO artifact"
+      ],
+      "blocked_by": [
+        "kvm-runner"
+      ],
+      "paths": [
+        ".gitea/workflows/",
+        "tools/iso/"
+      ]
+    },
+    {
+      "key": "ci-install-test",
+      "epic": "infra",
+      "title": "Run the VM install test in CI",
+      "summary": "The full install test (`make install-test`) is the gate for the stable channel (ADR 0026) but only runs on the owner's laptop.",
+      "acceptance": [
+        "A CI job installs from the CI-built ISO and runs every `install-test.py` check, including the desktop and idle-budget checks.",
+        "A failing check fails the job and keeps the serial log and screendump as artifacts."
+      ],
+      "verify": [
+        "CI run of the install test on main"
+      ],
+      "blocked_by": [
+        "ci-iso"
+      ],
+      "paths": [
+        ".gitea/workflows/",
+        "tools/iso/"
+      ]
+    },
+    {
+      "key": "snapshot-spike",
+      "epic": "base",
+      "kind": "spike",
+      "title": "Choose how the stable Arch snapshot is served",
+      "summary": "ADR 0026 leaves open whether the stable channel uses an own mirror of core, extra and multilib, or an Arch Linux Archive date pin.",
+      "question": "Own mirror (storage, bandwidth, sync job on a homelab host) or `archive.archlinux.org/repos/YYYY/MM/DD/` (no storage, but does Arch accept it as a regular mirror)? What does each cost and how is the snapshot advanced after the CI install test passes?",
+      "mode": "hitl",
+      "hitl_reason": "The owner chooses where the mirror lives, if any.",
+      "notes": "Record the recommendation and the owner's choice on this issue and in ADR 0026."
+    },
+    {
+      "key": "channels",
+      "epic": "base",
+      "title": "Add stable and edge update channels",
+      "summary": "ADR 0026 defines two channels: stable (a tested Arch snapshot) by default and edge (Arch mirrors directly) by choice. `subcult update` has no channels yet.",
+      "acceptance": [
+        "`default/pacman/` ships a mirrorlist per channel; `subcult channel set stable|edge` switches them and the Subarchy repository section, and `subcult channel` shows the current one.",
+        "New installs are on stable.",
+        "Switching from edge to stable warns that packages may be newer than the snapshot."
+      ],
+      "verify": [
+        "`go test -race ./...`",
+        "`make verify`",
+        "`make install-test` covers `subcult channel set edge` and back"
+      ],
+      "blocked_by": [
+        "snapshot-spike"
+      ],
+      "paths": [
+        "default/pacman/",
+        "cmd/",
+        "internal/update/"
+      ]
+    },
+    {
+      "key": "restart-detection",
+      "epic": "base",
+      "title": "Report which services need a restart after an update",
+      "summary": "`subcult update` reports the snapshot, DKMS problems and whether a reboot is needed, but not which running services use replaced files (ADR 0026 step 7).",
+      "acceptance": [
+        "After the upgrade, the report lists system and user services whose processes map deleted or replaced files.",
+        "Nothing is restarted automatically except what other issues add (the shell restart).",
+        "Unit tests cover the detection with a fake `/proc` tree."
+      ],
+      "verify": [
+        "`go test -race ./internal/update/`",
+        "`make verify`"
+      ],
+      "size": "S",
+      "paths": [
+        "internal/update/"
+      ]
+    },
+    {
+      "key": "budgets",
+      "epic": "base",
+      "title": "Enforce idle memory and package budgets in the VM test",
+      "summary": "ADR 0054 wants CI budgets for idle memory and package count, set from the first working build. Only the shell's idle wake-up budget exists (`tools/iso/idle-budget.json`).",
+      "acceptance": [
+        "The install test records idle resident memory of the session after login and the installed package count.",
+        "The first run writes them as budgets; later runs fail above budget × 1.2, as the idle check does.",
+        "The measured budgets are committed."
+      ],
+      "verify": [
+        "`make install-test` twice: the second run checks against the committed budgets"
+      ],
+      "size": "S",
+      "paths": [
+        "tools/iso/"
+      ]
+    },
+    {
+      "key": "offline-cache",
+      "epic": "base",
+      "title": "Carry an offline package cache on the ISO",
+      "summary": "ADR 0049: the ISO should install offline. It carries Subarchy's own packages in `/opt/subarchy/repo`, but Arch packages still download during install.",
+      "acceptance": [
+        "The ISO build adds every package the default install needs to a local repository on the image.",
+        "`subarchy-setup` installs with networking off.",
+        "With network, the installer can still fetch newer packages from the channel."
+      ],
+      "verify": [
+        "`make iso` then `make install-test` with the VM's network disabled"
+      ],
+      "size": "L",
+      "paths": [
+        "iso/",
+        "install/",
+        "tools/iso/"
+      ]
+    },
+    {
+      "key": "panel-host",
+      "epic": "widgets",
+      "title": "Open a click-out panel from a bar widget, starting with audio",
+      "summary": "Shell stage 2 gives widgets a click-out panel (shell and look design). Build the panel host (one panel at a time, loaded only while open, pinned to the bar's output) and the first panel: audio output and input devices and volumes.",
+      "acceptance": [
+        "Clicking the audio widget opens a panel under it with sinks, sources and their volumes; clicking outside or Escape closes it.",
+        "The panel's content loads only while open (`Loader`/`LazyLoader`) and stays on the output it opened on.",
+        "ADR 0068 documents the optional `Panel.qml` contract if it changed."
+      ],
+      "verify": [
+        "`make shell-test shell-lint shell-index-check`",
+        "`tools/test/shell-headless.sh shell`"
+      ],
+      "blocked_by": [
+        "overlay-screen"
+      ],
+      "paths": [
+        "shell/Ui/",
+        "shell/widgets/audio/",
+        "docs/decisions/0068-shell-plugin-api-v0.md"
+      ]
+    },
+    {
+      "key": "net-bt-panels",
+      "epic": "widgets",
+      "title": "Add network and Bluetooth panels",
+      "summary": "Stage 2 panels for the network widget (Wi-Fi list, connect, current connection) and the Bluetooth widget (paired devices, connect and disconnect).",
+      "acceptance": [
+        "The network panel lists Wi-Fi networks from `Quickshell.Networking` and connects to a known one.",
+        "The Bluetooth panel lists paired devices and toggles their connection.",
+        "No scanning runs while the panels are closed."
+      ],
+      "verify": [
+        "`make shell-test shell-lint shell-index-check`",
+        "`tools/test/shell-headless.sh shell`"
+      ],
+      "blocked_by": [
+        "panel-host"
+      ],
+      "paths": [
+        "shell/widgets/network/",
+        "shell/widgets/bluetooth/"
+      ]
+    },
+    {
+      "key": "notif-power-panels",
+      "epic": "widgets",
+      "title": "Add the notification centre and power panels",
+      "summary": "Stage 2 panels: notification history with clear and do-not-disturb, and battery and power-profile details.",
+      "acceptance": [
+        "The notifications panel shows history, clears one or all, and toggles do-not-disturb.",
+        "The battery panel shows charge, time remaining and the power profile, and switches the profile."
+      ],
+      "verify": [
+        "`make shell-test shell-lint shell-index-check`",
+        "`tools/test/shell-headless.sh shell`"
+      ],
+      "blocked_by": [
+        "panel-host"
+      ],
+      "paths": [
+        "shell/widgets/notifications/",
+        "shell/widgets/battery/"
+      ]
+    },
+    {
+      "key": "linecast-pkg",
+      "epic": "widgets",
+      "title": "Package linecast from a pinned tag",
+      "summary": "The weather widget calls `linecast` (v1.15.2 on sputnik) for forecast, sun, moon and tides; it ships as its own package (shell and look design, Ownership).",
+      "acceptance": [
+        "`packaging/linecast/` builds linecast from a pinned tag with its own licence recorded.",
+        "The licence is checked and noted in the PKGBUILD."
+      ],
+      "verify": [
+        "`makepkg` in the package-test container"
+      ],
+      "size": "S",
+      "paths": [
+        "packaging/"
+      ]
+    },
+    {
+      "key": "weather",
+      "epic": "widgets",
+      "title": "Add the weather widget and panel",
+      "summary": "Plan 2: current conditions from Open-Meteo, forecast, sun, moon and tides from linecast, with the design's AC and battery intervals.",
+      "acceptance": [
+        "Current conditions refresh every 15 min on AC and 30 min on battery; the rest every 2 h on AC and 6 h on battery, and on panel open when older than the AC interval.",
+        "Nothing touches the network until the user sets a location.",
+        "The manifest declares its timers and network calls (`cost`).",
+        "The panel shows the forecast and sun, moon and tides from linecast."
+      ],
+      "verify": [
+        "`make shell-test shell-lint shell-index-check`",
+        "`tools/test/shell-headless.sh shell`"
+      ],
+      "blocked_by": [
+        "linecast-pkg",
+        "panel-host",
+        "qualify"
+      ],
+      "paths": [
+        "shell/widgets/"
+      ],
+      "notes": "The owner asked for shell hardening to land before plan 2 builds on the shell, hence the edge to the qualification issue."
+    },
+    {
+      "key": "soma",
+      "epic": "widgets",
+      "title": "Add the Soma.fm widget and panel",
+      "summary": "Plan 2: pick a SomaFM channel, play it through mpv and show now-playing, polled only while playing.",
+      "acceptance": [
+        "The SomaFM channel list loads when the panel opens; playback runs through mpv.",
+        "Now-playing is polled only while playing; nothing runs when stopped.",
+        "The service wait is event-driven, not a 1 s timer."
+      ],
+      "verify": [
+        "`make shell-test shell-lint shell-index-check`",
+        "`tools/test/shell-headless.sh shell`"
+      ],
+      "blocked_by": [
+        "panel-host",
+        "qualify"
+      ],
+      "paths": [
+        "shell/widgets/"
+      ]
+    },
+    {
+      "key": "n8n",
+      "epic": "widgets",
+      "title": "Add the n8n widget and panel",
+      "summary": "Plan 2: workflow status from the n8n REST API with the key in the keyring through `secret-tool`; every 60 s on AC, 5 min on battery; hidden until a server is set up.",
+      "acceptance": [
+        "The widget is hidden until a server URL and key are configured; the key is read with `secret-tool`, never stored in config.",
+        "Polling follows `Power`: 60 s on AC, 5 min on battery.",
+        "The panel lists workflows and recent failed executions."
+      ],
+      "verify": [
+        "`make shell-test shell-lint shell-index-check`",
+        "`tools/test/shell-headless.sh shell`"
+      ],
+      "blocked_by": [
+        "panel-host",
+        "qualify"
+      ],
+      "paths": [
+        "shell/widgets/"
+      ]
+    },
+    {
+      "key": "ht3",
+      "epic": "widgets",
+      "title": "Add the HT3 headphones widget and panel",
+      "summary": "Plan 2: the owner's HT3 headphones through BlueZ and PipeWire, following `PROTOCOL.md` from the owner's plugin as a specification; the device helper runs only while the panel is open.",
+      "acceptance": [
+        "The widget shows only while an HT3 is connected.",
+        "The device helper starts on panel open and stops on close.",
+        "Protocol parsing has unit tests from `PROTOCOL.md`.",
+        "The owner confirms battery and mode readings with the real headphones."
+      ],
+      "verify": [
+        "`make shell-test shell-lint shell-index-check`",
+        "`tools/test/shell-headless.sh shell`"
+      ],
+      "blocked_by": [
+        "panel-host",
+        "qualify"
+      ],
+      "mode": "hitl",
+      "hitl_reason": "Needs the owner's HT3 headphones.",
+      "paths": [
+        "shell/widgets/"
+      ],
+      "notes": "Write fresh from the protocol document; do not copy `patrickfanella.ht3` code."
+    },
+    {
+      "key": "calendar-sync",
+      "epic": "widgets",
+      "title": "Sync CalDAV and iCal calendars into a local cache",
+      "summary": "Plan 3 (ADR 0061): a user timer syncs calendars into a cache the widget watches, every 15 min on AC and 60 min on battery. Start with CalDAV and iCal.",
+      "acceptance": [
+        "A user timer and command sync configured CalDAV and iCal sources into a cache file.",
+        "The interval follows AC and battery (15 / 60 min).",
+        "Credentials are read from the keyring, never stored in config.",
+        "Tests cover parsing and the cache format."
+      ],
+      "verify": [
+        "`go test -race ./...`",
+        "`make verify`"
+      ],
+      "paths": [
+        "cmd/",
+        "internal/",
+        "default/system/"
+      ]
+    },
+    {
+      "key": "calendar-google",
+      "epic": "widgets",
+      "title": "Add Google calendars to the sync",
+      "summary": "ADR 0061 picks Google and CalDAV. Add Google through the Workspace CLI to the sync from the previous issue.",
+      "acceptance": [
+        "Google calendars sync into the same cache after the user signs in.",
+        "The owner confirms with their account."
+      ],
+      "verify": [
+        "`go test -race ./...`",
+        "Owner's sync run"
+      ],
+      "size": "S",
+      "blocked_by": [
+        "calendar-sync"
+      ],
+      "mode": "hitl",
+      "hitl_reason": "Needs the owner's Google account."
+    },
+    {
+      "key": "calendar-widget",
+      "epic": "widgets",
+      "title": "Add the calendar widget and panel",
+      "summary": "Plan 3: show the next event in the bar and a month view with events in the panel, reading the sync cache.",
+      "acceptance": [
+        "The widget shows the next event and reacts to cache changes without polling.",
+        "The panel shows a month view and the selected day's events."
+      ],
+      "verify": [
+        "`make shell-test shell-lint shell-index-check`",
+        "`tools/test/shell-headless.sh shell`"
+      ],
+      "blocked_by": [
+        "calendar-sync",
+        "panel-host"
+      ],
+      "paths": [
+        "shell/widgets/"
+      ]
+    },
+    {
+      "key": "dell-power",
+      "epic": "plugins",
+      "title": "Ship the Dell power plugin, enabled on Dell hardware",
+      "summary": "Stage 3: Dell firmware power and charge profiles as a plugin, off by default and enabled automatically on Dell machines through `subcult hw` (ADR 0021, 0050).",
+      "acceptance": [
+        "The plugin ships disabled; `subcult hw` enables it on Dell hardware.",
+        "Enabled from config, it loads without errors."
+      ],
+      "verify": [
+        "`make shell-test shell-lint shell-index-check`",
+        "`tools/test/shell-headless.sh shell`",
+        "`go test -race ./internal/hw/`"
+      ],
+      "blocked_by": [
+        "hw-match"
+      ],
+      "paths": [
+        "shell/widgets/",
+        "internal/hw/"
+      ]
+    },
+    {
+      "key": "otoru",
+      "epic": "plugins",
+      "title": "Ship the downloads plugin, off by default",
+      "summary": "Stage 3: yt-dlp downloads in the bar (reference `ussego.otoru`), written fresh.",
+      "acceptance": [
+        "The plugin ships disabled and loads without errors when enabled in `bar.json`.",
+        "Nothing runs while no download is active."
+      ],
+      "verify": [
+        "`make shell-test shell-lint shell-index-check`",
+        "`tools/test/shell-headless.sh shell`"
+      ],
+      "size": "S",
+      "paths": [
+        "shell/widgets/"
+      ]
+    },
+    {
+      "key": "auto-wallpaper",
+      "epic": "plugins",
+      "title": "Ship the auto-wallpaper plugin, off by default",
+      "summary": "Stage 3: rotate wallpapers on a schedule (reference `dizziee.auto-wallpaper`), written fresh, using the shell's background.",
+      "acceptance": [
+        "The plugin ships disabled and loads without errors when enabled.",
+        "Its timer follows `Power` and pauses on battery unless the user opts in."
+      ],
+      "verify": [
+        "`make shell-test shell-lint shell-index-check`",
+        "`tools/test/shell-headless.sh shell`"
+      ],
+      "size": "S",
+      "paths": [
+        "shell/widgets/",
+        "shell/Background.qml"
+      ]
+    },
+    {
+      "key": "agents-usage",
+      "epic": "plugins",
+      "title": "Ship the agents usage plugin, off by default",
+      "summary": "Stage 3 and ADR 0047: a bar widget showing usage, limits and pace per agent, lighter than Omarchy's 23 providers.",
+      "acceptance": [
+        "The plugin ships disabled and loads without errors when enabled.",
+        "It reads the providers ADR 0047 names from their local files, only while shown."
+      ],
+      "verify": [
+        "`make shell-test shell-lint shell-index-check`",
+        "`tools/test/shell-headless.sh shell`"
+      ],
+      "paths": [
+        "shell/widgets/"
+      ]
+    },
+    {
+      "key": "launcher-core",
+      "epic": "launcher",
+      "title": "Open a launcher on Super+Space with apps, favorites and frecency",
+      "summary": "ADR 0057: a Raycast-style launcher inside the shell. Start with app search, the favorites grid on an empty query, and frecency ranking.",
+      "acceptance": [
+        "Super+Space opens the launcher through a global shortcut; Escape closes it.",
+        "Typing searches desktop entries; pinned favorites come first, then frecency; the history file can be cleared.",
+        "The app list is cached and refreshed when desktop entries change; no idle cost beyond the shell."
+      ],
+      "verify": [
+        "`make shell-test shell-lint shell-index-check`",
+        "`tools/test/shell-headless.sh shell`",
+        "`make hypr-check`"
+      ],
+      "blocked_by": [
+        "global-keys"
+      ],
+      "paths": [
+        "shell/",
+        "default/hypr/bindings.lua",
+        "default/launcher/"
+      ]
+    },
+    {
+      "key": "launcher-commands",
+      "epic": "launcher",
+      "title": "Search subcult commands, calculate and search the web from the launcher",
+      "summary": "ADR 0057: root search includes every `subcult` command, an inline calculator answer (libqalculate) and web search with quicklinks as the fallback. Commands marked dangerous ask first (rice port).",
+      "acceptance": [
+        "Commands come from `subcult commands --json`; those marked dangerous show a confirmation.",
+        "`=` and inline math show a libqalculate answer.",
+        "`@` and the no-match fallback open web search; quicklinks like `g`, `yt`, `gh`, `aur`, `wiki` work, plus user URLs with `{query}`."
+      ],
+      "verify": [
+        "`make shell-test shell-lint shell-index-check`",
+        "`tools/test/shell-headless.sh shell`",
+        "`go test -race ./...`"
+      ],
+      "blocked_by": [
+        "launcher-core"
+      ],
+      "paths": [
+        "shell/",
+        "cmd/subcult/",
+        "internal/dispatch/"
+      ],
+      "notes": "Add a `dangerous` metadata field to the dispatcher if it is missing."
+    },
+    {
+      "key": "launcher-files-emoji",
+      "epic": "launcher",
+      "title": "Search files and emoji from the launcher",
+      "summary": "ADR 0057 prefixes `.` (files with `fd` on demand, no index) and `:` (symbols and emoji), with a preview pane.",
+      "acceptance": [
+        "`.` searches files with `fd` only while typing; nothing indexes in the background.",
+        "`:` searches emoji and symbols and copies the pick.",
+        "The preview pane shows the selected file."
+      ],
+      "verify": [
+        "`make shell-test shell-lint shell-index-check`",
+        "`tools/test/shell-headless.sh shell`"
+      ],
+      "blocked_by": [
+        "launcher-core"
+      ],
+      "paths": [
+        "shell/"
+      ]
+    },
+    {
+      "key": "launcher-clipboard",
+      "epic": "launcher",
+      "title": "Keep clipboard history without storing secrets",
+      "summary": "ADR 0056 and 0057: `$` and Super+Ctrl+V show clipboard history. Copies marked secret are never stored and are cleared after 30 seconds.",
+      "acceptance": [
+        "A clipboard watcher keeps text and image history in a capped local file.",
+        "Copies with the `x-kde-passwordManagerHint` MIME type are not stored and are cleared after 30 s.",
+        "History can be cleared; the watcher's idle cost is stated in its manifest."
+      ],
+      "verify": [
+        "`make shell-test shell-lint shell-index-check`",
+        "`tools/test/shell-headless.sh shell`"
+      ],
+      "blocked_by": [
+        "launcher-core"
+      ],
+      "paths": [
+        "shell/"
+      ]
+    },
+    {
+      "key": "launcher-scripts",
+      "epic": "launcher",
+      "title": "Run script commands and snippets from the launcher",
+      "summary": "ADR 0057: scripts with a metadata header in `~/.config/subcult/commands/` appear as commands with arguments (Raycast's `@raycast.*` keys accepted); snippets with `{date}`, `{time}`, `{clipboard}`; aliases and global hotkeys.",
+      "acceptance": [
+        "A script with `@raycast.title`/`mode`/`argument1` headers runs unchanged from the launcher.",
+        "Snippets expand their placeholders and paste.",
+        "Any command can get an alias and a global hotkey from the user config."
+      ],
+      "verify": [
+        "`make shell-test shell-lint shell-index-check`",
+        "`tools/test/shell-headless.sh shell`"
+      ],
+      "blocked_by": [
+        "launcher-commands"
+      ],
+      "paths": [
+        "shell/",
+        "default/launcher/"
+      ]
+    },
+    {
+      "key": "launcher-ai",
+      "epic": "launcher",
+      "title": "Ask the default agent from the launcher",
+      "summary": "ADR 0057: Ask AI sends a typed question to the default agent CLI (ADR 0047) and shows the answer, labelled as leaving the machine.",
+      "acceptance": [
+        "The Ask AI entry sends the query to the configured agent CLI and shows the answer.",
+        "The entry says the text leaves the machine before sending."
+      ],
+      "verify": [
+        "`make shell-test shell-lint shell-index-check`",
+        "`tools/test/shell-headless.sh shell`"
+      ],
+      "size": "S",
+      "blocked_by": [
+        "launcher-core"
+      ],
+      "paths": [
+        "shell/"
+      ]
+    },
+    {
+      "key": "lock-core",
+      "epic": "lock",
+      "title": "Lock the session with a standalone QML lock program and hypridle",
+      "summary": "ADR 0036: the lock screen is its own small Quickshell program using the session-lock protocol, so a shell crash cannot unlock the session. hypridle locks on idle.",
+      "acceptance": [
+        "A separate unit runs the lock program; killing the main shell leaves the session locked.",
+        "Password unlock works through its PAM flow; a wrong password lets the user type again.",
+        "hypridle defaults lock before display off, display off at 7 min and suspend at 15 min, with layered user overrides.",
+        "The VM test locks, unlocks with the password and checks the shell crash case."
+      ],
+      "verify": [
+        "`make shell-lint`",
+        "`make install-test` lock checks"
+      ],
+      "risk": "high",
+      "size": "L",
+      "mode": "hitl",
+      "hitl_reason": "The lock is a security boundary; the owner reviews and tests it on sputnik.",
+      "paths": [
+        "shell/",
+        "default/hypr/",
+        "default/system/"
+      ]
+    },
+    {
+      "key": "lock-fingerprint",
+      "epic": "lock",
+      "title": "Unlock with a fingerprint on supported readers",
+      "summary": "ADR 0036 and 0023: the lock program has a separate fingerprint PAM flow beside the password.",
+      "acceptance": [
+        "With an enrolled finger, touching the reader unlocks; the password prompt still works.",
+        "Without a reader, no fingerprint UI appears."
+      ],
+      "verify": [
+        "`make shell-lint`",
+        "Owner test on a machine with a reader"
+      ],
+      "size": "S",
+      "blocked_by": [
+        "lock-core"
+      ],
+      "mode": "hitl",
+      "hitl_reason": "Needs a fingerprint reader and the owner's finger."
+    },
+    {
+      "key": "screensaver-spike",
+      "epic": "lock",
+      "kind": "spike",
+      "title": "Find a way to render ttfx effects to video loops",
+      "summary": "ADR 0036: the screensaver plays pre-rendered loops of `ttfx` effects on the SUBCULT art, rendered when the art or theme changes. How to capture terminal output to video is open.",
+      "question": "Which tool captures a `ttfx` effect running in a terminal to a short video loop headlessly, at what size and codec, and what does playing it in the lock program cost on battery?",
+      "risk": "high",
+      "notes": "Measure decode CPU for one loop at the panel resolution. Record commands and numbers here."
+    },
+    {
+      "key": "screensaver",
+      "epic": "lock",
+      "title": "Play the SUBCULT screensaver in the lock screen until input",
+      "summary": "ADR 0036: on idle the session locks and shows the screensaver loops until any input, then the prompt; still art on battery. Loops ship prebuilt and re-render on theme change.",
+      "acceptance": [
+        "Prebuilt SUBCULT loops ship in the package.",
+        "The lock program plays a loop until input, then shows the prompt; the session stays locked throughout.",
+        "On battery it shows still art.",
+        "A theme change re-renders the loops in the background once."
+      ],
+      "verify": [
+        "`make shell-lint`",
+        "`make install-test` lock checks"
+      ],
+      "blocked_by": [
+        "lock-core",
+        "screensaver-spike",
+        "brand-assets"
+      ],
+      "paths": [
+        "shell/",
+        "branding/"
+      ]
+    },
+    {
+      "key": "dock-profiles",
+      "epic": "rice",
+      "title": "Save and apply monitor layouts on dock and undock",
+      "summary": "Rice port: event-driven dock and monitor profiles that replace sputnik's polling `sputnik-dock-workspaces` helper. Monitors are matched by description, not connector.",
+      "acceptance": [
+        "A session service reacts to Hyprland monitor events (no polling) and applies the saved profile for the connected set.",
+        "`subcult display profile save|list|apply` manage profiles; workspaces move to their profile's monitors.",
+        "Idle cost is stated; unit tests cover matching."
+      ],
+      "verify": [
+        "`go test -race ./...`",
+        "`make verify`"
+      ],
+      "blocked_by": [
+        "full-bar"
+      ],
+      "paths": [
+        "cmd/",
+        "internal/",
+        "default/system/"
+      ],
+      "notes": "Reference: the rice's `subcult-topology`, `TOPOLOGIES.md`, `MACHINE_PROFILES.md`; rewrite."
+    },
+    {
+      "key": "reduced-motion",
+      "epic": "rice",
+      "title": "Cut motion on battery and as an accessibility setting",
+      "summary": "Rice port: animations, blur and shadows cut on battery and full on AC, plus an accessibility setting, read by the shell, Hyprland and the lock screen.",
+      "acceptance": [
+        "One setting (`auto`, `on`, `off`) is read by the shell, the Hyprland defaults and the lock program.",
+        "`auto` follows AC/battery through UPower events."
+      ],
+      "verify": [
+        "`make shell-test shell-lint shell-index-check`",
+        "`tools/test/shell-headless.sh shell`",
+        "`make hypr-check`"
+      ],
+      "size": "S",
+      "paths": [
+        "shell/Commons/",
+        "default/hypr/"
+      ]
+    },
+    {
+      "key": "alerts",
+      "epic": "rice",
+      "title": "Alert on low battery and high temperature with hysteresis",
+      "summary": "Rice port: battery and thermal alerts with hysteresis and cooldowns, triggered by UPower and kernel events.",
+      "acceptance": [
+        "Low and critical battery notifications fire once per crossing, with hysteresis.",
+        "Thermal alerts come from kernel trip events or UPower, not a polling loop, with a cooldown.",
+        "Unit tests cover the hysteresis model."
+      ],
+      "verify": [
+        "`make shell-test shell-lint shell-index-check`",
+        "`tools/test/shell-headless.sh shell`"
+      ],
+      "paths": [
+        "shell/services/"
+      ]
+    },
+    {
+      "key": "privacy",
+      "epic": "rice",
+      "title": "Show microphone, camera and screen-sharing use in the bar",
+      "summary": "Rice port: the indicators widget shows when the microphone, a camera or screen sharing is in use, building on the recording indicator's node-flag rule.",
+      "acceptance": [
+        "The bar shows separate marks for microphone, camera and screen sharing in use, from PipeWire node flags.",
+        "Model tests cover each case."
+      ],
+      "verify": [
+        "`make shell-test shell-lint shell-index-check`",
+        "`tools/test/shell-headless.sh shell`"
+      ],
+      "size": "S",
+      "blocked_by": [
+        "recording"
+      ],
+      "paths": [
+        "shell/widgets/indicators/"
+      ]
+    },
+    {
+      "key": "settings-panel",
+      "epic": "rice",
+      "title": "Add a settings panel with preview, apply and undo",
+      "summary": "Rice port: a shell settings panel covering bar layout, fonts, cursor, idle and power, with preview, apply and one-step undo. Writes only user override files (ADR 0048).",
+      "acceptance": [
+        "The panel previews a change, applies it to the user override file and undoes the last apply.",
+        "It covers bar layout, font roles, cursor role and size, idle times and motion.",
+        "Settings are described by a schema file, not hard-coded per page."
+      ],
+      "verify": [
+        "`make shell-test shell-lint shell-index-check`",
+        "`tools/test/shell-headless.sh shell`"
+      ],
+      "size": "L",
+      "blocked_by": [
+        "panel-host"
+      ],
+      "paths": [
+        "shell/"
+      ]
+    },
+    {
+      "key": "workspace-names",
+      "epic": "rice",
+      "title": "Name workspaces with compact labels and a switch overlay",
+      "summary": "Rice port: workspace names with compact bar labels and an overlay on switch.",
+      "acceptance": [
+        "Workspace names come from user config and show compactly in the workspaces widget.",
+        "Switching shows a short overlay on the output it happens on."
+      ],
+      "verify": [
+        "`make shell-test shell-lint shell-index-check`",
+        "`tools/test/shell-headless.sh shell`"
+      ],
+      "size": "S",
+      "blocked_by": [
+        "overlay-screen"
+      ],
+      "paths": [
+        "shell/widgets/workspaces/",
+        "shell/"
+      ]
+    },
+    {
+      "key": "media",
+      "epic": "rice",
+      "title": "Control media players from the bar",
+      "summary": "Rice port: media controls across several MPRIS players with privacy-safe artwork (no remote artwork fetches).",
+      "acceptance": [
+        "The widget shows the active player and play/pause/next/previous; it switches between players.",
+        "Remote artwork URLs are not fetched; only local artwork shows."
+      ],
+      "verify": [
+        "`make shell-test shell-lint shell-index-check`",
+        "`tools/test/shell-headless.sh shell`"
+      ],
+      "paths": [
+        "shell/widgets/"
+      ]
+    },
+    {
+      "key": "palette-convert",
+      "epic": "theming",
+      "title": "Ship subcult-minimal as a Theme Tender theme",
+      "summary": "ADR 0037: the default theme is `subcult-minimal` converted to Theme Tender's format (26 roles, ANSI 0–15, terminal specials). The shell's `palette.json` should come from it.",
+      "acceptance": [
+        "`default/theme/` holds `subcult-minimal` in Theme Tender's `schema: 1` format.",
+        "The shell's default palette file is generated from it and matches today's values.",
+        "`tools/test/palette-test.py` checks the two agree."
+      ],
+      "verify": [
+        "`python3 tools/test/palette-test.py`",
+        "`make verify`"
+      ],
+      "size": "S",
+      "paths": [
+        "default/theme/",
+        "tools/test/"
+      ]
+    },
+    {
+      "key": "tender-package",
+      "epic": "theming",
+      "title": "Package Theme Tender and apply the theme at install",
+      "summary": "ADR 0037: Theme Tender ships as its own package (GPL-3.0-only code, MIT templates), and the installer calls `tender apply` with a profile.",
+      "acceptance": [
+        "`packaging/theme-tender/` builds Theme Tender from a pinned tag.",
+        "The installer runs `tender apply` with the default theme for the new user.",
+        "`tender doctor` passes in the VM."
+      ],
+      "verify": [
+        "`makepkg` in the package-test container",
+        "`make install-test`"
+      ],
+      "paths": [
+        "packaging/",
+        "install/"
+      ]
+    },
+    {
+      "key": "tender-shell-targets",
+      "epic": "theming",
+      "title": "Theme Hyprland, the shell and the lock through Theme Tender",
+      "summary": "ADR 0037: Subarchy writes Theme Tender registry entries and templates for its own targets: Hyprland borders and groups, the Quickshell palette file and the lock palette, contributed upstream.",
+      "acceptance": [
+        "Registry entries and templates exist in theme-tender for Hyprland (include file), the shell palette and the lock palette.",
+        "`tender apply` with a catalog theme recolours borders, bar and lock without editing Subarchy defaults."
+      ],
+      "verify": [
+        "theme-tender's own tests",
+        "`tender apply` in the VM, then a screendump"
+      ],
+      "blocked_by": [
+        "palette-convert",
+        "tender-package"
+      ],
+      "paths": [
+        "default/hypr/",
+        "shell/Commons/"
+      ],
+      "notes": "The template PR goes to subculture-collective/theme-tender; reference this issue as `subculture-collective/subarchy#n`."
+    },
+    {
+      "key": "tender-desktop-targets",
+      "epic": "theming",
+      "title": "Theme Qt and GTK apps through Theme Tender",
+      "summary": "ADR 0037 targets: Qt/KDE colours through `kdeglobals` or Kvantum (Dolphin, Okular, Ark, VLC) and GTK 3 and 4.",
+      "acceptance": [
+        "Registry entries and templates exist for Qt/KDE and GTK 3/4.",
+        "Dolphin and a GTK app pick up the theme after `tender apply`."
+      ],
+      "verify": [
+        "theme-tender's own tests",
+        "Screendump in the VM"
+      ],
+      "blocked_by": [
+        "tender-package"
+      ]
+    },
+    {
+      "key": "tender-app-targets",
+      "epic": "theming",
+      "title": "Theme editors, CLI tools and Chromium through Theme Tender",
+      "summary": "ADR 0037 targets: Neovim, VS Code, Obsidian, fzf, bat, git-delta, eza, fastfetch, swayimg, and Chromium's colour policy.",
+      "acceptance": [
+        "Registry entries and templates exist for each listed app.",
+        "Chromium's theme colour is set through a managed policy file."
+      ],
+      "verify": [
+        "theme-tender's own tests"
+      ],
+      "blocked_by": [
+        "tender-package"
+      ]
+    },
+    {
+      "key": "brand-assets",
+      "epic": "theming",
+      "title": "Settle the brand assets for the SUBCULT screens",
+      "summary": "Next decisions W4: wordmark, icons, Plymouth splash, SDDM theme design, lock screen and screensaver art need a design session with the owner, starting from the rice's brand kit (`theme/brand/`).",
+      "acceptance": [
+        "The owner approves the wordmark, splash art, greeter design and screensaver art.",
+        "The approved files are committed under `branding/` with their sources."
+      ],
+      "verify": [
+        "Owner's approval on this issue"
+      ],
+      "mode": "hitl",
+      "hitl_reason": "Taste decisions belong to the owner.",
+      "paths": [
+        "branding/"
+      ]
+    },
+    {
+      "key": "greeter-splash",
+      "epic": "theming",
+      "title": "Theme the SDDM greeter and the Plymouth splash",
+      "summary": "The session boots with an unthemed SDDM greeter and a text-mode-tested Plymouth. Build Subarchy's SDDM theme and graphical Plymouth splash from the approved art and palette.",
+      "acceptance": [
+        "SDDM uses a Subarchy QML theme in the palette with the wordmark.",
+        "Plymouth shows the SUBCULT splash and the LUKS prompt in the theme.",
+        "The VM test's greeter screendump shows the theme's colours."
+      ],
+      "verify": [
+        "`make install-test`"
+      ],
+      "blocked_by": [
+        "brand-assets"
+      ],
+      "paths": [
+        "default/sddm/",
+        "default/plymouth/",
+        "branding/"
+      ]
+    },
+    {
+      "key": "system-apply",
+      "epic": "theming",
+      "title": "Apply the theme to SDDM, Plymouth and Limine through polkit",
+      "summary": "ADR 0037: Theme Tender runs as the user, so Subarchy's CLI applies root-owned targets (SDDM, Plymouth, Limine) through polkit from a palette Theme Tender exports (theme-tender#19).",
+      "acceptance": [
+        "`subcult theme apply-system` reads the exported palette and recolours SDDM, Plymouth and Limine through polkit.",
+        "It rebuilds the initramfs only when Plymouth changed."
+      ],
+      "verify": [
+        "`go test -race ./...`",
+        "`make install-test`"
+      ],
+      "blocked_by": [
+        "greeter-splash",
+        "tender-package"
+      ],
+      "notes": "Needs theme-tender#19 (export the resolved palette) upstream first; check its state before starting."
+    },
+    {
+      "key": "web-apps",
+      "epic": "apps",
+      "title": "Install web apps, with Discord preinstalled",
+      "summary": "App list: Discord is the one preinstalled web app (Chromium app window with Vencord Web); an install-web-app command opens any site as an app.",
+      "acceptance": [
+        "`subcult app webapp install <name> <url>` creates a desktop entry that opens the site in a Chromium app window; `remove` deletes it.",
+        "A fresh install has the Discord web app with Vencord Web active."
+      ],
+      "verify": [
+        "`go test -race ./internal/apps/`",
+        "`make install-test`"
+      ],
+      "paths": [
+        "internal/apps/",
+        "cmd/subcult-app/"
+      ]
+    },
+    {
+      "key": "lazyvim",
+      "epic": "apps",
+      "title": "Ship LazyVim prebuilt with pinned plugins",
+      "summary": "ADR 0045: Neovim runs stock LazyVim from a forked starter, with plugins pinned by a lockfile and cached in the package so first launch needs no downloads.",
+      "acceptance": [
+        "A `subarchy-nvim` package (or part of `subarchy`) installs the starter and cached plugins for new homes.",
+        "First launch in the VM opens without network access.",
+        "LazyVim's Apache-2.0 licence and NOTICE are kept; changed files are marked."
+      ],
+      "verify": [
+        "`make install-test` with networking off for the first `nvim --headless +qa`"
+      ],
+      "size": "L",
+      "paths": [
+        "packaging/",
+        "default/"
+      ]
+    },
+    {
+      "key": "lazyvim-brand",
+      "epic": "apps",
+      "title": "Add Subarchy's LazyVim branding layer",
+      "summary": "ADR 0045: a plugin layer for dashboard art, the colourscheme from the active theme, keymaps and chosen extras.",
+      "acceptance": [
+        "The dashboard shows SUBCULT art; the colourscheme follows the active theme.",
+        "The layer carries a Subarchy name, not LazyVim's."
+      ],
+      "verify": [
+        "`nvim --headless +qa` without errors in the VM"
+      ],
+      "size": "S",
+      "blocked_by": [
+        "lazyvim",
+        "brand-assets"
+      ]
+    },
+    {
+      "key": "cli-spike",
+      "epic": "apps",
+      "kind": "spike",
+      "title": "List the Bash commands the distribution CLI still needs",
+      "summary": "Roadmap Phase 4: the distribution CLI's dispatcher and `subcult app` are done; the Bash command set (ADR 0046) is not defined.",
+      "question": "Which of Omarchy's visible commands does Subarchy need, under which `subcult <group> <action>` names, and which become Go per ADR 0046's rule? Does CI need `bats` now?",
+      "mode": "hitl",
+      "hitl_reason": "The owner approves the command list.",
+      "notes": "Output: a proposed list on this issue. Approved commands become new issues in this roadmap."
+    },
+    {
+      "key": "hw-match",
+      "epic": "hardware",
+      "title": "Port hardware matching to subcult hw",
+      "summary": "ADR 0050: Omarchy's 42 `omarchy hw` detection and matching commands (`hw match`, `hw laptop`, `hw hybrid gpu`, `hw vm` and others) are the detection layer the fixes need. `subcult hw` picks packages only.",
+      "acceptance": [
+        "`subcult hw` answers the matching questions the fixes use (vendor, product, laptop, hybrid GPU, VM, specific devices) from DMI, PCI and USB data.",
+        "Fixture tests cover each matcher.",
+        "Each matcher links its Omarchy source and version."
+      ],
+      "verify": [
+        "`go test -race ./internal/hw/`",
+        "`make verify`"
+      ],
+      "paths": [
+        "internal/hw/",
+        "cmd/subcult-hw/"
+      ]
+    },
+    {
+      "key": "hw-intel-general",
+      "epic": "hardware",
+      "title": "Port the Intel and general hardware fixes",
+      "summary": "ADR 0050: Intel (Wi-Fi 7 EHT, FRED, IPU7 camera, LPMD, SOF firmware, thermald, video acceleration) and general fixes (Bluetooth, network, NVIDIA, Vulkan, speaker tuning, wireless regulatory domain). sputnik needs several of these.",
+      "acceptance": [
+        "Each fix applies by detection at install and from `subcult hw apply`.",
+        "Each is marked untested until run on the hardware, and links its Omarchy source.",
+        "Fixture tests cover detection."
+      ],
+      "verify": [
+        "`go test -race ./internal/hw/`",
+        "`make install-test` (the VM applies none)"
+      ],
+      "size": "L",
+      "blocked_by": [
+        "hw-match"
+      ],
+      "paths": [
+        "internal/hw/",
+        "default/"
+      ]
+    },
+    {
+      "key": "hw-apple-surface",
+      "epic": "hardware",
+      "title": "Port the Apple T2 and Microsoft Surface fixes",
+      "summary": "ADR 0050: Apple Intel/T2 (`fix-t2`, SPI keyboard, NVMe suspend, brcmfmac) and Microsoft Surface and Surface keyboard fixes.",
+      "acceptance": [
+        "Each fix applies by detection, is marked untested and links its Omarchy source.",
+        "Fixture tests cover detection."
+      ],
+      "verify": [
+        "`go test -race ./internal/hw/`"
+      ],
+      "blocked_by": [
+        "hw-match"
+      ],
+      "paths": [
+        "internal/hw/",
+        "default/"
+      ]
+    },
+    {
+      "key": "hw-vendors",
+      "epic": "hardware",
+      "title": "Port the ASUS, Dell, Framework, Lenovo and Tuxedo fixes",
+      "summary": "ADR 0050: ASUS (ROG, ProArt P14, ExpertBook B9406, Z13), Dell XPS (speaker firmware, amps, haptics), Framework 16 and QMK HID, Lenovo Yoga Pro 7 bass, Tuxedo keyboard backlight. Skip aarch64-only scripts.",
+      "acceptance": [
+        "Each fix applies by detection, is marked untested and links its Omarchy source.",
+        "Scripts that target aarch64 are listed as not ported."
+      ],
+      "verify": [
+        "`go test -race ./internal/hw/`"
+      ],
+      "size": "L",
+      "blocked_by": [
+        "hw-match"
+      ],
+      "paths": [
+        "internal/hw/",
+        "default/"
+      ]
+    },
+    {
+      "key": "hw-peripherals",
+      "epic": "hardware",
+      "title": "Port the peripheral hardware fixes",
+      "summary": "ADR 0050 peripherals: Elgato Cam Link 4K, Motorcomm YT6801 Ethernet, Broadcom BCM43xx, Synaptics touchpad, function keys.",
+      "acceptance": [
+        "Each fix applies by detection, is marked untested and links its Omarchy source."
+      ],
+      "verify": [
+        "`go test -race ./internal/hw/`"
+      ],
+      "blocked_by": [
+        "hw-match"
+      ],
+      "paths": [
+        "internal/hw/",
+        "default/"
+      ]
+    },
+    {
+      "key": "displaylink",
+      "epic": "hardware",
+      "title": "Install DisplayLink drivers when a DisplayLink adapter is present",
+      "summary": "First-install notes: `evdi`/`displaylink` are installed by nothing yet, and sputnik's dock uses a DisplayLink adapter (USB `17e9:4301`).",
+      "acceptance": [
+        "Pinned rebuilds of `evdi-dkms` and `displaylink` are in `packaging/aur/`.",
+        "`subcult hw packages` adds them and enables `displaylink.service` when a `17e9` device is present.",
+        "The DKMS check in `subcult update` covers evdi."
+      ],
+      "verify": [
+        "`packaging/aur/build.sh`",
+        "`go test -race ./internal/hw/`"
+      ],
+      "blocked_by": [
+        "hw-match"
+      ],
+      "paths": [
+        "packaging/aur/",
+        "internal/hw/"
+      ]
+    },
+    {
+      "key": "sputnik-install",
+      "epic": "hardware",
+      "title": "Install Subarchy on sputnik's second drive and record the hardware results",
+      "summary": "ADR 0049 and the first-install notes: install on `nvme0n1` (SPCC 1 TB), keeping Omarchy on `nvme1n1`, and test what the VM cannot.",
+      "acceptance": [
+        "Subarchy boots from `nvme0n1`; Omarchy still boots from the firmware menu.",
+        "Results are recorded for NVIDIA modes, Wi-Fi, SOF audio, Bluetooth, suspend, lid, battery profile switching, the graphical splash, Secure Boot, TPM unlock, DisplayLink and the shell at scale 1.6.",
+        "Failures become new issues in this roadmap."
+      ],
+      "verify": [
+        "Owner's results on this issue; `docs/review/first-install.md` updated"
+      ],
+      "mode": "hitl",
+      "hitl_reason": "Real hardware and the owner's disks.",
+      "paths": [
+        "docs/review/first-install.md"
+      ]
+    },
+    {
+      "key": "release",
+      "epic": "hardware",
+      "title": "Publish the first release on the stable channel",
+      "summary": "Roadmap Phase 5: the first release, versioned by semver from 0.0.0 (ADR 0066), gated by the CI install test on the stable snapshot.",
+      "acceptance": [
+        "A tagged release with an ISO and signed packages on the stable channel.",
+        "Release notes list the tested hardware set and the untested ports.",
+        "If the repository goes public, the licence gate (ADR 0053) passes first."
+      ],
+      "verify": [
+        "CI install test green on the release commit",
+        "Owner's sign-off"
+      ],
+      "blocked_by": [
+        "channels",
+        "publish-packages",
+        "ci-install-test",
+        "sputnik-install",
+        "budgets"
+      ],
+      "mode": "hitl",
+      "hitl_reason": "The owner decides when to release."
+    }
+  ]
+}

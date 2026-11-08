@@ -59,7 +59,10 @@ daemon (not needed; see the owner thread of 2026-11-07).
   `tools/test/shell-headless.sh shell` and the CI `shell` job stay green; the
   VM test (`make install-test`) passes at the end.
 - Commits as `SUBCULT Agent <info@subcult.tv>`, unsigned, with the
-  Co-Authored-By line. One PR for the whole plan, reviewed by a fresh reviewer.
+  Co-Authored-By line. One PR per task, tracked as Epic A of the
+  [roadmap issue #29](https://git.subcult.tv/subculture-collective/subarchy/issues/29);
+  the fresh review covers all of them in the final qualification issue.
+  (Revised 2026-11-07; first written as one PR for the whole plan.)
 
 ## Review Focus
 
