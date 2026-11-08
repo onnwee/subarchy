@@ -81,3 +81,4 @@ const mediaPrevious = "\u{F04AE}" // skip_previous
 const mediaNote = "\u{F075A}"     // music
 
 const wallpaper = "\u{F02E9}" // image
+const download = "\u{F01DA}" // download
