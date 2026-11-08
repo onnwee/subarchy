@@ -79,6 +79,7 @@ if [ "$1 $2" = "thermal watch" ]; then
   printf '{"zone":0,"type":"SKIN","trip":3,"kind":"hot","tripTemp":82050,"temp":79000,"direction":"down"}\n'
   printf '{"zone":0,"type":"SKIN","trip":3,"kind":"hot","tripTemp":82050,"temp":83000,"direction":"up"}\n'
   exec sleep infinity
+fi
 # The agents' usage, as the command reads it from local files.
 if [ "$1 $2 $3" = "agent usage --json" ]; then
   cat <<'JSON'
