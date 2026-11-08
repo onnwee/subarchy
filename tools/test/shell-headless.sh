@@ -381,6 +381,19 @@ st=$(status "$home1")
 [[ $(json '"subcult.media" in d["loaded"]["HEADLESS-1"] and "subcult.media" not in d["shown"]["HEADLESS-1"]') == True ]] ||
   fail "the media widget is not loaded-and-hidden without a player: $st"
 
+# The calendar widget reads the sync cache, watched (no polling): written
+# after start, it is picked up; the widget shows with or without it.
+mkdir -p "$home1/.local/state/subcult/calendar"
+printf '{"version": 1, "syncedAt": "2026-11-07T09:30:00Z", "events": [{"id": "x", "calendar": "Test", "title": "Headless standup", "start": "2099-01-01T10:00:00", "end": "2099-01-01T10:30:00", "allDay": false}]}\n' \
+  >"$home1/.local/state/subcult/calendar/events.json"
+[[ $(json '"subcult.calendar" in d["shown"]["HEADLESS-1"]') == True ]] || fail "the calendar widget is not shown: $st"
+calendar() { HOME=$home1 quickshell ipc -p "$shell" call subcult.shell widgetProperty subcult.calendar label; }
+for _ in $(seq 20); do
+  [[ $(calendar) == *"Headless standup 10:00" ]] && break
+  sleep 0.5
+done
+[[ $(calendar) == *"Headless standup 10:00" ]] || fail "the calendar widget did not pick up the written cache: $(calendar)"
+
 # A widget's click-out panel: the audio panel opens on request (no
 # PipeWire here, so it shows no devices), one at a time, and closes.
 HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.audio >/dev/null

@@ -57,5 +57,10 @@ Calendar is not reachable from other apps, so it is not a source.
   which refuses a `password` field. The user timer runs every quarter hour;
   on battery a sync younger than an hour is kept. Google sync is still to
   come (#113).
+- 2026-11-07: the bar's calendar widget (issue #90) shows the next event
+  from that cache ("Standup 14:00", "Standup now", "Tomorrow Dentist 09:00")
+  and opens a month panel with a mark on days that have events and the
+  selected day's list. The cache file is watched; the label follows the
+  shared minute clock; nothing polls.
 
 Related: [[decision-map|Decision map]] · [[0036-shell-components|ADR 0036]] · [[0057-launcher|ADR 0057]]

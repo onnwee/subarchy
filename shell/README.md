@@ -64,6 +64,16 @@ any window. The state is `~/.local/state/subcult/keep-awake` (`1`, or
 absent), so a shell restart keeps it; `subcult.shell keepAwake true|false`
 sets it over IPC.
 
+## Calendar
+
+The calendar widget shows the next event from the sync cache
+`~/.local/state/subcult/calendar/events.json` (`subcult calendar sync`,
+[ADR 0061](../docs/decisions/0061-default-bar-calendar.md)) and opens a
+month panel: a dot marks days with events, a click lists that day. The file
+is watched, so a sync changes the bar at once; the label follows the shared
+minute clock. `subcult.shell widgetProperty subcult.calendar label` over
+IPC returns the label (tests).
+
 ## Launcher
 
 Super+Space opens it ([ADR 0057](../docs/decisions/0057-launcher.md)). An

@@ -42,6 +42,17 @@
         "kind": "bar-widget"
       }
     },
+    "subcult.calendar": {
+      "dir": "calendar",
+      "manifest": {
+        "id": "subcult.calendar",
+        "name": "Calendar",
+        "version": "1.0.0",
+        "api": 0,
+        "kind": "bar-widget",
+        "panel": true
+      }
+    },
     "subcult.clock": {
       "dir": "clock",
       "manifest": {

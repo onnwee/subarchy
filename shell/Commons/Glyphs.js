@@ -61,6 +61,7 @@ function powerProfile(name) {
 const idleInhibit = "\u{F0176}" // coffee
 const recording = "\u{F044A}"   // record
 const updates = "\u{F06B0}"     // update
+const calendar = "\u{F00ED}"    // calendar
 
 function bell(unread, dnd) {
   if (dnd)
