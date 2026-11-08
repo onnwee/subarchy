@@ -1,13 +1,14 @@
 .pragma library
 // On-screen display helpers.
 
-// `brightnessctl -m` prints "device,class,current,percent%,max".
-function brightness(line) {
-  const f = String(line).trim().split(",")
-  if (f.length < 5)
+// A backlight level, 0..1, from the text of sysfs `brightness` and
+// `max_brightness`.
+function level(raw, max) {
+  const r = String(raw).trim()
+  const m = String(max).trim()
+  if (!/^[0-9]+$/.test(r) || !/^[0-9]+$/.test(m) || Number(m) === 0)
     return null
-  const p = parseFloat(f[3])
-  return isNaN(p) ? null : Math.max(0, Math.min(1, p / 100))
+  return Math.min(1, Number(r) / Number(m))
 }
 
 // A volume reading is a change worth showing only after the first one.

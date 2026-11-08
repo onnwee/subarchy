@@ -233,7 +233,7 @@ Every widget below is written fresh for Subarchy. "Reference" names the
 | Update count | `omarchy.system-update` | File watch on the `subcult-update check` state file | None |
 | Clock, world clock | `omarchy.clock`, `omarchy.elsewhen` | One timer aligned to the minute | One wake a minute |
 | Notifications and centre | `foamy.notification-center` | `Quickshell.Services.Notifications`; history in memory plus a small JSON file | None |
-| OSD | `omarchy.osd` | PipeWire volume events; brightness and caps-lock bindings call the shell over IPC | None |
+| OSD | `omarchy.osd` | PipeWire volume events; brightness keys as Hyprland global shortcuts; caps lock over IPC | None |
 | Polkit dialog | `omarchy.polkit` | `Quickshell.Services.Polkit` | None |
 | Soma.fm | `io.github.joshuaswarren.somafm` | SomaFM API when the panel opens; now-playing polled only while playing; playback through mpv | None unless playing |
 | Weather | `ashuttl.linecast` | Current conditions from Open-Meteo; forecast, sun, moon and tides from the `linecast` program ([[#Ownership]]) | Current every 15 min on AC, 30 min on battery; the rest every 2 h on AC, 6 h on battery, and on panel open when older than the AC interval |

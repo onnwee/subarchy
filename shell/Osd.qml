@@ -9,9 +9,10 @@ import "OsdModel.js" as Model
 import "Commons/Glyphs.js" as Glyphs
 
 // Volume, brightness and caps-lock feedback near the bottom of the focused
-// output. Volume shows on its own when PipeWire reports a change; the
-// brightness keys call `flash brightness` over IPC. Hidden after 1.5 s; the
-// window exists only while shown.
+// output. Volume shows on its own when PipeWire reports a change. The
+// brightness keys arrive as global shortcuts: brightnessctl sets the level,
+// then the OSD reads it back from sysfs. Hidden after 1.5 s; the window
+// exists only while shown.
 PanelWindow { // qmllint disable uncreatable-type
   id: osd
 
@@ -19,6 +20,8 @@ PanelWindow { // qmllint disable uncreatable-type
   property real value: 0
   property bool muted: false
   property var lastVolume: null
+  // The backlight's sysfs folder, found once at start; empty without one.
+  property string backlight: ""
 
   readonly property var sink: Pipewire.defaultAudioSink
 
@@ -35,10 +38,12 @@ PanelWindow { // qmllint disable uncreatable-type
 
   function show(k) {
     if (k === "brightness") {
-      brightnessQuery.running = true
-      return
-    }
-    if (k === "volume" && osd.sink && osd.sink.audio) {
+      const v = osd.brightnessLevel()
+      if (v === null)
+        return
+      osd.value = v
+      osd.muted = false
+    } else if (k === "volume" && osd.sink && osd.sink.audio) {
       osd.value = osd.sink.audio.volume
       osd.muted = osd.sink.audio.muted
     }
@@ -63,18 +68,63 @@ PanelWindow { // qmllint disable uncreatable-type
     osd.lastVolume = now
   }
 
+  // sysfs does not report changes, so the level is read again each time.
+  function brightnessLevel() {
+    if (osd.backlight === "")
+      return null
+    levelFile.reload()
+    levelFile.waitForJob()
+    return Model.level(levelFile.text(), maxFile.text())
+  }
+
+  // One write at a time: a press (or key repeat) while one runs is dropped.
+  function stepBrightness(change) {
+    if (brightnessSet.running)
+      return
+    const device = osd.backlight === "" ? [] : ["-d", osd.backlight.split("/").pop()]
+    brightnessSet.command = ["brightnessctl", "-q"].concat(device, ["set", change])
+    brightnessSet.running = true
+  }
+
+  GlobalShortcut {
+    appid: "subcult"
+    name: "brightness-up"
+    description: "Brightness up"
+    onPressed: osd.stepBrightness("5%+")
+  }
+
+  GlobalShortcut {
+    appid: "subcult"
+    name: "brightness-down"
+    description: "Brightness down"
+    onPressed: osd.stepBrightness("5%-")
+  }
+
   Process {
-    id: brightnessQuery
-    command: ["brightnessctl", "-m"]
+    id: brightnessSet
+    onExited: osd.show("brightness")
+  }
+
+  Process {
+    running: true
+    command: ["sh", "-c", "for d in /sys/class/backlight/*; do [ -r \"$d/max_brightness\" ] && { echo \"$d\"; exit; }; done"]
     stdout: StdioCollector {
-      onStreamFinished: {
-        const v = Model.brightness(text)
-        osd.value = v === null ? 0 : v
-        osd.muted = false
-        osd.kind = "brightness"
-        hide.restart()
-      }
+      onStreamFinished: osd.backlight = text.trim()
     }
+  }
+
+  FileView {
+    id: levelFile
+    path: osd.backlight === "" ? "" : osd.backlight + "/brightness"
+    blockLoading: true
+    printErrors: false
+  }
+
+  FileView {
+    id: maxFile
+    path: osd.backlight === "" ? "" : osd.backlight + "/max_brightness"
+    blockLoading: true
+    printErrors: false
   }
 
   Timer {

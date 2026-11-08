@@ -39,6 +39,14 @@ The unit is enabled for every user by a symlink in
 `/usr/lib/systemd/user/graphical-session.target.wants/`, so a user turns it
 off with `systemctl --user mask subcult-shell`, not `disable`.
 
+Keys reach the shell as Hyprland global shortcuts with the appid `subcult`:
+`default/hypr/bindings.lua` binds them with `hl.dsp.global("subcult:<name>")`
+and Quickshell `GlobalShortcut` objects receive them, so a key press starts
+no process. The names are `altswitch-next`, `altswitch-prev`,
+`altswitch-commit`, `brightness-up` and `brightness-down`; `hyprctl dispatch
+'hl.dsp.global("subcult:altswitch-next")'` sends one by hand.
+
 IPC: `quickshell ipc -p /usr/share/subcult/shell show` lists the targets
 (`subcult.shell status`, `subcult.osd flash <volume|brightness|capslock>`,
-`subcult.altswitch next|prev|commit|cancel`).
+`subcult.altswitch next|prev|commit|cancel`). Tests and scripts use it; the
+key bindings do not.
