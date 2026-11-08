@@ -63,6 +63,18 @@ any window. The state is `~/.local/state/subcult/keep-awake` (`1`, or
 absent), so a shell restart keeps it; `subcult.shell keepAwake true|false`
 sets it over IPC.
 
+## Privacy marks
+
+The indicators show, in the error colour, a microphone, a camera and a
+screen mark while a client reads the microphone, a camera or the screen.
+PipeWire tells: a device in use has a link from its node to the client's
+stream, and device nodes carry type flags, so the microphone and camera
+marks read links alone. Screen capture is a video stream linked from
+anything but a camera (the screencast producer); video streams carry no
+flags in Quickshell 0.3.2, so only the nodes that could be one are
+tracked. A paused client still holds the device and keeps its mark; a
+desktop-audio capture links from a sink and shows nothing.
+
 ## Launcher
 
 Super+Space opens it ([ADR 0057](../docs/decisions/0057-launcher.md)). An

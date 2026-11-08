@@ -59,7 +59,8 @@ function powerProfile(name) {
 }
 
 const idleInhibit = "\u{F0176}" // coffee
-const recording = "\u{F044A}"   // record
+const camera = "\u{F0100}"      // camera
+const screenShare = "\u{F1483}" // monitor_share
 const updates = "\u{F06B0}"     // update
 
 function bell(unread, dnd) {
