@@ -45,27 +45,38 @@ CACHE = ROOT / "build" / "pkgcache"
 IDLE_BUDGET = ROOT / "tools" / "iso" / "idle-budget.json"
 
 
+def budget_ok(key: str, value: int, slack: int = 0) -> bool:
+    """A measurement against its budget in tools/iso/idle-budget.json (ADR 0054).
+
+    The first run records its measurement as the budget (null in the file),
+    written to build/vm/budgets.json to copy over; later runs fail above the
+    larger of budget × 1.2 and budget + slack.
+    """
+    import json
+    if value < 0:
+        return False
+    data = json.loads(IDLE_BUDGET.read_text())
+    budget = data.get(key)
+    if budget is None:
+        print(f"install-test: no budget for {key} yet; measured {value}, record it in {IDLE_BUDGET}")
+        recorded = VM / "budgets.json"
+        seen = json.loads(recorded.read_text()) if recorded.exists() else {}
+        seen[key] = value
+        recorded.write_text(json.dumps(seen) + "\n")
+        return True
+    return value <= max(budget * 1.2, budget + slack)
+
+
 def idle_ok(switches: int) -> bool:
-    """The shell's idle wake-ups against tools/iso/idle-budget.json (ADR 0054).
+    """The shell's idle wake-ups per minute (ADR 0054), with three of slack.
 
     Counted on the shell's main thread, where its timers and event sources
     run. Every frame also wakes the render thread and, in a VM, llvmpipe's
     worker threads, so the total over all threads is reported but not
     budgeted (a probe on 2026-11-07 saw 10 main-thread wake-ups and 48-58
-    in all for a quiet minute). The first run records its measurement as
-    the budget (null in the file); later runs fail above the larger of
-    budget × 1.2 and budget + 3.
+    in all for a quiet minute).
     """
-    import json
-    if switches < 0:
-        return False
-    data = json.loads(IDLE_BUDGET.read_text())
-    budget = data.get("shell_main_thread_wakeups_per_minute")
-    if budget is None:
-        print(f"install-test: no idle budget yet; measured {switches}, record it in {IDLE_BUDGET}")
-        (VM / "idle.json").write_text(json.dumps({"shell_main_thread_wakeups_per_minute": switches}) + "\n")
-        return True
-    return switches <= max(budget * 1.2, budget + 3)
+    return budget_ok("shell_main_thread_wakeups_per_minute", switches, 3)
 USER = "tester"
 PASSWORD = "subarchy-test"
 PASSPHRASE = "subarchy-disk-test"
@@ -316,6 +327,13 @@ def boot(disk: Path, vars_file: Path) -> bool:
         ok = len(before) == 2 and len(after) == 2 and all(x.isdigit() for x in before + after)
         results["idle"] = int(after[0]) - int(before[0]) if ok else -1
         results["idle_all"] = int(after[1]) - int(before[1]) if ok else -1
+        # Idle resident memory of the whole session (every process of the
+        # user: compositor, shell, portals, agents) in KiB, taken after the
+        # quiet minute, and the installed package count (ADR 0054 budgets).
+        mem = serial.run("ps -u $(id -u) -o rss= | awk '{s += $1} END {print s + 0}'").strip()
+        results["mem"] = int(mem) if mem.isdigit() else -1
+        pkgs = serial.run("pacman -Qq | wc -l").strip()
+        results["packages"] = int(pkgs) if pkgs.isdigit() else -1
         # The shell's Hyprland dispatches on a Lua config: the workspace click
         # expression (as shell/Commons/HyprDispatch.js writes it).
         results["dispatch"] = serial.run(
@@ -443,6 +461,8 @@ def boot(disk: Path, vars_file: Path) -> bool:
         "Alt-Tab switches to the previous window (global shortcuts)": "SWITCHED_GLOBAL" in r["altswitch"].splitlines(),
         "Alt-Tab switches back (IPC)": "SWITCHED_IPC" in r["altswitch"].splitlines(),
         "shell idle within budget": idle_ok(r["idle"]),
+        "session idle memory within budget": budget_ok("session_rss_kb", r["mem"], 20480),
+        "package count within budget": budget_ok("packages", r["packages"], 5),
     }
     for name, ok in checks.items():
         print(f"install-test: {'ok  ' if ok else 'FAIL'} {name}")
@@ -451,6 +471,7 @@ def boot(disk: Path, vars_file: Path) -> bool:
     if r["shell_errors"].strip():
         print("install-test: shell errors:\n" + r["shell_errors"].strip())
     print(f"install-test: shell idle: {r['idle']} main-thread wake-ups in 60 s, {r['idle_all']} over all threads (budget file {IDLE_BUDGET})")
+    print(f"install-test: session idle memory: {r['mem']} KiB resident; packages installed: {r['packages']}")
     print(f"install-test: screenshots {VM / 'greeter.png'}, {VM / 'session.png'}, {VM / 'bar.png'}"
           f" ({r['greeter_colours']} and {r['session_colours']} colours)")
     if r["failed"].strip():
