@@ -8,9 +8,10 @@ import qs.services
 import "services/NotificationsModel.js" as Model
 
 // Popups at the top right, under the bar, on the output that was focused
-// when the first of them appeared. They go after five seconds; critical
-// ones stay until dismissed. The window exists only while there is
-// something to show.
+// when the first of them appeared. Each goes after its app's timeout (the
+// service keeps the timers; hovering a card pauses its own); critical ones
+// stay until dismissed. The window exists only while there is something to
+// show.
 PanelWindow { // qmllint disable uncreatable-type
   id: window
 
@@ -130,10 +131,9 @@ PanelWindow { // qmllint disable uncreatable-type
           onClicked: Notifications.invoke(card.modelData, Model.defaultAction(card.modelData.actions))
         }
 
-        Timer {
-          running: !card.critical
-          interval: 5000
-          onTriggered: Notifications.expire(card.modelData)
+        // While read, the card stays.
+        HoverHandler {
+          onHoveredChanged: hovered ? Notifications.hold(card.modelData) : Notifications.release(card.modelData)
         }
       }
     }

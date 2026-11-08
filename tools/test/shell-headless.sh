@@ -192,6 +192,31 @@ st=$(status "$home1")
 [[ $(json 'd.get("popups")') == 0 && $(json 'd.get("unread")') == 1 ]] ||
   fail "the popup did not go after five seconds, or its record was lost: $st"
 
+# A notification replaced through replaces_id (a download's progress)
+# updates its popup and history record instead of adding one. The first has
+# the app's own 8 s timeout; the replacement restarts it.
+notify() { # app replaces_id summary body timeout -> the id
+  DBUS_SESSION_BUS_ADDRESS=unix:path=$work/bus gdbus call --session --dest org.freedesktop.Notifications \
+    --object-path /org/freedesktop/Notifications --method org.freedesktop.Notifications.Notify \
+    "$1" "$2" "" "$3" "$4" "[]" "{}" "$5" | sed -E 's/.*uint32 ([0-9]+).*/\1/'
+}
+nid=$(notify subarchy-test 0 "Download 10%" "" 8000)
+sleep 1
+st=$(status "$home1")
+[[ $(json 'd["history"][0]["id"]') == "$nid" && $(json 'd.get("popups")') == 1 ]] || fail "no popup for the download: $st"
+[[ $(notify subarchy-test "$nid" "Download 90%" "" 8000) == "$nid" ]] || fail "replaces_id gave a new id"
+sleep 1
+st=$(status "$home1")
+[[ $(json 'd["history"][0]["summary"]') == "Download 90%" && $(json 'd["history"][0]["id"]') == "$nid" ]] ||
+  fail "the replaced notification did not update its history record: $st"
+[[ $(json 'd.get("popups")') == 1 && $(json 'd.get("unread")') == 2 ]] || fail "a replacement added a popup or a record: $st"
+sleep 6
+st=$(status "$home1")
+[[ $(json 'd.get("popups")') == 1 ]] || fail "the replaced popup went before its restarted 8 s timeout: $st"
+sleep 4
+st=$(status "$home1")
+[[ $(json 'd.get("popups")') == 0 ]] || fail "the replaced popup stayed past its timeout: $st"
+
 # Markup and entities arrive as capped plain text in the history.
 DBUS_SESSION_BUS_ADDRESS=unix:path=$work/bus gdbus call --session --dest org.freedesktop.Notifications \
   --object-path /org/freedesktop/Notifications --method org.freedesktop.Notifications.Notify \

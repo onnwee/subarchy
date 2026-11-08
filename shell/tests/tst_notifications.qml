@@ -63,6 +63,25 @@ TestCase {
     compare(Model.plain("short", 64), "short")
   }
 
+  function test_timeoutMs() {
+    compare(Model.timeoutMs(5000, "critical"), 0, "critical stays")
+    compare(Model.timeoutMs(-1, "normal"), 5000, "the app's default")
+    compare(Model.timeoutMs(0, "normal"), 5000)
+    compare(Model.timeoutMs(500, "normal"), 2000, "too short to read")
+    compare(Model.timeoutMs(600000, "low"), 30000, "too long to keep")
+    compare(Model.timeoutMs(8000, "normal"), 8000)
+  }
+
+  function test_updateRecord() {
+    const h = [entry(2), entry(1)]
+    const next = Model.updateRecord(h, 1, { summary: "new", body: "b" })
+    compare(next.map(e => e.summary), ["s2", "new"])
+    compare(next[1].body, "b")
+    compare(next[1].read, false)
+    compare(h[1].summary, "s1", "the input is not changed")
+    compare(Model.updateRecord(h, 9, { summary: "x" }).map(e => e.summary), ["s2", "s1"], "an unknown id changes nothing")
+  }
+
   function test_restore() {
     compare(Model.restore('[{"id":1,"summary":"a","read":true}]', 100).length, 1)
     compare(Model.restore("broken", 100), [])
