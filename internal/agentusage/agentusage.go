@@ -100,7 +100,9 @@ func LoadCache(path string) Cache {
 	return c
 }
 
-// Save writes the cache, dropping files no longer scanned.
+// Save writes the cache through a temporary file and a rename, so the
+// widget on another screen or the panel reading at the same moment never
+// sees a torn file.
 func (c Cache) Save(path string) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
@@ -109,14 +111,33 @@ func (c Cache) Save(path string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, b, 0o600)
+	tmp, err := os.CreateTemp(filepath.Dir(path), ".agent-usage-*")
+	if err != nil {
+		return err
+	}
+	if _, err := tmp.Write(b); err != nil {
+		tmp.Close()
+		os.Remove(tmp.Name())
+		return err
+	}
+	if err := tmp.Chmod(0o600); err != nil {
+		tmp.Close()
+		os.Remove(tmp.Name())
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		os.Remove(tmp.Name())
+		return err
+	}
+	return os.Rename(tmp.Name(), path)
 }
 
 type provider struct {
 	id, name string
 	dir      func(home string) string
 	match    func(path string) bool
-	parse    func(line string) (at time.Time, in, out int, limits []Limit, plan string, ok bool)
+	// seen is the file's own set of message ids, for providers that repeat a message's usage.
+	parse func(line string, seen map[string]bool) (at time.Time, in, out int, limits []Limit, plan string, ok bool)
 }
 
 var providers = []provider{
@@ -200,9 +221,9 @@ func Scan(home string, cache *Cache, now time.Time) Report {
 	return r
 }
 
-func summarize(path string, info fs.FileInfo, parse func(string) (time.Time, int, int, []Limit, string, bool)) fileSummary {
+func summarize(path string, info fs.FileInfo, parse func(string, map[string]bool) (time.Time, int, int, []Limit, string, bool)) fileSummary {
 	s := fileSummary{Size: info.Size(), ModTime: info.ModTime()}
-	claudeIDs = map[string]bool{}
+	seen := map[string]bool{}
 	f, err := os.Open(path)
 	if err != nil {
 		return s
@@ -212,7 +233,7 @@ func summarize(path string, info fs.FileInfo, parse func(string) (time.Time, int
 	sc := bufio.NewScanner(f)
 	sc.Buffer(make([]byte, 1024*1024), 64*1024*1024)
 	for sc.Scan() {
-		at, in, out, limits, plan, ok := parse(sc.Text())
+		at, in, out, limits, plan, ok := parse(sc.Text(), seen)
 		if !ok {
 			continue
 		}
@@ -243,7 +264,7 @@ func summarize(path string, info fs.FileInfo, parse func(string) (time.Time, int
 // Claude Code writes one line per message; an assistant message's usage
 // repeats on every content block, all with the same message id, so each
 // file counts a message id once (the first line carries the usage).
-func parseClaude(line string) (time.Time, int, int, []Limit, string, bool) {
+func parseClaude(line string, seen map[string]bool) (time.Time, int, int, []Limit, string, bool) {
 	if !strings.Contains(line, `"usage"`) || !strings.Contains(line, `"assistant"`) {
 		return time.Time{}, 0, 0, nil, "", false
 	}
@@ -267,27 +288,19 @@ func parseClaude(line string) (time.Time, int, int, []Limit, string, bool) {
 	if err != nil {
 		return time.Time{}, 0, 0, nil, "", false
 	}
-	if d.Message.ID != "" && claudeSeen(d.Message.ID) {
-		return at, 0, 0, nil, "", true
+	if d.Message.ID != "" {
+		if seen[d.Message.ID] {
+			return at, 0, 0, nil, "", true
+		}
+		seen[d.Message.ID] = true
 	}
 	u := d.Message.Usage
 	return at, u.Input + u.CacheCreation + u.CacheRead, u.Output, nil, "", true
 }
 
-// Message ids seen in the file being summarized; reset per file.
-var claudeIDs = map[string]bool{}
-
-func claudeSeen(id string) bool {
-	if claudeIDs[id] {
-		return true
-	}
-	claudeIDs[id] = true
-	return false
-}
-
 // Codex writes a token_count event per response with the tokens of that
 // response and the account's rate limits as of then.
-func parseCodex(line string) (time.Time, int, int, []Limit, string, bool) {
+func parseCodex(line string, _ map[string]bool) (time.Time, int, int, []Limit, string, bool) {
 	if !strings.Contains(line, `"token_count"`) {
 		return time.Time{}, 0, 0, nil, "", false
 	}

@@ -26,8 +26,9 @@ BarWidget {
     anchors.verticalCenter: parent.verticalCenter
     glyph: Glyphs.radio
     label: root.playing && root.mode === "full" ? root.label : ""
-    color: root.playing ? Theme.text : Theme.subtext
-    tooltip: root.playing ? root.label : (Soma.channel ? "SomaFM: " + Soma.channel.title + " (stopped)" : "SomaFM")
+    color: Soma.playError !== "" ? Theme.warning : (root.playing ? Theme.text : Theme.subtext)
+    tooltip: Soma.playError !== "" ? "SomaFM: " + Soma.playError
+      : (root.playing ? root.label : (Soma.channel ? "SomaFM: " + Soma.channel.title + " (stopped)" : "SomaFM"))
     onClicked: (m) => {
       if (m.button === Qt.MiddleButton)
         Soma.toggle()

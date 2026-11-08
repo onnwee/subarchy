@@ -17,6 +17,7 @@ function serverUrl(settings) {
 // Exit codes of the fetch snippet.
 const EXIT_NO_KEY = 3
 const EXIT_UNREACHABLE = 4
+const EXIT_REFUSED = 5 // an HTTP error: the key was not accepted
 
 function fetchCommand(server) {
   const script = [
@@ -25,7 +26,7 @@ function fetchCommand(server) {
     // A key with a quote, backslash or line break cannot go into curl's config.
     "case $key in *\\\"*|*\\\\*) exit " + EXIT_NO_KEY + ";; esac",
     "[ \"$(printf '%s' \"$key\" | wc -l)\" -eq 0 ] || exit " + EXIT_NO_KEY,
-    "get() { printf 'header = \"X-N8N-API-KEY: %s\"\\n' \"$key\" | curl -sf --max-time 10 -K - \"$1\" || exit " + EXIT_UNREACHABLE + "; }",
+    "get() { printf 'header = \"X-N8N-API-KEY: %s\"\\n' \"$key\" | curl -sf --max-time 10 -K - \"$1\"; rc=$?; [ \"$rc\" -eq 0 ] && return 0; [ \"$rc\" -eq 22 ] && exit " + EXIT_REFUSED + "; exit " + EXIT_UNREACHABLE + "; }",
     'get "$1/api/v1/workflows?limit=100"',
     "printf '\\n" + MARK + "\\n'",
     'get "$1/api/v1/executions?status=error&limit=10"'
@@ -80,6 +81,8 @@ function errorText(code) {
     return "No API key in the keyring"
   if (code === EXIT_UNREACHABLE)
     return "The server did not answer"
+  if (code === EXIT_REFUSED)
+    return "The server refused the key"
   return code === 0 ? "" : "The check failed (" + code + ")"
 }
 

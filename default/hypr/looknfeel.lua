@@ -76,7 +76,7 @@ end
 -- battery without a mains device counts as AC unless it is discharging.
 local function on_ac()
   local dir = (os.getenv("SUBCULT_SYS") or "/sys") .. "/class/power_supply"
-  local list = io.popen("ls -1 '" .. dir .. "' 2>/dev/null")
+  local list = io.popen("ls -1 '" .. dir:gsub("'", "'\\''") .. "' 2>/dev/null")
   if not list then
     return true
   end

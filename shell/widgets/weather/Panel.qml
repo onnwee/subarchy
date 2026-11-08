@@ -21,7 +21,9 @@ PanelBase {
   implicitWidth: 340
   implicitHeight: column.implicitHeight
 
-  Component.onCompleted: Weather.refreshStale(900000, 7200000)
+  // Stale means older than the AC interval the manifest declares.
+  Component.onCompleted: Weather.refreshStale(Model.timerMs(panel.shell.manifest, "current", 900000), Model.timerMs(panel.shell.manifest, "almanac", 7200000))
+  Component.onDestruction: Weather.clearMatches()
 
   function choose(match) {
     if (panel.shell.config) {
@@ -73,9 +75,9 @@ PanelBase {
       }
     }
     Text {
-      visible: Weather.searching
-      text: "Searching…"
-      color: Theme.muted
+      visible: Weather.searching || Weather.searchError !== ""
+      text: Weather.searching ? "Searching…" : Weather.searchError
+      color: Weather.searching ? Theme.muted : Theme.warning
       font.family: Style.uiFontFamily
       font.pixelSize: Style.fontSize - 1
     }
@@ -109,8 +111,10 @@ PanelBase {
     }
 
     Text {
-      visible: Weather.error !== "" && Weather.location !== null
-      text: Weather.error
+      visible: Weather.location !== null && (Weather.error !== "" || Weather.almanacError !== "")
+      width: parent.width
+      text: [Weather.error, Weather.almanacError].filter(e => e !== "").join("\n")
+      wrapMode: Text.Wrap
       color: Theme.warning
       font.family: Style.uiFontFamily
       font.pixelSize: Style.fontSize - 1

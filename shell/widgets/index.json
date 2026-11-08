@@ -306,7 +306,17 @@
             }
           ],
           "network": [
-            "api.open-meteo.com"
+            "api.open-meteo.com",
+            "geocoding-api.open-meteo.com",
+            "archive-api.open-meteo.com",
+            "air-quality-api.open-meteo.com",
+            "marine-api.open-meteo.com",
+            "aviationweather.gov",
+            "api.weather.gov",
+            "api.tidesandcurrents.noaa.gov",
+            "api-iwls.dfo-mpo.gc.ca",
+            "www.data.qld.gov.au",
+            "data.weather.gov.hk"
           ]
         },
         "settings": {

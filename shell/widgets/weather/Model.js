@@ -162,6 +162,20 @@ function duration(seconds) {
   return Math.floor(s / 3600) + "h " + Math.round((s % 3600) / 60) + "m"
 }
 
+// A manifest timer's AC interval in ms, or the fallback when absent.
+function timerMs(manifest, name, fallbackMs) {
+  const timers = (manifest && manifest.cost && manifest.cost.timers) || []
+  for (const t of timers)
+    if (t.name === name && isFinite(Number(t.ac)))
+      return Number(t.ac) * 1000
+  return fallbackMs
+}
+
+// Whether any almanac part came through.
+function almanacHasData(a) {
+  return !!a && (a.forecast !== null || a.sun !== null || a.moon !== null || a.tides !== null)
+}
+
 // Whether a fetch made at `at` (epoch ms) is older than `maxAgeMs` now.
 function stale(at, maxAgeMs, now) {
   return !at || now - at > maxAgeMs

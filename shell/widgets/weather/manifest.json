@@ -10,7 +10,12 @@
       { "name": "current", "ac": 900, "battery": 1800 },
       { "name": "almanac", "ac": 7200, "battery": 21600 }
     ],
-    "network": ["api.open-meteo.com"]
+    "network": [
+      "api.open-meteo.com",
+      "geocoding-api.open-meteo.com", "archive-api.open-meteo.com", "air-quality-api.open-meteo.com", "marine-api.open-meteo.com",
+      "aviationweather.gov", "api.weather.gov",
+      "api.tidesandcurrents.noaa.gov", "api-iwls.dfo-mpo.gc.ca", "www.data.qld.gov.au", "data.weather.gov.hk"
+    ]
   },
   "settings": {
     "location": "",

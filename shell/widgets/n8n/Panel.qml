@@ -84,9 +84,9 @@ PanelBase {
     }
 
     Text {
-      visible: panel.server === "" || panel.error === 3
+      visible: panel.server === "" || panel.error === 3 || panel.error === 5
       width: parent.width
-      text: (panel.server === "" ? "Set the server above. " : "") + "The API key lives in the keyring: run\n" + Model.storeHint()
+      text: (panel.server === "" ? "Set the server above. " : panel.error === 5 ? "The server refused the key. " : "") + "The API key lives in the keyring: run\n" + Model.storeHint()
       textFormat: Text.PlainText
       wrapMode: Text.Wrap
       color: Theme.subtext
@@ -95,7 +95,7 @@ PanelBase {
     }
 
     Text {
-      visible: panel.server !== "" && panel.error !== 0 && panel.error !== 3
+      visible: panel.server !== "" && panel.error !== 0 && panel.error !== 3 && panel.error !== 5
       width: parent.width
       text: Model.errorText(panel.error) + ": " + panel.server
       textFormat: Text.PlainText

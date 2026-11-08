@@ -48,10 +48,11 @@ PanelBase {
         }
         Text {
           width: parent.width
-          text: Soma.playing ? (Soma.song !== "" ? Soma.song : "Tuning in…") : (Soma.channel ? "Stopped" : "Pick a channel")
+          text: Soma.playError !== "" ? Soma.playError
+            : (Soma.playing ? (Soma.song !== "" ? Soma.song : "Tuning in…") : (Soma.channel ? "Stopped" : "Pick a channel"))
           textFormat: Text.PlainText
           elide: Text.ElideRight
-          color: Theme.subtext
+          color: Soma.playError !== "" ? Theme.warning : Theme.subtext
           font.family: Style.uiFontFamily
           font.pixelSize: Style.fontSize - 1
         }
