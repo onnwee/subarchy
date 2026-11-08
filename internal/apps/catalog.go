@@ -56,6 +56,9 @@ type App struct {
 	Desktop      string   `toml:"desktop" json:"desktop,omitempty"`
 	URL          string   `toml:"url" json:"url,omitempty"`
 	Notes        string   `toml:"notes" json:"notes,omitempty"`
+	// Ask, for agents, is the command that answers one question on its
+	// standard output; the question is appended (ADR 0047, 0057).
+	Ask []string `toml:"ask" json:"ask,omitempty"`
 	// Remove, in the user's catalogue, hides the system entry with this id.
 	Remove bool `toml:"remove" json:"-"`
 }
@@ -290,6 +293,9 @@ func (c *Catalog) validate() []error {
 			if _, mime := mimeTypes[role]; (mime || role == "terminal") && a.Desktop == "" {
 				bad("default for %q needs a desktop file", role)
 			}
+		}
+		if len(a.Ask) > 0 && a.Ask[0] == "" {
+			bad("ask needs a program")
 		}
 		if !slices.Contains(sources, a.Source) {
 			bad("unknown source %q", a.Source)
