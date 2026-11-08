@@ -125,4 +125,13 @@ which Subarchy does not use.
   Theme Tender, plus the system-level apply for SDDM, Plymouth and Limine.
 - The palette contract is Theme Tender's, versioned there (`schema: 1`).
 
+## Progress
+
+- 2026-11-07: `default/theme/subcult-minimal.json` holds the default theme
+  in Theme Tender's palette-file format (`schema: 1`, a `theme` envelope,
+  the 26 roles, ANSI 0–15 and the terminal specials); `tender palette`
+  reads it as `subcult-minimal`. The shell's `palette.json` is generated
+  from it by `tools/theme/gen-palette.py` and `make verify` fails when the
+  two differ (issue #80).
+
 Related: [[decision-map|Decision map]] · [[0048-config-ownership|ADR 0048]] · [[brand-identity|Brand identity]] · [[0038-wallpaper|ADR 0038]] · [[0039-fonts-icons|ADR 0039]]

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Check the default palette and the Hyprland theme colours (ADR 0037)."""
+"""Check the default palette, the Theme Tender theme it is generated from,
+and the Hyprland theme colours (ADR 0037)."""
 
 import json
 import re
@@ -40,6 +41,16 @@ def main() -> int:
     for key, value in PINNED.items():
         if colors.get(key) != value:
             errors.append(f"{key} is {colors.get(key)!r}, spec says {value}")
+    # The Theme Tender theme (default/theme/subcult-minimal.json) is the
+    # source; the shell's palette.json is generated from it and must agree.
+    tt = json.loads((ROOT / "default/theme/subcult-minimal.json").read_text())
+    meta = tt.get("theme") or {}
+    if tt.get("schema") != 1 or meta.get("id") != "subcult-minimal" or meta.get("appearance") != "dark" or not meta.get("name"):
+        errors.append("subcult-minimal.json lacks Theme Tender's schema 1 theme envelope (id, name, appearance)")
+    if tt.get("colors") != colors:
+        errors.append("subcult-minimal.json and palette.json colours differ; run tools/theme/gen-palette.py")
+    if palette.get("name") != "subcult-minimal" or palette.get("appearance") != "dark":
+        errors.append("palette.json name or appearance differ from the theme")
     theme = (ROOT / "default/hypr/theme.lua").read_text()
     for needle in ("rgb(8F4BC8)", "rgb(1F1830)"):
         if needle not in theme:
