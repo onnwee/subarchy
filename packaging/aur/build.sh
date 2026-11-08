@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Builds a vendored AUR package in a clean Arch container and adds it to the
+# Builds a vendored package in a clean Arch container and adds it to the
 # local repository build/repo (ADR 0025: AUR packages Subarchy ships are
-# rebuilt into its own repository from reviewed, pinned PKGBUILDs).
+# rebuilt into its own repository from reviewed, pinned PKGBUILDs; Subarchy's
+# own packages under packaging/<name>, such as linecast, build the same way).
 #
 # Usage: packaging/aur/build.sh <package>...   (needs docker)
 set -euo pipefail
@@ -12,7 +13,8 @@ mkdir -p "$repo"
 
 for name in "$@"; do
   dir="$root/packaging/aur/$name"
-  [[ -f $dir/PKGBUILD ]] || { echo "build.sh: no packaging/aur/$name/PKGBUILD" >&2; exit 1; }
+  [[ -f $dir/PKGBUILD ]] || dir="$root/packaging/$name"
+  [[ -f $dir/PKGBUILD ]] || { echo "build.sh: no packaging/aur/$name/PKGBUILD or packaging/$name/PKGBUILD" >&2; exit 1; }
   out="$root/build/aur/$name"
   mkdir -p "$out"
   echo ">> building $name"
