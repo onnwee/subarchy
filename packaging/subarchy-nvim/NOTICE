@@ -5,3 +5,7 @@ checker is off and the bootstrap clone is gone, because the plugins come
 prebuilt in this package. Every other file of the starter is unchanged.
 LazyVim itself (https://github.com/LazyVim/LazyVim) is Apache License 2.0.
 The cached plugins keep their own licence files in their directories.
+
+lua/plugins/subarchy.lua is Subarchy's own plugin layer (not from the
+starter): the dashboard mark and the colour scheme that follows the active
+theme.

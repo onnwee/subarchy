@@ -14,7 +14,7 @@
 # licences inside their directories.
 pkgname=subarchy-nvim
 pkgver=2024.12.11
-pkgrel=1
+pkgrel=2
 pkgdesc="Neovim with LazyVim, prebuilt: the starter config and pinned plugins for new users"
 arch=('any')
 url="https://github.com/LazyVim/starter"
@@ -26,8 +26,10 @@ _starter=803bc181d7c0d6d5eeba9274d9be49b287294d99
 source=("starter-$_starter.tar.gz::https://github.com/LazyVim/starter/archive/$_starter.tar.gz"
         lazy-lock.json
         subarchy-lazy.lua
+        subarchy.lua
         NOTICE)
 sha256sums=('b580d0bdb1654342dcf9f24fa1d4584bb91046a06dc1b6c866cbd06719b9dc7a'
+            'SKIP'
             'SKIP'
             'SKIP'
             'SKIP')
@@ -42,6 +44,9 @@ prepare() {
   # with the package), no bootstrap clone (lazy.nvim is in the cache).
   install -m644 subarchy-lazy.lua "$cfg/lua/config/lazy.lua"
   install -m644 lazy-lock.json "$cfg/lazy-lock.json"
+  # Subarchy's plugin layer (ADR 0045, #121): the dashboard mark and the
+  # theme-following colour scheme, beside the starter's own plugin specs.
+  install -m644 subarchy.lua "$cfg/lua/plugins/subarchy.lua"
 }
 
 build() {
