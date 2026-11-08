@@ -1,0 +1,8 @@
+{
+  "id": "subcult.media",
+  "name": "Media",
+  "version": "1.0.0",
+  "api": 0,
+  "kind": "bar-widget",
+  "panel": true
+}

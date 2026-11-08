@@ -3,7 +3,7 @@
   "full": [],
   "layout": {
     "left": ["subcult.menu", "subcult.workspaces", "subcult.active-window"],
-    "center": ["subcult.indicators", "subcult.microphone", "subcult.clock", "subcult.world-clock", "subcult.updates"],
+    "center": ["subcult.indicators", "subcult.microphone", "subcult.media", "subcult.clock", "subcult.world-clock", "subcult.updates"],
     "right": ["subcult.keyboard-layout", "subcult.tray", "subcult.audio", "subcult.display", "subcult.bluetooth",
       "subcult.network", "subcult.notifications", "subcult.battery"],
     "minimal": ["subcult.workspaces", "subcult.display"]
