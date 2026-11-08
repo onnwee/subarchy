@@ -233,13 +233,31 @@ lstate() { # query -> the launcher's state after typing it
 row() { # python expression over the rows of the state in $ls
   python3 -c "import json,sys; r=json.loads(sys.argv[1])['rows']; print($1)" "$ls"
 }
-ls=$(lstate "remove")
-[[ $(row '[x["id"] for x in r if x["kind"] == "command"]') == "['subcult app remove']" ]] ||
+# Commands, scripts and qalc answers arrive from processes the launcher
+# starts, so these checks wait for them (up to 10 s) instead of sleeping.
+lwait() { # query, python condition over the rows r; leaves the state in $ls
+  local _
+  launcher type "$1" >/dev/null
+  for _ in $(seq 20); do
+    sleep 0.5
+    ls=$(launcher state)
+    [[ $(row "$2") == True ]] && return 0
+  done
+  return 1
+}
+filewait() { # file, expected content
+  local _
+  for _ in $(seq 20); do
+    [[ $(cat "$1" 2>/dev/null) == "$2" ]] && return 0
+    sleep 0.5
+  done
+  return 1
+}
+lwait "remove" '[x["id"] for x in r if x["kind"] == "command"] == ["subcult app remove"]' ||
   fail "subcult commands are not searched: $ls"
-ls=$(lstate "font set Iosevka")
-[[ $(row '(r[0]["kind"], r[0]["name"])') == "('command', 'font set Iosevka')" ]] ||
+lwait "font set Iosevka" 'r[:1] and (r[0]["kind"], r[0]["name"]) == ("command", "font set Iosevka")' ||
   fail "a command with arguments is not offered first: $ls"
-ls=$(lstate "app remove")
+lwait "app remove" 'r[:1] and r[0]["id"] == "subcult app remove"' || fail "no row for a dangerous command: $ls"
 launcher enter >/dev/null
 ls=$(launcher state)
 [[ $(python3 -c "import json,sys; print(json.loads(sys.argv[1])['pending'])" "$ls") == "subcult app remove" ]] ||
@@ -252,10 +270,8 @@ ls=$(lstate "@yt cats")
 ls=$(lstate "gh subarchy")
 [[ $(row 'r[0]["url"]') == "https://github.com/search?q=subarchy" ]] || fail "a quicklink keyword in root search: $ls"
 if command -v qalc >/dev/null; then
-  ls=$(lstate "=2+2*3")
-  [[ $(row '[(x["kind"], x["name"]) for x in r]') == "[('calc', '8')]" ]] || fail "= does not calculate: $ls"
-  ls=$(lstate "sqrt(16)")
-  [[ $(row '(r[0]["kind"], r[0]["name"])') == "('calc', '4')" ]] || fail "inline math has no answer: $ls"
+  lwait "=2+2*3" '[(x["kind"], x["name"]) for x in r] == [("calc", "8")]' || fail "= does not calculate: $ls"
+  lwait "sqrt(16)" 'r[:1] and (r[0]["kind"], r[0]["name"]) == ("calc", "4")' || fail "inline math has no answer: $ls"
 else
   [[ -z ${CI:-} ]] || fail "qalc not installed"
   echo "shell-headless: qalc not installed, calculator not checked"
@@ -280,19 +296,16 @@ chmod +x "$home1/.config/subcult/commands/greet.sh"
 printf '{"aliases": {"hi": "script:greet.sh", "fs": "subcult font set"}}\n' >"$home1/.config/subcult/launcher/aliases.json"
 printf '{"snippets": [{"name": "Sign-off", "keyword": "sig", "text": "Best, {date}"}]}\n' >"$home1/.config/subcult/launcher/snippets.json"
 sleep 1
-ls=$(lstate "greet")
-[[ $(row '(r[0]["kind"], r[0]["id"])') == "('script', 'script:greet.sh')" ]] || fail "a Raycast script is not a command: $ls"
+lwait "greet" 'r[:1] and (r[0]["kind"], r[0]["id"]) == ("script", "script:greet.sh")' ||
+  fail "a Raycast script is not a command: $ls"
 launcher enter >/dev/null
 [[ $(lfield argument) == 1 ]] || fail "the script did not ask for its argument: $(launcher state)"
 launcher type "world" >/dev/null
 launcher enter >/dev/null
-sleep 1
-[[ $(cat "$home1/greet-out" 2>/dev/null) == world ]] || fail "the script did not run with its argument"
-ls=$(lstate "hi there friend")
-[[ $(row 'r[0]["id"]') == "script:greet.sh" ]] || fail "an alias does not lead: $ls"
+filewait "$home1/greet-out" world || fail "the script did not run with its argument"
+lwait "hi there friend" 'r[:1] and r[0]["id"] == "script:greet.sh"' || fail "an alias does not lead: $ls"
 launcher enter >/dev/null
-sleep 1
-[[ $(cat "$home1/greet-out" 2>/dev/null) == "there friend" ]] || fail "an alias did not pass its arguments"
+filewait "$home1/greet-out" "there friend" || fail "an alias did not pass its arguments"
 launcher close >/dev/null
 [[ $(lfield aliases) == "['hi', 'fs']" ]] || fail "the aliases are not registered: $(launcher state)"
 launcher hotkey hi >/dev/null
