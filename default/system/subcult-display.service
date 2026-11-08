@@ -1,0 +1,15 @@
+[Unit]
+Description=Apply the saved monitor layout when monitors come or go (subcult display watch)
+Documentation=https://git.subcult.tv/subculture-collective/subarchy
+PartOf=graphical-session.target
+After=graphical-session.target
+Requisite=graphical-session.target
+
+[Service]
+Type=exec
+ExecStart=/usr/bin/subcult-display watch
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target
