@@ -77,6 +77,15 @@ anything but a camera (the screencast producer); video streams carry no
 flags in Quickshell 0.3.2, so only the nodes that could be one are
 tracked. A paused client still holds the device and keeps its mark; a
 desktop-audio capture links from a sink and shows nothing.
+## Calendar
+
+The calendar widget shows the next event from the sync cache
+`~/.local/state/subcult/calendar/events.json` (`subcult calendar sync`,
+[ADR 0061](../docs/decisions/0061-default-bar-calendar.md)) and opens a
+month panel: a dot marks days with events, a click lists that day. The file
+is watched, so a sync changes the bar at once; the label follows the shared
+minute clock. `subcult.shell widgetProperty subcult.calendar label` over
+IPC returns the label (tests).
 
 ## Launcher
 
