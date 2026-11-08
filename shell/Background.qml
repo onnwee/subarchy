@@ -26,14 +26,18 @@ PanelWindow { // qmllint disable uncreatable-type
   }
   color: Theme.base
 
+  // Decoded at device pixels: the screen's logical size times its scale,
+  // so it is sharp at a fractional scale (1.6 on sputnik). Not cached: the
+  // decode is per output and a cached logical-size copy would be reused.
   Image {
     anchors.fill: parent
     visible: background.hasWallpaper && status === Image.Ready
     source: background.hasWallpaper ? "file://" + background.wallpaper : ""
     fillMode: Image.PreserveAspectCrop
     asynchronous: true
-    sourceSize.width: background.modelData.width
-    sourceSize.height: background.modelData.height
+    cache: false
+    sourceSize.width: Math.ceil(background.modelData.width * background.modelData.devicePixelRatio)
+    sourceSize.height: Math.ceil(background.modelData.height * background.modelData.devicePixelRatio)
   }
 
   Process {
