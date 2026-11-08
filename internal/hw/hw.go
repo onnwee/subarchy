@@ -118,6 +118,29 @@ type Selection struct {
 	Notes    []string
 }
 
+// Catalog is every package Select can choose, for the install image's
+// offline repository (ADR 0049): the image carries them all, the installer
+// picks per machine. TestCatalogCoversSelect keeps it in step with Select.
+func Catalog() []string {
+	pkgs := []string{"intel-ucode", "thermald", "amd-ucode", "sof-firmware",
+		"linux-firmware", "linux-firmware-intel", "linux-firmware-amdgpu", "linux-firmware-nvidia", "linux-firmware-cirrus",
+		"vulkan-intel", "intel-media-driver", "vulkan-radeon",
+		"nvidia-open-dkms", "nvidia-utils", "libva-nvidia-driver", "linux-zen-headers", "linux-lts-headers",
+		"evdi-dkms", "displaylink"}
+	seen := map[string]bool{}
+	for _, p := range pkgs {
+		seen[p] = true
+	}
+	for _, fw := range radioFirmware {
+		if !seen[fw] {
+			pkgs = append(pkgs, fw)
+			seen[fw] = true
+		}
+	}
+	sort.Strings(pkgs)
+	return pkgs
+}
+
 // Select picks packages for the machine.
 func Select(m Machine) Selection {
 	set := map[string]bool{}

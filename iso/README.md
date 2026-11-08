@@ -19,7 +19,7 @@ The installer is not on the image yet.
 Needs `archiso`, `qemu-base` and `edk2-ovmf`, and sudo for `mkarchiso`.
 
 ```bash
-make iso        # tools/iso/build.sh: package -> local repo -> mkarchiso -> build/iso/
+make iso        # tools/iso/build.sh: package -> local repo (+ the install set, downloaded) -> mkarchiso -> build/iso/
 make iso-test   # tools/iso/boot-test.py: UEFI boot in QEMU, checks over the serial console
 ```
 

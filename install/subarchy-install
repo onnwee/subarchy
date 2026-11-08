@@ -23,6 +23,7 @@
 #   XKB_LAYOUT            desktop keyboard layout (default us)
 #   SUBARCHY_REPO         pacman Server URL for the [subarchy] repository (required)
 #   PACKAGE_CACHE         pacman cache directory to reuse (optional)
+#   OFFLINE               1 to skip the mirrors and install from SUBARCHY_REPO alone (optional)
 #   KERNEL_CMDLINE_EXTRA  appended to the kernel command line (optional)
 set -euo pipefail
 
@@ -35,9 +36,9 @@ step() { echo ">> $*"; }
 
 declare -A conf=(
   [TIMEZONE]=UTC [LOCALE]=en_US.UTF-8 [KEYMAP]=us [XKB_LAYOUT]=us
-  [PACKAGE_CACHE]="" [KERNEL_CMDLINE_EXTRA]=""
+  [PACKAGE_CACHE]="" [KERNEL_CMDLINE_EXTRA]="" [OFFLINE]=""
 )
-keys=" DISK HOSTNAME USERNAME USER_PASSWORD_FILE LUKS_PASSPHRASE_FILE TIMEZONE LOCALE KEYMAP XKB_LAYOUT SUBARCHY_REPO PACKAGE_CACHE KERNEL_CMDLINE_EXTRA "
+keys=" DISK HOSTNAME USERNAME USER_PASSWORD_FILE LUKS_PASSPHRASE_FILE TIMEZONE LOCALE KEYMAP XKB_LAYOUT SUBARCHY_REPO PACKAGE_CACHE KERNEL_CMDLINE_EXTRA OFFLINE "
 
 read_config() {
   local line key value n=0
@@ -162,16 +163,32 @@ interface_branding_colour: 8b5cf6
 EOF
 }
 
+# The Arch mirrors answer, or the install runs from the image's repository
+# alone (ADR 0049). OFFLINE=1 in the config skips the probe.
+mirrors_reachable() {
+  [[ ${conf[OFFLINE]} == 1 ]] && return 1
+  curl -sfI --max-time 8 -o /dev/null "https://geo.mirror.pkgbuild.com/core/os/x86_64/core.db"
+}
+
 pacstrap_packages() {
   step "installing packages"
-  local conf_file=/tmp/subarchy-pacman.conf
+  local conf_file=/tmp/subarchy-pacman.conf online=1
+  mirrors_reachable || { online=0; echo "no mirror reachable: installing from the image's repository alone"; }
   {
     sed '/^\[core\]/,$d' /etc/pacman.conf
     if [[ -n ${conf[PACKAGE_CACHE]} ]]; then
       echo "CacheDir = ${conf[PACKAGE_CACHE]}"
     fi
-    printf '[subarchy]\nSigLevel = Optional TrustAll\nServer = %s\n\n' "${conf[SUBARCHY_REPO]}"
-    printf '[core]\nInclude = /etc/pacman.d/mirrorlist\n\n[extra]\nInclude = /etc/pacman.d/mirrorlist\n'
+    # The repository on the image doubles as a cache: online, a package of
+    # the same version is read from it instead of fetched.
+    if [[ ${conf[SUBARCHY_REPO]} == file://* ]]; then
+      echo "CacheDir = ${conf[SUBARCHY_REPO]#file://}"
+    fi
+    # Online the mirrors come first, so a newer package wins over the
+    # image's copy; the repository supplies Subarchy's own packages and,
+    # offline, everything.
+    ((online)) && printf '[core]\nInclude = /etc/pacman.d/mirrorlist\n\n[extra]\nInclude = /etc/pacman.d/mirrorlist\n\n'
+    printf '[subarchy]\nSigLevel = Optional TrustAll\nServer = %s\n' "${conf[SUBARCHY_REPO]}"
   } >"$conf_file"
   local -a pkgs
   mapfile -t pkgs < <(sed 's/#.*//; /^[[:space:]]*$/d' "$here/packages/base.txt" "$here/packages/desktop.txt")

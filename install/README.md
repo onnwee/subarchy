@@ -39,8 +39,12 @@ What it builds:
 | Factory reset | read-only `@factory` snapshot of the fresh `@` | 0049, 0056 |
 
 Not yet: the
-Quickshell shell and themes, hardware detection, a Limine entry that chainloads
-another disk's bootloader, and the offline package cache.
+Quickshell shell and themes, hardware detection, and a Limine entry that
+chainloads another disk's bootloader.
+
+With no network the install runs from the repository on the image alone,
+which carries the whole install set (`make iso` downloads it); with network
+the Arch mirrors come first and the image's copies serve as a cache.
 
 The two Limine tools are AUR packages, and Theme Tender is Subarchy's own
 package (`packaging/theme-tender`), rebuilt locally into `build/repo` by

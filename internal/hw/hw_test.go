@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 	"testing"
@@ -182,5 +183,39 @@ func TestDetectErrors(t *testing.T) {
 	m, err := Detect(root)
 	if err != nil || len(m.Devices) != 0 {
 		t.Errorf("unreadable device kept: %+v, %v", m.Devices, err)
+	}
+}
+
+// Every package name Select adds is in the catalog, so the install image's
+// offline repository carries whatever Select may pick.
+func TestCatalogCoversSelect(t *testing.T) {
+	src, err := os.ReadFile("hw.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := string(src)
+	start := strings.Index(body, "func Select(")
+	if start < 0 {
+		t.Fatal("no Select")
+	}
+	body = body[start:]
+	catalog := map[string]bool{}
+	for _, p := range Catalog() {
+		catalog[p] = true
+	}
+	for _, m := range regexp.MustCompile(`add\(([^)]*)\)`).FindAllStringSubmatch(body, -1) {
+		for _, q := range regexp.MustCompile(`"([^"]+)"`).FindAllStringSubmatch(m[1], -1) {
+			if !catalog[q[1]] {
+				t.Errorf("Select adds %q, which the catalog lacks", q[1])
+			}
+		}
+	}
+	for _, fw := range radioFirmware {
+		if !catalog[fw] {
+			t.Errorf("radio firmware %q missing from the catalog", fw)
+		}
+	}
+	if len(Catalog()) < 20 {
+		t.Errorf("catalog too short: %d", len(Catalog()))
 	}
 }

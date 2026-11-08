@@ -96,3 +96,8 @@ iso-test:
 # Installs from the newest ISO into a VM disk, then boots and checks it.
 install-test:
 	python3 tools/iso/install-test.py "$$(ls -t $(BUILD)/iso/subarchy-*.iso | head -1)"
+
+# The same through the image's own setup with the guest's network off: the
+# install must come from the repository on the image alone (ADR 0049).
+install-test-offline:
+	python3 tools/iso/install-test.py --guided --offline "$$(ls -t $(BUILD)/iso/subarchy-*.iso | head -1)"

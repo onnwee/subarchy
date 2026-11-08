@@ -141,7 +141,7 @@ def guided(serial: Serial, timeout: float) -> str:
     return ANSI.sub("", out.decode(errors="replace"))
 
 
-def install(iso: Path, disk: Path, vars_file: Path, timeout: float, guided_setup: bool = False) -> bool:
+def install(iso: Path, disk: Path, vars_file: Path, timeout: float, guided_setup: bool = False, offline: bool = False) -> bool:
     disk.unlink(missing_ok=True)
     subprocess.run(["qemu-img", "create", "-q", "-f", "qcow2", str(disk), "24G"], check=True)
     shutil.copy(OVMF_VARS, vars_file)
@@ -159,6 +159,7 @@ def install(iso: Path, disk: Path, vars_file: Path, timeout: float, guided_setup
         "-drive", f"file={disk},if=virtio,format=qcow2,discard=unmap",
         "-virtfs", f"local,path={ROOT},mount_tag=src,security_model=none,readonly=on",
         "-virtfs", f"local,path={CACHE},mount_tag=pkgcache,security_model=none",
+        network=not offline,
     )
     started = time.monotonic()
     proc, serial, log = start(cmd, VM / "install-serial.log")
@@ -181,6 +182,12 @@ def install(iso: Path, disk: Path, vars_file: Path, timeout: float, guided_setup
                 timeout=timeout,
             )
         ok = "subarchy-install: done" in out and "EXIT=0" in out
+        if offline:
+            # With no network the installer must say so and still finish from
+            # the image's repository (ADR 0049).
+            offline_ok = "no mirror reachable" in out
+            print(f"install-test: {'ok  ' if offline_ok else 'FAIL'} installer ran from the image's repository with no network")
+            ok = ok and offline_ok
         print(f"install-test: installer {'finished' if ok else 'FAILED'} after {time.monotonic() - started:.0f}s")
         if not ok:
             print("\n".join(out.splitlines()[-40:]), file=sys.stderr)
@@ -667,14 +674,17 @@ def main() -> int:
     ap.add_argument("--skip-install", action="store_true", help="boot the existing build/vm disk only")
     ap.add_argument("--guided", action="store_true", help="install by answering subarchy-setup from the image")
     ap.add_argument("--timeout-install", type=float, default=2400)
+    ap.add_argument("--offline", action="store_true", help="install with the guest's network off (needs --guided)")
     args = ap.parse_args()
+    if args.offline and not args.guided:
+        ap.error("--offline needs --guided: the image's own setup and repository")
     for f in (args.iso, OVMF_CODE, OVMF_VARS, ROOT / "build" / "repo" / "subarchy.db"):
         if not f.exists():
             print(f"install-test: missing {f} (run make iso first)", file=sys.stderr)
             return 2
     disk, vars_file = VM / "disk.qcow2", VM / "OVMF_VARS.fd"
     write_config()
-    if not args.skip_install and not install(args.iso, disk, vars_file, args.timeout_install, args.guided):
+    if not args.skip_install and not install(args.iso, disk, vars_file, args.timeout_install, args.guided, args.offline):
         return 1
     # A failed check in one stage does not skip the others.
     ok = boot(disk, vars_file)
