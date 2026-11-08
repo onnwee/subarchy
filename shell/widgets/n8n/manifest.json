@@ -1,0 +1,14 @@
+{
+  "id": "subcult.n8n",
+  "name": "n8n",
+  "version": "1.0.0",
+  "api": 0,
+  "kind": "bar-widget",
+  "panel": true,
+  "cost": {
+    "timers": [{ "name": "refresh", "ac": 60, "battery": 300 }]
+  },
+  "settings": {
+    "server": ""
+  }
+}
