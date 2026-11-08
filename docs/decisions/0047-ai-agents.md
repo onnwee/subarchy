@@ -54,4 +54,15 @@ Built into the base system, lighter than Omarchy:
   [[0042-browser|ADR 0042]]; desktop control from Subarchy's MCP server in
   [[0059-agent-desktop-control|ADR 0059]].
 
+## Progress
+
+- 2026-11-08: the usage widget (`subcult.agents`, off by default, issue
+  #92). `subcult agent usage` (`internal/agentusage`) reads Claude Code's
+  transcripts and Codex's rollouts for tokens today and this week, the
+  pace over the last hour and the rate limits Codex writes to disk; Claude
+  Code keeps none locally, so the widget shows its tokens instead. A cache
+  keyed by file size and modification time keeps a refresh to the sessions
+  still running (about 0.2 s warm on `sputnik`, 2 s cold). Two providers
+  for now; the Omarchy readers that call provider APIs were not ported.
+
 Related: [[decision-map|Decision map]] · [[0046-distribution-cli|ADR 0046]] · [[0044-default-apps|ADR 0044]]
