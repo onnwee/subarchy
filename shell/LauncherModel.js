@@ -499,3 +499,25 @@ function symbols(text) {
     return []
   }
 }
+
+// --- Ask AI ----------------------------------------------------------------
+
+// The default agent from `subcult app ask --json` ({id, name, argv}), or
+// null when there is none or the output is not that.
+function agent(text) {
+  try {
+    const d = JSON.parse(text)
+    return d && typeof d.id === "string" && d.id !== "" && typeof d.name === "string" && d.name !== "" ? { id: d.id, name: d.name } : null
+  } catch (e) {
+    return null
+  }
+}
+
+// The Ask AI row for a query: the last row of a root search. It says the
+// text leaves the machine before anything is sent (ADR 0057).
+function askRow(agent, text) {
+  if (!agent || !text)
+    return null
+  return { kind: "ask", id: "ask:" + agent.id, name: "Ask " + agent.name + ": \u201c" + text + "\u201d",
+    genericName: "Sends the text to " + agent.name + "'s provider: it leaves this machine. Enter asks", icon: "dialog-question", text: text }
+}

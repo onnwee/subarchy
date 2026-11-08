@@ -5,7 +5,8 @@ import qs.Ui
 import "../../Commons/Glyphs.js" as Glyphs
 
 // Bluetooth on, off or connected. Hidden on machines without an adapter.
-// Click turns the adapter on or off.
+// A click opens the devices panel; a right click turns the adapter on or
+// off.
 BarWidget {
   id: root
 
@@ -23,6 +24,11 @@ BarWidget {
     color: root.adapter && root.adapter.enabled ? Theme.subtext : Theme.muted
     tooltip: !root.adapter ? "" : !root.adapter.enabled ? "Bluetooth off"
       : root.connected > 0 ? root.connected + " connected" : "Bluetooth on"
-    onClicked: if (root.adapter) root.adapter.enabled = !root.adapter.enabled
+    onClicked: (mouse) => {
+      if (mouse.button === Qt.RightButton && root.adapter)
+        root.adapter.enabled = !root.adapter.enabled
+      else
+        root.openPanel()
+    }
   }
 }

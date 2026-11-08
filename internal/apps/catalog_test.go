@@ -220,9 +220,15 @@ func TestShippedCatalogue(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, role := range []string{"terminal", "browser", "editor", "file-manager"} {
+	for _, role := range []string{"terminal", "browser", "editor", "file-manager", "agent"} {
 		if _, ok := c.Default(role); !ok {
 			t.Errorf("no default %s", role)
+		}
+	}
+	// Every agent answers the launcher's Ask row (ADR 0057).
+	for _, a := range c.ForRole("agent") {
+		if len(a.Ask) == 0 {
+			t.Errorf("%s: no ask command", a.ID)
 		}
 	}
 }

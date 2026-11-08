@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"text/tabwriter"
 
@@ -37,6 +38,9 @@ var routes = []dispatch.Described{
 	{Words: []string{"app", "default"}, Metadata: dispatch.Metadata{
 		Summary: "Show or set the default app per role", Args: "[<role> [<id>]] [--dry-run]",
 		Examples: []string{"subcult app default", "subcult app default browser", "subcult app default browser chromium"}}},
+	{Words: []string{"app", "ask"}, Metadata: dispatch.Metadata{
+		Summary: "Ask the default agent one question and print its answer; --json names the agent", Args: "<question>... | --json",
+		Examples: []string{"subcult app ask what does zram do", "subcult app ask --json"}}},
 	{Words: []string{"app", "webapp"}, Metadata: dispatch.Metadata{
 		Summary:  "Open a site as an app (a Chromium app window with its own desktop entry)",
 		Args:     "install <name> <url> [--icon FILE] | remove <name>",
@@ -76,6 +80,9 @@ func parseOptions(args []string) (options, error) {
 			o.icon = args[i]
 		case strings.HasPrefix(a, "--icon="):
 			o.icon = strings.TrimPrefix(a, "--icon=")
+		case a == "--":
+			o.args = append(o.args, args[i+1:]...)
+			return o, nil
 		case strings.HasPrefix(a, "-") && a != "-":
 			return o, fmt.Errorf("unknown option %s", a)
 		default:
@@ -125,6 +132,8 @@ func (c *cli) main(args []string) int {
 		return c.webapp(paths, o)
 	case "default":
 		return c.setDefault(cat, paths, o)
+	case "ask":
+		return c.ask(cat, o)
 	default:
 		return c.usageError(fmt.Errorf("unknown subcommand %q", sub))
 	}
@@ -372,6 +381,34 @@ func (c *cli) apply(steps []apps.Step, dryRun bool) int {
 		if err := c.run(s); err != nil {
 			return c.fail(fmt.Errorf("%s: %w", s, err))
 		}
+	}
+	return 0
+}
+
+// ask sends one question to the default agent's `ask` command, which
+// prints its answer (ADR 0047, 0057); --json names the agent and its
+// command for the launcher without asking anything.
+func (c *cli) ask(cat *apps.Catalog, o options) int {
+	a, ok := cat.Default("agent")
+	if !ok {
+		return c.fail(errors.New("no default agent: set one with `subcult app default agent <id>`"))
+	}
+	if len(a.Ask) == 0 {
+		return c.fail(fmt.Errorf("%s has no ask command in the catalogue", a.ID))
+	}
+	if o.json {
+		return c.encode(struct {
+			ID   string   `json:"id"`
+			Name string   `json:"name"`
+			Argv []string `json:"argv"`
+		}{a.ID, a.Name, a.Ask})
+	}
+	q := strings.TrimSpace(strings.Join(o.args, " "))
+	if q == "" {
+		return c.usageError(errors.New("ask takes a question"))
+	}
+	if err := c.run(apps.Step{Argv: append(slices.Clone(a.Ask), q)}); err != nil {
+		return c.fail(err)
 	}
 	return 0
 }
