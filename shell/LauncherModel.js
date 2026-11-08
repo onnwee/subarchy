@@ -123,14 +123,18 @@ function move(index, step, count) {
 
 // --- Commands, calculator and web search ---------------------------------
 
-// What a query asks for: "=" is the calculator, "@" web search; anything
-// else is root search.
+// What a query asks for: "=" is the calculator, "@" web search, "." files,
+// ":" symbols and emoji; anything else is root search.
 function parseQuery(query) {
   const q = String(query || "")
   if (q.startsWith("="))
     return { mode: "calc", text: q.slice(1).trim() }
   if (q.startsWith("@"))
     return { mode: "web", text: q.slice(1).trim() }
+  if (q.startsWith("."))
+    return { mode: "files", text: q.slice(1).trim() }
+  if (q.startsWith(":"))
+    return { mode: "symbols", text: q.slice(1).trim() }
   return { mode: "root", text: q.trim() }
 }
 
@@ -399,4 +403,99 @@ function expand(text, date, clipboard) {
   const d = date.getFullYear() + "-" + pad(date.getMonth() + 1) + "-" + pad(date.getDate())
   const t = pad(date.getHours()) + ":" + pad(date.getMinutes())
   return String(text).split("{date}").join(d).split("{time}").join(t).split("{clipboard}").join(String(clipboard || ""))
+}
+
+// --- Files and symbols ----------------------------------------------------
+
+// The file search (ADR 0056: fd on demand, no index): file and folder names
+// under home containing the text, case-insensitive, hidden and ignored
+// files skipped, at most 60. Each line of output is "d <path>" or
+// "f <path>".
+function fdArgv(text, home) {
+  return ["sh", "-c", 'fd --color never --fixed-strings --ignore-case --type f --type d --max-results 60 -- "$1" "$2"'
+    + ' | while IFS= read -r f; do if [ -d "$f" ]; then printf "d %s\\n" "$f"; else printf "f %s\\n" "$f"; fi; done',
+    "sh", text, home]
+}
+
+// A path with home shortened to "~".
+function tilde(path, home) {
+  const p = String(path || "")
+  return home && (p === home || p.startsWith(home + "/")) ? "~" + p.slice(home.length) : p
+}
+
+const IMAGE = /\.(png|jpe?g|gif|webp|svg|bmp|avif)$/i
+
+function isImage(path) {
+  return IMAGE.test(String(path || ""))
+}
+
+function fileIcon(path) {
+  const p = String(path || "")
+  if (isImage(p))
+    return "image-x-generic"
+  if (/\.(mp4|mkv|webm|mov|avi)$/i.test(p))
+    return "video-x-generic"
+  if (/\.(mp3|flac|ogg|opus|wav|m4a)$/i.test(p))
+    return "audio-x-generic"
+  if (/\.pdf$/i.test(p))
+    return "application-pdf"
+  return "text-x-generic"
+}
+
+// Rows from the file search's output, in fd's order.
+function files(output, home) {
+  const out = []
+  for (const line of String(output || "").split("\n")) {
+    const m = /^([df]) (.+)$/.exec(line)
+    if (!m)
+      continue
+    const path = m[2]
+    const slash = path.lastIndexOf("/")
+    const dir = slash > 0 ? path.slice(0, slash) : "/"
+    const isDir = m[1] === "d"
+    out.push({ kind: "file", id: path, name: path.slice(slash + 1), genericName: tilde(dir, home),
+      icon: isDir ? "folder" : fileIcon(path), path: path, isDir: isDir })
+  }
+  return out
+}
+
+// The preview of a file: a folder's first entries, a text file's first
+// lines, or a binary file's size.
+function previewArgv(path) {
+  return ["sh", "-c", 'if [ -d "$1" ]; then ls -1A -- "$1" | head -n 12; elif grep -qI . -- "$1" 2>/dev/null; then head -c 1500 -- "$1" | head -n 12; else stat -c "%s bytes, binary" -- "$1"; fi',
+    "sh", path]
+}
+
+function symbol(ch, name, group) {
+  return { kind: "symbol", id: "symbol:" + ch, name: name, genericName: group, icon: "", char: ch }
+}
+
+// Emoji from Unicode's emoji-test.txt (the unicode-emoji package): the
+// fully-qualified ones, named, with their group as the second line.
+function emoji(text) {
+  const out = []
+  let group = ""
+  for (const line of String(text || "").split("\n")) {
+    if (line.startsWith("# group: ")) {
+      group = line.slice(9).trim()
+      continue
+    }
+    const m = /^[0-9A-F ]+;\s*fully-qualified\s*#\s*(\S+)\s+E\d+\.\d+\s+(.+)$/.exec(line)
+    if (m)
+      out.push(symbol(m[1], m[2].trim(), group))
+  }
+  return out
+}
+
+// The symbols file ({"symbols": [{"char", "name", "group"}]}).
+function symbols(text) {
+  try {
+    const d = JSON.parse(text)
+    if (!d || !Array.isArray(d.symbols))
+      return []
+    return d.symbols.filter(s => s && typeof s.char === "string" && s.char !== "" && typeof s.name === "string" && s.name !== "")
+      .map(s => symbol(s.char, s.name, typeof s.group === "string" ? s.group : "Symbols"))
+  } catch (e) {
+    return []
+  }
 }
