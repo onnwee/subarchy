@@ -133,5 +133,9 @@ which Subarchy does not use.
   reads it as `subcult-minimal`. The shell's `palette.json` is generated
   from it by `tools/theme/gen-palette.py` and `make verify` fails when the
   two differ (issue #80).
+- 2026-11-07: Theme Tender ships from `packaging/theme-tender/` (its v0.1.0
+  release PKGBUILD, vendored) and is in the desktop package set; the
+  installer runs `tender apply -profile default/theme/subarchy.toml` for
+  the new user, and the VM test checks `tender doctor` (issue #72).
 
 Related: [[decision-map|Decision map]] · [[0048-config-ownership|ADR 0048]] · [[brand-identity|Brand identity]] · [[0038-wallpaper|ADR 0038]] · [[0039-fonts-icons|ADR 0039]]
