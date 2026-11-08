@@ -9,7 +9,7 @@ contract: [ADR 0068](../docs/decisions/0068-shell-plugin-api-v0.md).
 
 | Path | Holds |
 |---|---|
-| `shell.qml` | Root: one bar and one background per output, notifications, OSD, polkit dialog, Alt-Tab, the `subcult.shell` IPC handler |
+| `shell.qml` | Root: one bar and one background per output, notifications, OSD, polkit dialog, Alt-Tab, launcher, the `subcult.shell` IPC handler |
 | `Commons/` | `Theme`, `Power`, `Config`, `Style`, `Clock`, `WidgetIndex` singletons; `WatchedFile`; pure models (`*Model.js`) and `Glyphs.js` |
 | `Ui/` | `BarWidget`, `PanelBase` and `WidgetTimer` (the widget contract), `IconButton`, `Tooltip`, `Popup` |
 | `widgets/<name>/` | One widget: `manifest.json`, `Widget.qml`, optional `Model.js`, `Panel.qml`, `tests/` |
@@ -42,11 +42,30 @@ off with `systemctl --user mask subcult-shell`, not `disable`.
 Keys reach the shell as Hyprland global shortcuts with the appid `subcult`:
 `default/hypr/bindings.lua` binds them with `hl.dsp.global("subcult:<name>")`
 and Quickshell `GlobalShortcut` objects receive them, so a key press starts
-no process. The names are `altswitch-next`, `altswitch-prev`,
-`altswitch-commit`, `brightness-up` and `brightness-down`; `hyprctl dispatch
+no process. The names are `launcher-toggle`, `altswitch-next`,
+`altswitch-prev`, `altswitch-commit`, `brightness-up` and `brightness-down`; `hyprctl dispatch
 'hl.dsp.global("subcult:altswitch-next")'` sends one by hand.
 
 IPC: `quickshell ipc -p /usr/share/subcult/shell show` lists the targets
 (`subcult.shell status`, `subcult.osd flash <volume|brightness|capslock>`,
-`subcult.altswitch next|prev|commit|cancel`). Tests and scripts use it; the
-key bindings do not.
+`subcult.altswitch next|prev|commit|cancel`,
+`subcult.launcher open|close|toggle|clearHistory|search <query>`). Tests and
+scripts use it; the key bindings do not.
+
+## Launcher
+
+Super+Space opens it ([ADR 0057](../docs/decisions/0057-launcher.md)). An
+empty query shows the favorites; typing searches desktop entries by name,
+generic name, keywords and id. Favorites come first in their own order, then
+apps by frecency, then by how well they match. Apps start through
+`uwsm-app -- <id>.desktop`.
+
+- Favorites: `/usr/share/subcult/default/launcher/favorites.json`, replaced
+  by `~/.config/subcult/launcher/favorites.json` when that file has a
+  `favorites` list of desktop entry ids.
+- History: `~/.local/state/subcult/launcher/history.json` (or under
+  `$XDG_STATE_HOME`). Clear it with
+  `quickshell ipc -p /usr/share/subcult/shell call subcult.launcher clearHistory`
+  or by deleting the file.
+- Quickshell keeps the app list and reloads it when desktop entries change;
+  nothing polls.

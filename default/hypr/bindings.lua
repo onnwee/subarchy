@@ -1,6 +1,5 @@
 -- Default key bindings, a small subset of Omarchy's (MIT) so muscle memory
--- carries over. The launcher (Super+Space, ADR 0057) and menus arrive with
--- the Quickshell shell.
+-- carries over. Menus arrive with the Quickshell shell.
 
 sub.bind("SUPER + RETURN", "Terminal", sub.launch("xdg-terminal-exec"))
 sub.bind("SUPER + SHIFT + B", "Browser", sub.launch("xdg-open https://"))
@@ -47,6 +46,9 @@ sub.bind("XF86AudioMute", "Mute", "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle", 
 sub.bind("XF86AudioMicMute", "Mute microphone", "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle", { locked = true })
 sub.bind("XF86MonBrightnessUp", "Brightness up", shell_key("brightness-up"), { locked = true, repeating = true })
 sub.bind("XF86MonBrightnessDown", "Brightness down", shell_key("brightness-down"), { locked = true, repeating = true })
+
+-- The launcher (ADR 0057).
+sub.bind("SUPER + SPACE", "Launcher", shell_key("launcher-toggle"))
 
 -- Alt-Tab across all workspaces, most recent first (the shell's switcher).
 sub.bind("ALT + TAB", "Next window", shell_key("altswitch-next"))

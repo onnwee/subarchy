@@ -101,4 +101,10 @@ was proposed by the agent and confirmed by the owner on 2026-11-07.
 - No idle cost beyond the shell: the app list is cached and refreshed when
   desktop entries change; files are searched only when asked.
 
+## Progress
+
+- 2026-11-07: Super+Space opens the launcher in the shell with app search,
+  the favorites grid and frecency ranking (issue #61). Commands, calculator,
+  web search and the other sources follow in their own issues.
+
 Related: [[decision-map|Decision map]] · [[0036-shell-components|ADR 0036]] · [[0056-quality-of-life|ADR 0056]] · [[0046-distribution-cli|ADR 0046]]
