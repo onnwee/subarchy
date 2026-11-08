@@ -379,6 +379,23 @@ st=$(status "$home1")
 [[ $(json '"subcult.media" in d["loaded"]["HEADLESS-1"] and "subcult.media" not in d["shown"]["HEADLESS-1"]') == True ]] ||
   fail "the media widget is not loaded-and-hidden without a player: $st"
 
+# A widget's click-out panel: the audio panel opens on request (no
+# PipeWire here, so it shows no devices), one at a time, and closes.
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.audio >/dev/null
+sleep 1
+st=$(status "$home1")
+[[ $(json 'd.get("panel")') == subcult.audio ]] || fail "the audio panel did not open: $st"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.audio >/dev/null
+sleep 1
+st=$(status "$home1")
+[[ $(json 'd.get("panel")') == "" ]] || fail "a second request did not close the panel: $st"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.audio >/dev/null
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
+sleep 1
+st=$(status "$home1")
+[[ $(json 'd.get("panel")') == "" ]] || fail "the panel did not close: $st"
+check_log "$work/qs1.log"
+
 # 2. A palette written after start applies without a restart.
 mkdir -p "$home1/.config/subcult/theme"
 printf '{"schema": 1, "colors": {"base": "#FF0000", "surface0": "#00FF00"}}\n' >"$home1/.config/subcult/theme/palette.json"

@@ -27,6 +27,8 @@ ShellRoot {
 
   NotificationPopups {}
 
+  PanelOverlay {}
+
   Osd {
     id: osd
   }
@@ -47,6 +49,22 @@ ShellRoot {
       KeepAwake.enabled = on
     }
 
+    // Used by the tests: open a widget's panel ("subcult.audio") or close
+    // the open one ("close").
+    function panel(id: string): void {
+      if (id === "close") {
+        Panels.close()
+        return
+      }
+      for (const b of bars.instances) {
+        const h = (b as Bar).hostFor(id)
+        if (h) {
+          Panels.toggle(h)
+          return
+        }
+      }
+    }
+
     // Used by the tests: which outputs have a bar, the power state, and the
     // interval each widget timer runs at right now.
     function status(): string {
@@ -61,6 +79,7 @@ ShellRoot {
         unread: Notifications.unread,
         history: Notifications.history.slice(0, 5).map(e => ({ id: e.id, summary: e.summary, body: e.body, appName: e.appName })),
         osd: osd.kind,
+        panel: Panels.host ? Panels.host.widgetId : "",
         launcher: launcher.open,
         intervals: Power.report()
       })
