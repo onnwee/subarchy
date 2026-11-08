@@ -4,11 +4,19 @@ Documentation=file:///usr/share/subcult/shell
 PartOf=graphical-session.target
 After=graphical-session.target
 Requisite=graphical-session.target
+# Tray apps start after the shell's tray watcher is up.
+Before=xdg-desktop-autostart.target
 
 [Service]
 Type=exec
 ExecStart=/usr/bin/quickshell -n -p /usr/share/subcult/shell
 Environment=QS_NO_RELOAD_POPUP=1
+# A package upgrade replaces /usr/share/subcult/shell file by file; with the
+# watcher on, Quickshell reloaded a half-written tree. `subcult update`
+# restarts the shell after the subarchy package changed instead.
+Environment=QS_DISABLE_FILE_WATCHER=1
+# systemd supervises; Quickshell's own crash handler competed with it.
+Environment=QS_DISABLE_CRASH_HANDLER=1
 Restart=on-failure
 RestartSec=1
 

@@ -56,6 +56,19 @@ type Report struct {
 	Migrations    []string // migrations that ran
 	RebootNeeded  bool
 	RunningKernel string
+	// ShellRestarted: the subarchy package changed, so the desktop shell was
+	// restarted to run the new one.
+	ShellRestarted bool
+}
+
+// pkgVersion is `pacman -Q name` ("name version"), or "" when the query
+// fails (the package is not installed).
+func (u *Updater) pkgVersion(ctx context.Context, name string) string {
+	out, err := u.R.Output(ctx, "pacman", "-Q", name)
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(out)
 }
 
 // Run performs the update. A failure in the snapshot or package step stops
@@ -73,6 +86,7 @@ func (u *Updater) Run(ctx context.Context) (Report, error) {
 		rep.Snapshot = strings.TrimSpace(num)
 	}
 
+	shellBefore := u.pkgVersion(ctx, "subarchy")
 	say("upgrading packages")
 	args := u.priv("upgrade")
 	if u.O.Yes {
@@ -126,6 +140,19 @@ func (u *Updater) Run(ctx context.Context) (Report, error) {
 
 	if err := u.cleanup(ctx); err != nil {
 		fmt.Fprintf(u.O.Stdout, "   cleanup: %v (continuing)\n", err)
+	}
+
+	// The shell does not watch its own files (its unit turns the watcher
+	// off), so after the subarchy package changed it runs the old tree
+	// until restarted. Last, so migrations and cleanup are done. As the
+	// user, not through the privileged path.
+	if after := u.pkgVersion(ctx, "subarchy"); after != "" && after != shellBefore {
+		say("restarting the desktop shell")
+		if err := u.R.Run(ctx, "systemctl", "--user", "try-restart", "subcult-shell.service"); err != nil {
+			fmt.Fprintf(u.O.Stdout, "   shell restart: %v (continuing)\n", err)
+		} else {
+			rep.ShellRestarted = true
+		}
 	}
 
 	running, err := u.R.Output(ctx, "uname", "-r")
@@ -245,6 +272,9 @@ func (r Report) Summary() string {
 	}
 	for _, p := range r.DKMSProblems {
 		fmt.Fprintf(&b, "DKMS module not built: %s. Boot the other kernel or the snapshot if it fails.\n", p)
+	}
+	if r.ShellRestarted {
+		b.WriteString("The desktop shell was restarted.\n")
 	}
 	if r.RebootNeeded {
 		fmt.Fprintf(&b, "Reboot needed: the running kernel %s was upgraded.\n", r.RunningKernel)
