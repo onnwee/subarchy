@@ -106,6 +106,11 @@ cp -L "$repo"/*.pkg.tar.zst "$repo"/subarchy.db "$repo"/subarchy.files "$profile
 
 echo ">> running mkarchiso (work: $work, out: $out)"
 mkdir -p "$out"
+# A work directory left by a failed build makes mkarchiso skip the steps
+# it had done, with the pacman.conf and packages of that build.
+if [[ -d $work ]]; then
+  sudo rm -rf -- "$work"
+fi
 sudo mkarchiso -v -r -w "$work" -o "$out" "$profile"
 sudo chown "$(id -u):$(id -g)" "$out"/*.iso
 ls -l "$out"/*.iso
