@@ -34,7 +34,10 @@ both Quickshell builds declare.
 
 ## Running it
 
-The session starts it; `systemctl --user restart subcult-shell` restarts it.
+The session starts it; `systemctl --user restart subcult-shell` restarts it,
+and `subcult update` restarts it after the `subarchy` package changed. The
+unit turns Quickshell's file watcher off (a package upgrade would reload a
+half-written tree) and its crash handler (systemd restarts on failure).
 The unit is enabled for every user by a symlink in
 `/usr/lib/systemd/user/graphical-session.target.wants/`, so a user turns it
 off with `systemctl --user mask subcult-shell`, not `disable`.

@@ -14,8 +14,9 @@ import (
 // fake records commands and answers queries from a table.
 type fake struct {
 	tools   map[string]bool
-	outputs map[string]string // joined argv -> output
-	fail    map[string]bool   // joined argv -> error
+	outputs map[string]string   // joined argv -> output
+	series  map[string][]string // joined argv -> one output per call, in order
+	fail    map[string]bool     // joined argv -> error
 	ran     []string
 }
 
@@ -32,6 +33,10 @@ func (f *fake) Output(_ context.Context, argv ...string) (string, error) {
 	key := strings.Join(argv, " ")
 	if f.fail[key] {
 		return "", errors.New("failed")
+	}
+	if s := f.series[key]; len(s) > 0 {
+		f.series[key] = s[1:]
+		return s[0], nil
 	}
 	out, ok := f.outputs[key]
 	if !ok && strings.HasPrefix(key, "pacman -Qdtq") {
@@ -92,6 +97,47 @@ func TestRunOrder(t *testing.T) {
 	}
 	if !strings.Contains(rep.Summary(), "Snapshot 7") || !strings.Contains(rep.Summary(), "No reboot needed") {
 		t.Errorf("summary = %q", rep.Summary())
+	}
+}
+
+const shellRestart = "systemctl --user try-restart subcult-shell.service"
+
+func TestRunRestartsShellWhenSubarchyChanged(t *testing.T) {
+	f := &fake{
+		tools:  map[string]bool{},
+		series: map[string][]string{"pacman -Q subarchy": {"subarchy 0.1.0-1\n", "subarchy 0.2.0-1\n"}},
+	}
+	u, _ := newUpdater(t, f, true)
+	rep, err := u.Run(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Contains(f.ran, shellRestart) {
+		t.Errorf("ran %q, want the shell restarted", f.ran)
+	}
+	if !rep.ShellRestarted || !strings.Contains(rep.Summary(), "The desktop shell was restarted.") {
+		t.Errorf("report = %+v, summary = %q", rep, rep.Summary())
+	}
+	if i := slices.Index(f.ran, shellRestart); i != len(f.ran)-1 {
+		t.Errorf("the restart must come last, after migrations and cleanup: %q", f.ran)
+	}
+}
+
+func TestRunLeavesShellWhenSubarchyUnchanged(t *testing.T) {
+	f := &fake{
+		tools:   map[string]bool{},
+		outputs: map[string]string{"pacman -Q subarchy": "subarchy 0.1.0-1\n"},
+	}
+	u, _ := newUpdater(t, f, true)
+	rep, err := u.Run(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if slices.Contains(f.ran, shellRestart) || rep.ShellRestarted {
+		t.Errorf("the shell was restarted for an unchanged package: %q", f.ran)
+	}
+	if strings.Contains(rep.Summary(), "shell") {
+		t.Errorf("summary mentions the shell: %q", rep.Summary())
 	}
 }
 
