@@ -127,7 +127,12 @@ chmod +x "$work/bin/hyprctl"
 # else answers.
 cat >"$work/bin/curl" <<'STUB'
 #!/bin/sh
+echo "$*" >>"$HOME/curl-log"
 for a; do case $a in
+https://api.open-meteo.com/*) cat <<'JSON'
+{"current_units": {"temperature_2m": "°C", "wind_speed_10m": "km/h"}, "current": {"time": "2026-11-08T13:00", "temperature_2m": 12.4, "apparent_temperature": 10.1, "relative_humidity_2m": 56, "weather_code": 2, "wind_speed_10m": 11.6, "is_day": 1}}
+JSON
+exit 0;;
 */api/v1/workflows*) cat <<'JSON'
 {"data": [{"id": "a1", "name": "Backups", "active": true}, {"id": "b2", "name": "Alerts", "active": false}, {"id": "c3", "name": "Sync", "active": true}], "nextCursor": null}
 JSON
@@ -154,6 +159,22 @@ cat >"$work/bin/secret-tool" <<'STUB'
 exit 1
 STUB
 chmod +x "$work/bin/secret-tool"
+# A stand-in for linecast: a search answer and one JSON document per part.
+cat >"$work/bin/linecast" <<'STUB'
+#!/bin/sh
+echo "$*" >>"$HOME/linecast-log"
+case " $* " in
+*" --search "*) printf '  44.9800,-93.2638  Minneapolis, Minnesota, United States\n  39.1219,-97.7067  Minneapolis, Kansas, United States\n'; exit 0;;
+esac
+case $1 in
+weather) echo '{"schema": 1, "location": "Minneapolis, Minnesota", "daily": [{"date": "2026-11-08", "high": 15.1, "low": 2.6, "precipitation_probability": 0, "weather_code": 3, "condition": "Clear"}, {"date": "2026-11-09", "high": 9, "low": 1, "precipitation_probability": 40, "weather_code": 61, "condition": "Rain"}]}';;
+sunshine) echo '{"schema": 1, "sunrise": "2026-11-08T07:01", "sunset": "2026-11-08T16:51", "day_length_seconds": 35432}';;
+moon) echo '{"schema": 1, "phase": "New Moon", "icon": "○", "illumination": 0.4, "events": [{"kind": "set", "time": "2026-11-08T16:07"}], "next_full": "2026-11-24"}';;
+tides) echo '{"schema": 1, "station": null, "units": {"height": "ft"}, "events": [], "series": []}';;
+*) exit 2;;
+esac
+STUB
+chmod +x "$work/bin/linecast"
 # A stand-in for mpv: serves the JSON IPC socket it was given, answers the
 # property observations with a song title, records its arguments, and ends
 # on quit or when its socket closes.
@@ -769,6 +790,31 @@ st=$(status "$home1")
 [[ $(json 'd.get("panel")') == subcult.n8n ]] || fail "the n8n panel did not open: $st"
 HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
 rm "$home1/n8n-key"
+# Weather: in the default layout; nothing is fetched until a location is
+# set (no Open-Meteo call in the curl log); the panel's search runs
+# linecast; a location set in the config fetches the conditions (stub curl)
+# and the almanac (stub linecast) and the bar shows the temperature.
+printf '{"layout": {"left": ["subcult.test-probe", "subcult.weather"]}}\n' >"$home1/.config/subcult/shell/bar.json"
+sleep 2
+st=$(status "$home1")
+[[ $(json '"subcult.weather" in d["shown"]["HEADLESS-1"]') == True ]] || fail "weather did not load: $st"
+! grep -q "open-meteo" "$home1/curl-log" 2>/dev/null || fail "weather reached the network without a location: $(grep open-meteo "$home1/curl-log")"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.weather search Minneapolis >/dev/null
+for _ in $(seq 20); do we=$(HOME=$home1 quickshell ipc -p "$shell" call subcult.weather state); [[ $(python3 -c "import json,sys; print(len(json.loads(sys.argv[1])['matches']))" "$we") == 2 ]] && break; sleep 0.5; done
+[[ $(python3 -c "import json,sys; print(json.loads(sys.argv[1])['matches'][0]['location'])" "$we") == "44.9800,-93.2638" ]] || fail "the location search gave no matches: $we"
+printf '{"layout": {"left": ["subcult.test-probe", "subcult.weather"]}, "widgets": {"subcult.weather": {"location": "44.98,-93.27", "name": "Minneapolis"}}}\n' >"$home1/.config/subcult/shell/bar.json"
+for _ in $(seq 20); do [[ $(wprop subcult.weather label) == "12°" ]] && break; sleep 0.5; done
+[[ $(wprop subcult.weather label) == "12°" ]] || fail "weather label: $(wprop subcult.weather label), state $(HOME=$home1 quickshell ipc -p "$shell" call subcult.weather state)"
+[[ $(json 'd["intervals"].get("subcult.weather.current", {}).get("interval")') == 900000 ]] || st=$(status "$home1")
+[[ $(json 'd["intervals"].get("subcult.weather.current", {}).get("interval")') == 900000 && $(json 'd["intervals"].get("subcult.weather.almanac", {}).get("interval")') == 7200000 ]] || fail "weather timers not reported: $st"
+for _ in $(seq 20); do we=$(HOME=$home1 quickshell ipc -p "$shell" call subcult.weather state); [[ $(python3 -c "import json,sys; print(sorted(json.loads(sys.argv[1])['almanac']))" "$we") == "['forecast', 'moon', 'sun', 'tides']" ]] && break; sleep 0.5; done
+[[ $(python3 -c "import json,sys; print(sorted(json.loads(sys.argv[1])['almanac']))" "$we") == "['forecast', 'moon', 'sun', 'tides']" ]] || fail "the almanac did not load: $we"
+grep -q -- "weather --json --location 44.98,-93.27 --metric" "$home1/linecast-log" || fail "linecast was not run for the location: $(cat "$home1/linecast-log")"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.weather >/dev/null
+sleep 1
+st=$(status "$home1")
+[[ $(json 'd.get("panel")') == subcult.weather ]] || fail "the weather panel did not open: $st"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
 # Opening another widget's panel while one is open switches to it.
 HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.audio >/dev/null
 HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.notifications >/dev/null
