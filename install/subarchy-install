@@ -146,6 +146,10 @@ ENABLE_LIMINE_FALLBACK=yes
 FIND_BOOTLOADERS=no
 BOOT_ORDER="linux-zen, linux-lts, *, *fallback, Snapshots"
 MAX_SNAPSHOT_ENTRIES=5
+# Where @ and snapper's snapshots sit on the volume: limine-snapper-sync
+# detects them when it makes a snapshot but needs them stated to restore one.
+ROOT_SUBVOLUME_PATH="/@"
+ROOT_SNAPSHOTS_PATH="/@/.snapshots"
 EOF
   # Global menu options; the tools add the entries below them. Entry 1 is
   # the Subarchy directory, so entry 2 is its first kernel (linux-zen).

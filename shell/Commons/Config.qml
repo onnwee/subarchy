@@ -16,6 +16,8 @@ Singleton {
   property var defaults: ({})
   property string lastWarning: ""
   readonly property var parsed: ConfigModel.parse(userFile.text, defaults)
+  // The user's file as written, for the settings panel's own merge.
+  readonly property string userText: userFile.text
   readonly property var bar: parsed.config
 
   onParsedChanged: {

@@ -1,0 +1,7 @@
+Subarchy's Neovim configuration is the LazyVim starter
+(https://github.com/LazyVim/starter, Apache License 2.0) with one changed
+file, lua/config/lazy.lua (shipped here as subarchy-lazy.lua): the update
+checker is off and the bootstrap clone is gone, because the plugins come
+prebuilt in this package. Every other file of the starter is unchanged.
+LazyVim itself (https://github.com/LazyVim/LazyVim) is Apache License 2.0.
+The cached plugins keep their own licence files in their directories.

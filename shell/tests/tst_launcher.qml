@@ -272,4 +272,62 @@ TestCase {
     compare(Model.expand("{date} {time} [{clipboard}] {other}", d, "copied"), "2026-11-07 09:05 [copied] {other}")
     compare(Model.expand("{clipboard}", d, null), "")
   }
+
+  function test_parseQueryPrefixes() {
+    compare(Model.parseQuery(". report"), { mode: "files", text: "report" })
+    compare(Model.parseQuery("."), { mode: "files", text: "" })
+    compare(Model.parseQuery(":heart"), { mode: "symbols", text: "heart" })
+    compare(Model.parseQuery(".5 * 2"), { mode: "files", text: "5 * 2" }, "a leading dot is the files prefix")
+  }
+
+  function test_files() {
+    const rows = Model.files("f /home/pat/Documents/report.pdf\nd /home/pat/Music\nf /etc/hosts\nodd line\n\n", "/home/pat")
+    compare(rows.map(r => r.name), ["report.pdf", "Music", "hosts"])
+    compare(rows.map(r => r.genericName), ["~/Documents", "~", "/etc"])
+    compare(rows.map(r => r.icon), ["application-pdf", "folder", "text-x-generic"])
+    compare(rows[0].kind, "file")
+    compare(rows[0].id, "/home/pat/Documents/report.pdf")
+    compare(rows[1].isDir, true)
+    compare(Model.files("", "/home/pat"), [])
+    verify(Model.isImage("/x/photo.JPG"))
+    verify(!Model.isImage("/x/photo.jpg.txt"))
+    compare(Model.fileIcon("/x/a.webp"), "image-x-generic")
+    compare(Model.fileIcon("/x/a.flac"), "audio-x-generic")
+    compare(Model.fileIcon("/x/a.mkv"), "video-x-generic")
+  }
+
+  function test_fdArgv() {
+    const a = Model.fdArgv("report", "/home/pat")
+    compare(a.slice(0, 2), ["sh", "-c"])
+    compare(a.slice(-2), ["report", "/home/pat"], "the text is an argument, never part of the script")
+    verify(a[2].indexOf("--fixed-strings") >= 0, "the text is not a regex")
+    verify(a[2].indexOf("--max-results 60") >= 0)
+    verify(Model.previewArgv("/x/a b").slice(-1)[0] === "/x/a b")
+  }
+
+  function test_emoji() {
+    const data = "# emoji-test.txt\n# group: Smileys & Emotion\n# subgroup: face-smiling\n"
+      + "1F600                                                  ; fully-qualified     # 😀 E1.0 grinning face\n"
+      + "263A                                                   ; unqualified         # ☺ E0.6 smiling face\n"
+      + "# group: Symbols\n"
+      + "2764 FE0F                                              ; fully-qualified     # ❤️ E0.6 red heart\n"
+      + "0023 FE0F 20E3                                         ; fully-qualified     # #️⃣ E0.6 keycap: #\n"
+    const list = Model.emoji(data)
+    compare(list.map(e => e.name), ["grinning face", "red heart", "keycap: #"], "fully-qualified only")
+    compare(list.map(e => e.genericName), ["Smileys & Emotion", "Symbols", "Symbols"])
+    compare(list[1].char, "\u2764\uFE0F")
+    compare(list[1].id, "symbol:\u2764\uFE0F")
+    compare(list[0].kind, "symbol")
+    compare(Model.emoji("").length, 0)
+    // The launcher's ranking finds them by name words.
+    compare(Model.rank(list, [], {}, "heart", 0, 10).map(e => e.name), ["red heart"])
+  }
+
+  function test_symbols() {
+    const list = Model.symbols('{"symbols": [{"char": "—", "name": "em dash", "group": "Punctuation"}, {"char": "→", "name": "right arrow"}, {"char": "", "name": "x"}, {"name": "no char"}]}')
+    compare(list.map(x => x.char), ["—", "→"])
+    compare(list.map(x => x.genericName), ["Punctuation", "Symbols"])
+    compare(Model.symbols("{broken"), [])
+    compare(Model.symbols('{"symbols": 3}'), [])
+  }
 }

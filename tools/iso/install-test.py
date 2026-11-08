@@ -16,10 +16,13 @@ Usage: tools/iso/install-test.py ISO [--skip-install] [--timeout-install 2400]
 from __future__ import annotations
 
 import argparse
+import atexit
+import os
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -27,26 +30,53 @@ from vmlib import ANSI, OVMF_CODE, OVMF_VARS, Serial, colours_in, distinct_colou
 
 ROOT = Path(__file__).resolve().parents[2]
 VM = ROOT / "build" / "vm"
+_SOCKETS: Path | None = None
+
+
+def socket_path(name: str) -> Path:
+    """A Unix socket path under the 108-byte limit: build/vm can sit too deep
+    for one, so sockets go to a short runtime directory, removed at exit."""
+    global _SOCKETS
+    if _SOCKETS is None:
+        _SOCKETS = Path(tempfile.mkdtemp(prefix="subarchy-vm-", dir=os.environ.get("XDG_RUNTIME_DIR")))
+        atexit.register(shutil.rmtree, _SOCKETS, True)
+    return _SOCKETS / name
 CACHE = ROOT / "build" / "pkgcache"
 IDLE_BUDGET = ROOT / "tools" / "iso" / "idle-budget.json"
 
 
-def idle_ok(switches: int) -> bool:
-    """The shell's idle wake-ups against tools/iso/idle-budget.json (ADR 0054).
+def budget_ok(key: str, value: int, slack: int = 0) -> bool:
+    """A measurement against its budget in tools/iso/idle-budget.json (ADR 0054).
 
-    The first run records its measurement as the budget (null in the file);
-    later runs fail above the larger of budget × 1.2 and budget + 3.
+    The first run records its measurement as the budget (null in the file),
+    written to build/vm/budgets.json to copy over; later runs fail above the
+    larger of budget × 1.2 and budget + slack.
     """
     import json
-    if switches < 0:
+    if value < 0:
         return False
     data = json.loads(IDLE_BUDGET.read_text())
-    budget = data.get("shell_voluntary_ctxt_switches_per_minute")
+    budget = data.get(key)
     if budget is None:
-        print(f"install-test: no idle budget yet; measured {switches}, record it in {IDLE_BUDGET}")
-        (VM / "idle.json").write_text(json.dumps({"shell_voluntary_ctxt_switches_per_minute": switches}) + "\n")
+        print(f"install-test: no budget for {key} yet; measured {value}, record it in {IDLE_BUDGET}")
+        recorded = VM / "budgets.json"
+        seen = json.loads(recorded.read_text()) if recorded.exists() else {}
+        seen[key] = value
+        recorded.write_text(json.dumps(seen) + "\n")
         return True
-    return switches <= max(budget * 1.2, budget + 3)
+    return value <= max(budget * 1.2, budget + slack)
+
+
+def idle_ok(switches: int) -> bool:
+    """The shell's idle wake-ups per minute (ADR 0054), with three of slack.
+
+    Counted on the shell's main thread, where its timers and event sources
+    run. Every frame also wakes the render thread and, in a VM, llvmpipe's
+    worker threads, so the total over all threads is reported but not
+    budgeted (a probe on 2026-11-07 saw 10 main-thread wake-ups and 48-58
+    in all for a quiet minute).
+    """
+    return budget_ok("shell_main_thread_wakeups_per_minute", switches, 3)
 USER = "tester"
 PASSWORD = "subarchy-test"
 PASSPHRASE = "subarchy-disk-test"
@@ -173,8 +203,7 @@ def wait_for(serial: Serial, command: str, seconds: int = 60) -> str:
 
 
 def boot(disk: Path, vars_file: Path) -> bool:
-    qmp = VM / "qmp.sock"
-    qmp.unlink(missing_ok=True)
+    qmp = socket_path("qmp.sock")
     cmd = qemu_command(
         vars_file, "-drive", f"file={disk},if=virtio,format=qcow2",
         "-qmp", f"unix:{qmp},server=on,wait=off",
@@ -285,19 +314,34 @@ def boot(disk: Path, vars_file: Path) -> bool:
 
         # Theme Tender applied the default theme for the new user (ADR 0037).
         results["tender"] = serial.run("tender doctor 2>&1; echo TENDER_RC=$?", timeout=60)
+
+        # Neovim's first launch needs no network (ADR 0045): run it in a
+        # network namespace as the user, with the config from /etc/skel.
+        results["nvim"] = serial.run(
+            f"{sudo} unshare -n runuser -u $(id -un) -- nvim --headless '+lua print(require(\"lazy\").stats().count)' +qa 2>&1; echo NVIM_RC=$?", timeout=120)
         results["cursor"] = serial.run("ls /usr/share/icons/subcult-cursor/cursors/left_ptr /usr/share/icons/subcult-cursor/hyprcursors/default.hlc")
         # The bar and the idle sample come first, before any window is open.
         screendump(qmp, VM / "bar.png")
         results["bar_colours"] = colours_in(VM / "bar.png", 26)
-        # Idle cost: voluntary context switches of all the shell's threads over
-        # a quiet minute.
+        # Idle cost over a quiet minute: voluntary context switches of the
+        # shell's main thread (budgeted) and of all its threads (reported).
         pid = serial.run("pgrep -u $(id -u) -f 'quickshell -n -p /usr/share/subcult/shell' | head -1").strip()
-        ctxt = ("cat /proc/%s/task/*/status 2>/dev/null"
-                " | awk '/^voluntary_ctxt_switches/ {s += $2} END {print s + 0}'" % pid)
-        before = serial.run(ctxt).strip() if pid.isdigit() else ""
+        ctxt = ("awk '/^voluntary_ctxt_switches/ {print $2}' /proc/%s/status;"
+                " cat /proc/%s/task/*/status 2>/dev/null"
+                " | awk '/^voluntary_ctxt_switches/ {s += $2} END {print s + 0}'" % (pid, pid))
+        before = serial.run(ctxt).split() if pid.isdigit() else []
         time.sleep(60)
-        after = serial.run(ctxt).strip() if pid.isdigit() else ""
-        results["idle"] = int(after) - int(before) if before.isdigit() and after.isdigit() else -1
+        after = serial.run(ctxt).split() if pid.isdigit() else []
+        ok = len(before) == 2 and len(after) == 2 and all(x.isdigit() for x in before + after)
+        results["idle"] = int(after[0]) - int(before[0]) if ok else -1
+        results["idle_all"] = int(after[1]) - int(before[1]) if ok else -1
+        # Idle resident memory of the whole session (every process of the
+        # user: compositor, shell, portals, agents) in KiB, taken after the
+        # quiet minute, and the installed package count (ADR 0054 budgets).
+        mem = serial.run("ps -u $(id -u) -o rss= | awk '{s += $1} END {print s + 0}'").strip()
+        results["mem"] = int(mem) if mem.isdigit() else -1
+        pkgs = serial.run("pacman -Qq | wc -l").strip()
+        results["packages"] = int(pkgs) if pkgs.isdigit() else -1
         # The shell's Hyprland dispatches on a Lua config: the workspace click
         # expression (as shell/Commons/HyprDispatch.js writes it).
         results["dispatch"] = serial.run(
@@ -417,6 +461,7 @@ def boot(disk: Path, vars_file: Path) -> bool:
         "font roles": r["fonts"].split("\n")[:3] == ["JetBrainsMono Nerd Font", "JetBrainsMono Nerd Font Propo", "Libertinus Mono"],
         "GTK icons and cursor": "'Papirus-Dark'" in r["gtk"] and "'subcult-cursor'" in r["gtk"],
         "cursor theme installed": "No such file" not in r["cursor"] and "left_ptr" in r["cursor"],
+        "Neovim starts offline with its plugins": "NVIM_RC=0" in r["nvim"] and "Failed" not in r["nvim"],
         "Discord web app and Vencord Web installed": "WEBAPP_OK" in r["discord"],
 
         "tender doctor passes with subcult-minimal applied": "TENDER_RC=0" in r["tender"] and "subcult-minimal" in r["tender"],
@@ -427,6 +472,8 @@ def boot(disk: Path, vars_file: Path) -> bool:
         "Alt-Tab switches to the previous window (global shortcuts)": "SWITCHED_GLOBAL" in r["altswitch"].splitlines(),
         "Alt-Tab switches back (IPC)": "SWITCHED_IPC" in r["altswitch"].splitlines(),
         "shell idle within budget": idle_ok(r["idle"]),
+        "session idle memory within budget": budget_ok("session_rss_kb", r["mem"], 20480),
+        "package count within budget": budget_ok("packages", r["packages"], 5),
     }
     for name, ok in checks.items():
         print(f"install-test: {'ok  ' if ok else 'FAIL'} {name}")
@@ -434,7 +481,8 @@ def boot(disk: Path, vars_file: Path) -> bool:
         print("install-test: Alt-Tab:\n" + r["altswitch"].strip())
     if r["shell_errors"].strip():
         print("install-test: shell errors:\n" + r["shell_errors"].strip())
-    print(f"install-test: shell idle: {r['idle']} voluntary context switches in 60 s (budget file {IDLE_BUDGET})")
+    print(f"install-test: shell idle: {r['idle']} main-thread wake-ups in 60 s, {r['idle_all']} over all threads (budget file {IDLE_BUDGET})")
+    print(f"install-test: session idle memory: {r['mem']} KiB resident; packages installed: {r['packages']}")
     print(f"install-test: screenshots {VM / 'greeter.png'}, {VM / 'session.png'}, {VM / 'bar.png'}"
           f" ({r['greeter_colours']} and {r['session_colours']} colours)")
     if r["failed"].strip():
@@ -539,7 +587,7 @@ def boot_secureboot(disk: Path, vars_file: Path) -> bool:
     tpm_dir = VM / "tpm"
     shutil.rmtree(tpm_dir, ignore_errors=True)
     tpm_dir.mkdir(parents=True)
-    tpm_sock = tpm_dir / "swtpm.sock"
+    tpm_sock = socket_path("swtpm.sock")
     swtpm = subprocess.Popen(
         ["swtpm", "socket", "--tpm2", "--tpmstate", f"dir={tpm_dir}", "--ctrl", f"type=unixio,path={tpm_sock}"],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,

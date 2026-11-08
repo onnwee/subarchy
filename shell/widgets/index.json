@@ -22,6 +22,30 @@
         "panel": true
       }
     },
+    "subcult.auto-wallpaper": {
+      "dir": "auto-wallpaper",
+      "manifest": {
+        "id": "subcult.auto-wallpaper",
+        "name": "Auto wallpaper",
+        "version": "1.0.0",
+        "api": 0,
+        "kind": "bar-widget",
+        "cost": {
+          "timers": [
+            {
+              "name": "rotate",
+              "ac": 1800,
+              "battery": 3600
+            }
+          ]
+        },
+        "settings": {
+          "directory": "/usr/share/backgrounds/subarchy",
+          "mode": "sequential",
+          "onBattery": false
+        }
+      }
+    },
     "subcult.battery": {
       "dir": "battery",
       "manifest": {
@@ -115,7 +139,8 @@
         "name": "Menu",
         "version": "1.0.0",
         "api": 0,
-        "kind": "bar-widget"
+        "kind": "bar-widget",
+        "panel": true
       }
     },
     "subcult.microphone": {
