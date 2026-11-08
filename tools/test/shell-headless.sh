@@ -187,6 +187,28 @@ for call in next prev cancel; do
     fail "Alt-Tab IPC call $call failed"
 done
 
+# The launcher: a desktop entry written after start is found without a
+# restart (the shell creates the user's applications folder, which did not
+# exist, so it can be watched), and the user's favorites make the home
+# screen. It opens and closes.
+launcher() { HOME=$home1 quickshell ipc -p "$shell" call subcult.launcher "$@"; }
+mkdir -p "$home1/.local/share/applications" "$home1/.config/subcult/launcher"
+printf '[Desktop Entry]\nType=Application\nName=Subarchy Test App\nExec=true\n' \
+  >"$home1/.local/share/applications/subarchy-test-app.desktop"
+printf '{"favorites": ["subarchy-test-app"]}\n' >"$home1/.config/subcult/launcher/favorites.json"
+sleep 2
+[[ $(launcher search "test app") == '["subarchy-test-app"]' ]] ||
+  fail "the launcher did not find a new desktop entry: $(launcher search "test app")"
+[[ $(launcher search "") == '["subarchy-test-app"]' ]] ||
+  fail "the launcher home screen is not the user's favorites: $(launcher search "")"
+launcher open >/dev/null
+st=$(status "$home1")
+[[ $(json 'd.get("launcher")') == True ]] || fail "the launcher did not open: $st"
+if [[ -n ${SHELL_HEADLESS_LAUNCHER_SHOT:-} ]]; then shot HEADLESS-1; cp "$work/shot.png" "$SHELL_HEADLESS_LAUNCHER_SHOT"; fi
+launcher close >/dev/null
+st=$(status "$home1")
+[[ $(json 'd.get("launcher")') == False ]] || fail "the launcher did not close: $st"
+
 # 2. A palette written after start applies without a restart.
 mkdir -p "$home1/.config/subcult/theme"
 printf '{"schema": 1, "colors": {"base": "#FF0000", "surface0": "#00FF00"}}\n' >"$home1/.config/subcult/theme/palette.json"

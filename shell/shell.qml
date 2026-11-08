@@ -38,6 +38,10 @@ ShellRoot {
 
   AltSwitch {}
 
+  Launcher {
+    id: launcher
+  }
+
   IpcHandler {
     target: "subcult.shell"
 
@@ -54,6 +58,7 @@ ShellRoot {
         popups: Notifications.popups.length,
         unread: Notifications.unread,
         osd: osd.kind,
+        launcher: launcher.open,
         intervals: Power.report()
       })
     }
