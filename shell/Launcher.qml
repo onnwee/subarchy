@@ -23,7 +23,6 @@ PanelWindow { // qmllint disable uncreatable-type
   id: launcher
 
   property bool open: false
-  property var openScreen: null
   property string query: ""
   property int index: 0
 
@@ -64,7 +63,7 @@ PanelWindow { // qmllint disable uncreatable-type
   readonly property int columns: 4
 
   visible: open
-  screen: openScreen
+  screen: place.screen
   WlrLayershell.namespace: "subcult-launcher"
   WlrLayershell.layer: WlrLayer.Overlay
   WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
@@ -152,7 +151,7 @@ PanelWindow { // qmllint disable uncreatable-type
     launcher.index = 0
     commandList.running = true
     scriptList.running = true
-    launcher.openScreen = Quickshell.screens.find(s => Hyprland.focusedMonitor && s.name === Hyprland.focusedMonitor.name) || Quickshell.screens[0]
+    place.open()
     launcher.open = true
   }
 
@@ -329,6 +328,10 @@ PanelWindow { // qmllint disable uncreatable-type
       description: "Launcher alias " + modelData
       onPressed: launcher.runAlias(modelData)
     }
+  }
+
+  OverlayScreen {
+    id: place
   }
 
   GlobalShortcut {

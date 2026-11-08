@@ -122,6 +122,19 @@ TestCase {
     compare(LayoutModel.describe({ name: "HEADLESS-1", model: "", serialNumber: "" }, null), "")
   }
 
+  function test_pickScreenKeepsCurrent() {
+    compare(LayoutModel.pickScreen(["DP-1", "DP-2"], "DP-1", "DP-2"), "DP-2", "an open overlay stays where it is")
+    compare(LayoutModel.pickScreen(["DP-1", "DP-2"], "", "DP-2"), "DP-2")
+  }
+
+  function test_pickScreenFallsBack() {
+    compare(LayoutModel.pickScreen(["DP-1", "DP-2"], "DP-2", ""), "DP-2", "opening: the focused output")
+    compare(LayoutModel.pickScreen(["DP-1", "DP-2"], "DP-2", "DP-9"), "DP-2", "its output went: the focused one")
+    compare(LayoutModel.pickScreen(["DP-1", "DP-2"], "DP-9", "DP-9"), "DP-1", "neither exists: the first")
+    compare(LayoutModel.pickScreen(["DP-1"], "FALLBACK", ""), "DP-1", "FALLBACK is never chosen")
+    compare(LayoutModel.pickScreen([], "DP-1", "DP-1"), "", "no outputs: none")
+  }
+
   function test_widgetsFull() {
     const layout = { left: ["a", "b"], center: ["c"], right: ["d"], minimal: ["b"] }
     const w = LayoutModel.widgetsFor(layout, "full")
