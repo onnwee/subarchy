@@ -5,14 +5,20 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Services.Polkit
 import qs.Commons
+import "PolkitModel.js" as Model
 
 // The polkit authentication agent (ADR 0023): when an app asks for admin
 // rights, a centred dialog on the focused output asks for the password.
-// The window exists only while a request is open.
+// The window exists only while a request is open. The field is read-only,
+// never disabled, while PAM checks, so it keeps the focus; Escape and
+// Enter work wherever the focus is; after a wrong password the field is
+// refocused and says so for two seconds.
 PanelWindow { // qmllint disable uncreatable-type
   id: dialog
 
   readonly property var flow: agent.flow // qmllint disable unresolved-type
+  readonly property string userName: Quickshell.env("USER")
+  property bool wrongPassword: false
 
   visible: agent.isActive && flow !== null
   screen: place.screen
@@ -30,10 +36,43 @@ PanelWindow { // qmllint disable uncreatable-type
 
   PolkitAgent {
     id: agent
+    // The identity to authenticate as, chosen before the first response:
+    // the current user when several admins are offered.
+    onAuthenticationRequestStarted: {
+      const f = agent.flow
+      const ids = f ? Array.from(f.identities || []) : []
+      if (ids.length > 0)
+        f.selectedIdentity = ids[Model.pickIdentity(ids, dialog.userName)]
+    }
+  }
+
+  // Another agent (a desktop's own, or a second shell) holding the session
+  // is the usual reason registration fails; say so once.
+  Timer {
+    interval: 5000
+    running: true
+    onTriggered: if (!agent.isRegistered)
+      console.warn("subcult shell: the polkit agent is not registered; another authentication agent probably holds this session")
+  }
+
+  Connections {
+    target: dialog.flow
+    function onAuthenticationFailed() {
+      dialog.wrongPassword = true
+      wrongPasswordTimer.restart()
+      Qt.callLater(() => password.forceActiveFocus())
+    }
+  }
+
+  Timer {
+    id: wrongPasswordTimer
+    interval: 2000
+    onTriggered: dialog.wrongPassword = false
   }
 
   onVisibleChanged: {
     password.text = ""
+    dialog.wrongPassword = false
     if (visible) {
       place.open()
       password.forceActiveFocus()
@@ -66,9 +105,20 @@ PanelWindow { // qmllint disable uncreatable-type
       dialog.flow.cancelAuthenticationRequest()
   }
 
-  Item {
+  FocusScope {
     anchors.fill: parent
-    Keys.onEscapePressed: dialog.cancel()
+    focus: true
+    // Escape cancels and Enter submits wherever the focus is.
+    Keys.priority: Keys.BeforeItem
+    Keys.onPressed: (event) => {
+      if (event.key === Qt.Key_Escape) {
+        dialog.cancel()
+        event.accepted = true
+      } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+        dialog.submit()
+        event.accepted = true
+      }
+    }
 
     Rectangle {
       anchors.centerIn: parent
@@ -114,7 +164,7 @@ PanelWindow { // qmllint disable uncreatable-type
         }
         Text {
           width: parent.width
-          visible: dialog.flow !== null && dialog.flow.failed && (!dialog.flow.supplementaryMessage || dialog.flow.supplementaryMessage === "")
+          visible: dialog.wrongPassword
           text: "Wrong password, try again."
           color: Theme.error
           font.family: Style.uiFontFamily
@@ -125,7 +175,10 @@ PanelWindow { // qmllint disable uncreatable-type
           width: parent.width
           placeholderText: dialog.flow ? dialog.flow.inputPrompt : "Password"
           echoMode: dialog.flow && dialog.flow.responseVisible ? TextInput.Normal : TextInput.Password
-          enabled: dialog.flow !== null && dialog.flow.isResponseRequired
+          // Read-only, not disabled, while PAM checks: a disabled field
+          // drops the focus, and after a wrong password typing must work
+          // without a click.
+          readOnly: dialog.flow === null || !dialog.flow.isResponseRequired
           color: Theme.text
           font.family: Style.fontFamily
           font.pixelSize: Style.fontSize + 1
@@ -134,8 +187,6 @@ PanelWindow { // qmllint disable uncreatable-type
             border.width: 1
             border.color: password.activeFocus ? Theme.accent : Theme.surface
           }
-          onAccepted: dialog.submit()
-          Keys.onEscapePressed: dialog.cancel()
         }
         Row {
           anchors.right: parent.right
@@ -146,7 +197,7 @@ PanelWindow { // qmllint disable uncreatable-type
           }
           Button {
             text: "Authenticate"
-            enabled: password.enabled
+            enabled: !password.readOnly
             onClicked: dialog.submit()
           }
         }
