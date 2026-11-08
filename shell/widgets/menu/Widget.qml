@@ -3,9 +3,10 @@ import qs.Commons
 import qs.Ui
 import "../../Commons/Glyphs.js" as Glyphs
 
-// The SUBCULT mark at the left of the bar. The menu it opens arrives with
-// the launcher (ADR 0057).
+// The SUBCULT mark at the left of the bar. A click opens the settings
+// panel (bar layout, fonts, cursor, idle, motion: preview, apply, undo).
 BarWidget {
+  id: root
   implicitWidth: button.implicitWidth
 
   IconButton {
@@ -13,6 +14,7 @@ BarWidget {
     anchors.verticalCenter: parent.verticalCenter
     glyph: Glyphs.menu
     color: Theme.accent
-    tooltip: "SUBCULT"
+    tooltip: "SUBCULT settings"
+    onClicked: root.openPanel()
   }
 }

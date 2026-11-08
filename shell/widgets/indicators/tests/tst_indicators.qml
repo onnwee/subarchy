@@ -28,11 +28,34 @@ TestCase {
     verify(!Model.candidate(null))
   }
 
-  function test_recording() {
-    verify(!Model.recording([]))
-    verify(Model.recording([screencast]), "a client capturing video")
-    verify(!Model.recording([producer]), "the screencast source alone is not a capture")
-    verify(!Model.recording([{ mediaClass: "" }]), "a candidate whose class is not known yet")
-    verify(Model.recording([producer, screencast]))
+  function test_captures() {
+    compare(Model.captures([]), [])
+    compare(Model.captures([{ id: 81, mediaClass: "Stream/Input/Video" }]), [81], "a client capturing video")
+    compare(Model.captures([{ id: 70, mediaClass: "Stream/Output/Video" }]), [], "the screencast source alone is not a capture")
+    compare(Model.captures([{ id: 70, mediaClass: "" }]), [], "a candidate whose class is not known yet")
+    compare(Model.captures([{ id: 70, mediaClass: "Stream/Output/Video" }, { id: 81, mediaClass: "Stream/Input/Video" }]), [81])
+  }
+
+  // Links as pw-dump showed them on sputnik (2026-11-07): the device is the
+  // link's source, the client stream its target.
+  readonly property var micLink: ({ sourceType: 9, targetId: 81 })       // Audio/Source -> Stream/Input/Audio
+  readonly property var duplexLink: ({ sourceType: 25, targetId: 81 })   // an audio duplex device read by a client
+  readonly property var monitorLink: ({ sourceType: 17, targetId: 81 })  // Audio/Sink monitor -> desktop audio capture
+  readonly property var cameraLink: ({ sourceType: 10, targetId: 90 })   // Video/Source -> Stream/Input/Video
+  readonly property var screenLink: ({ sourceType: 0, targetId: 91 })    // Stream/Output/Video producer -> capture
+  readonly property var playbackLink: ({ sourceType: 21, targetId: 64 }) // Stream/Output/Audio -> Audio/Sink
+
+  function test_marks() {
+    compare(Model.marks([], []), { microphone: false, camera: false, screen: false })
+    compare(Model.marks([micLink], []), { microphone: true, camera: false, screen: false })
+    compare(Model.marks([duplexLink], []), { microphone: true, camera: false, screen: false })
+    compare(Model.marks([monitorLink], []), { microphone: false, camera: false, screen: false }, "desktop audio is not the microphone")
+    compare(Model.marks([playbackLink], []), { microphone: false, camera: false, screen: false })
+    compare(Model.marks([cameraLink], [90]), { microphone: false, camera: true, screen: false }, "a camera client is not a screen capture")
+    compare(Model.marks([cameraLink], []), { microphone: false, camera: true, screen: false }, "the camera mark needs no tracked node")
+    compare(Model.marks([screenLink], [91]), { microphone: false, camera: false, screen: true })
+    compare(Model.marks([screenLink], []), { microphone: false, camera: false, screen: false }, "a link into an unknown node is nothing yet")
+    compare(Model.marks([], [91]), { microphone: false, camera: false, screen: false }, "a capture client without a link holds nothing")
+    compare(Model.marks([micLink, cameraLink, screenLink, null], [90, 91]), { microphone: true, camera: true, screen: true })
   }
 }
