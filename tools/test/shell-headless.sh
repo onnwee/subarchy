@@ -127,7 +127,16 @@ chmod +x "$work/bin/hyprctl"
 # else answers.
 cat >"$work/bin/curl" <<'STUB'
 #!/bin/sh
-for a; do case $a in https://somafm.com/channels.json) cat <<'JSON'
+for a; do case $a in
+*/api/v1/workflows*) cat <<'JSON'
+{"data": [{"id": "a1", "name": "Backups", "active": true}, {"id": "b2", "name": "Alerts", "active": false}, {"id": "c3", "name": "Sync", "active": true}], "nextCursor": null}
+JSON
+exit 0;;
+*/api/v1/executions*) cat <<'JSON'
+{"data": [{"id": "900", "workflowId": "a1", "status": "error", "startedAt": "2026-11-08T14:00:00Z", "stoppedAt": "2026-11-08T14:00:05Z"}, {"id": "901", "workflowId": "zz", "status": "error"}]}
+JSON
+exit 0;;
+https://somafm.com/channels.json) cat <<'JSON'
 {"channels": [
   {"id": "groovesalad", "title": "Groove Salad", "description": "Ambient beats", "genre": "ambient", "dj": "Rusty", "listeners": "1200",
    "playlists": [{"url": "https://api.somafm.com/groovesalad.pls", "format": "mp3", "quality": "highest"}, {"url": "https://api.somafm.com/groovesalad130.pls", "format": "aac", "quality": "highest"}]},
@@ -138,6 +147,13 @@ exit 0;; esac; done
 exit 22
 STUB
 chmod +x "$work/bin/curl"
+# A stand-in for secret-tool: the n8n key once the test has "stored" it.
+cat >"$work/bin/secret-tool" <<'STUB'
+#!/bin/sh
+[ "$1" = lookup ] && [ -f "$HOME/n8n-key" ] && { cat "$HOME/n8n-key"; exit 0; }
+exit 1
+STUB
+chmod +x "$work/bin/secret-tool"
 # A stand-in for mpv: serves the JSON IPC socket it was given, answers the
 # property observations with a song title, records its arguments, and ends
 # on quit or when its socket closes.
@@ -727,6 +743,32 @@ sleep 1
 so=$(HOME=$home1 quickshell ipc -p "$shell" call subcult.soma state)
 [[ $(python3 -c "import json,sys; j=json.loads(sys.argv[1]); print(j['playing'], j['song'])" "$so") == "False " ]] || fail "stop did not end playback: $so"
 [[ $(HOME=$home1 quickshell ipc -p "$shell" call subcult.soma play nosuch) == false ]] || fail "an unknown channel played"
+# n8n: hidden until a server is set; with a server but no key in the
+# keyring it shows the warning; with the key it reads the (stub) API and
+# shows active workflows over all and the failed runs.
+printf '{"layout": {"left": ["subcult.test-probe", "subcult.n8n"]}}\n' >"$home1/.config/subcult/shell/bar.json"
+sleep 2
+st=$(status "$home1")
+[[ $(json '"subcult.n8n" in d["loaded"]["HEADLESS-1"] and "subcult.n8n" not in d["shown"]["HEADLESS-1"]') == True ]] || fail "n8n not hidden without a server: $st"
+printf '{"layout": {"left": ["subcult.test-probe", "subcult.n8n"]}, "widgets": {"subcult.n8n": {"server": "http://n8n.test:5678"}}}\n' >"$home1/.config/subcult/shell/bar.json"
+sleep 2
+st=$(status "$home1")
+[[ $(json '"subcult.n8n" in d["shown"]["HEADLESS-1"]') == True ]] || fail "n8n not shown with a server: $st"
+[[ $(json 'd["intervals"].get("subcult.n8n.refresh", {}).get("interval")') == 60000 ]] || fail "n8n timer not reported: $st"
+wprop() { HOME=$home1 quickshell ipc -p "$shell" call subcult.shell widgetProperty "$1" "$2"; }
+for _ in $(seq 20); do [[ $(wprop subcult.n8n error) == 3 ]] && break; sleep 0.5; done
+[[ $(wprop subcult.n8n error) == 3 ]] || fail "n8n without a key: error $(wprop subcult.n8n error), server $(wprop subcult.n8n server), report $(wprop subcult.n8n report)"
+printf 'SECRETKEY' >"$home1/n8n-key"
+printf '{"layout": {"left": ["subcult.test-probe", "subcult.n8n"]}, "widgets": {"subcult.n8n": {"server": "http://n8n.test:5678/"}}}\n' >"$home1/.config/subcult/shell/bar.json"
+sleep 2
+for _ in $(seq 20); do [[ $(wprop subcult.n8n label) == "2/3 ✗2" ]] && break; sleep 0.5; done
+[[ $(wprop subcult.n8n label) == "2/3 ✗2" ]] || fail "n8n label: $(wprop subcult.n8n label), error $(wprop subcult.n8n error)"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.n8n >/dev/null
+sleep 1
+st=$(status "$home1")
+[[ $(json 'd.get("panel")') == subcult.n8n ]] || fail "the n8n panel did not open: $st"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
+rm "$home1/n8n-key"
 # Opening another widget's panel while one is open switches to it.
 HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.audio >/dev/null
 HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.notifications >/dev/null
