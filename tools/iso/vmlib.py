@@ -59,15 +59,15 @@ def colours_in(png: Path, rows: int) -> set[str]:
     return {m.upper() for m in re.findall(r"#([0-9A-Fa-f]{6})", out.stdout)}
 
 
-def qemu_command(vars_file: Path, *extra: str, memory: str = "4096") -> list[str]:
-    """Base QEMU command line: q35, OVMF, serial on stdio, user networking."""
+def qemu_command(vars_file: Path, *extra: str, memory: str = "4096", network: bool = True) -> list[str]:
+    """Base QEMU command line: q35, OVMF, serial on stdio, user networking (or none)."""
     cmd = [
         "qemu-system-x86_64", "-machine", "q35,smm=on", "-m", memory, "-smp", "4",
         "-global", "driver=cfi.pflash01,property=secure,value=on",
         "-drive", f"if=pflash,format=raw,readonly=on,file={OVMF_CODE}",
         "-drive", f"if=pflash,format=raw,file={vars_file}",
         "-display", "none", "-serial", "stdio", "-monitor", "none",
-        "-nic", "user,model=virtio-net-pci",
+        "-nic", "user,model=virtio-net-pci" if network else "none",
         *extra,
     ]
     if os.access("/dev/kvm", os.R_OK | os.W_OK):

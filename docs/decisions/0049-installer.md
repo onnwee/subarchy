@@ -80,5 +80,14 @@ Decision map item R2. Accepted 2026-11-06.
   test drives it end to end with `--guided`. The image carries Subarchy's own
   packages in `/opt/subarchy/repo`; Arch packages still come from the
   network, so the offline cache is still open.
+- 2026-11-08: the offline cache (issue #77). `make iso` downloads the whole
+  install set, the install lists plus every hardware package `subcult hw
+  packages --all` can pick, with dependencies, into the same repository the
+  image carries at `/opt/subarchy/repo`. The installer probes one Arch
+  mirror: reachable, the mirrors come first in its pacman.conf so newer
+  packages win and the image's repository serves as a package cache;
+  unreachable (or `OFFLINE=1`), the repository alone serves the install.
+  `make install-test-offline` runs the guided install in a VM with no
+  network device.
 
 Related: [[decision-map|Decision map]] · [[0050-hardware-support|ADR 0050]]

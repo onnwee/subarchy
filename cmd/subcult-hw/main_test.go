@@ -70,3 +70,14 @@ func TestRun(t *testing.T) {
 		t.Errorf("missing cpuinfo: exit %d", code)
 	}
 }
+
+func TestPackagesAll(t *testing.T) {
+	var out, errOut bytes.Buffer
+	if code := run([]string{"packages", "--all"}, &out, &errOut); code != 0 {
+		t.Fatalf("exit %d: %s", code, errOut.String())
+	}
+	lines := strings.Split(strings.TrimSpace(out.String()), "\n")
+	if len(lines) < 20 || !strings.Contains(out.String(), "nvidia-open-dkms\n") || !strings.Contains(out.String(), "intel-ucode\n") {
+		t.Errorf("catalog:\n%s", out.String())
+	}
+}

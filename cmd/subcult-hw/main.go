@@ -22,8 +22,9 @@ import (
 var routes = func() []dispatch.Described {
 	r := []dispatch.Described{
 		{Words: []string{"hw", "packages"}, Metadata: dispatch.Metadata{
-			Summary:  "List the firmware, microcode and GPU driver packages this machine needs",
-			Examples: []string{"subcult hw packages"}}},
+			Summary:  "List the firmware, microcode and GPU driver packages this machine needs (--all: every package it could pick)",
+			Args:     "[--all]",
+			Examples: []string{"subcult hw packages", "subcult hw packages --all"}}},
 		{Words: []string{"hw", "info"}, Metadata: dispatch.Metadata{
 			Summary: "Show the detected CPU, GPUs, radios, notes and matches", Args: "[--json]",
 			Examples: []string{"subcult hw info", "subcult hw info --json"}}},
@@ -64,8 +65,15 @@ func run(args []string, stdout, stderr io.Writer) int {
 	fs.SetOutput(stderr)
 	root := fs.String("root", "/", "directory holding proc/ and sys/ (tests)")
 	asJSON := fs.Bool("json", false, "machine-readable output")
+	all := fs.Bool("all", false, "every package the selection can pick, for the install image (packages)")
 	if err := fs.Parse(args[1:]); err != nil {
 		return 2
+	}
+	if args[0] == "packages" && *all {
+		for _, p := range hw.Catalog() {
+			fmt.Fprintln(stdout, p)
+		}
+		return 0
 	}
 	m, err := hw.Detect(*root)
 	if err != nil {

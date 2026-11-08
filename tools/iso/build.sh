@@ -52,6 +52,42 @@ done
 ((${#missing[@]} == 0)) || { echo "build.sh: not in build/repo: ${missing[*]} (run packaging/aur/build.sh ${missing[*]})" >&2; exit 1; }
 ((package_only)) && exit 0
 
+echo ">> downloading the install set into the repository"
+# Everything the installer may pacstrap (ADR 0049): the install lists and
+# every hardware package `subcult hw` can pick, with their dependencies,
+# from the mirrors into the same repository, so the image installs with no
+# network. A private database makes pacman resolve the whole closure;
+# files already in build/repo are not fetched again.
+offline_db="$root/build/offline-db"
+mkdir -p "$offline_db"
+mapfile -t install_set < <(sed 's/#.*//; /^[[:space:]]*$/d' "$root"/install/packages/*.txt; (cd "$root" && go run ./cmd/subcult-hw packages --all))
+cat >"$root/build/offline-pacman.conf" <<EOF
+[options]
+Architecture = auto
+SigLevel = Required DatabaseOptional
+DBPath = $offline_db
+CacheDir = $repo
+
+[subarchy]
+SigLevel = Optional TrustAll
+Server = file://$repo
+
+[core]
+Include = /etc/pacman.d/mirrorlist
+
+[extra]
+Include = /etc/pacman.d/mirrorlist
+EOF
+download_log="$root/build/offline-download.log"
+if ! { sudo pacman --config "$root/build/offline-pacman.conf" -Syw --noconfirm "${install_set[@]}"; } >"$download_log" 2>&1; then
+  tail -20 "$download_log" >&2
+  echo "build.sh: downloading the install set failed" >&2
+  exit 1
+fi
+sudo chown -R "$(id -u):$(id -g)" "$repo" "$offline_db"
+repo-add --quiet "$repo/subarchy.db.tar.gz" "$repo"/*.pkg.tar.zst >/dev/null
+echo "   $(find "$repo" -name '*.pkg.tar.zst' | wc -l) packages, $(du -sh "$repo" | cut -f1)"
+
 echo ">> preparing the profile"
 mkdir -p "$profile"
 cp -a --no-preserve=ownership "$root/iso/profile/." "$profile/"
@@ -61,8 +97,9 @@ lib="$profile/airootfs/usr/local/lib/subarchy-install"
 mkdir -p "$lib" "$profile/airootfs/usr/local/bin"
 cp -a --no-preserve=ownership "$root/install/subarchy-install" "$root/install/packages" "$lib/"
 ln -sfn ../lib/subarchy-install/subarchy-install "$profile/airootfs/usr/local/bin/subarchy-install"
-# Subarchy's own packages, so the image installs them without a network
-# repository (ADR 0049); subarchy-setup points SUBARCHY_REPO here.
+# The repository: Subarchy's own packages and the whole install set, so
+# the image installs with no network (ADR 0049); subarchy-setup points
+# SUBARCHY_REPO here and the installer uses it as a package cache online.
 mkdir -p "$profile/airootfs/opt/subarchy/repo"
 cp -L "$repo"/*.pkg.tar.zst "$repo"/subarchy.db "$repo"/subarchy.files "$profile/airootfs/opt/subarchy/repo/"
 
