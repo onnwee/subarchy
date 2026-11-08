@@ -123,6 +123,58 @@ cat >"$work/bin/hyprctl" <<'STUB'
 printf '%s\n' "$*" >>"$HOME/hyprctl-log"
 STUB
 chmod +x "$work/bin/hyprctl"
+# A stand-in for curl: SomaFM's channel list for the radio widget, nothing
+# else answers.
+cat >"$work/bin/curl" <<'STUB'
+#!/bin/sh
+for a; do case $a in https://somafm.com/channels.json) cat <<'JSON'
+{"channels": [
+  {"id": "groovesalad", "title": "Groove Salad", "description": "Ambient beats", "genre": "ambient", "dj": "Rusty", "listeners": "1200",
+   "playlists": [{"url": "https://api.somafm.com/groovesalad.pls", "format": "mp3", "quality": "highest"}, {"url": "https://api.somafm.com/groovesalad130.pls", "format": "aac", "quality": "highest"}]},
+  {"id": "dronezone", "title": "Drone Zone", "description": "", "genre": "ambient", "dj": "", "listeners": "900",
+   "playlists": [{"url": "https://api.somafm.com/dronezone.pls", "format": "mp3", "quality": "highest"}]}]}
+JSON
+exit 0;; esac; done
+exit 22
+STUB
+chmod +x "$work/bin/curl"
+# A stand-in for mpv: serves the JSON IPC socket it was given, answers the
+# property observations with a song title, records its arguments, and ends
+# on quit or when its socket closes.
+cat >"$work/bin/mpv" <<'STUB'
+#!/usr/bin/python3
+import json, os, socket, sys
+with open(os.path.join(os.environ["HOME"], "mpv-args"), "a") as f:
+    f.write(" ".join(sys.argv[1:]) + "\n")
+path = next(a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--input-ipc-server="))
+try:
+    os.unlink(path)
+except FileNotFoundError:
+    pass
+srv = socket.socket(socket.AF_UNIX)
+srv.bind(path)
+srv.listen(1)
+conn, _ = srv.accept()
+buf = b""
+while True:
+    data = conn.recv(4096)
+    if not data:
+        break
+    buf += data
+    while b"\n" in buf:
+        line, buf = buf.split(b"\n", 1)
+        try:
+            cmd = json.loads(line)["command"]
+        except Exception:
+            continue
+        if cmd[0] == "observe_property":
+            conn.sendall(b'{"request_id":0,"error":"success"}\n')
+            if cmd[2] == "media-title":
+                conn.sendall(json.dumps({"event": "property-change", "id": cmd[1], "name": "media-title", "data": "Stub Artist - Stub Song"}).encode() + b"\n")
+        elif cmd[0] == "quit":
+            sys.exit(0)
+STUB
+chmod +x "$work/bin/mpv"
 # System tools before the developer's shims: a mise shim resolves its tool
 # from HOME, and the test's HOME is empty, so `fd` through the shim fails
 # and the launcher's file search finds nothing.
@@ -653,6 +705,28 @@ sleep 1
 st=$(status "$home1")
 [[ $(json 'd.get("panel")') == subcult.agents ]] || fail "the agents panel did not open: $st"
 HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
+# SomaFM: in the default layout; its panel fetches the channel list (stub
+# curl), playing a channel starts the (stub) mpv with the aac stream and the
+# song arrives over mpv's IPC socket; stop ends mpv.
+printf '{"layout": {"left": ["subcult.test-probe", "subcult.soma"]}}\n' >"$home1/.config/subcult/shell/bar.json"
+sleep 2
+st=$(status "$home1")
+[[ $(json '"subcult.soma" in d["shown"]["HEADLESS-1"]') == True ]] || fail "soma did not load: $st"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.soma >/dev/null
+for _ in $(seq 20); do so=$(HOME=$home1 quickshell ipc -p "$shell" call subcult.soma state); [[ $(python3 -c "import json,sys; print(json.loads(sys.argv[1])['channels'])" "$so") == 2 ]] && break; sleep 0.5; done
+[[ $(python3 -c "import json,sys; print(json.loads(sys.argv[1])['channels'])" "$so") == 2 ]] || fail "the channel list did not load on panel open: $so"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
+[[ $(HOME=$home1 quickshell ipc -p "$shell" call subcult.soma play groovesalad) == true ]] || fail "play refused"
+for _ in $(seq 30); do so=$(HOME=$home1 quickshell ipc -p "$shell" call subcult.soma state); [[ $(python3 -c "import json,sys; print(json.loads(sys.argv[1])['song'])" "$so") == "Stub Artist - Stub Song" ]] && break; sleep 0.5; done
+[[ $(python3 -c "import json,sys; j=json.loads(sys.argv[1]); print(j['playing'], j['channel'], j['song'])" "$so") == "True groovesalad Stub Artist - Stub Song" ]] || fail "no song over mpv's IPC: $so"
+grep -q -- '--input-ipc-server=.*subcult-soma.sock -- https://api.somafm.com/groovesalad130.pls' "$home1/mpv-args" || fail "mpv was not given the aac stream: $(cat "$home1/mpv-args")"
+[[ $(HOME=$home1 quickshell ipc -p "$shell" call subcult.shell widgetProperty subcult.soma label) == "Groove Salad · Stub Artist - Stub Song" ]] ||
+  fail "soma label: $(HOME=$home1 quickshell ipc -p "$shell" call subcult.shell widgetProperty subcult.soma label)"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.soma stop >/dev/null
+sleep 1
+so=$(HOME=$home1 quickshell ipc -p "$shell" call subcult.soma state)
+[[ $(python3 -c "import json,sys; j=json.loads(sys.argv[1]); print(j['playing'], j['song'])" "$so") == "False " ]] || fail "stop did not end playback: $so"
+[[ $(HOME=$home1 quickshell ipc -p "$shell" call subcult.soma play nosuch) == false ]] || fail "an unknown channel played"
 # Opening another widget's panel while one is open switches to it.
 HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.audio >/dev/null
 HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.notifications >/dev/null

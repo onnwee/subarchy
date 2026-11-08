@@ -214,6 +214,32 @@
         "panel": true
       }
     },
+    "subcult.soma": {
+      "dir": "soma",
+      "manifest": {
+        "id": "subcult.soma",
+        "name": "SomaFM",
+        "version": "1.0.0",
+        "api": 0,
+        "kind": "bar-widget",
+        "panel": true,
+        "cost": {
+          "network": [
+            "somafm.com",
+            "api.somafm.com",
+            "ice1.somafm.com",
+            "ice2.somafm.com",
+            "ice3.somafm.com",
+            "ice4.somafm.com",
+            "ice5.somafm.com",
+            "ice6.somafm.com"
+          ]
+        },
+        "settings": {
+          "format": "aac"
+        }
+      }
+    },
     "subcult.tray": {
       "dir": "tray",
       "manifest": {

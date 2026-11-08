@@ -86,3 +86,6 @@ const mediaNote = "\u{F075A}"     // music
 const wallpaper = "\u{F02E9}" // image
 const download = "\u{F01DA}" // download
 const agents = "\u{F06A9}" // robot
+const radio = "\u{F043B}" // radio
+const play = "\u{F040A}" // play
+const stop = "\u{F04DB}" // stop

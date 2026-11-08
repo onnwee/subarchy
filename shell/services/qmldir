@@ -3,3 +3,4 @@ singleton Notifications 1.0 Notifications.qml
 singleton Alerts 1.0 Alerts.qml
 
 singleton Downloads 1.0 Downloads.qml
+singleton Soma 1.0 Soma.qml
