@@ -31,6 +31,13 @@ build() {
   # The default cursor, lavender (shell and look design, "Cursor").
   "$srcdir/bin/subcult-cursor" build --role lavender --palette "$root/default/theme/palette.json" \
     --src "$root/default/cursor" --out "$srcdir/subcult-cursor"
+  # The boot splash's images (ADR 0013): the SUBCULT mark and the small
+  # parts, rendered from their SVG sources.
+  mkdir -p "$srcdir/plymouth"
+  rsvg-convert -w 240 -o "$srcdir/plymouth/logo.png" "$root/branding/marks/mark-dark.svg"
+  for f in bullet entry lock progress-bar progress-box; do
+    rsvg-convert -o "$srcdir/plymouth/$f.png" "$root/default/plymouth/$f.svg"
+  done
 }
 
 check() {
@@ -71,6 +78,17 @@ package() {
   # Session and greeter (ADR 0030, 0031).
   install -Dm644 "$root/default/sddm/subarchy.desktop" "$pkgdir/usr/share/wayland-sessions/subarchy.desktop"
   install -Dm644 "$root/default/sddm/subarchy.conf" "$pkgdir/usr/lib/sddm/sddm.conf.d/subarchy.conf"
+  # The greeter theme (ADR 0030) with the SUBCULT lockup, and the boot splash
+  # theme (ADR 0013) with its rendered images.
+  for f in "$root"/default/sddm/theme/*; do
+    install -Dm644 "$f" "$pkgdir/usr/share/sddm/themes/subarchy/$(basename "$f")"
+  done
+  install -Dm644 "$root/branding/studio/logos/lockup-dark.svg" "$pkgdir/usr/share/sddm/themes/subarchy/lockup-dark.svg"
+  install -Dm644 "$root/default/plymouth/subarchy.plymouth" "$pkgdir/usr/share/plymouth/themes/subarchy/subarchy.plymouth"
+  install -Dm644 "$root/default/plymouth/subarchy.script" "$pkgdir/usr/share/plymouth/themes/subarchy/subarchy.script"
+  for f in "$srcdir"/plymouth/*.png; do
+    install -Dm644 "$f" "$pkgdir/usr/share/plymouth/themes/subarchy/$(basename "$f")"
+  done
   # System drop-ins (ADR 0016, 0020, 0063); /etc overrides each of them.
   local sys="$root/default/system"
   install -Dm644 "$sys/sysctl-hardening.conf" "$pkgdir/usr/lib/sysctl.d/90-subarchy-hardening.conf"

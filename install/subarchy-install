@@ -124,8 +124,12 @@ write_boot_config() {
   # AppArmor (ADR 0063) and the Plymouth splash (ADR 0013).
   cmdline+=" lsm=landlock,lockdown,yama,integrity,apparmor,bpf quiet splash"
   [[ -n ${conf[KERNEL_CMDLINE_EXTRA]} ]] && cmdline+=" ${conf[KERNEL_CMDLINE_EXTRA]}"
-  install -d "$target"/etc/{kernel,mkinitcpio.conf.d,default}
+  install -d "$target"/etc/{kernel,mkinitcpio.conf.d,default,plymouth}
   echo "$cmdline" >"$target/etc/kernel/cmdline"
+  # The Subarchy splash (ADR 0013), chosen before pacstrap so the UKIs it
+  # builds carry the theme; pacman leaves this file and writes its own as
+  # plymouthd.conf.pacnew.
+  printf '[Daemon]\nTheme=subarchy\n' >"$target/etc/plymouth/plymouthd.conf"
   printf "KEYMAP=%s\nXKBLAYOUT=%s\n" "${conf[KEYMAP]}" "${conf[XKB_LAYOUT]}" >"$target/etc/vconsole.conf"
   cat >"$target/etc/mkinitcpio.conf.d/subarchy.conf" <<'EOF'
 # Subarchy (ADR 0008): systemd-based initramfs; sd-btrfs-overlayfs makes

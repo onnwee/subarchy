@@ -1,0 +1,9 @@
+[Plymouth Theme]
+Name=Subarchy
+Description=SUBCULT // Subarchy boot splash: the mark on ink, a progress track and the passphrase prompt
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/subarchy
+ScriptFile=/usr/share/plymouth/themes/subarchy/subarchy.script
+ConsoleLogBackgroundColor=0x100B19

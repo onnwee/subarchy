@@ -48,5 +48,14 @@ borrowed.
   test boots with `console=ttyS0`, which puts Plymouth in text mode, so the
   graphical splash itself is untested. The theme is Arch's default until the
   Subarchy theme exists.
+- 2026-11-08: the Subarchy theme (issue #73): `default/plymouth/` holds
+  `subarchy.plymouth`, an own `subarchy.script` (ink background, the
+  SUBCULT mark, a violet track filling with acid green, the passphrase
+  prompt with a lock and bullets, messages in paper) and the SVG sources of
+  the small images; the package renders them with rsvg-convert and installs
+  the theme. The installer writes `/etc/plymouth/plymouthd.conf` before
+  pacstrap, so the UKIs built during it carry the theme (pacman keeps the
+  file and writes its own as `.pacnew`). The VM test checks the theme is
+  selected and installed; the splash is still drawn in text mode there.
 
 Related: [[decision-map|Decision map]] · [[0008-initramfs|ADR 0008]] · [[brand-identity|Brand identity]]
