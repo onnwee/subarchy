@@ -244,3 +244,159 @@ function webTarget(ql, text) {
     return null
   return { key: ql.default, name: def.name, query: t, url: fill(def.url, t) }
 }
+
+// --- Script commands, aliases and snippets --------------------------------
+
+// Script commands from the launcher's folder listing: each file starts with
+// "\x1e<path>" and is followed by its first lines. A script needs a title in
+// a `@raycast.<key>` or `@subcult.<key>` comment; Raycast's keys are read
+// as they are, so Raycast script commands run unchanged.
+function scripts(text) {
+  const out = []
+  for (const chunk of String(text || "").split("\x1e")) {
+    const nl = chunk.indexOf("\n")
+    if (nl < 0)
+      continue
+    const s = scriptHeader(chunk.slice(0, nl), chunk.slice(nl + 1).split("\n"))
+    if (s)
+      out.push(s)
+  }
+  return out
+}
+
+function scriptHeader(path, lines) {
+  const meta = {}
+  for (const line of lines) {
+    const m = /^\s*(?:#|\/\/|--|;)\s*@(?:raycast|subcult)\.([A-Za-z0-9]+)\s+(.*?)\s*$/.exec(line)
+    if (m)
+      meta[m[1]] = m[2]
+  }
+  if (!meta.title || path === "")
+    return null
+  const args = []
+  for (const key of ["argument1", "argument2", "argument3"]) {
+    if (!meta[key])
+      break
+    let a = {}
+    try {
+      a = JSON.parse(meta[key]) || {}
+    } catch (e) {
+      a = {}
+    }
+    args.push({ placeholder: String(a.placeholder || key), optional: a.optional === true, percentEncoded: a.percentEncoded === true })
+  }
+  const file = path.slice(path.lastIndexOf("/") + 1)
+  const dir = path.slice(0, path.lastIndexOf("/"))
+  return {
+    kind: "script",
+    id: "script:" + file,
+    path: path,
+    name: meta.title,
+    genericName: meta.description || meta.packageName || "Script command",
+    keywords: [file].concat(meta.packageName ? [meta.packageName] : []),
+    icon: "utilities-terminal",
+    mode: ["fullOutput", "compact", "silent"].indexOf(meta.mode) >= 0 ? meta.mode : "compact",
+    params: args,
+    dangerous: meta.needsConfirmation === "true",
+    dir: meta.currentDirectoryPath || dir
+  }
+}
+
+// How many arguments a script must get before it can run.
+function requiredArgs(script) {
+  return (script.params || []).filter(p => !p.optional).length
+}
+
+// Words typed after a script's alias become its arguments; the last
+// argument takes the rest of the line.
+function splitArgs(text, count) {
+  const words = String(text || "").trim().split(/\s+/).filter(w => w !== "")
+  if (count <= 0 || words.length <= count)
+    return count <= 0 ? [] : words
+  return words.slice(0, count - 1).concat([words.slice(count - 1).join(" ")])
+}
+
+// The argv that runs a script in its mode: fullOutput in a terminal that
+// stays open, compact with its last output line as a notification, silent
+// with no output. dir may start with "~" (Raycast's currentDirectoryPath).
+function scriptArgv(script, args, home) {
+  const dir = String(script.dir || "").replace(/^~(?=\/|$)/, home)
+  const values = (args || []).map((v, i) => script.params && script.params[i] && script.params[i].percentEncoded ? encodeURIComponent(v) : v)
+  if (script.mode === "fullOutput")
+    return ["uwsm-app", "--", "xdg-terminal-exec", "sh", "-c",
+      'cd "$1" || exit; shift; "$@"; s=$?; printf "\\n[exit %d] Press Enter to close." "$s"; read -r _', "sh", dir, script.path].concat(values)
+  if (script.mode === "silent")
+    return ["sh", "-c", 'cd "$1" || exit; shift; exec "$@" >/dev/null 2>&1', "sh", dir, script.path].concat(values)
+  return ["sh", "-c", 'cd "$1" || exit; t=$2; shift 2; out=$("$@" 2>&1); notify-send -a Launcher -- "$t" "$(printf "%s\\n" "$out" | tail -n 1)"',
+    "sh", dir, script.name, script.path].concat(values)
+}
+
+// The user's aliases: a name for any launcher item, by id ("subcult update",
+// an app id, "script:hello.sh", "snippet:Sign-off").
+function aliases(text) {
+  try {
+    const d = JSON.parse(text)
+    const out = {}
+    if (d && d.aliases && typeof d.aliases === "object") {
+      for (const name of Object.keys(d.aliases)) {
+        if (/^[A-Za-z0-9_-]+$/.test(name) && typeof d.aliases[name] === "string" && d.aliases[name] !== "")
+          out[name] = d.aliases[name]
+      }
+    }
+    return out
+  } catch (e) {
+    return {}
+  }
+}
+
+// A query whose first word is an alias: its item and the rest of the line.
+function resolveAlias(names, items, query) {
+  const q = String(query || "").trim()
+  const first = q.split(/\s+/)[0]
+  if (!first || !names || !Object.prototype.hasOwnProperty.call(names, first))
+    return null
+  const item = (items || []).find(i => i.id === names[first])
+  return item ? { name: first, item: item, rest: q.slice(first.length).trim() } : null
+}
+
+// Snippets from the system and user files ({"snippets": [{name, keyword,
+// text}]}), the user's after the system's.
+function snippets(systemText, userText) {
+  const out = []
+  for (const t of [systemText, userText]) {
+    let d = null
+    try {
+      d = JSON.parse(t)
+    } catch (e) {
+      continue
+    }
+    if (!d || !Array.isArray(d.snippets))
+      continue
+    for (const s of d.snippets) {
+      if (!s || typeof s.name !== "string" || s.name === "" || typeof s.text !== "string")
+        continue
+      out.push({
+        kind: "snippet",
+        id: "snippet:" + s.name,
+        name: s.name,
+        genericName: s.text.replace(/\s+/g, " ").slice(0, 80),
+        keywords: typeof s.keyword === "string" && s.keyword !== "" ? [s.keyword] : [],
+        icon: "edit-paste",
+        text: s.text
+      })
+    }
+  }
+  return out
+}
+
+function pad(n) {
+  return (n < 10 ? "0" : "") + n
+}
+
+// A snippet's text with {date} (2026-11-07), {time} (14:05) and
+// {clipboard} filled in; other braces stay.
+function expand(text, date, clipboard) {
+  const d = date.getFullYear() + "-" + pad(date.getMonth() + 1) + "-" + pad(date.getDate())
+  const t = pad(date.getHours()) + ":" + pad(date.getMinutes())
+  return String(text).split("{date}").join(d).split("{time}").join(t).split("{clipboard}").join(String(clipboard || ""))
+}

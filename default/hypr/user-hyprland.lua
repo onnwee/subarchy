@@ -6,6 +6,7 @@
 --
 --   hl.config({ general = { gaps_out = 4 } })
 --   sub.bind("SUPER + B", "Browser", sub.launch("zen-browser"))
+--   sub.bind("SUPER + ALT + U", "Update", sub.alias("up")) -- a launcher alias
 --
 -- Modules in ~/.config/hypr/ load with require("hypr.<name>").
 

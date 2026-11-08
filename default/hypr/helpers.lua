@@ -19,6 +19,13 @@ function sub.bind(keys, description, action, options)
   hl.bind(keys, action, opts)
 end
 
+-- A launcher alias as a dispatcher: the shell registers one global shortcut
+-- per alias in ~/.config/subcult/launcher/aliases.json (ADR 0057).
+--   sub.bind("SUPER + ALT + U", "Update", sub.alias("up"))
+function sub.alias(name)
+  return hl.dsp.global("subcult:alias." .. name)
+end
+
 -- Replace an existing binding.
 function sub.rebind(keys, description, action, options)
   hl.unbind(keys)

@@ -110,5 +110,11 @@ was proposed by the agent and confirmed by the owner on 2026-11-07.
   ask first), an inline `qalc` answer and `=`, and web search through `@`,
   quicklinks and the no-match fallback (issue #71). The default engine is
   DuckDuckGo, chosen by the agent; `quicklinks.json` changes it.
+- 2026-11-07: script commands with Raycast headers, snippets and aliases
+  (issue #95). Owner decisions: snippets are typed with `wtype`; an alias's
+  hotkey is bound in the Hyprland config (`sub.alias`) to the global
+  shortcut the shell registers, as Omarchy binds its shell shortcuts; Raycast
+  modes `fullOutput`, `compact` and `silent` are supported and `inline` runs
+  as `compact`.
 
 Related: [[decision-map|Decision map]] · [[0036-shell-components|ADR 0036]] · [[0056-quality-of-life|ADR 0056]] · [[0046-distribution-cli|ADR 0046]]
