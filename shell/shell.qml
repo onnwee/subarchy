@@ -1,7 +1,6 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import Quickshell.Wayland
 import qs.Commons
 import qs.services
 import "Commons/LayoutModel.js" as LayoutModel
@@ -26,13 +25,6 @@ ShellRoot {
     delegate: Background {}
   }
 
-  // Keep-awake (the indicators' toggle) for the whole session, held by the
-  // first bar's window.
-  IdleInhibitor {
-    window: bars.instances.length > 0 ? bars.instances[0] : null
-    enabled: KeepAwake.enabled
-  }
-
   NotificationPopups {}
 
   Osd {
@@ -49,6 +41,11 @@ ShellRoot {
 
   IpcHandler {
     target: "subcult.shell"
+
+    // Used by the tests: keep-awake on or off.
+    function keepAwake(on: bool): void {
+      KeepAwake.enabled = on
+    }
 
     // Used by the tests: which outputs have a bar, the power state, and the
     // interval each widget timer runs at right now.
