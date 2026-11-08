@@ -4,3 +4,4 @@ singleton Alerts 1.0 Alerts.qml
 
 singleton Downloads 1.0 Downloads.qml
 singleton Soma 1.0 Soma.qml
+singleton Weather 1.0 Weather.qml

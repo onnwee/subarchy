@@ -283,6 +283,39 @@
         "kind": "bar-widget"
       }
     },
+    "subcult.weather": {
+      "dir": "weather",
+      "manifest": {
+        "id": "subcult.weather",
+        "name": "Weather",
+        "version": "1.0.0",
+        "api": 0,
+        "kind": "bar-widget",
+        "panel": true,
+        "cost": {
+          "timers": [
+            {
+              "name": "current",
+              "ac": 900,
+              "battery": 1800
+            },
+            {
+              "name": "almanac",
+              "ac": 7200,
+              "battery": 21600
+            }
+          ],
+          "network": [
+            "api.open-meteo.com"
+          ]
+        },
+        "settings": {
+          "location": "",
+          "name": "",
+          "units": "metric"
+        }
+      }
+    },
     "subcult.workspaces": {
       "dir": "workspaces",
       "manifest": {
