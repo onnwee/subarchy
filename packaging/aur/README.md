@@ -9,6 +9,8 @@ sha256 in the PKGBUILD.
 |---|---|---|---|
 | `limine-mkinitcpio-hook` | 1.40.0-1 | `94ffde9c` | UKIs and Limine entries (ADR 0007, 0008) |
 | `limine-snapper-sync` | 1.32.1-1 | `b3c82ade` | snapshot boot entries (ADR 0011) |
+| `evdi-dkms` | 1.15.1-1 | `9f1f2b56` | the DisplayLink kernel module, built by DKMS (ADR 0050; `subcult hw packages` adds it for a `17e9` USB adapter) |
+| `displaylink` | 6.4-1 | `8b49499d` | the DisplayLink manager from Synaptics' Ubuntu driver (custom EULA plus GPL2 and LGPL2.1 parts); `displaylink.service` is enabled at install when the adapter is present |
 
 Both build a native binary with GraalVM (downloaded by the PKGBUILD,
 sha256-pinned) and Gradle.

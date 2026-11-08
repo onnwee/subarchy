@@ -209,6 +209,15 @@ EOF
   if [[ -e $target/usr/lib/systemd/system/thermald.service ]]; then
     arch-chroot "$target" systemctl enable --quiet thermald
   fi
+  # Services the detected hardware needs (ADR 0050): displaylink for a
+  # DisplayLink adapter.
+  if command -v subcult-hw >/dev/null; then
+    local svc
+    while read -r svc; do
+      [[ -n $svc && -e $target/usr/lib/systemd/system/$svc.service ]] || continue
+      arch-chroot "$target" systemctl enable --quiet "$svc"
+    done < <(subcult-hw services)
+  fi
   # DNS through resolved's stub (ADR 0020); .local through Avahi.
   ln -sf ../run/systemd/resolve/stub-resolv.conf "$target/etc/resolv.conf"
   sed -i 's/^hosts: mymachines resolve/hosts: mymachines mdns_minimal [NOTFOUND=return] resolve/' \

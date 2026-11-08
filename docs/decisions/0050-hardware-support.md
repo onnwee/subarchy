@@ -74,5 +74,10 @@ port with them.
   `hw laptop-closed` reads the ACPI lid only. Not ported: `intel-ptl` (lspci
   text; needs PCI ids) and so `dell-xps-oled`, the `aarch64` board
   variants beyond Apple, and the platform `displays.conf` lists.
+- 2026-11-07: DisplayLink (issue #107): `evdi-dkms` and `displaylink` are
+  vendored under `packaging/aur/`; with a `17e9` USB adapter present,
+  `subcult hw packages` adds them (and the kernel headers DKMS needs),
+  `subcult hw services` lists `displaylink`, and the installer enables it.
+  The DKMS check after an update already covers evdi, being generic.
 
 Related: [[decision-map|Decision map]] · [[0005-firmware|ADR 0005]] · [[0006-gpu-drivers|ADR 0006]] · [[0049-installer|ADR 0049]]

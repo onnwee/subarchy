@@ -27,6 +27,9 @@ var routes = func() []dispatch.Described {
 		{Words: []string{"hw", "info"}, Metadata: dispatch.Metadata{
 			Summary: "Show the detected CPU, GPUs, radios, notes and matches", Args: "[--json]",
 			Examples: []string{"subcult hw info", "subcult hw info --json"}}},
+		{Words: []string{"hw", "services"}, Metadata: dispatch.Metadata{
+			Summary:  "List the system services the installer enables for this hardware",
+			Examples: []string{"subcult hw services"}}},
 		{Words: []string{"hw", "match"}, Metadata: dispatch.Metadata{
 			Summary: "Exit 0 when the product name or family contains the text", Args: "<text>",
 			Examples: []string{"subcult hw match XPS"}}},
@@ -49,11 +52,11 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return 0
 	}
 	if len(args) == 0 {
-		fmt.Fprintln(stderr, "Usage: subcult hw packages | info [--json] | match <text> | matches [--json] | <question>")
+		fmt.Fprintln(stderr, "Usage: subcult hw packages | services | info [--json] | match <text> | matches [--json] | <question>")
 		return 2
 	}
 	matcher, isMatcher := hw.FindMatcher(args[0])
-	if !isMatcher && args[0] != "packages" && args[0] != "info" && args[0] != "match" && args[0] != "matches" {
+	if !isMatcher && args[0] != "packages" && args[0] != "services" && args[0] != "info" && args[0] != "match" && args[0] != "matches" {
 		fmt.Fprintf(stderr, "subcult hw: unknown question %q; the questions are: %s\n", args[0], strings.Join(matcherNames(), ", "))
 		return 2
 	}
@@ -104,6 +107,12 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return 0
 	}
 	sel := hw.Select(m)
+	if args[0] == "services" {
+		for _, s := range sel.Services {
+			fmt.Fprintln(stdout, s)
+		}
+		return 0
+	}
 	if args[0] == "packages" {
 		for _, p := range sel.Packages {
 			fmt.Fprintln(stdout, p)
@@ -117,7 +126,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 		enc := json.NewEncoder(stdout)
 		enc.SetIndent("", "  ")
 		if err := enc.Encode(map[string]any{
-			"cpu": m.CPUVendor, "vm": m.VM, "hybrid": m.Hybrid(), "packages": sel.Packages, "notes": sel.Notes,
+			"cpu": m.CPUVendor, "vm": m.VM, "hybrid": m.Hybrid(), "packages": sel.Packages, "services": sel.Services, "notes": sel.Notes,
 			"vendor": m.Facts.SysVendor, "product": m.Facts.ProductName, "family": m.Facts.ProductFamily,
 			"matches": m.Matches(),
 		}); err != nil {
