@@ -6,6 +6,7 @@ import "../Commons/ConfigModel.js" as ConfigModel
 import "../Commons/LayoutModel.js" as LayoutModel
 import "../Commons/ThemeModel.js" as ThemeModel
 import "../Commons/ManifestModel.js" as ManifestModel
+import "../Commons/WorkspacesModel.js" as WorkspacesModel
 
 TestCase {
   name: "Models"
@@ -133,6 +134,29 @@ TestCase {
     compare(LayoutModel.pickScreen(["DP-1", "DP-2"], "DP-9", "DP-9"), "DP-1", "neither exists: the first")
     compare(LayoutModel.pickScreen(["DP-1"], "FALLBACK", ""), "DP-1", "FALLBACK is never chosen")
     compare(LayoutModel.pickScreen([], "DP-1", "DP-1"), "", "no outputs: none")
+  }
+
+  function test_workspaceNames() {
+    const sys = JSON.stringify({ workspaces: [{ id: 1, name: "Archive", short: "arc" }, { id: 2, name: "Door" }] })
+    const user = JSON.stringify({ workspaces: [{ id: 2, name: "Door list", short: "DOR" }, { id: 3, name: "Workbench · Development" },
+      { id: 11, name: "out of range" }, { id: "x", name: "bad id" }, { id: 4, name: "ctl\u0007chars\u001b", short: "toolongtoken" }] })
+    const names = WorkspacesModel.parse(sys, user)
+    compare(Object.keys(names).sort(), ["1", "2", "3", "4"])
+    compare(names[1], { name: "Archive", short: "ARC" }, "tokens are upper case")
+    compare(names[2].short, "DOR", "the user's entry replaces the system's")
+    compare(names[4], { name: "ctlchars", short: "TOOL" }, "control characters dropped, token cut to 4")
+    compare(WorkspacesModel.parse("{broken", ""), {})
+  }
+
+  function test_workspaceLabels() {
+    const names = WorkspacesModel.parse("", JSON.stringify({ workspaces: [{ id: 1, short: "ARC" }, { id: 3, name: "Workbench · Dev" }] }))
+    compare(WorkspacesModel.label(names, 1), "ARC")
+    compare(WorkspacesModel.label(names, 3), "WOR", "the first three letters of the name")
+    compare(WorkspacesModel.label(names, 5), "5")
+    compare(WorkspacesModel.label(names, 10), "0")
+    compare(WorkspacesModel.title(names, 3), "3 · Workbench · Dev")
+    compare(WorkspacesModel.title(names, 1), "Workspace 1", "a token alone has no name")
+    compare(WorkspacesModel.title(names, 10), "Workspace 0")
   }
 
   function test_widgetsFull() {

@@ -8,8 +8,8 @@ import qs.Commons
 import "OsdModel.js" as Model
 import "Commons/Glyphs.js" as Glyphs
 
-// Volume, brightness and caps-lock feedback near the bottom of the focused
-// output. Volume shows on its own when PipeWire reports a change. The
+// Volume, brightness, caps-lock and workspace-switch feedback near the
+// bottom of the focused output. Volume shows on its own when PipeWire reports a change. The
 // brightness keys arrive as global shortcuts: brightnessctl sets the level,
 // then the OSD reads it back from sysfs. Hidden after 1.5 s; the window
 // exists only while shown, on the output that was focused when it opened.
@@ -20,6 +20,8 @@ PanelWindow { // qmllint disable uncreatable-type
   property real value: 0
   property bool muted: false
   property var lastVolume: null
+  property string label: ""
+  property int lastWorkspace: -1
   // The backlight's sysfs folder, found once at start; empty without one.
   property string backlight: ""
 
@@ -47,6 +49,9 @@ PanelWindow { // qmllint disable uncreatable-type
         return
       osd.value = v
       osd.muted = false
+    } else if (k === "workspace") {
+      const ws = Hyprland.focusedWorkspace
+      osd.label = Workspaces.title(ws ? ws.id : osd.lastWorkspace)
     } else if (k === "volume" && osd.sink && osd.sink.audio) {
       osd.value = osd.sink.audio.volume
       osd.muted = osd.sink.audio.muted
@@ -135,6 +140,21 @@ PanelWindow { // qmllint disable uncreatable-type
     printErrors: false
   }
 
+  // A workspace switch shows its name for a moment (rice port:
+  // subcult.workspace-osd). The first focus at start is not a switch.
+  Connections {
+    target: Hyprland
+    function onFocusedWorkspaceChanged() {
+      const ws = Hyprland.focusedWorkspace
+      if (!ws || ws.id <= 0)
+        return
+      const first = osd.lastWorkspace < 0
+      osd.lastWorkspace = ws.id
+      if (!first)
+        osd.show("workspace")
+    }
+  }
+
   Timer {
     id: hide
     interval: 1500
@@ -160,6 +180,7 @@ PanelWindow { // qmllint disable uncreatable-type
       spacing: Style.spacing
 
       Text {
+        visible: osd.kind !== "workspace"
         anchors.verticalCenter: parent.verticalCenter
         text: osd.kind === "volume" ? Glyphs.volume(osd.value, osd.muted)
           : osd.kind === "brightness" ? Glyphs.brightness(osd.value) : Glyphs.capsLock
@@ -168,8 +189,19 @@ PanelWindow { // qmllint disable uncreatable-type
         font.pixelSize: Style.iconSize + 4
       }
 
+      Text {
+        visible: osd.kind === "workspace"
+        anchors.verticalCenter: parent.verticalCenter
+        text: osd.label
+        textFormat: Text.PlainText
+        color: Theme.text
+        font.family: Style.uiFontFamily
+        font.pixelSize: Style.fontSize + 3
+        font.bold: true
+      }
+
       Rectangle {
-        visible: osd.kind !== "capslock"
+        visible: osd.kind !== "capslock" && osd.kind !== "workspace"
         anchors.verticalCenter: parent.verticalCenter
         width: 200
         height: 6

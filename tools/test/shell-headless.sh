@@ -398,6 +398,18 @@ st=$(status "$home1")
 [[ $(json 'd.get("panel")') == "" ]] || fail "the panel did not close: $st"
 check_log "$work/qs1.log"
 
+# Workspace names written after start reach the bar's labels; the switch
+# overlay answers its OSD call.
+mkdir -p "$home1/.config/subcult/shell"
+printf '{"workspaces": [{"id": 3, "name": "Workbench", "short": "wrk"}]}\n' >"$home1/.config/subcult/shell/workspaces.json"
+sleep 2
+st=$(status "$home1")
+[[ $(json 'd["workspaceLabels"].get("3")') == WRK ]] || fail "a workspace name did not reach the bar: $st"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.osd flash workspace >/dev/null 2>&1 || fail "the OSD has no workspace kind"
+st=$(status "$home1")
+[[ $(json 'd.get("osd")') == workspace ]] || fail "the workspace OSD did not show: $st"
+sleep 2
+
 # 2. A palette written after start applies without a restart.
 mkdir -p "$home1/.config/subcult/theme"
 printf '{"schema": 1, "colors": {"base": "#FF0000", "surface0": "#00FF00"}}\n' >"$home1/.config/subcult/theme/palette.json"

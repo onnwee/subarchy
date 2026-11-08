@@ -51,7 +51,7 @@ no process. The names are `launcher-toggle`, `alias.<name>`, `altswitch-next`,
 'hl.dsp.global("subcult:altswitch-next")'` sends one by hand.
 
 IPC: `quickshell ipc -p /usr/share/subcult/shell show` lists the targets
-(`subcult.shell status`, `subcult.osd flash <volume|brightness|capslock>`,
+(`subcult.shell status`, `subcult.osd flash <volume|brightness|capslock|workspace>`,
 `subcult.altswitch next|prev|commit|cancel`,
 `subcult.launcher open|close|toggle|clearHistory|search <query>|type <query>|enter|hotkey <alias>|state`).
 Tests and scripts use it; the key bindings do not.
