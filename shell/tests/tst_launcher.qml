@@ -323,6 +323,21 @@ TestCase {
     compare(Model.rank(list, [], {}, "heart", 0, 10).map(e => e.name), ["red heart"])
   }
 
+  function test_ask() {
+    compare(Model.agent('{"id": "claude-code", "name": "Claude Code", "argv": ["claude", "-p"]}'), { id: "claude-code", name: "Claude Code" })
+    compare(Model.agent(""), null)
+    compare(Model.agent('{"id": "", "name": "x"}'), null)
+    compare(Model.agent("subcult app: no default agent"), null, "an error message is no agent")
+    const row = Model.askRow({ id: "claude-code", name: "Claude Code" }, "what is zram")
+    compare(row.kind, "ask")
+    compare(row.id, "ask:claude-code")
+    compare(row.name, "Ask Claude Code: \u201cwhat is zram\u201d")
+    verify(row.genericName.indexOf("leaves this machine") >= 0, "the row says the text leaves the machine")
+    compare(row.text, "what is zram")
+    compare(Model.askRow(null, "x"), null, "no agent, no row")
+    compare(Model.askRow({ id: "a", name: "A" }, ""), null)
+  }
+
   function test_symbols() {
     const list = Model.symbols('{"symbols": [{"char": "—", "name": "em dash", "group": "Punctuation"}, {"char": "→", "name": "right arrow"}, {"char": "", "name": "x"}, {"name": "no char"}]}')
     compare(list.map(x => x.char), ["—", "→"])

@@ -48,6 +48,11 @@ cp -r "$src" "$shell"
 mkdir -p "$work/bin"
 cat >"$work/bin/subcult" <<'STUB'
 #!/bin/sh
+# The default agent for the launcher's Ask row, and its answer.
+if [ "$1 $2 $3" = "app ask --json" ]; then
+  printf '{"id": "stub-agent", "name": "Stub Agent", "argv": ["echo"]}\n'; exit 0
+fi
+if [ "$1 $2" = "app ask" ]; then shift 2; [ "$1" = "--" ] && shift; echo "answer to: $*"; exit 0; fi
 [ "$1 $2" = "commands --json" ] || exit 2
 cat <<'JSON'
 {"ok": true, "commands": [
@@ -311,7 +316,7 @@ ls=$(launcher state)
 [[ $(python3 -c "import json,sys; print(json.loads(sys.argv[1])['pending'])" "$ls") == "subcult app remove" ]] ||
   fail "a dangerous command did not ask for confirmation: $ls"
 ls=$(lstate "zzqx nothing here")
-[[ $(row '[(x["kind"], x["url"]) for x in r]') == "[('web', 'https://duckduckgo.com/?q=zzqx%20nothing%20here')]" ]] ||
+[[ $(row '[(x["kind"], x["url"]) for x in r if x["kind"] != "ask"]') == "[('web', 'https://duckduckgo.com/?q=zzqx%20nothing%20here')]" ]] ||
   fail "no match does not fall back to web search: $ls"
 ls=$(lstate "@yt cats")
 [[ $(row 'r[0]["url"]') == "https://www.youtube.com/results?search_query=cats" ]] || fail "@yt is not a quicklink: $ls"
@@ -345,6 +350,18 @@ else
   [[ -z ${CI:-} ]] || fail "unicode-emoji not installed"
   echo "shell-headless: unicode-emoji not installed, emoji not checked"
 fi
+# Ask AI: the last row of a root search names the agent and says the text
+# leaves the machine; Enter on it asks, and the answer lands in the preview.
+ls=$(lstate "what is subarchy")
+[[ $(row 'r[-1]["kind"]') == ask && $(row 'r[-1]["name"].startswith("Ask Stub Agent: ") and "what is subarchy" in r[-1]["name"]') == True ]] ||
+  fail "the Ask row is not the last root result: $ls"
+launcher last >/dev/null
+launcher enter >/dev/null
+for _ in $(seq 20); do
+  [[ $(lfield preview) == "answer to: what is subarchy" ]] && break
+  sleep 0.5
+done
+[[ $(lfield preview) == "answer to: what is subarchy" ]] || fail "the agent's answer did not reach the preview: $(launcher state)"
 launcher close >/dev/null
 
 # Script commands with Raycast headers, aliases and snippets. The script
