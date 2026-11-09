@@ -1,0 +1,4 @@
+#%PAM-1.0
+# Subarchy's lock screen (ADR 0036): the local password stack.
+auth     include  system-auth
+account  include  system-auth

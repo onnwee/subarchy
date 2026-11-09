@@ -1,0 +1,18 @@
+[Unit]
+Description=Subarchy lock screen (ADR 0036)
+Documentation=file:///usr/share/subcult/lock
+PartOf=graphical-session.target
+After=graphical-session.target
+Requisite=graphical-session.target
+
+[Service]
+Type=exec
+ExecStart=/usr/bin/quickshell -n -p /usr/share/subcult/lock
+Environment=QS_NO_RELOAD_POPUP=1
+Environment=QS_DISABLE_FILE_WATCHER=1
+Environment=QS_DISABLE_CRASH_HANDLER=1
+# The program exits on its own once unlocked. If it dies while locked the
+# compositor keeps the session locked with nothing drawn; it comes back and
+# takes the lock over.
+Restart=on-failure
+RestartSec=1

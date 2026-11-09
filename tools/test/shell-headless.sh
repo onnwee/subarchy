@@ -886,4 +886,28 @@ shot HEADLESS-1
 warnings=$(grep -c 'subcult shell config' "$work/qs2.log" || true)
 [[ $warnings == 1 ]] || fail "want exactly one config warning, got $warnings"
 
+# The lock program (ADR 0036): its own Quickshell program locks the
+# session, reports it, and unlocks through PAM (a permit stack here) when
+# the password is typed and entered; then it exits.
+if command -v wtype >/dev/null; then
+  mkdir -p "$work/pam"
+  printf 'auth required pam_permit.so\naccount required pam_permit.so\n' >"$work/pam/subcult-test"
+  SUBCULT_LOCK_PAM=subcult-test SUBCULT_LOCK_PAM_DIR=$work/pam HOME=$home1 \
+    quickshell -n -p "$root/lock" >"$work/lock.log" 2>&1 &
+  lockpid=$!
+  pids+=("$lockpid")
+  for _ in $(seq 30); do lk=$(HOME=$home1 quickshell ipc -p "$root/lock" call subcult.lock status 2>/dev/null) && [[ $lk == *'"locked":true'* ]] && break; sleep 0.5; done
+  [[ $lk == *'"locked":true'* && $lk == *'"prompt":false'* ]] || fail "the lock did not lock the session: ${lk:-no answer} $(tail -3 "$work/lock.log")"
+  wtype -s 150 'secret' -k Return
+  for _ in $(seq 30); do kill -0 "$lockpid" 2>/dev/null || break; sleep 0.5; done
+  if kill -0 "$lockpid" 2>/dev/null; then
+    lk=$(HOME=$home1 quickshell ipc -p "$root/lock" call subcult.lock status 2>/dev/null)
+    fail "the lock did not unlock on the password: $lk $(tail -3 "$work/lock.log")"
+  fi
+  if wait "$lockpid"; then echo "lock: unlocked and exited"; else fail "the lock program exited with an error: $(tail -3 "$work/lock.log")"; fi
+  grep -nE 'ERROR|TypeError|ReferenceError' "$work/lock.log" && fail "QML errors in the lock log"
+else
+  echo "shell-headless: wtype not installed, lock check skipped"
+fi
+
 echo "shell-headless: ok"

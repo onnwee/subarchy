@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import atexit
+import json
 import os
 import re
 import shutil
@@ -320,6 +321,21 @@ def boot(disk: Path, vars_file: Path) -> bool:
             " | grep -vE 'Failed to (connect|create) pipewire context|MESA|ZINK'"
             " | grep -E 'ERROR|TypeError|ReferenceError|is not a type|Cannot assign' | head -5")
         results["layers"] = serial.run("hyprctl -i 0 layers | grep -c 'namespace: subcult-bar'")
+        # Idle (ADR 0036): hypridle runs from the generated config; the
+        # display-power dispatcher the config uses is accepted.
+        results["idle"] = serial.run(
+            "systemctl --user is-active subcult-idle.service; grep -c 'timeout = 420' /run/user/$(id -u)/subcult/hypridle.conf;"
+            " hyprctl -i 0 dispatch 'hl.dsp.dpms({ mode = \"off\" })'; sleep 1; hyprctl -i 0 dispatch 'hl.dsp.dpms({ mode = \"on\" })'", timeout=60)
+        # The lock (ADR 0036): its own unit locks the session; the shell dying
+        # leaves it locked; the password typed into it unlocks and the
+        # program exits; the shell comes back on its own.
+        lock_status = "quickshell ipc --any-display -p /usr/share/subcult/lock call subcult.lock status"
+        results["lock"] = serial.run(
+            f"systemctl --user start subcult-lock.service; sleep 4; {lock_status}; echo ---;"
+            f" systemctl --user kill subcult-shell.service; sleep 4; {lock_status}; echo ---;"
+            f" W=$(ls /run/user/$(id -u) | grep -m1 '^wayland-[0-9]'); WAYLAND_DISPLAY=$W wtype -s 200 '{PASSWORD}' -k Return; sleep 5;"
+            " systemctl --user is-active subcult-lock.service; systemctl --user is-active subcult-shell.service",
+            timeout=120)
         results["fonts"] = serial.run(
             "for r in monospace sans-serif serif; do fc-match -f '%{family[0]}\\n' $r; done")
         results["gtk"] = serial.run(
@@ -465,6 +481,9 @@ def boot(disk: Path, vars_file: Path) -> bool:
         and r["plymouth"].strip().isdigit() and int(r["plymouth"].strip()) > 0,
         "SDDM greeter running": "sddm-greeter" in r["greeter"],
         "greeter drew something": r["greeter_colours"] > 1,
+        "idle service runs the generated hypridle config, dpms dispatch accepted":
+            r["idle"].strip().splitlines()[0:2] == ["active", "1"] and r["idle"].strip().splitlines()[-2:] == ["ok", "ok"],
+        "lock locks, survives the shell dying, unlocks with the password": lock_ok(r["lock"]),
         "Hyprland session started": r["hyprland"].strip() != "",
         "session runs under uwsm": "wayland-wm@" in r["uwsm"],
         "Subarchy Hyprland defaults loaded (flat look)": "gap data: 0 0 0 0" in r["hypr_opts"]
@@ -676,6 +695,20 @@ def boot_secureboot(disk: Path, vars_file: Path) -> bool:
     for name, ok in checks.items():
         print(f"install-test: {'ok  ' if ok else 'FAIL'} {name}")
     return all(checks.values())
+
+
+def lock_ok(out: str) -> bool:
+    """Two lock statuses (locked, still locked after the shell died), then the units after the unlock."""
+    parts = [p.strip() for p in out.split("---")]
+    if len(parts) < 3:
+        return False
+    try:
+        first = json.loads(parts[0].splitlines()[-1])
+        second = json.loads(parts[1].splitlines()[-1])
+    except (ValueError, IndexError):
+        return False
+    tail = parts[2].splitlines()
+    return first.get("locked") is True and second.get("locked") is True and tail[-2:] == ["inactive", "active"]
 
 
 def channel_ok(out: str) -> bool:

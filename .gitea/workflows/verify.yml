@@ -54,7 +54,7 @@ jobs:
     steps:
       - name: Install Quickshell, Qt and the headless test tools
         run: |
-          pacman -Syu --noconfirm --needed git make nodejs python quickshell qt6-declarative sway grim imagemagick libnotify ttf-dejavu libqalculate fd unicode-emoji
+          pacman -Syu --noconfirm --needed git make nodejs python quickshell qt6-declarative sway grim imagemagick libnotify ttf-dejavu libqalculate fd unicode-emoji wtype
           # Arch gives sway cap_sys_nice as a file capability, which a container
           # may not grant; without it the binary cannot start at all.
           setcap -r /usr/bin/sway
