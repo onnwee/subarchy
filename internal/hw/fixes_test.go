@@ -256,7 +256,7 @@ func TestFixesVendors(t *testing.T) {
 			}
 			if c.file != "" {
 				target := t.TempDir()
-				written, err := Apply(target, Fixes(m))
+				written, _, err := Apply(target, Fixes(m))
 				if err != nil || !contains(written, c.file) {
 					t.Errorf("apply: %v %v", written, err)
 				}
