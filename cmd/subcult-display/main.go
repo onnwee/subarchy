@@ -26,6 +26,11 @@ import (
 )
 
 var routes = []dispatch.Described{
+	{Words: []string{"display", "scale"}, Metadata: dispatch.Metadata{
+		Summary: "Set the focused display's scale, or step through Omarchy's presets", Args: "<up|down|1..4>",
+		Examples: []string{"subcult display scale up", "subcult display scale 1.6"}}},
+	{Words: []string{"display", "lid"}, Metadata: dispatch.Metadata{
+		Summary: "Keep external displays running with the laptop panel off while docked", Args: "<open|closed>", Hidden: true}},
 	{Words: []string{"display", "profile", "save"}, Metadata: dispatch.Metadata{
 		Summary: "Save the connected monitors' layout and workspaces under a name", Args: "<name>",
 		Examples: []string{"subcult display profile save home-dock"}}},
@@ -78,6 +83,8 @@ func hyprctl(args ...string) error {
 type app struct {
 	stdout, stderr io.Writer
 	store          string
+	lidFile        string
+	lidClosed      func() (bool, error)
 	hypr           Hypr
 	// events feeds "monitoradded>>…" lines to watch; nil means Hyprland's socket.
 	events func() (io.ReadCloser, error)
@@ -110,6 +117,19 @@ func (a *app) run(args []string) int {
 	}
 	if len(args) == 0 {
 		return a.usage()
+	}
+	if len(args) == 2 && args[0] == "scale" {
+		return a.scale(args[1])
+	}
+	if len(args) == 2 && args[0] == "lid" {
+		switch args[1] {
+		case "closed":
+			return a.lid(true)
+		case "open":
+			return a.lid(false)
+		default:
+			return a.usage()
+		}
 	}
 	store, err := display.Load(a.store)
 	if err != nil {
@@ -245,11 +265,23 @@ func (a *app) watch(store display.Store) int {
 		return a.fail(err)
 	}
 	defer conn.Close()
+	ms, _, err := a.live()
+	if err != nil {
+		return a.fail(err)
+	}
+	if p, ok := store.Match(ms); ok {
+		if code := a.apply(p, ms, false); code != 0 {
+			return code
+		}
+	}
+	if code := a.syncLid(); code != 0 {
+		return code
+	}
 	debounce := time.Duration(store.Debounce) * time.Millisecond
 	if debounce <= 0 {
 		debounce = display.DefaultDebounceMs * time.Millisecond
 	}
-	var last []string
+	last := display.Identity(ms)
 	sc := bufio.NewScanner(conn)
 	for sc.Scan() {
 		if !display.MonitorEvent(sc.Text()) {
@@ -276,9 +308,12 @@ func (a *app) watch(store display.Store) int {
 		p, ok := store.Match(ms)
 		if !ok {
 			fmt.Fprintf(a.stdout, "monitors changed (%s): no saved profile, left as is\n", strings.Join(id, "; "))
-			continue
+		} else if code := a.apply(p, ms, false); code != 0 {
+			return code
 		}
-		a.apply(p, ms, false)
+		if code := a.syncLid(); code != 0 {
+			return code
+		}
 	}
 	return 0
 }
@@ -294,7 +329,7 @@ func hyprlandEvents() (io.ReadCloser, error) {
 }
 
 func (a *app) usage() int {
-	fmt.Fprintln(a.stderr, "Usage: subcult display profile save <name> | list | apply [<name>] [--dry-run] | remove <name>")
+	fmt.Fprintln(a.stderr, "Usage: subcult display scale <up|down|1..4> | lid <open|closed> | profile save <name> | list | apply [<name>] [--dry-run] | remove <name>")
 	return 2
 }
 
@@ -309,6 +344,15 @@ func main() {
 		fmt.Fprintln(os.Stderr, "subcult display:", err)
 		os.Exit(1)
 	}
-	a := &app{stdout: os.Stdout, stderr: os.Stderr, store: filepath.Join(config, "subcult", "display", "profiles.json"), hypr: realHypr{}, sleep: time.Sleep}
+	runtime := os.Getenv("XDG_RUNTIME_DIR")
+	if runtime == "" {
+		runtime, err = os.UserCacheDir()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "subcult display:", err)
+			os.Exit(1)
+		}
+	}
+	a := &app{stdout: os.Stdout, stderr: os.Stderr, store: filepath.Join(config, "subcult", "display", "profiles.json"),
+		lidFile: filepath.Join(runtime, "subcult", "display-lid.json"), lidClosed: lidClosed, hypr: realHypr{}, sleep: time.Sleep}
 	os.Exit(a.run(os.Args[1:]))
 }

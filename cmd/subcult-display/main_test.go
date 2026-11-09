@@ -16,14 +16,18 @@ const laptopJSON = `[{"id":0,"name":"eDP-1","description":"Samsung Display Corp.
 const wsJSON = `[{"id":1,"monitor":"DP-3"},{"id":2,"monitor":"eDP-1"}]`
 
 type fakeHypr struct {
-	monitors string
-	evals    []string
-	dispatch []string
+	monitors   string
+	workspaces string
+	evals      []string
+	dispatch   []string
 }
 
 func (f *fakeHypr) Query(args ...string) ([]byte, error) {
 	if args[0] == "monitors" {
 		return []byte(f.monitors), nil
+	}
+	if f.workspaces != "" {
+		return []byte(f.workspaces), nil
 	}
 	return []byte(wsJSON), nil
 }
@@ -102,8 +106,8 @@ func TestWatchAppliesOnMonitorEvents(t *testing.T) {
 	if calls != 2 {
 		t.Errorf("debounce waited %d times, want 2 (one per monitor event)", calls)
 	}
-	if len(h.evals) != 2 || len(h.dispatch) != 2 {
-		t.Errorf("the dock profile applied once: evals=%v dispatch=%v", h.evals, h.dispatch)
+	if len(h.evals) != 3 || len(h.dispatch) != 3 {
+		t.Errorf("the initial laptop profile and dock profile applied once each: evals=%v dispatch=%v", h.evals, h.dispatch)
 	}
 	if !strings.Contains(out.String(), "applied home-dock") {
 		t.Errorf("out = %q", out.String())

@@ -26,6 +26,11 @@ end
 
 sub.bind("SUPER + S", "Scratchpad", hl.dsp.workspace.toggle_special("scratchpad"))
 
+sub.bind("SUPER + code:61", "Increase display scale", "subcult display scale up")
+sub.bind("SUPER + ALT + code:61", "Decrease display scale", "subcult display scale down")
+sub.bind("switch:on:Lid Switch", nil, "subcult display lid closed", { locked = true })
+sub.bind("switch:off:Lid Switch", nil, "subcult display lid open", { locked = true })
+
 sub.bind("SUPER + mouse:272", "Move window", hl.dsp.window.drag(), { mouse = true })
 sub.bind("SUPER + mouse:273", "Resize window", hl.dsp.window.resize(), { mouse = true })
 
