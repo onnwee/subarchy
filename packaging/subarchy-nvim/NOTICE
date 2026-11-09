@@ -6,6 +6,9 @@ prebuilt in this package. Every other file of the starter is unchanged.
 LazyVim itself (https://github.com/LazyVim/LazyVim) is Apache License 2.0.
 The cached plugins keep their own licence files in their directories.
 
+lua/config/lazy.lua also keeps /usr/share/nvim/site on the runtime path,
+which lazy.nvim's reset would drop, so the system's colour schemes load.
+
 lua/plugins/subarchy.lua is Subarchy's own plugin layer (not from the
 starter): the dashboard mark and the colour scheme that follows the active
 theme.

@@ -14,7 +14,7 @@
 # licences inside their directories.
 pkgname=subarchy-nvim
 pkgver=2024.12.11
-pkgrel=2
+pkgrel=3
 pkgdesc="Neovim with LazyVim, prebuilt: the starter config and pinned plugins for new users"
 arch=('any')
 url="https://github.com/LazyVim/starter"

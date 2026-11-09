@@ -35,6 +35,9 @@ require("lazy").setup({
   },
   performance = {
     rtp = {
+      -- lazy.nvim resets the runtime path to the config and its plugins;
+      -- Subarchy's colour schemes live in the system site directory.
+      paths = { "/usr/share/nvim/site" },
       -- disable some rtp plugins
       disabled_plugins = {
         "gzip",
