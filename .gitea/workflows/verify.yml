@@ -5,8 +5,7 @@ on:
     branches: [main]
   pull_request:
 
-# The runner allows 512 tasks; tools otherwise size their worker pools from
-# the host's CPU count rather than the job's two-CPU quota.
+# Bound worker pools to the job quota rather than the host CPU count.
 env:
   GOMAXPROCS: "2"
   GOFLAGS: "-p=2"
@@ -43,9 +42,16 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: archlinux:latest
+      # Reap orphaned package-hook processes and leave room for build/render
+      # threads. The runner default of 512 prevented even checkout from forking.
+      options: --init --pids-limit=1024
     steps:
       - name: Install build tools
         run: pacman -Syu --noconfirm --needed base-devel go git nodejs pacman-contrib fakeroot hypridle librsvg xorg-xcursorgen hyprcursor python lua python-pyte python-pillow ffmpeg ttf-dejavu qt6-multimedia
+      - name: Check process budget
+        run: |
+          cat /sys/fs/cgroup/pids.current /sys/fs/cgroup/pids.max
+          ps -eLo comm= | sort | uniq -c | sort -nr | head -10
       - uses: actions/checkout@v4
       - name: Build and check the package as a normal user
         run: |
@@ -59,6 +65,9 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: archlinux:latest
+      # Reap orphaned package-hook processes and leave room for build/render
+      # threads. The runner default of 512 prevented even checkout from forking.
+      options: --init --pids-limit=1024
     steps:
       - name: Install Quickshell, Qt and the headless test tools
         run: |
