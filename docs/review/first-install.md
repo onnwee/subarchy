@@ -18,6 +18,17 @@ logged into both systems. The installer retained Omarchy as the firmware
 default; the owner later selected Subarchy first on November 9, as recorded
 below. Subarchy is running for owner testing.
 
+**Latest resume result, November 9 CST:** the owner completed a fresh lid
+close/open cycle with a visible lock, working password input and no Hyprland
+warning flash. The tested repair explicitly sets DPMS `action`, restores
+lock-view focus on click/activation/Tab, and waits for the Wayland lock
+notification before sleep. Local service overrides retain this candidate
+across logins while [PR #229](https://git.subcult.tv/subculture-collective/subarchy/pulls/229)
+awaits CI and package publication. The installation coordinator will retire
+those overrides after verifying the fixed installed package. The earlier
+failed cycles below remain diagnostic history; other hardware acceptance
+checks remain open.
+
 Issue [#75](https://git.subcult.tv/subculture-collective/subarchy/issues/75)
 stays open until the owner records the remaining hardware results below.
 Installation, local checks, hosted CI, package publication and physical

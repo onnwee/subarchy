@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import QtQuick.Window
 import QtMultimedia
 import Quickshell
 import "LockModel.js" as Model
@@ -23,6 +24,12 @@ FocusScope {
   signal playbackChanged(bool active)
 
   focus: true
+  activeFocusOnTab: true
+  Component.onCompleted: view.forceActiveFocus()
+  Window.onActiveChanged: {
+    if (Window.active)
+      view.forceActiveFocus(Qt.ActiveWindowFocusReason)
+  }
   Keys.onPressed: (event) => {
     view.key(Model.keyName(event.key), event.text)
     event.accepted = true
@@ -68,7 +75,10 @@ FocusScope {
       if (havePosition) view.wake()
       havePosition = true
     }
-    onPressed: view.wake()
+    onPressed: {
+      view.forceActiveFocus(Qt.MouseFocusReason)
+      view.wake()
+    }
     onWheel: view.wake()
   }
 
@@ -121,11 +131,12 @@ FocusScope {
         height: 40
         color: view.theme.surface || "#1F1830"
         border.width: 1
-        border.color: view.lockState.checking ? (view.theme.muted || "#5E5570") : (view.theme.border || "#8F4BC8")
+        border.color: view.lockState.checking ? (view.theme.muted || "#5E5570")
+          : view.activeFocus ? (view.theme.accent || "#8B5CF6") : (view.theme.border || "#8F4BC8")
 
         Text {
           anchors.centerIn: parent
-          text: view.lockState.checking ? "Checking…" : Model.bullets(view.lockState.password.length)
+          text: view.lockState.checking ? "Checking…" : view.lockState.password.length > 0 ? Model.bullets(view.lockState.password.length) : "Password"
           color: view.theme.text || "#F0ECE4"
           font.family: "monospace"
           font.pixelSize: 18

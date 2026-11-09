@@ -81,6 +81,7 @@ jobs:
           git config --global --add safe.directory "$PWD"
           make shell-test shell-lint shell-index-check
           tools/test/dell-power-refresh.sh
+          tools/test/lock-focus-test.sh
           python3 -m unittest discover -s tools/bluetooth -p 'test_*.py' -v
           tools/test/bluetooth-panel-test.sh build/bluetooth-preview
           tools/test/battery-panel-test.sh build/battery-preview
