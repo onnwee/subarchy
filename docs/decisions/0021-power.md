@@ -65,4 +65,20 @@ Decision map item S7. Accepted 2026-11-06.
   the live tests stop at resolving the family; parsing is covered with
   built messages.
 
+- 2026-11-08: the Dell add-on (issue #91). `subcult dell power`
+  (`bin/subcult-dell-power`) reads and sets the firmware's platform profile
+  (quiet, cool, balanced, performance; the daemon's power-saver, balanced or
+  performance goes with it) and the dell-wmi-sysman charging mode (adaptive,
+  standard, express, primarily AC, custom with start and stop thresholds,
+  checked against the firmware's range, step and five-point gap). A udev
+  rule and a short oneshot service hand those sysfs files to wheel, so the
+  bar writes them as the user; no sudo rule. The `dell-power` widget and
+  panel ship off: `subcult hw apply` enables them on a machine with the
+  dell-pc platform profile through the machine layer of the bar config
+  (`/etc/subcult/shell/bar.json`, [[0048-config-ownership|ADR 0048]]). The
+  state is read when the widget appears, when the panel opens and after a
+  change; nothing polls. Tested against a fake sysfs tree
+  (`tools/test/dell-power-test.sh` and the headless shell check); no Dell
+  was at hand.
+
 Related: [[decision-map|Decision map]] · [[0014-swap-hibernation|ADR 0014]]

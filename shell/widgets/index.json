@@ -115,6 +115,17 @@
         "kind": "bar-widget"
       }
     },
+    "subcult.dell-power": {
+      "dir": "dell-power",
+      "manifest": {
+        "id": "subcult.dell-power",
+        "name": "Dell power",
+        "version": "1.0.0",
+        "api": 0,
+        "kind": "bar-widget",
+        "panel": true
+      }
+    },
     "subcult.display": {
       "dir": "display",
       "manifest": {

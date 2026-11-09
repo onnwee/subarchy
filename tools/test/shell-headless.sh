@@ -69,6 +69,8 @@ if [ "$1 $2 $3" = "clipboard list --json" ]; then
 fi
 if [ "$1 $2" = "clipboard show" ]; then printf 'hello world'; exit 0; fi
 if [ "$1 $2" = "clipboard copy" ] || [ "$1 $2" = "clipboard clear" ]; then echo "$2 $3" >>"$HOME/clipboard-actions"; exit 0; fi
+# Dell power: the real command against the fake sysfs tree below.
+if [ "$1 $2" = "dell power" ]; then shift 2; exec "$SUBCULT_DELL_POWER" "$@"; fi
 # The thermal watch: a hot trip crossed when the test asks for it (a
 # trigger file), then the same trip again, down and up, which stays quiet.
 if [ "$1 $2" = "thermal watch" ]; then
@@ -216,6 +218,29 @@ chmod +x "$work/bin/mpv"
 # from HOME, and the test's HOME is empty, so `fd` through the shim fails
 # and the launcher's file search finds nothing.
 export PATH="$work/bin:/usr/bin:$PATH"
+
+# The machine layer of the bar config (written late in the test) and the
+# Dell firmware files `subcult dell power` reads and writes: a fake sysfs,
+# with a stub powerprofilesctl that records the profile it was given.
+export SUBCULT_ETC="$work/etc" SUBCULT_SYSFS="$work/sysfs" SUBCULT_DELL_POWER="$root/bin/subcult-dell-power" PPD_STATE="$work/ppd"
+dell="$work/sysfs/class"
+mkdir -p "$dell/platform-profile/platform-profile-0" "$dell/firmware-attributes/dell-wmi-sysman/attributes"/{PrimaryBattChargeCfg,CustomChargeStart,CustomChargeStop}
+echo dell-pc >"$dell/platform-profile/platform-profile-0/name"
+echo "quiet cool balanced performance" >"$dell/platform-profile/platform-profile-0/choices"
+echo balanced >"$dell/platform-profile/platform-profile-0/profile"
+dellattrs="$dell/firmware-attributes/dell-wmi-sysman/attributes"
+echo Adaptive >"$dellattrs/PrimaryBattChargeCfg/current_value"
+echo "Adaptive;Standard;Express;PrimAcUse;Custom" >"$dellattrs/PrimaryBattChargeCfg/possible_values"
+for kv in current_value=50 min_value=50 max_value=95 scalar_increment=5; do echo "${kv#*=}" >"$dellattrs/CustomChargeStart/${kv%%=*}"; done
+for kv in current_value=80 min_value=55 max_value=100 scalar_increment=5; do echo "${kv#*=}" >"$dellattrs/CustomChargeStop/${kv%%=*}"; done
+cat >"$work/bin/powerprofilesctl" <<'STUB'
+#!/bin/sh
+case $1 in
+  get) cat "$PPD_STATE" 2>/dev/null || echo balanced ;;
+  set) echo "$2" >"$PPD_STATE" ;;
+esac
+STUB
+chmod +x "$work/bin/powerprofilesctl"
 mkdir -p "$shell/widgets/test-probe"
 cat >"$shell/widgets/test-probe/manifest.json" <<'EOF'
 {"id": "subcult.test-probe", "name": "Test probe", "version": "0.0.0", "api": 0, "kind": "bar-widget",
@@ -909,5 +934,39 @@ if command -v wtype >/dev/null; then
 else
   echo "shell-headless: wtype not installed, lock check skipped"
 fi
+# Dell power (ADR 0021), off by default: the machine layer `subcult hw
+# apply` writes under /etc enables it; it reads the (fake) firmware, shows
+# the profile, sets one through the command (the stub daemon follows), sets
+# a custom charging window, and leaves the bar when the layer goes.
+mkdir -p "$work/etc/shell"
+printf '{"#": "# Subarchy hardware fix dell-power (ADR 0021)", "enable": ["subcult.dell-power"]}\n' >"$work/etc/shell/bar.json"
+printf '{"layout": {"left": ["subcult.test-probe"]}}\n' >"$home1/.config/subcult/shell/bar.json"
+sleep 2
+st=$(status "$home1")
+[[ $(json '"subcult.dell-power" in d["shown"]["HEADLESS-1"]') == True ]] || fail "the machine layer did not enable dell-power: $st"
+for _ in $(seq 20); do dp=$(HOME=$home1 quickshell ipc -p "$shell" call subcult.dell-power state); [[ $dp == *'"available":true'* ]] && break; sleep 0.5; done
+[[ $(HOME=$home1 quickshell ipc -p "$shell" call subcult.shell widgetProperty subcult.dell-power label) == Balanced ]] ||
+  fail "dell-power label: $(HOME=$home1 quickshell ipc -p "$shell" call subcult.shell widgetProperty subcult.dell-power label) ($dp)"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.dell-power setProfile quiet >/dev/null
+for _ in $(seq 20); do [[ $(<"$dell/platform-profile/platform-profile-0/profile") == quiet ]] && break; sleep 0.5; done
+[[ $(<"$dell/platform-profile/platform-profile-0/profile") == quiet && $(<"$work/ppd") == power-saver ]] || fail "quiet did not reach the firmware and the daemon: $(cat "$dell/platform-profile/platform-profile-0/profile" "$work/ppd" 2>&1)"
+for _ in $(seq 20); do [[ $(HOME=$home1 quickshell ipc -p "$shell" call subcult.shell widgetProperty subcult.dell-power label) == Quiet ]] && break; sleep 0.5; done
+[[ $(HOME=$home1 quickshell ipc -p "$shell" call subcult.shell widgetProperty subcult.dell-power label) == Quiet ]] || fail "the label did not follow the change"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.dell-power setCharging custom 60 90 >/dev/null
+for _ in $(seq 20); do [[ $(<"$dellattrs/CustomChargeStop/current_value") == 90 ]] && break; sleep 0.5; done
+[[ $(<"$dellattrs/PrimaryBattChargeCfg/current_value") == Custom && $(<"$dellattrs/CustomChargeStart/current_value") == 60 && $(<"$dellattrs/CustomChargeStop/current_value") == 90 ]] ||
+  fail "the custom charging window did not reach the firmware: $(cat "$dellattrs/PrimaryBattChargeCfg/current_value" "$dellattrs/CustomChargeStart/current_value" "$dellattrs/CustomChargeStop/current_value" | tr '\n' ' ')"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.dell-power setCharging custom 80 80 >/dev/null
+for _ in $(seq 20); do dp=$(HOME=$home1 quickshell ipc -p "$shell" call subcult.dell-power state); [[ $dp == *'at least 5 above'* ]] && break; sleep 0.5; done
+[[ $dp == *'at least 5 above'* ]] || fail "a refused change did not report its reason: $dp"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.dell-power >/dev/null
+sleep 1
+st=$(status "$home1")
+[[ $(json 'd.get("panel")') == subcult.dell-power ]] || fail "the dell-power panel did not open: $st"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
+rm "$work/etc/shell/bar.json"
+sleep 2
+st=$(status "$home1")
+[[ $(json '"subcult.dell-power" in d["shown"]["HEADLESS-1"]') == False ]] || fail "dell-power stayed after the machine layer went: $st"
 
 echo "shell-headless: ok"

@@ -62,6 +62,22 @@ TestCase {
     compare(r.warning, "")
   }
 
+  function test_machineLayerEnables() {
+    const defaults = { layout: { left: ["a"], right: ["b"] }, widgets: {} }
+    const r = ConfigModel.machine(defaults, '{"#": "# Subarchy hardware fix dell-power", "enable": ["subcult.dell-power", "b"], "widgets": {"x": {"n": 1}}}')
+    compare(r.warning, "")
+    compare(r.config.layout.right, ["b", "subcult.dell-power"], "enabled once, b was already there")
+    compare(r.config.layout.left, ["a"])
+    compare(r.config.widgets.x.n, 1)
+    verify(r.config.enable === undefined && r.config["#"] === undefined, "the layer's own keys do not reach the config")
+    compare(ConfigModel.machine(defaults, "").config.layout.right, ["b"])
+    const bad = ConfigModel.machine(defaults, "{ nope")
+    compare(bad.config.layout.right, ["b"])
+    verify(bad.warning.length > 0)
+    const user = ConfigModel.parse('{"layout": {"right": ["c"]}}', r.config)
+    compare(user.config.layout.right, ["c"], "the user's layout still replaces")
+  }
+
   function test_withWidgetSettingIsolated() {
     const user = { primary: "DP-3", widgets: { "subcult.clock": { format: "x" }, "subcult.other": { k: 1 } } }
     const next = ConfigModel.withWidgetSetting(user, "subcult.clock", "zone", "UTC")

@@ -39,6 +39,9 @@ type Facts struct {
 	Battery       bool     // a battery under /sys/class/power_supply
 	ACPIIDs       []string // ACPI device hardware ids (the hid files), e.g. OVTI08F4
 	Modules       []string // loaded kernel modules (/proc/modules), on the live system
+	// PlatformProfiles are the firmware platform-profile devices by name
+	// (/sys/class/platform-profile/*/name), e.g. dell-pc.
+	PlatformProfiles []string
 }
 
 var archNames = map[string]string{"amd64": "x86_64", "arm64": "aarch64"}
@@ -91,6 +94,12 @@ func readFacts(root string) Facts {
 			}
 		}
 	}
+	for _, name := range glob(root, "sys/class/platform-profile/*/name") {
+		if b, err := os.ReadFile(name); err == nil {
+			f.PlatformProfiles = append(f.PlatformProfiles, strings.TrimSpace(string(b)))
+		}
+	}
+	sort.Strings(f.PlatformProfiles)
 	for _, state := range glob(root, "proc/acpi/button/lid/*/state") {
 		f.LidSwitch = true
 		if b, err := os.ReadFile(state); err == nil && strings.Contains(string(b), "closed") {

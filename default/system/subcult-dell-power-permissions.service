@@ -1,0 +1,8 @@
+[Unit]
+Description=Hand the Dell charging controls to wheel (Subarchy, ADR 0021)
+ConditionPathExists=/sys/class/firmware-attributes/dell-wmi-sysman
+
+[Service]
+Type=oneshot
+TimeoutStartSec=15s
+ExecStart=/usr/bin/subcult-dell-power permissions

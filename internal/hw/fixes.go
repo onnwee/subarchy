@@ -272,6 +272,26 @@ var catalogue = []Fix{
 			return map[string]string{"etc/mkinitcpio.conf.d/surface-keyboard.conf": Header + " surface-keyboard (ADR 0050)\nMODULES+=(" + modules + ")\n"}
 		},
 	},
+	// Vendor add-ons (ADR 0021): the bar widget for Dell's firmware power and
+	// charging profiles ships off; a Dell with the dell-pc platform profile
+	// gets it through the machine layer of the bar config (ADR 0048).
+	{
+		Name:    "dell-power",
+		Summary: "Dell firmware power and charging profiles in the bar (the dell-power widget)",
+		Source:  "plugin: omarchy-dell-power-profiles 1.2.2 (behaviour only)",
+		Files: map[string]string{
+			"etc/subcult/shell/bar.json": `{"#": "` + Header + ` dell-power (ADR 0021)", "enable": ["subcult.dell-power"]}` + "\n",
+		},
+		Note: "the widget writes the firmware files as the user; the package's udev rule hands them to wheel",
+		applies: func(m Machine) bool {
+			for _, p := range m.Facts.PlatformProfiles {
+				if p == "dell-pc" {
+					return true
+				}
+			}
+			return false
+		},
+	},
 	// Peripherals (issue #106).
 	{
 		Name: "broadcom-wl", Summary: "Broadcom BCM4360 and BCM4331 Wi-Fi through the wl driver (DKMS)",
@@ -350,6 +370,14 @@ const Header = "# Subarchy hardware fix"
 // returns the paths it wrote and the paths it kept: a file already holding
 // the content is left alone, and so is a file that does not start with the
 // Header, which the user wrote or edited.
+// ours reports whether a file on disk is one of the fixes' own: it starts
+// with Header, or carries it in its first line (a JSON file keeps it in a
+// "#" key).
+func ours(content string) bool {
+	first, _, _ := strings.Cut(content, "\n")
+	return strings.Contains(first, Header)
+}
+
 func Apply(root string, fixes []Fix) (written, kept []string, err error) {
 	for _, f := range fixes {
 		paths := make([]string, 0, len(f.Files))
@@ -363,7 +391,7 @@ func Apply(root string, fixes []Fix) (written, kept []string, err error) {
 				if string(old) == f.Files[p] {
 					continue
 				}
-				if !strings.HasPrefix(string(old), Header) {
+				if !ours(string(old)) {
 					kept = append(kept, p)
 					continue
 				}

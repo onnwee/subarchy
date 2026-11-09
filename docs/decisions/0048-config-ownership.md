@@ -52,4 +52,15 @@ defaults without rewriting your ~/.config/hypr files".
 - A `refresh` command can still reset a user file to the empty override, with
   a backup.
 
+## Progress
+
+- 2026-11-08: a **machine layer** for the bar config (issue #91). The shell
+  reads `/etc/subcult/shell/bar.json` between the defaults and the user's
+  file; it merges like the user's file, and its `enable` list adds widgets
+  to the right section unless the layout already has them. `subcult hw
+  apply` writes it for the hardware it found ([[0050-hardware-support|ADR
+  0050]]; first the Dell power widget), so a widget that only makes sense on
+  some machines ships off and still appears on them without touching
+  `~/.config`. The user's layout still replaces it.
+
 Related: [[decision-map|Decision map]] · [[0026-update-model|ADR 0026]] · [[0037-theming|ADR 0037]]
