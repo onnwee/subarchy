@@ -195,8 +195,19 @@ Artifact prepared on Sputnik, 2026-11-08:
 - Real Sputnik recheck at 23:02 CST: all 15 Omarchy ESP file hashes still
   match preflight; firmware boot order remains `0002,0000,0001`.
 
-No USB write, SSD erase, installer boot on hardware or physical installation
-has been performed by this coordinator yet.
+The owner approved erasing USB serial `07002AC6C31EA238` and SPCC serial
+`AA231221NV01KG05237` in the coordinator conversation on November 8.
+The USB was written after live serial/size/root-ancestry guards passed.
+Readback of all 4,346,556,416 bytes matched the ISO SHA-256 at 23:13:25 CST.
+Fresh probing reports `SUBARCHY_202611`; its FAT32 EFI partition 2 contains
+the loader and Subarchy boot entry. The earlier Debian label in `lsblk`
+was stale cached metadata; direct `blkid -p` identified the new image.
+
+The parent was notified before reboot and reported its work pushed, durable
+continuation on Kvant and no local parent processes. The owner confirmed
+console availability. A reboot to the USB has been requested. Live boot,
+trusted SSH reconnection and both SSD identities must still be checked.
+The SPCC has not been erased or installed yet.
 
 ## Owner hardware acceptance
 
