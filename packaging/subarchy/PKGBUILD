@@ -38,6 +38,10 @@ build() {
   for f in bullet entry lock progress-bar progress-box; do
     rsvg-convert -o "$srcdir/plymouth/$f.png" "$root/default/plymouth/$f.svg"
   done
+  # Qt SVG omits the master lockup's nested SVG image. Render the unchanged
+  # source with librsvg so the greeter and lock show the full mark.
+  FONTCONFIG_FILE="$root/branding/fontconfig.xml" rsvg-convert -w 2000 \
+    -o "$srcdir/lockup-dark.png" "$root/branding/studio/logos/lockup-dark.svg"
   python3 bin/subcult-screensaver-render --out "$srcdir/screensaver" \
     --palette default/theme/palette.json --captures branding/screensaver
 }
@@ -86,7 +90,7 @@ package() {
   for f in "$root"/default/sddm/theme/*; do
     install -Dm644 "$f" "$pkgdir/usr/share/sddm/themes/subarchy/$(basename "$f")"
   done
-  install -Dm644 "$root/branding/studio/logos/lockup-dark.svg" "$pkgdir/usr/share/sddm/themes/subarchy/lockup-dark.svg"
+  install -Dm644 "$srcdir/lockup-dark.png" "$pkgdir/usr/share/sddm/themes/subarchy/lockup-dark.png"
   install -Dm644 "$root/default/plymouth/subarchy.plymouth" "$pkgdir/usr/share/plymouth/themes/subarchy/subarchy.plymouth"
   install -Dm644 "$root/default/plymouth/subarchy.script" "$pkgdir/usr/share/plymouth/themes/subarchy/subarchy.script"
   for f in "$srcdir"/plymouth/*.png; do
@@ -171,7 +175,7 @@ package() {
         install -Dm644 "$f" "$pkgdir/usr/share/subcult/lock/${f#./}"
       done
   )
-  install -Dm644 "$root/branding/studio/logos/lockup-dark.svg" "$pkgdir/usr/share/subcult/lock/lockup-dark.svg"
+  install -Dm644 "$srcdir/lockup-dark.png" "$pkgdir/usr/share/subcult/lock/lockup-dark.png"
   install -Dm644 "$root/default/pam/subcult-lock" "$pkgdir/etc/pam.d/subcult-lock"
   install -Dm644 "$sys/subcult-lock.service" "$pkgdir/usr/lib/systemd/user/subcult-lock.service"
   install -Dm644 "$sys/subcult-idle.service" "$pkgdir/usr/lib/systemd/user/subcult-idle.service"

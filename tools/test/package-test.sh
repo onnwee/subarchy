@@ -66,6 +66,9 @@ for path in usr/share/icons/subcult-cursor/index.theme usr/share/icons/subcult-c
   grep -qx "$path" <<<"$list" || fail "missing $path"
 done
 grep -qx usr/share/fontconfig/conf.avail/44-subarchy-roles.conf <<<"$list" || fail "missing font roles conf"
+for path in usr/share/sddm/themes/subarchy/lockup-dark.png usr/share/subcult/lock/lockup-dark.png; do
+  grep -qx "$path" <<<"$list" || fail "missing rendered lockup $path"
+done
 [[ $(bsdtar -tvf "$pkg" etc/fonts/conf.d/44-subarchy-roles.conf 2>/dev/null) == *"-> /usr/share/fontconfig/conf.avail/44-subarchy-roles.conf" ]] ||
   fail "font roles conf is not linked from /etc/fonts/conf.d"
 # Files other Arch packages own must not be in this package (neovim owns
@@ -92,6 +95,8 @@ done
 
 mkdir "$work/root"
 bsdtar -xf "$pkg" -C "$work/root" usr
+cmp "$work/root/usr/share/sddm/themes/subarchy/lockup-dark.png" \
+  "$work/root/usr/share/subcult/lock/lockup-dark.png" || fail "greeter and lock artwork differ"
 "$work/root/usr/bin/subcult" --version | grep -qx 'subcult 0.0.0' || fail "subcult --version"
 "$work/root/usr/bin/subcult-app" validate "$work/root/usr/share/subcult/default/apps.toml" >/dev/null ||
   fail "shipped app catalogue does not validate"

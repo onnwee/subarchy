@@ -14,8 +14,9 @@ aliases: [First install, Install runbook]
 Subarchy was installed on Sputnik's SPCC second drive on November 8–9,
 2026 CST, coordinated from Kvant. **Both Subarchy and the existing Omarchy
 booted and accepted their separately trusted SSH connections.** The owner
-logged into both systems. Subarchy is running for owner testing; Omarchy
-remains the permanent firmware default.
+logged into both systems. The installer retained Omarchy as the firmware
+default; the owner later selected Subarchy first on November 9, as recorded
+below. Subarchy is running for owner testing.
 
 Issue [#75](https://git.subcult.tv/subculture-collective/subarchy/issues/75)
 stays open until the owner records the remaining hardware results below.
@@ -114,10 +115,17 @@ In-place relabelling with `efibootmgr -b -L` did not change the label, so
 only the newly created SPCC entry was recreated with the distinct label.
 GUID and loader-path readback guarded that operation.
 
-Future normal reboots still default to Omarchy. Use F12 and select
-**Subarchy (SPCC)** to return to Subarchy. Re-read entry numbers before any
-`BootNext` or boot-order write. Subarchy's `UEFI_BOOT_ORDER=last` avoids
-taking the permanent default if its entry must be recreated.
+At the installation checkpoint, normal reboots defaulted to Omarchy and
+F12 **Subarchy (SPCC)** selected the new system. The owner later chose
+Subarchy as the permanent default. November 9 readback on boot
+`074d3320-f3c7-4653-b0fe-46cde89e3ae5` showed `BootCurrent: 0005` and order
+`0005,0002,0000,0003,0004,0001,0006,0007`; the original Omarchy entry
+`0002` still points to the Crucial ESP. That owner choice was left in place.
+Use the Crucial/Limine entry in F12 for the Omarchy recovery path.
+
+Re-read entry numbers before any `BootNext` or boot-order write. Subarchy's
+`UEFI_BOOT_ORDER=last` avoids taking the permanent default when its entry
+must be recreated.
 
 ## Artifact and recovery receipts
 
@@ -220,8 +228,9 @@ installer exit.
 7. Provision only the new OS's SSH key, Wi-Fi profile and restricted
    firewall rule. Do not migrate Omarchy's home, T3 or VPN identity.
    Generate/pin new host keys and check package/service state.
-8. Verify the protected ESP and partition map. Restore Omarchy's firmware
-   default. Verify its actual recovery boot, then use a one-time Subarchy
+8. Verify the protected ESP and partition map. Restore the preflight firmware
+   default unless the owner explicitly changes it. Verify Omarchy's actual
+   recovery boot, then use a one-time Subarchy
    boot and finish there. The owner unlocks the corresponding disk locally.
 9. Verify new root/ESP ancestry, trusted SSH, units, session and receipt
    source. Apply merged client fixes separately from the image; require

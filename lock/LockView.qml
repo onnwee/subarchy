@@ -85,8 +85,9 @@ FocusScope {
     Image {
       anchors.horizontalCenter: parent.horizontalCenter
       width: 360
-      source: Qt.resolvedUrl("lockup-dark.svg")
-      sourceSize.width: 360
+      height: width * 0.26
+      source: Qt.resolvedUrl("lockup-dark.png")
+      sourceSize.width: width * 2
       fillMode: Image.PreserveAspectFit
       smooth: true
     }
