@@ -3,7 +3,7 @@ title: "Roadmap"
 type: plan
 status: draft
 created: 2026-11-06
-updated: 2026-11-07
+updated: 2026-11-08
 tags: [plan]
 aliases: []
 ---
@@ -37,7 +37,8 @@ one issue per PR in dependency order. The issue plan is
 - [ ] Test the Gitea Arch registry with a Subarchy signing key, or set up a
       static repository ([[0025-package-repository|ADR 0025]])
 - [ ] Signing key with offline backup; keyring package
-- [ ] CI runner with KVM for package builds and VM boot tests
+- [x] CI runner with KVM for package builds and VM boot tests (Kvant,
+      `subarchy-kvm`, 2026-11-08; [[ci-runner|limits and recovery]])
 - [ ] Choose how the stable Arch snapshot is served
       ([[0026-update-model|ADR 0026]])
 

@@ -3,7 +3,7 @@ title: "Subarchy documentation"
 type: index
 status: active
 created: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-08
 tags: [index]
 aliases: [Docs home, Home]
 ---
@@ -24,6 +24,7 @@ notes describe the state observed on `sputnik` on 2026-11-06 with Omarchy
 | [[brand-identity\|Brand identity]] | Name, palette, marks and voice | Hand-written draft |
 | [[review-index\|Review]] | Items waiting on an owner decision | Hand-written checklists |
 | [[roadmap\|Roadmap]] | Phases from inventory to installable image | Hand-written |
+| [[ci-runner\|KVM CI runner]] | Runner limits, capability check and recovery | Hand-written |
 | [[vault-conventions\|Vault conventions]] | Properties, links, views, templates and plugins | Hand-written |
 
 ## Waiting on review
