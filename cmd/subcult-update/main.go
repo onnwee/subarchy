@@ -143,8 +143,12 @@ func (a *app) update(ctx context.Context, yes, noSnapshot, dryRun bool) int {
 		return a.fail(err)
 	}
 	r := a.runner
+	procDir := "/proc"
 	if dryRun {
 		r = update.DryRunner{Runner: r, Out: a.stdout}
+		// The root-only service scan is read-only, but sudo can still ask
+		// for a password. A dry run must not invoke privileged queries.
+		procDir = ""
 	} else {
 		stopAuthorization, err := update.Authorize(ctx, r)
 		if err != nil {
@@ -154,7 +158,7 @@ func (a *app) update(ctx context.Context, yes, noSnapshot, dryRun bool) int {
 	}
 	u := &update.Updater{R: r, O: update.Options{
 		Yes: yes, NoSnapshot: noSnapshot || dryRun, Version: dispatch.Version,
-		ModulesDir: "/usr/lib/modules", ProcDir: "/proc", Migrations: m, Stdin: a.stdin, Stdout: a.stdout,
+		ModulesDir: "/usr/lib/modules", ProcDir: procDir, Migrations: m, Stdin: a.stdin, Stdout: a.stdout,
 		Privileged:      []string{"sudo", selfPath, "privileged"},
 		ChannelRefresh:  []string{"sudo", "/usr/bin/subcult-channel", "refresh", "--quiet"},
 		HyprlandSession: os.Getenv("HYPRLAND_INSTANCE_SIGNATURE") != "",
