@@ -43,3 +43,14 @@ func TestCleanScaleRejectsInvalidInput(t *testing.T) {
 		t.Error("accepted a disabled mode")
 	}
 }
+
+func TestScaleRoundingStaysWithinAdvertisedRange(t *testing.T) {
+	got, err := CleanScale(2160, 1350, 4)
+	if err != nil || got != 3.75 {
+		t.Errorf("maximum legal scale: %g, %v; want 3.75", got, err)
+	}
+	got, err = StepScale(Monitor{Width: 2160, Height: 1350, Scale: 3}, 1)
+	if err != nil || got != 3.75 {
+		t.Errorf("step up: %g, %v; want 3.75", got, err)
+	}
+}

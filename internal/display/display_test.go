@@ -1,9 +1,11 @@
 package display
 
 import (
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -131,6 +133,38 @@ func TestStoreMatchUpsertRemove(t *testing.T) {
 	}
 	if !back.Remove("laptop") || back.Remove("laptop") || len(back.Profiles) != 1 {
 		t.Error("remove")
+	}
+}
+
+func TestConcurrentSavesLeaveACompletePrivateStore(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "display", "profiles.json")
+	start := make(chan struct{})
+	errors := make(chan error, 32)
+	var writers sync.WaitGroup
+	for i := range 32 {
+		writers.Go(func() {
+			<-start
+			errors <- Save(path, Store{Profiles: []Profile{{Name: strconv.Itoa(i) + strings.Repeat("x", 4096)}}})
+		})
+	}
+	close(start)
+	writers.Wait()
+	close(errors)
+	for err := range errors {
+		if err != nil {
+			t.Errorf("concurrent save: %v", err)
+		}
+	}
+	if saved, err := Load(path); err != nil || len(saved.Profiles) != 1 || len(saved.Profiles[0].Name) < 4097 {
+		t.Errorf("incomplete final store: %+v, %v", saved, err)
+	}
+	info, err := os.Stat(path)
+	if err != nil || info.Mode().Perm() != 0o600 {
+		t.Fatalf("private store mode: %v, %v", info, err)
+	}
+	entries, err := os.ReadDir(filepath.Dir(path))
+	if err != nil || len(entries) != 1 || entries[0].Name() != "profiles.json" {
+		t.Errorf("save left temporary files: %v, %v", entries, err)
 	}
 }
 
