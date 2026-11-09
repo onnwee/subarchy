@@ -1,0 +1,17 @@
+log:
+  level: info
+runner:
+  file: /data/.runner
+  capacity: 1
+  timeout: 3h
+  shutdown_timeout: 5m
+  insecure: false
+  labels:
+    - subarchy-kvm:docker://archlinux:latest
+cache:
+  enabled: false
+container:
+  privileged: true
+  options: --init --device=/dev/kvm --cpus=4 --memory=8g --memory-swap=8g --pids-limit=1024
+  valid_volumes: []
+  docker_host: "-"
