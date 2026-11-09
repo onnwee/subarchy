@@ -140,6 +140,20 @@ which Subarchy does not use.
   installer runs `tender apply -profile default/theme/subarchy.toml` for
   the new user, and the VM test checks `tender doctor` (issue #72).
 
+- 2026-11-08: the Hyprland, shell and lock targets (issue #100). Theme
+  Tender is now **Pult** upstream (`subculture-collective/pult`, binary
+  `pult`, 0.2.0); the registry entries and templates went there as
+  `subarchy-shell` (the palette file the shell watches and the lock reads)
+  and `subarchy-hyprland` (the colour file `default/hypr/theme.lua` runs
+  after its own), both `owned` files detected through `subcult`, so Pult
+  never edits a Subarchy default or `~/.config/hypr/hyprland.lua`
+  (pult#77). On this side the lock program reads the palette (system file
+  under the user's, through the shell's role map) and `subcult theme
+  reload` runs `hyprctl reload` inside a session for Pult's reload step.
+  Still to do: package Pult 0.2.0 in place of Theme Tender 0.1.0 (the
+  installer and VM test still call `tender`), after which `pult apply`
+  with a catalog theme recolours borders, bar and lock on a Subarchy
+  install; the headless check covers the lock's palette until then.
 - 2026-11-08: Pult 0.2.0 replaces Theme Tender 0.1.0 (`packaging/pult`, its
   release PKGBUILD vendored; `install/packages/desktop.txt`, the app table,
   the installer and the VM test call `pult`). The 0.2.0 registry has no

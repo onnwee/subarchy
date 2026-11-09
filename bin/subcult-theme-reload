@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# subcult:summary=Reload what reads the theme after Pult applied one
+# subcult:examples=subcult theme reload
+#
+# ADR 0037: Pult runs this after writing ~/.config/subcult/theme/hyprland.lua
+# (its subarchy-hyprland entry). Hyprland re-reads its configuration on
+# reload, which only works from inside the session; elsewhere there is
+# nothing to reload and the exit is 0, so an apply from a TTY passes. The
+# shell watches its palette file itself and needs nothing here.
+set -euo pipefail
+
+if [[ -z ${HYPRLAND_INSTANCE_SIGNATURE:-} ]] || ! command -v hyprctl >/dev/null; then
+  echo "Hyprland is not running in this session; nothing to reload"
+  exit 0
+fi
+if hyprctl reload >/dev/null; then
+  echo "Hyprland reloaded"
+else
+  echo "subcult theme reload: hyprctl reload failed" >&2
+  exit 1
+fi

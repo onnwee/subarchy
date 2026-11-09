@@ -9,6 +9,8 @@ FocusScope {
   id: view
 
   property var lockState: Model.initial()
+  // The shell's colour tokens (base, text, subtext, muted, surface, border, error).
+  property var theme: ({})
 
   signal key(string name, string text)
 
@@ -39,7 +41,7 @@ FocusScope {
     Text {
       anchors.horizontalCenter: parent.horizontalCenter
       text: Model.clockText(clock.date)
-      color: "#F0ECE4"
+      color: view.theme.text || "#F0ECE4"
       font.family: "monospace"
       font.pixelSize: 64
       font.bold: true
@@ -48,7 +50,7 @@ FocusScope {
     Text {
       anchors.horizontalCenter: parent.horizontalCenter
       text: Qt.formatDate(clock.date, "dddd d MMMM")
-      color: "#9A92A8"
+      color: view.theme.subtext || "#9A92A8"
       font.family: "sans-serif"
       font.pixelSize: 18
     }
@@ -63,14 +65,14 @@ FocusScope {
         visible: view.lockState.prompt
         width: parent.width
         height: 40
-        color: "#1F1830"
+        color: view.theme.surface || "#1F1830"
         border.width: 1
-        border.color: view.lockState.checking ? "#5E5570" : "#8B5CF6"
+        border.color: view.lockState.checking ? (view.theme.muted || "#5E5570") : (view.theme.border || "#8F4BC8")
 
         Text {
           anchors.centerIn: parent
           text: view.lockState.checking ? "Checking…" : Model.bullets(view.lockState.password.length)
-          color: "#F0ECE4"
+          color: view.theme.text || "#F0ECE4"
           font.family: "monospace"
           font.pixelSize: 18
         }
@@ -82,7 +84,7 @@ FocusScope {
         anchors.horizontalCenter: parent.horizontalCenter
         visible: view.lockState.prompt && view.lockState.message !== ""
         text: view.lockState.message
-        color: "#D52032"
+        color: view.theme.error || "#D52032"
         font.family: "sans-serif"
         font.pixelSize: 14
       }
@@ -91,7 +93,7 @@ FocusScope {
         anchors.centerIn: parent
         visible: !view.lockState.prompt
         text: "Press a key to unlock"
-        color: "#5E5570"
+        color: view.theme.muted || "#5E5570"
         font.family: "sans-serif"
         font.pixelSize: 14
       }
