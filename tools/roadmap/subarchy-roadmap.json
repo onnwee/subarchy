@@ -581,9 +581,9 @@
       "key": "publish-packages",
       "epic": "infra",
       "title": "Build, sign and publish Subarchy packages from CI",
-      "summary": "Packages build in CI today but go nowhere. Publish the `subarchy` package, the keyring and the AUR rebuilds to the repository chosen in the registry spike, signed with the Subarchy key.",
+      "summary": "Publish the `subarchy` package, the keyring and the pinned rebuilds to Gitea stable and edge. ADR 0025 records that the registry signs packages and databases with its own trusted key; the owner key remains for release images.",
       "acceptance": [
-        "A CI job on main builds the packages, signs them with the key from a CI secret and uploads them.",
+        "A CI job on main builds and uploads the packages using a package-only CI secret; the registry signs the packages and databases with the key shipped in subarchy-keyring.",
         "`pacman -Sy` on a fresh install with the keyring verifies the database and packages with `SigLevel = Required`.",
         "Builds on PR branches do not publish."
       ],
@@ -595,7 +595,7 @@
         "keyring"
       ],
       "mode": "hitl",
-      "hitl_reason": "The owner installs the signing key as a CI secret.",
+      "hitl_reason": "The owner authorizes live package publication and a package-only CI credential.",
       "paths": [
         ".gitea/workflows/",
         "packaging/"

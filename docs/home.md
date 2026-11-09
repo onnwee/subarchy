@@ -25,6 +25,7 @@ notes describe the state observed on `sputnik` on 2026-11-06 with Omarchy
 | [[review-index\|Review]] | Items waiting on an owner decision | Hand-written checklists |
 | [[roadmap\|Roadmap]] | Phases from inventory to installable image | Hand-written |
 | [[ci-runner\|KVM CI runner]] | Runner limits, capability check and recovery | Hand-written |
+| [[package-publishing\|Package publishing]] | Main-only uploads, signature checks and credential rotation | Hand-written |
 | [[vault-conventions\|Vault conventions]] | Properties, links, views, templates and plugins | Hand-written |
 
 ## Waiting on review
