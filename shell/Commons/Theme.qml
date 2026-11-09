@@ -50,12 +50,22 @@ Singleton {
     onLoaded: root.fallback = root.colorsOf(text())
   }
 
+  // Coalesce palette writes. Restarting the service also replaces a render
+  // still working on the previous theme, so the last palette always wins.
+  Timer {
+    id: render
+    interval: 750
+    onTriggered: Quickshell.execDetached(["systemctl", "--user", "restart", "subcult-screensaver.service"])
+  }
+
   WatchedFile {
     path: root.userPath
     onChanged: (live) => {
       root.user = root.colorsOf(text)
-      if (live)
+      if (live) {
         Quickshell.execDetached(["subcult", "cursor", "apply"])
+        render.restart()
+      }
     }
   }
 }

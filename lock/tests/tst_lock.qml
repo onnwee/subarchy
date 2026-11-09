@@ -19,6 +19,12 @@ TestCase {
     compare(s1.password, "a")
   }
 
+  function test_returnOpensPromptWithoutSubmitting() {
+    const r = Model.key(Model.initial(), "Return", "\r")
+    verify(r.state.prompt)
+    verify(!r.submit)
+  }
+
   function test_backspaceEscapeReturn() {
     let s = type(Model.initial(), "secret")
     s = Model.key(s, "Backspace", "").state

@@ -354,8 +354,9 @@ def boot(disk: Path, vars_file: Path) -> bool:
         lock_status = "quickshell ipc --any-display -p /usr/share/subcult/lock call subcult.lock status"
         results["lock"] = serial.run(
             f"systemctl --user start subcult-lock.service; sleep 4; {lock_status}; echo ---;"
-            f" systemctl --user kill subcult-shell.service; sleep 4; {lock_status}; echo ---;"
-            f" W=$(ls /run/user/$(id -u) | grep -m1 '^wayland-[0-9]'); WAYLAND_DISPLAY=$W wtype -s 200 '{PASSWORD}' -k Return; sleep 5;"
+            f" systemctl --user kill --signal=SIGKILL subcult-shell.service; sleep 4; {lock_status}; echo ---;"
+            f" W=$(ls /run/user/$(id -u) | grep -m1 '^wayland-[0-9]'); WAYLAND_DISPLAY=$W wtype -s 200 -k Return; sleep 2; {lock_status}; echo ---;"
+            f" WAYLAND_DISPLAY=$W wtype -s 200 '{PASSWORD}' -k Return; sleep 5;"
             " systemctl --user is-active subcult-lock.service; systemctl --user is-active subcult-shell.service",
             timeout=120)
         results["fonts"] = serial.run(
@@ -440,6 +441,12 @@ def boot(disk: Path, vars_file: Path) -> bool:
             " && busctl get-property org.freedesktop.UPower /org/freedesktop/UPower org.freedesktop.UPower OnBattery"
             " && systemctl --user restart subcult-shell.service && sleep 8"
             f" && {shell_ipc}", timeout=300)
+        # A battery lock must use still art even when motion is forced on.
+        results["lock_battery"] = serial.run(
+            "mkdir -p ~/.config/subcult; echo '{\"mode\":\"on\"}' >~/.config/subcult/motion.json;"
+            f" systemctl --user start subcult-lock.service; sleep 4; {lock_status};"
+            f" W=$(ls /run/user/$(id -u) | grep -m1 '^wayland-[0-9]'); WAYLAND_DISPLAY=$W wtype -s 200 '{PASSWORD}' -k Return; sleep 3;"
+            " echo '{\"mode\":\"auto\"}' >~/.config/subcult/motion.json", timeout=60)
         # Keep-awake: a logind idle inhibitor that a shell restart keeps.
         shell_call = "quickshell ipc --any-display -p /usr/share/subcult/shell call subcult.shell"
         inhibited = "systemd-inhibit --list --no-legend 2>/dev/null | grep -c SUBCULT"
@@ -533,6 +540,7 @@ def boot(disk: Path, vars_file: Path) -> bool:
         "Discord web app and Vencord Web installed": "WEBAPP_OK" in r["discord"],
 
         "pult doctor passes with subcult-minimal applied": "PULT_RC=0" in r["pult"] and "subcult-minimal" in r["pult"],
+        "lock uses still art on battery even with motion on": '\"playing\":0' in r["lock_battery"] and '\"motion\":false' in r["lock_battery"] and '\"screensaver\":true' in r["lock_battery"],
         "shell sees battery power": '"onBattery":true' in r["battery"],
         "shell back on AC with the real UPower": '"onBattery":false' in r["ac_again"],
         "keep-awake inhibits idle, survives a shell restart, releases": r["keep_awake"].split() == ["1", "1", "0"],
@@ -730,17 +738,21 @@ def boot_secureboot(disk: Path, vars_file: Path) -> bool:
 
 
 def lock_ok(out: str) -> bool:
-    """Two lock statuses (locked, still locked after the shell died), then the units after the unlock."""
+    """Playback, shell-crash survival, prompt without playback, then unlock."""
     parts = [p.strip() for p in out.split("---")]
-    if len(parts) < 3:
+    if len(parts) < 4:
         return False
     try:
         first = json.loads(parts[0].splitlines()[-1])
         second = json.loads(parts[1].splitlines()[-1])
+        prompt = json.loads(parts[2].splitlines()[-1])
     except (ValueError, IndexError):
         return False
-    tail = parts[2].splitlines()
-    return first.get("locked") is True and second.get("locked") is True and tail[-2:] == ["inactive", "active"]
+    tail = parts[3].splitlines()
+    return (first.get("locked") is True and first.get("playing", 0) > 0
+            and first.get("screensaver") is True and second.get("locked") is True
+            and prompt.get("locked") is True and prompt.get("prompt") is True
+            and prompt.get("playing") == 0 and tail[-2:] == ["inactive", "active"])
 
 
 def theme_system_ok(out: str) -> bool:

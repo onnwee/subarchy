@@ -18,7 +18,7 @@ fail() { # the message, then the shell log's last warnings when it exists
   exit 1
 }
 
-for tool in sway swaymsg quickshell grim magick python3 dbus-run-session gdbus; do
+for tool in sway swaymsg quickshell grim magick python3 dbus-run-session gdbus ffmpeg; do
   if ! command -v "$tool" >/dev/null; then
     [[ -n ${CI:-} ]] && fail "$tool not installed"
     echo "shell-headless: $tool not installed, skipped"
@@ -154,6 +154,16 @@ exit 0;; esac; done
 exit 22
 STUB
 chmod +x "$work/bin/curl"
+# Record background screensaver requests without touching the host's units.
+cat >"$work/bin/systemctl" <<'STUB'
+#!/bin/sh
+if [ "$*" = "--user restart subcult-screensaver.service" ]; then
+  echo restart >>"$HOME/screensaver-reloads"
+  exit 0
+fi
+exec /usr/bin/systemctl "$@"
+STUB
+chmod +x "$work/bin/systemctl"
 # A stand-in for secret-tool: the n8n key once the test has "stored" it.
 cat >"$work/bin/secret-tool" <<'STUB'
 #!/bin/sh
@@ -869,11 +879,15 @@ sleep 2
 
 # 2. A palette written after start applies without a restart.
 mkdir -p "$home1/.config/subcult/theme"
+printf '{"colors":{"base":"#123456"}}' >"$home1/.config/subcult/theme/palette.json"
+sleep 0.1
 printf '{"schema": 1, "colors": {"base": "#FF0000", "surface0": "#00FF00"}}\n' >"$home1/.config/subcult/theme/palette.json"
 sleep 2
 shot HEADLESS-1
 [[ $(bar_colour) == FF0000 && $(pixel 640 25) == 00FF00 ]] ||
   fail "a new palette was not applied live (bar $(bar_colour), line $(pixel 640 25))"
+
+[[ $(wc -l <"$home1/screensaver-reloads") == 1 ]] || fail "a palette burst did not request one background render"
 
 # 3. A bar config changed after start applies without a restart.
 printf '{"layout": {"left": []}}\n' >"$home1/.config/subcult/shell/bar.json"
@@ -917,7 +931,14 @@ warnings=$(grep -c 'subcult shell config' "$work/qs2.log" || true)
 if command -v wtype >/dev/null; then
   mkdir -p "$work/pam"
   printf 'auth required pam_permit.so\naccount required pam_permit.so\n' >"$work/pam/subcult-test"
-  SUBCULT_LOCK_PAM=subcult-test SUBCULT_LOCK_PAM_DIR=$work/pam HOME=$home1 \
+  # A short real WebM exercises Qt Multimedia in CI as well as input and
+  # the motion file watch. The system directory is private to this test.
+  mkdir -p "$work/art/screensaver"
+  ffmpeg -v error -y -f lavfi -i color=c=purple:s=192x108:r=10 -t 1 -c:v libvpx-vp9 -threads 1 "$work/art/screensaver/probe.webm"
+  ffmpeg -v error -y -i "$work/art/screensaver/probe.webm" -frames:v 1 -threads 1 "$work/art/screensaver/probe.png"
+  echo '{"schema":1,"loops":["probe"]}' >"$work/art/screensaver/index.json"
+  echo '{"mode":"on"}' >"$home1/.config/subcult/motion.json"
+  SUBCULT_PATH=$work/art SUBCULT_LOCK_PAM=subcult-test SUBCULT_LOCK_PAM_DIR=$work/pam HOME=$home1 \
     quickshell -n -p "$root/lock" >"$work/lock.log" 2>&1 &
   lockpid=$!
   pids+=("$lockpid")
@@ -925,6 +946,22 @@ if command -v wtype >/dev/null; then
   [[ $lk == *'"locked":true'* && $lk == *'"prompt":false'* ]] || fail "the lock did not lock the session: ${lk:-no answer} $(tail -3 "$work/lock.log")"
   # The lock reads the user's palette (ADR 0037): home1's base is red since check 2.
   [[ ${lk,,} == *'"base":"#ff0000"'* ]] || fail "the lock did not take the user's palette: $lk"
+  for _ in $(seq 30); do
+    lk=$(HOME=$home1 quickshell ipc -p "$root/lock" call subcult.lock status)
+    [[ $lk == *'"playing":1'* ]] && break
+    sleep 0.2
+  done
+  [[ $lk == *'"playing":1'* && $lk == *'"effect":"probe"'* ]] || fail "the screensaver is not playing: $lk $(tail -8 "$work/lock.log")"
+  echo '{"mode":"off"}' >"$home1/.config/subcult/motion.json"
+  sleep 1
+  lk=$(HOME=$home1 quickshell ipc -p "$root/lock" call subcult.lock status)
+  [[ $lk == *'"playing":0'* && $lk == *'"prompt":false'* && $lk == *'"motion":false'* ]] || fail "motion off did not stop the decoder: $lk"
+  echo '{"mode":"on"}' >"$home1/.config/subcult/motion.json"
+  sleep 1
+  wtype -s 200 -k Return
+  sleep 1
+  lk=$(HOME=$home1 quickshell ipc -p "$root/lock" call subcult.lock status)
+  [[ $lk == *'"locked":true'* && $lk == *'"prompt":true'* && $lk == *'"playing":0'* ]] || fail "input did not stop video and keep the lock: $lk"
   wtype -s 150 'secret' -k Return
   for _ in $(seq 30); do kill -0 "$lockpid" 2>/dev/null || break; sleep 0.5; done
   if kill -0 "$lockpid" 2>/dev/null; then

@@ -4,7 +4,7 @@ BUILD := build
 VERSION ?= 0.0.0
 LDFLAGS := -X git.subcult.tv/subculture-collective/subarchy/internal/dispatch.Version=$(VERSION)
 # Vendored upstream scripts under packaging/aur are not ours to lint.
-SHELL_SCRIPTS := $(shell git ls-files '*.sh' 'bin/subcult-*' 2>/dev/null | grep -v '^packaging/aur/')
+SHELL_SCRIPTS := $(shell git ls-files '*.sh' 'bin/subcult-*' 2>/dev/null | grep -vE '^packaging/aur/|^bin/subcult-screensaver-render$$')
 QT6BIN ?= /usr/lib/qt6/bin
 QT6QML ?= /usr/lib/qt6/qml
 .DEFAULT_GOAL := verify
@@ -25,6 +25,7 @@ shell-test:
 
 # The widget index is generated and committed; this fails when it is stale.
 shell-index-check:
+	@for f in MotionModel.js WatchedFile.qml; do cmp shell/Commons/$$f lock/$$f || exit 1; done
 	@[ "$$(sha256sum < shell/Commons/ThemeModel.js)" = "$$(sha256sum < lock/ThemeModel.js)" ] || { echo "lock/ThemeModel.js differs from shell/Commons/ThemeModel.js; copy it"; exit 1; }
 	python3 tools/shell/test_gen_index.py
 	python3 tools/shell/gen-index.py --check

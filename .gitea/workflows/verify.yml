@@ -37,7 +37,7 @@ jobs:
       image: archlinux:latest
     steps:
       - name: Install build tools
-        run: pacman -Syu --noconfirm --needed base-devel go git nodejs pacman-contrib fakeroot hypridle librsvg xorg-xcursorgen hyprcursor python lua
+        run: pacman -Syu --noconfirm --needed base-devel go git nodejs pacman-contrib fakeroot hypridle librsvg xorg-xcursorgen hyprcursor python lua python-pyte python-pillow ffmpeg ttf-dejavu
       - uses: actions/checkout@v4
       - name: Build and check the package as a normal user
         run: |
@@ -54,7 +54,7 @@ jobs:
     steps:
       - name: Install Quickshell, Qt and the headless test tools
         run: |
-          pacman -Syu --noconfirm --needed git make nodejs python quickshell qt6-declarative sway grim imagemagick libnotify ttf-dejavu libqalculate fd unicode-emoji wtype
+          pacman -Syu --noconfirm --needed git make nodejs python ffmpeg quickshell qt6-multimedia qt6-declarative sway grim imagemagick libnotify ttf-dejavu libqalculate fd unicode-emoji wtype
           # Arch gives sway cap_sys_nice as a file capability, which a container
           # may not grant; without it the binary cannot start at all.
           setcap -r /usr/bin/sway

@@ -10,7 +10,9 @@ apart from the desktop shell, so a shell crash cannot unlock the session.
   unlocked. `subcult.lock status` over IPC reports the state; nothing
   unlocks over IPC.
 - `LockView.qml` is one output's surface: the SUBCULT lockup, the clock, and
-  the prompt that opens on the first key. Its colours are the shell's tokens
+  the prompt that opens on keyboard or pointer input. Until then it plays
+  a pre-rendered SUBCULT loop, or shows its still on battery or with motion
+  off; opening the prompt destroys the decoder. Its colours are the shell's tokens
   (ADR 0037): `shell.qml` reads Subarchy's palette under the user's
   `~/.config/subcult/theme/palette.json`, the file Pult writes, through the
   shell's `ThemeModel.js` (a copy here, since Quickshell refuses imports
@@ -20,5 +22,8 @@ apart from the desktop shell, so a shell crash cannot unlock the session.
 
 `subcult lock` starts the unit by hand; hypridle starts it on idle through
 `loginctl lock-session`, from the config `subcult-idle` generates out of
-`~/.config/subcult/idle.json` (the settings panel's Idle group). Still to
-come: the screensaver loop (#96) and fingerprint unlock (#117).
+`~/.config/subcult/idle.json` (the settings panel's Idle group). The package
+ships the screensaver loops and their captures; the shell starts a background
+render when Pult writes the palette. The next lock prefers the user's completed render in
+`~/.cache/subcult/screensaver`. See [the render pipeline](../tools/screensaver/README.md).
+Fingerprint unlock remains in #117.
