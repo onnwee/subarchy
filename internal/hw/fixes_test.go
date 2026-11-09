@@ -176,3 +176,40 @@ func contains(list []string, s string) bool {
 	}
 	return false
 }
+
+func TestFixesPeripherals(t *testing.T) {
+	root := fixtureRoot(t, map[string]string{
+		"proc/cpuinfo": "vendor_id\t: GenuineIntel\nmodel\t\t: 94\n",
+		"sys/bus/pci/devices/0000:02:00.0/vendor": "0x14e4\n", "sys/bus/pci/devices/0000:02:00.0/device": "0x43a0\n", "sys/bus/pci/devices/0000:02:00.0/class": "0x028000\n",
+		"sys/bus/usb/devices/1-2/idVendor": "0fd9\n", "sys/bus/usb/devices/1-2/idProduct": "0066\n", "sys/bus/usb/devices/1-2/product": "Cam Link 4K\n",
+		"sys/class/input/event5/device/name": "Synaptics TM3276-022\n",
+		"run/udev/data/c13:69":               "E:ID_INPUT_TOUCHPAD=1\n",
+	})
+	m, err := Detect(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := fixNames(Fixes(m))
+	for _, want := range []string{"broadcom-wl", "elgato-camlink-4k"} {
+		if !contains(got, want) {
+			t.Errorf("fixes lack %s: %v (usb %v)", want, got, m.Facts.USBProducts)
+		}
+	}
+	if strings.Contains(strings.ToLower(m.Facts.Touchpad), "synaptics") && !contains(got, "synaptics-intertouch") {
+		t.Errorf("synaptics touchpad %q without the fix: %v", m.Facts.Touchpad, got)
+	}
+	sel := Select(m)
+	for _, p := range []string{"broadcom-wl-dkms", "v4l2loopback-dkms", "linux-zen-headers"} {
+		if !contains(sel.Packages, p) {
+			t.Errorf("packages lack %s: %v", p, sel.Packages)
+		}
+	}
+	target := t.TempDir()
+	written, _, err := Apply(target, Fixes(m))
+	if err != nil || !contains(written, "etc/modprobe.d/v4l2loopback-exclusive-caps.conf") {
+		t.Errorf("apply: %v %v", written, err)
+	}
+	if contains(written, "etc/modprobe.d/psmouse-synaptics.conf") {
+		t.Error("the Synaptics fix must not force intertouch past the kernel's allowlist")
+	}
+}

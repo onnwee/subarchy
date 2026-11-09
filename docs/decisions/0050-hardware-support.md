@@ -92,6 +92,13 @@ port with them.
   NetworkManager were already enabled; thermald and SOF firmware were
   already chosen. Fixtures cover a Panther Lake laptop, an NVIDIA desktop
   and the VM.
+- 2026-11-08: the peripheral fixes (issue #106): the Broadcom wl driver for
+  BCM4360 and BCM4331, the Synaptics intertouch step as a note (Omarchy
+  enables it for the running session only when the kernel's allowlist
+  agrees, which the installer cannot judge), and the Elgato Cam Link 4K as a v4l2loopback camera with
+  exclusive caps; the relay that feeds it (v4l2-relayd) is not in Arch's
+  repositories and is noted, not installed. The Motorcomm YT6801 script is
+  empty in Omarchy 4.5.0, so there is nothing to port.
 - 2026-11-07: DisplayLink (issue #107): `evdi-dkms` and `displaylink` are
   vendored under `packaging/aur/`; with a `17e9` USB adapter present,
   `subcult hw packages` adds them (and the kernel headers DKMS needs),
