@@ -141,9 +141,14 @@ func LimineConf(existing []byte, p Palette) ([]byte, bool) {
 	if ansi, ok := ansiPalette(p, 8); ok {
 		want["term_palette_bright"] = ansi
 	}
-	lines := strings.Split(strings.TrimRight(string(existing), "\n"), "\n")
+	// The Limine tools may end the last entry with blank lines. Keep those
+	// bytes so applying the same colours does not rewrite their output.
+	content := strings.TrimRight(string(existing), "\n")
+	ending := string(existing)[len(content):]
+	lines := strings.Split(content, "\n")
 	if len(existing) == 0 {
 		lines = nil
+		ending = "\n"
 	}
 	firstEntry := len(lines)
 	for i, l := range lines {
@@ -181,7 +186,7 @@ func LimineConf(existing []byte, p Palette) ([]byte, bool) {
 			}
 		}
 	}
-	result := strings.Join(out, "\n") + "\n"
+	result := strings.Join(out, "\n") + ending
 	return []byte(result), result != string(existing)
 }
 

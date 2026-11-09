@@ -267,7 +267,7 @@ def boot(disk: Path, vars_file: Path) -> bool:
             "power_auto": serial.run("systemctl show -p Result --value subcult-power-auto; journalctl -b -u subcult-power-auto -o cat"),
             "plymouth": serial.run(f"{sudo} journalctl -b -o cat | grep -c 'Show Plymouth Boot Screen'"),
             # The splash theme (ADR 0013): selected, and its files installed.
-            "plymouth_theme": serial.run("plymouth-set-default-theme; ls /usr/share/plymouth/themes/subarchy | sort | tr '\\n' ' '"),
+            "plymouth_theme": serial.run("plymouth-set-default-theme; ls /usr/share/plymouth/themes/subarchy | sort | tr '\\n' ' '; echo"),
             # Channels (ADR 0026): a new install is on stable; edge includes
             # Arch's mirrorlist; back to stable warns about newer packages.
             "channel": serial.run(
@@ -287,8 +287,9 @@ def boot(disk: Path, vars_file: Path) -> bool:
             # rebuild), Chromium skipped since it is not installed; again: nothing.
             "theme_system": serial.run(
                 "mkdir -p ~/.config/subcult/theme && printf '%s' '{\"schema\": 1, \"appearance\": \"dark\", \"colors\": {\"base\": \"#1a1b26\", \"text\": \"#c0caf5\", \"mauve\": \"#bb9af7\", \"surface0\": \"#24283b\"}}' > ~/.config/subcult/theme/palette.json;"
-                " subcult theme apply-system --elevate sudo; echo ---; subcult theme apply-system --elevate sudo; echo ---;"
-                " grep -c '^base=#1a1b26' /usr/share/sddm/themes/subarchy/theme.conf; grep -c '^interface_branding_colour: bb9af7' /boot/limine.conf;"
+                f" subcult theme apply-system --elevate sudo; {sudo} cp /boot/limine.conf /tmp/limine-after-theme.conf; echo ---;"
+                f" subcult theme apply-system --elevate sudo; {sudo} diff -u /tmp/limine-after-theme.conf /boot/limine.conf; echo ---;"
+                f" grep -c '^base=#1a1b26' /usr/share/sddm/themes/subarchy/theme.conf; {sudo} grep -c '^interface_branding_colour: bb9af7' /boot/limine.conf;"
                 " plymouth-set-default-theme; grep -c 'SetBackgroundTopColor(0.102, 0.106, 0.149)' /usr/share/plymouth/themes/subarchy-user/subarchy-user.script",
                 timeout=600,
             ),
@@ -310,6 +311,11 @@ def boot(disk: Path, vars_file: Path) -> bool:
             "state": serial.run("systemctl is-system-running --wait", timeout=120),
             "failed": serial.run("systemctl --failed --no-legend --plain | awk '{print $1}'"),
         }
+        # The theme probe deliberately writes a different palette. Reset it
+        # before the greeter and bar checks assert the shipped colours.
+        results["theme_reset"] = serial.run(
+            "cp /usr/share/subcult/default/theme/palette.json ~/.config/subcult/theme/palette.json"
+            " && subcult theme apply-system --elevate sudo && echo THEME_RESET", timeout=600)
         # Desktop (ADR 0029-0032): the SDDM greeter, then a test-only
         # autologin into the uwsm/Hyprland session.
         results["greeter"] = wait_for(serial, "pgrep -a sddm-greeter", 60)
@@ -516,6 +522,7 @@ def boot(disk: Path, vars_file: Path) -> bool:
         "greeter drew something": r["greeter_colours"] > 1,
         "greeter shows the theme (ink background, no QML errors)": "100B19" in r["greeter_palette"]
         and r["sddm_log"].strip().splitlines()[-1:] == ["0"],
+        "default palette restored after the system-theme probe": "THEME_RESET" in r["theme_reset"],
         "theme apply-system recolours SDDM, Limine and the splash, rebuilding the initramfs once": theme_system_ok(r["theme_system"]),
         "Plymouth theme selected with its images": "subarchy" in r["plymouth_theme"].split()
         and all(f in r["plymouth_theme"] for f in ("logo.png", "subarchy.script", "entry.png", "progress-bar.png")),
@@ -757,8 +764,8 @@ def lock_ok(out: str) -> bool:
 
 def theme_system_ok(out: str) -> bool:
     """Two apply-system runs (the first rebuilds the initramfs, the second changes nothing), then the files."""
-    parts = [p.strip() for p in out.split("---")]
-    if len(parts) < 3:
+    parts = [p.strip() for p in re.split(r"(?m)^---$", out)]
+    if len(parts) != 3:
         return False
     first, second, files = parts
     return (
