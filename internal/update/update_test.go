@@ -124,6 +124,9 @@ func TestUpdatePausesHyprlandReload(t *testing.T) {
 			f := &fake{tools: map[string]bool{"hyprctl": true}, outputs: map[string]string{"hyprctl -j getoption misc:disable_autoreload": tt.option}, fail: map[string]bool{tt.failure: true}}
 			u, _ := newUpdater(t, f, true)
 			u.O.HyprlandSession = true
+			if tt.option == `{"bool":true}` {
+				f.series = map[string][]string{"pacman -Q subarchy": {"subarchy 1", "subarchy 2"}}
+			}
 			if tt.failure == "bash -euo pipefail" {
 				script := filepath.Join(u.O.Migrations.Dir, "1794256000.sh")
 				if err := os.WriteFile(script, []byte("false\n"), 0o644); err != nil {
@@ -147,6 +150,9 @@ func TestUpdatePausesHyprlandReload(t *testing.T) {
 			if tt.option == `{"bool":true}` {
 				if slices.Contains(f.ran, resumeReload) {
 					t.Fatalf("enabled owner's disabled watcher: %v", f.ran)
+				}
+				if slices.Index(f.ran, pauseReload) <= slices.Index(f.ran, "hyprctl reload") {
+					t.Fatalf("did not preserve disabled setting across reload: %v", f.ran)
 				}
 				return
 			}

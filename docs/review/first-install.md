@@ -33,8 +33,8 @@ packaged services and the other hardware acceptance checks remain open.
 **Update feedback, November 9 CST:** core434 still briefly reports the
 missing Lua file during replacement, then clears it with its final reload.
 General sudo still asks for authentication, but the packaged update-specific
-NOPASSWD rules explain why updates do not. [[0069-update-authentication|ADR
-0069]] records the owner's request to authenticate updates. Source fix
+NOPASSWD rules explain why updates do not.
+[[0069-update-authentication|ADR 0069]] records the owner's request to authenticate updates. Source fix
 [PR #232](https://git.subcult.tv/subculture-collective/subarchy/pulls/232)
 adds initial authorization, a bounded-lifetime noninteractive keepalive and
 watcher pause/restore around the update. These changes are not in core434;
