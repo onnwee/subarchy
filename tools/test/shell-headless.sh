@@ -905,7 +905,7 @@ if command -v wtype >/dev/null; then
     fail "the lock did not unlock on the password: $lk $(tail -3 "$work/lock.log")"
   fi
   if wait "$lockpid"; then echo "lock: unlocked and exited"; else fail "the lock program exited with an error: $(tail -3 "$work/lock.log")"; fi
-  grep -nE 'ERROR|TypeError|ReferenceError' "$work/lock.log" && fail "QML errors in the lock log"
+  grep -vE '^MESA|ZINK' "$work/lock.log" | grep -nE 'ERROR|TypeError|ReferenceError' && fail "QML errors in the lock log"
 else
   echo "shell-headless: wtype not installed, lock check skipped"
 fi
