@@ -127,7 +127,7 @@ func Catalog() []string {
 		"vulkan-intel", "intel-media-driver", "vulkan-radeon",
 		"nvidia-open-dkms", "nvidia-utils", "libva-nvidia-driver", "linux-zen-headers", "linux-lts-headers",
 		"evdi-dkms", "displaylink", "intel-lpmd", "libvpl", "vpl-gpu-rt",
-		"broadcom-wl-dkms", "v4l2loopback-dkms", "v4l2loopback-utils"}
+		"broadcom-wl-dkms", "v4l2loopback-dkms", "v4l2loopback-utils", "asusctl"}
 	seen := map[string]bool{}
 	for _, p := range pkgs {
 		seen[p] = true
