@@ -290,7 +290,9 @@ PRs #219–#223 merged after exact-head CI on November 9:
   isolated QML check fails on the baseline and passes with the fix.
 - [#220](https://git.subcult.tv/subculture-collective/subarchy/pulls/220)
   implements the requested docked-lid behavior and Omarchy-style scale
-  shortcuts. [#223](https://git.subcult.tv/subculture-collective/subarchy/pulls/223)
+  shortcuts: `Super + /` increases scale and `Super + Alt + /` decreases it,
+  following the [Omarchy monitor guide](https://learn.omacom.io/books/2/pages/86).
+  [#223](https://git.subcult.tv/subculture-collective/subarchy/pulls/223)
   fixes two review findings: colliding concurrent profile writes and scale
   rounding beyond 4. The same regressions fail before the fixes and pass
   afterward, including 32 writers and the 2160×1350 scale case.
