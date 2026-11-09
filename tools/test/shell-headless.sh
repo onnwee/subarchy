@@ -898,6 +898,8 @@ if command -v wtype >/dev/null; then
   pids+=("$lockpid")
   for _ in $(seq 30); do lk=$(HOME=$home1 quickshell ipc -p "$root/lock" call subcult.lock status 2>/dev/null) && [[ $lk == *'"locked":true'* ]] && break; sleep 0.5; done
   [[ $lk == *'"locked":true'* && $lk == *'"prompt":false'* ]] || fail "the lock did not lock the session: ${lk:-no answer} $(tail -3 "$work/lock.log")"
+  # The lock reads the user's palette (ADR 0037): home1's base is red since check 2.
+  [[ ${lk,,} == *'"base":"#ff0000"'* ]] || fail "the lock did not take the user's palette: $lk"
   wtype -s 150 'secret' -k Return
   for _ in $(seq 30); do kill -0 "$lockpid" 2>/dev/null || break; sleep 0.5; done
   if kill -0 "$lockpid" 2>/dev/null; then

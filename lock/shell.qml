@@ -5,6 +5,7 @@ import Quickshell.Io
 import Quickshell.Services.Pam
 import Quickshell.Wayland
 import "LockModel.js" as Model
+import "ThemeModel.js" as ThemeModel
 
 // Subarchy's lock screen (ADR 0036): its own Quickshell program, apart from
 // the desktop shell, so a shell crash cannot unlock the session. It locks
@@ -18,6 +19,42 @@ ShellRoot {
   readonly property string pamConfig: Quickshell.env("SUBCULT_LOCK_PAM") || "subcult-lock"
   readonly property string pamDir: Quickshell.env("SUBCULT_LOCK_PAM_DIR") || "/etc/pam.d"
   property var lockState: Model.initial()
+
+  // The palette (ADR 0037): Subarchy's default under the user's file, which
+  // Pult writes; read once at start, since the program lives for one lock.
+  // ThemeModel.js is the shell's copy: Quickshell refuses imports outside
+  // the program's directory, and `make shell-index-check` keeps them equal.
+  readonly property string systemPalette: (Quickshell.env("SUBCULT_PATH") || "/usr/share/subcult") + "/default/theme/palette.json"
+  readonly property string userPalette: Quickshell.env("HOME") + "/.config/subcult/theme/palette.json"
+  property var fallback: ({})
+  property var user: ({})
+  readonly property var theme: ThemeModel.tokens(user, fallback)
+
+  function colorsOf(text) {
+    if (text.trim() === "")
+      return {}
+    try {
+      const doc = JSON.parse(text)
+      return doc && typeof doc.colors === "object" && doc.colors !== null ? doc.colors : {}
+    } catch (e) {
+      console.warn("subcult lock: palette is not valid JSON:", e.message)
+      return {}
+    }
+  }
+
+  FileView {
+    path: root.systemPalette
+    blockLoading: true
+    printErrors: false
+    onLoaded: root.fallback = root.colorsOf(text())
+  }
+
+  FileView {
+    path: root.userPalette
+    blockLoading: true
+    printErrors: false
+    onLoaded: root.user = root.colorsOf(text())
+  }
 
   // One key from any output's surface.
   function key(name, text) {
@@ -60,11 +97,12 @@ ShellRoot {
 
     WlSessionLockSurface {
       id: surface
-      color: "#100B19"
+      color: root.theme.base || "#100B19"
 
       LockView {
         anchors.fill: parent
         lockState: root.lockState
+        theme: root.theme
         onKey: (name, text) => root.key(name, text)
       }
     }
@@ -98,7 +136,8 @@ ShellRoot {
     function status(): string {
       return JSON.stringify({
         locked: lock.locked, secure: lock.secure, prompt: root.lockState.prompt, checking: root.lockState.checking,
-        attempts: root.lockState.attempts, message: root.lockState.message, typed: root.lockState.password.length
+        attempts: root.lockState.attempts, message: root.lockState.message, typed: root.lockState.password.length,
+        base: String(root.theme.base || "")
       })
     }
   }

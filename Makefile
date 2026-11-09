@@ -25,6 +25,7 @@ shell-test:
 
 # The widget index is generated and committed; this fails when it is stale.
 shell-index-check:
+	@cmp -s shell/Commons/ThemeModel.js lock/ThemeModel.js || { echo "lock/ThemeModel.js differs from shell/Commons/ThemeModel.js; copy it"; exit 1; }
 	python3 tools/shell/test_gen_index.py
 	python3 tools/shell/gen-index.py --check
 
