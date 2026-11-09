@@ -55,6 +55,9 @@ func Render(s Settings) string {
 	b.WriteString("general {\n")
 	b.WriteString("    lock_cmd = systemctl --user start subcult-lock.service\n")
 	b.WriteString("    before_sleep_cmd = loginctl lock-session\n")
+	// Auto inhibition recognizes hyprlock by name; our separate locker needs
+	// the explicit lock-notify mode so sleep waits until its surface is ready.
+	b.WriteString("    inhibit_sleep = 3\n")
 	b.WriteString("    after_sleep_cmd = hyprctl dispatch 'hl.dsp.dpms({ action = \"on\" })'\n")
 	b.WriteString("    ignore_dbus_inhibit = false\n")
 	b.WriteString("}\n")

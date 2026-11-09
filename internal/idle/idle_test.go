@@ -30,7 +30,7 @@ func TestLoad(t *testing.T) {
 
 func TestRender(t *testing.T) {
 	out := Render(Defaults())
-	for _, want := range []string{"lock_cmd = systemctl --user start subcult-lock.service", "timeout = 420", "timeout = 600", "timeout = 900",
+	for _, want := range []string{"lock_cmd = systemctl --user start subcult-lock.service", "inhibit_sleep = 3", "timeout = 420", "timeout = 600", "timeout = 900",
 		"on-timeout = loginctl lock-session", `hl.dsp.dpms({ action = "off" })`, "on-timeout = systemctl suspend"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("render lacks %q:\n%s", want, out)

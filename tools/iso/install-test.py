@@ -358,6 +358,7 @@ def boot(disk: Path, vars_file: Path) -> bool:
         dpms_probe = r"""
 import json, os, pathlib, shlex, subprocess, time
 config = pathlib.Path('/run/user', str(os.getuid()), 'subcult/hypridle.conf').read_text()
+assert 'inhibit_sleep = 3' in config, config
 commands = dict(line.strip().split(' = ', 1) for line in config.splitlines()
                 if ' = ' in line and 'dpms(' in line)
 on = shlex.split(commands['after_sleep_cmd'])
