@@ -26,7 +26,9 @@ for name in "$@"; do
     archlinux:latest bash -euo pipefail -c '
       pacman -Syu --noconfirm --needed base-devel git >/dev/null
       makedeps=$(bash -c "source /src/PKGBUILD; echo \${makedepends[*]}")
-      pacman -S --noconfirm --needed $makedeps >/dev/null
+      # A package with no makedepends (subarchy-keyring) gives pacman no
+      # targets, which it refuses.
+      [ -z "$makedeps" ] || pacman -S --noconfirm --needed $makedeps >/dev/null
       useradd -m builder
       cp -r /src /home/builder/pkg
       chown -R builder /home/builder/pkg
