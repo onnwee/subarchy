@@ -33,6 +33,11 @@ var intelLPMDModels = map[int]bool{151: true, 154: true, 170: true, 172: true, 1
 
 const intelPantherLake = 204
 
+// Broadcom radios that need the proprietary wl driver (BCM4360, BCM4331).
+const vendorBroadcom = 0x14e4
+
+var broadcomWLRadios = map[uint16]bool{0x43a0: true, 0x4331: true}
+
 func (m Machine) hasPCI(vendor uint16, devices map[uint16]bool) bool {
 	for _, d := range m.Devices {
 		if d.Bus == "pci" && d.Vendor == vendor && devices[d.Device] {
@@ -111,6 +116,38 @@ var catalogue = []Fix{
 			"etc/mkinitcpio.conf.d/nvidia.conf": "# Subarchy hardware fix nvidia-modeset (ADR 0050)\nMODULES+=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)\n",
 		},
 		applies: func(m Machine) bool { return m.nvidiaOpen() },
+	},
+	// Peripherals (issue #106).
+	{
+		Name: "broadcom-wl", Summary: "Broadcom BCM4360 and BCM4331 Wi-Fi through the wl driver (DKMS)",
+		Source:   "install/hardware/fix-bcm43xx.sh",
+		Packages: []string{"broadcom-wl-dkms", "linux-zen-headers", "linux-lts-headers"},
+		applies:  func(m Machine) bool { return m.hasPCI(vendorBroadcom, broadcomWLRadios) },
+	},
+	{
+		Name: "synaptics-intertouch", Summary: "Synaptics touchpads over RMI4 instead of PS/2 (psmouse synaptics_intertouch=1)",
+		Source: "install/hardware/fix-synaptic-touchpad.sh",
+		Files:  map[string]string{"etc/modprobe.d/psmouse-synaptics.conf": "# Subarchy hardware fix synaptics-intertouch (ADR 0050)\noptions psmouse synaptics_intertouch=1\n"},
+		applies: func(m Machine) bool {
+			return strings.Contains(strings.ToLower(m.Facts.Touchpad), "synaptics")
+		},
+	},
+	{
+		Name: "elgato-camlink-4k", Summary: "Elgato Cam Link 4K as a loopback camera (v4l2loopback, exclusive caps)",
+		Source:   "install/hardware/fix-elgato-camlink-4k.sh",
+		Packages: []string{"v4l2loopback-dkms", "v4l2loopback-utils", "linux-zen-headers", "linux-lts-headers"},
+		Files: map[string]string{
+			"etc/modprobe.d/v4l2loopback-exclusive-caps.conf": "# Subarchy hardware fix elgato-camlink-4k (ADR 0050)\noptions v4l2loopback exclusive_caps=1\n",
+		},
+		Note: "the relay that feeds the capture into the loopback device (v4l2-relayd and its unit) is not in Arch's repositories and is not ported yet",
+		applies: func(m Machine) bool {
+			for _, p := range m.Facts.USBProducts {
+				if strings.Contains(p, "cam link 4k") {
+					return true
+				}
+			}
+			return false
+		},
 	},
 	{
 		Name: "hid-apple-fkeys", Summary: "Function keys first on Apple-style keyboards (hid_apple fnmode=2)",
