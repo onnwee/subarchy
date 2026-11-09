@@ -4,7 +4,7 @@ type: review
 status: active
 review: done
 created: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-09
 tags: [review, rice, shell]
 aliases: [Rice port list, What to port from the rice]
 ---
@@ -41,6 +41,25 @@ guided by the rice's code, docs and tests in
 The **brand kit** (`theme/brand/`: marks, lockups, Oswald, Space Grotesk,
 JetBrains Mono) is also carried over as brand assets for the SUBCULT screens,
 after checking `ASSETS_LICENSE.md`.
+
+### Display controls
+
+`Super + /` increases the focused output's scale; `Super + Alt + /`
+decreases it, following Omarchy's documented shortcuts. The presets are
+1, 1.25, 1.6, 2, 3 and 4, adjusted to scales the active mode can represent.
+`subcult display scale 1.6` sets it directly. Each change updates the
+matching saved layout (or creates a `scaled-N` layout), which the display
+service applies at session startup and on hotplug. Other outputs keep
+their active scale and position. Review saved layouts with
+`subcult display profile list`.
+
+With an active external display, closing the lid disables the laptop
+panel and caches its mode, scale, position and workspaces for the session.
+Opening the lid, or removing the last external display, restores that
+snapshot. A close event never disables the only usable display; logind
+continues to handle ordinary undocked suspend. Neither the lid cache nor
+scaling changes rewrite the user's Hyprland Lua files. These controls
+address #215; Sputnik physical retests remain separate from command tests.
 
 ## Not ported
 

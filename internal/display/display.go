@@ -15,6 +15,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -30,6 +31,7 @@ type Monitor struct {
 	Scale       float64 `json:"scale"`
 	Transform   int     `json:"transform"`
 	Disabled    bool    `json:"disabled"`
+	Focused     bool    `json:"focused"`
 }
 
 // Internal reports a laptop panel.
@@ -256,8 +258,8 @@ func Plan(p Profile, monitors []Monitor) ([]Step, []string) {
 			steps = append(steps, Step{"eval", fmt.Sprintf(`hl.monitor({ output = %s, disabled = true })`, luaString(m.Name))})
 			continue
 		}
-		steps = append(steps, Step{"eval", fmt.Sprintf(`hl.monitor({ output = %s, mode = %s, position = %s, scale = %s, transform = %d, mirror = "" })`,
-			luaString(m.Name), luaString(pm.Mode), luaString(pm.Position), trimFloat(pm.Scale), pm.Transform)})
+		steps = append(steps, Step{"eval", fmt.Sprintf(`hl.monitor({ output = %s, disabled = false, mode = %s, position = %s, scale = %s, transform = %d, mirror = "" })`,
+			luaString(m.Name), luaString(pm.Mode), luaString(pm.Position), strconv.FormatFloat(pm.Scale, 'f', -1, 64), pm.Transform)})
 		for _, w := range pm.Workspaces {
 			moves = append(moves, Step{"dispatch", fmt.Sprintf(`hl.dsp.workspace.move({ workspace = "%d", monitor = %s })`, w, luaString(m.Name))})
 		}
