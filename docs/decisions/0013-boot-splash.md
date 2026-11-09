@@ -57,5 +57,10 @@ borrowed.
   pacstrap, so the UKIs built during it carry the theme (pacman keeps the
   file and writes its own as `.pacnew`). The VM test checks the theme is
   selected and installed; the splash is still drawn in text mode there.
+- 2026-11-08: the user's palette (issue #103): `subcult theme apply-system`
+  writes a recoloured copy of the theme to
+  `/usr/share/plymouth/themes/subarchy-user` (background and message text
+  from the palette; the images linked from the packaged theme), selects it
+  in `plymouthd.conf` and rebuilds the initramfs, only when those changed.
 
 Related: [[decision-map|Decision map]] · [[0008-initramfs|ADR 0008]] · [[brand-identity|Brand identity]]

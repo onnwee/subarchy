@@ -98,6 +98,8 @@ package() {
   # Passwordless update steps (ADR 0062), the daily update check (ADR 0026)
   # and the power profile by power source (ADR 0021).
   install -Dm440 "$sys/sudoers-update" "$pkgdir/etc/sudoers.d/50-subarchy-update"
+  # subcult theme apply-system becomes root through polkit (ADR 0037, 0062).
+  install -Dm644 "$root/default/polkit/tv.subcult.theme.policy" "$pkgdir/usr/share/polkit-1/actions/tv.subcult.theme.policy"
   install -Dm644 "$sys/subcult-update-check.service" "$pkgdir/usr/lib/systemd/user/subcult-update-check.service"
   install -Dm644 "$sys/subcult-update-check.timer" "$pkgdir/usr/lib/systemd/user/subcult-update-check.timer"
   install -dm755 "$pkgdir/usr/lib/systemd/user/timers.target.wants"

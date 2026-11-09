@@ -25,6 +25,7 @@ this directory to `/usr/share/subcult/default/`. Omarchy counterpart:
 | `kitty/` | kitty's system config and the Subcult Ink colours (→ `/etc/xdg/kitty/`) |
 | `nvim/` | Subcult Ink for Neovim (→ `/usr/share/nvim/site/`) |
 | `system/` | systemd units, drop-ins and rules, including `subcult-shell.service` |
+| `polkit/` | The polkit action for `subcult theme apply-system` (ADR 0037, 0062) |
 | `sddm/` | SDDM greeter running in Hyprland (`subarchy.conf` → `/usr/lib/sddm/sddm.conf.d/`), the greeter's compositor config, and the `SUBCULT` session file (→ `/usr/share/wayland-sessions/`) that starts Hyprland through uwsm (ADR 0030, 0031). |
 
 Still to come: Plymouth, Limine and SDDM theming through Pult's palette.

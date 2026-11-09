@@ -55,5 +55,10 @@ Hyprland. Artwork and text are replaced (R4).
   field. Installed to `/usr/share/sddm/themes/subarchy` and selected by the
   package's `sddm.conf.d` file. The VM test's greeter screendump shows the
   ink background and the greeter log has no QML error.
+- 2026-11-08: the user's palette (issue #103): `metadata.desktop` names
+  `theme.conf`, which `subcult theme apply-system` writes beside `Main.qml`
+  with the roles the greeter reads from `config` (base, surface, border,
+  borderInactive, text, subtext, muted, error); without the file the
+  shipped colours stand.
 
 Related: [[decision-map|Decision map]] · [[0031-session-manager|ADR 0031]] · [[0013-boot-splash|ADR 0013]]

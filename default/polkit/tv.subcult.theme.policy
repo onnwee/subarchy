@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<!-- Subarchy (ADR 0037, ADR 0062): `subcult theme apply-system` runs its
+     privileged half through pkexec. The action names the exact program;
+     the program takes only colours as arguments. An administrator's
+     password is asked, and kept for a while as polkit does. -->
+<policyconfig>
+  <vendor>Subarchy</vendor>
+  <vendor_url>https://git.subcult.tv/subculture-collective/subarchy</vendor_url>
+  <action id="tv.subcult.theme.system-apply">
+    <description>Apply the theme to the login screen, boot splash and boot menu</description>
+    <message>Authentication is required to apply the theme to the login screen, boot splash and boot menu</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/subcult-theme</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
+  </action>
+</policyconfig>
