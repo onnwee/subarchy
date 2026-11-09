@@ -82,4 +82,15 @@ be drawn by the lock screen, which hyprlock cannot do.
 - The owner's `lock-explorer` lock designs do not carry over directly.
 - Idle settings live in hypridle config, edited through a settings panel.
 
+## Progress
+
+- 2026-11-08: spike #47, how a `ttfx` effect becomes a video loop:
+  `tools/screensaver/capture.sh` records the effect under `script` with
+  timings, `render.py` replays it through pyte and draws the frames with
+  Pillow in the palette, ffmpeg encodes VP9 WebM. A 9.8 s matrix loop at
+  1920×1152 is 107 KB and costs about 5 % of one core to decode in software
+  (under 1 % at 800×480; H.264 about 9 %, or hardware decode). The lock
+  plays VP9 WebM loops of about ten seconds with Qt Multimedia; on battery
+  it shows still art, as decided above.
+
 Related: [[decision-map|Decision map]] · [[0034-shell-toolkit|ADR 0034]] · [[0035-plugin-api|ADR 0035]]
