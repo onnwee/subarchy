@@ -237,16 +237,39 @@ need their own key-custody and recovery checkpoint.
 | Check | Required observation | Result |
 |---|---|---|
 | Dual boot | Subarchy on SPCC; original Omarchy boots via its firmware entry | Passed November 8–9 |
-| NVIDIA | Both DKMS builds; GPU modes and `subcult gpu run` | DKMS and basic `nvidia-smi` passed; modes/rendering pending |
-| Wi-Fi | Connect/reconnect and usable network after reboot | Installed reconnect/SSH passed; owner exercise pending |
-| SOF audio | Speakers/headphones and microphone | Pending |
-| Bluetooth | Pair and use a real peripheral | Pending |
-| Suspend/lid | Suspend/resume, lid, unlock and network recovery | Pending |
-| Battery | Unplug/replug and automatic profile switching | AC service passed after #211 repair; switching pending |
+| NVIDIA | Both DKMS builds; GPU modes and `subcult gpu run` | DKMS/basic `nvidia-smi` passed; owner saw only offloaded Kitty disappear temporarily, duration unknown. Inconclusive, #218 |
+| Wi-Fi | Connect/reconnect and usable network after reboot | Installed reconnect/SSH passed; owner reports Wi-Fi working November 9 |
+| SOF audio | Speakers/headphones and microphone | Owner reports audio working November 9; microphone/headphones not separately identified |
+| Bluetooth | Pair and use a real peripheral | Discovery observed; no pairing attempted. Panel delegates pairing to terminal, #217 |
+| Suspend/lid | Suspend/resume, lid, unlock and network recovery | Failed: lock appears briefly, then black display; owner reboots. #213 |
+| Battery | Unplug/replug and automatic profile switching | Owner confirms changes take effect; Dell label stays stale until interaction, #214 |
 | Splash | Graphical Plymouth and readable unlock prompt | Owner confirmation pending |
 | Secure Boot | Key custody/recovery, enrollment and enforced boot | Pending; not enabled during install |
 | TPM unlock | Recovery passphrase retained; real-TPM boot | Pending; no TPM token enrolled |
-| DisplayLink | Dock, displays and reconnect behavior | Packages/modules/service present; physical test pending |
-| Shell at 1.6 | Bar, launcher, notifications, lock and greeter usability | Session/config checks passed; scale-1.6 test pending |
+| DisplayLink | Dock, displays and reconnect behavior | Owner confirms dock works with lid open; lid closure leaves panel on, #215 |
+| Shell at 1.6 | Bar, launcher, notifications, lock and greeter usability | Owner accepts scaling appearance and display output; live scale was 2, so 1.6 remains pending. Scale shortcut #215; greeter appearance #216 |
+
+### November 9 owner follow-up
+
+The requested dock behavior is to keep external displays on and turn off
+the laptop panel when the lid closes. Restore the panel on reopening and
+retain a usable display if the dock is removed. The requested scale
+shortcut should follow Omarchy's display controls.
+
+The failed suspend at 00:23 CST used boot `cd91287eb3054e9ea1c8001eaba9942e`.
+System logs show s2idle entered at 00:23:37 and resumed at 00:23:41;
+hypridle's DPMS-on command returned `ok`. The lock process remained alive
+and received keyboard/PAM requests. The kernel logged `spd5118` resume
+errors and NVIDIA ACPI D-Notifier messages. These are diagnostic leads;
+the cause of the black display is not established. The machine exposes
+only s2idle. No remote suspend/reboot or driver-setting experiment was
+performed during this investigation.
+
+Kvant reconnected through dock Ethernet `10.0.0.64` using the installed
+OS's pinned SSH key. Its separate coordinator config was updated; the
+global Omarchy alias and the owner's Wi-Fi connection were left alone.
+
+Issues #213–#218 track the failures, inconclusive GPU result and requested
+interface improvements. They do not count as completed physical retests.
 
 Related: [[0049-installer|ADR 0049]] · [[0050-hardware-support|Hardware support]] · [[package-publishing|Package publishing]] · [[roadmap|Roadmap]] · [[review-index|Review index]]
