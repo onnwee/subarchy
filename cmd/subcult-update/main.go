@@ -157,6 +157,14 @@ func (a *app) update(ctx context.Context, yes, noSnapshot, dryRun bool) int {
 		return a.fail(err)
 	}
 	fmt.Fprint(a.stdout, "\n"+rep.Summary())
+	// The bar reads a persisted count. Refresh it after the upgrade instead
+	// of leaving yesterday's value visible until the randomized daily check.
+	if !dryRun && a.runner.Has("checkupdates") {
+		fmt.Fprintln(a.stdout, ">> refreshing the update indicator")
+		if code := a.check(ctx, false, true); code == 1 {
+			fmt.Fprintln(a.stdout, "warning: the update indicator could not be refreshed.")
+		}
+	}
 	return 0
 }
 

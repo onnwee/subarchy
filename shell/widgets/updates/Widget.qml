@@ -6,8 +6,8 @@ import "Model.js" as Model
 import "../../Commons/Glyphs.js" as Glyphs
 
 // Available package updates, from the count `subcult update check` writes
-// once a day. Watched, not polled; hidden at zero. Click runs the update in
-// a terminal.
+// after updates and scheduled checks. Watched, not polled; hidden at zero.
+// Click runs the update in a terminal.
 BarWidget {
   id: root
 

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -21,11 +22,16 @@ type fakeRunner struct {
 	out    string
 	err    error
 	series map[string][]string
+	fail   map[string]bool
 	ran    []string
 }
 
 func (f *fakeRunner) Run(_ context.Context, argv ...string) error {
-	f.ran = append(f.ran, strings.Join(argv, " "))
+	key := strings.Join(argv, " ")
+	f.ran = append(f.ran, key)
+	if f.fail[key] {
+		return errors.New("failed")
+	}
 	return nil
 }
 func (f *fakeRunner) Output(_ context.Context, argv ...string) (string, error) {
@@ -99,6 +105,53 @@ func TestUpdateYes(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), "reboot") {
 		t.Errorf("no report:\n%s", out)
+	}
+}
+
+func TestUpdateRefreshesIndicator(t *testing.T) {
+	noUpdates := exec.Command("sh", "-c", "exit 2").Run()
+	for _, tt := range []struct {
+		name, updates, want             string
+		checkError                      error
+		dryRun, upgradeFailure, warning bool
+		exit                            int
+	}{
+		{name: "clear stale count", checkError: noUpdates, want: "0\n"},
+		{name: "retain genuine remaining updates", updates: "a 1 -> 2\nb 3 -> 4\n", want: "2\n"},
+		{name: "failed check preserves count", checkError: errors.New("network unavailable"), want: "80\n", warning: true},
+		{name: "dry run leaves state", updates: "a 1 -> 2\n", dryRun: true, want: "80\n"},
+		{name: "failed upgrade leaves state", upgradeFailure: true, want: "80\n", exit: 1},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &fakeRunner{
+				tools:  map[string]bool{"checkupdates": true},
+				err:    tt.checkError,
+				series: map[string][]string{"checkupdates --nocolor": {tt.updates}},
+				fail:   map[string]bool{"sudo /usr/bin/subcult-update privileged upgrade --noconfirm": tt.upgradeFailure},
+			}
+			a, out, errOut := newApp(t, r)
+			if err := a.writeState(80); err != nil {
+				t.Fatal(err)
+			}
+			args := []string{"--yes", "--no-snapshot"}
+			if tt.dryRun {
+				args = append(args, "--dry-run")
+			}
+			if code := a.main(context.Background(), args); code != tt.exit {
+				t.Fatalf("exit %d, want %d: %s", code, tt.exit, errOut)
+			}
+			dir, err := a.stateDir()
+			if err != nil {
+				t.Fatal(err)
+			}
+			state, err := os.ReadFile(filepath.Join(dir, "update-count"))
+			if err != nil || string(state) != tt.want {
+				t.Errorf("indicator = %q, %v; want %q", state, err, tt.want)
+			}
+			if strings.Contains(out.String(), "update indicator could not be refreshed") != tt.warning {
+				t.Errorf("refresh warning: %s", out)
+			}
+		})
 	}
 }
 
