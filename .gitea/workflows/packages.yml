@@ -1,0 +1,74 @@
+name: packages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: packages-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  GOMAXPROCS: "4"
+  LP_NUM_THREADS: "2"
+
+jobs:
+  build:
+    runs-on: subarchy-kvm
+    timeout-minutes: 180
+    steps:
+      - name: Check disk reserve
+        run: test "$(df -B1 --output=avail / | tail -1)" -ge 60000000000
+      - name: Install build tools
+        run: pacman -Syu --noconfirm --needed base-devel git nodejs python go pacman-contrib fakeroot hypridle librsvg xorg-xcursorgen hyprcursor python-pyte python-pillow ffmpeg ttf-dejavu qt6-multimedia
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Build the core, keyring and pinned packages
+        run: |
+          git config --global --add safe.directory "$PWD"
+          tools/ci/build-packages.sh
+      - uses: actions/upload-artifact@v3
+        with:
+          name: packages
+          path: build/packages/
+          retention-days: 3
+          if-no-files-found: error
+
+  publish:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: subarchy-kvm
+    timeout-minutes: 30
+    steps:
+      - name: Install publishing and verification tools
+        run: pacman -Syu --noconfirm --needed git nodejs python
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v3
+        with:
+          name: packages
+          path: build/packages/
+      - name: Publish to the signed stable and edge registries
+        env:
+          SUBARCHY_PACKAGE_TOKEN: ${{ secrets.SUBARCHY_PACKAGE_TOKEN }}
+        run: python3 tools/ci/publish-packages.py
+      - name: Verify signed databases and packages in this fresh container
+        run: |
+          pacman -U --noconfirm build/packages/subarchy-keyring-*.pkg.tar.zst
+          pacman-key --init
+          pacman-key --populate archlinux subarchy
+          for channel in stable edge; do
+            cp /etc/pacman.conf "/tmp/pacman-$channel.conf"
+            printf '\n[subarchy]\nSigLevel = Required\nServer = https://git.subcult.tv/api/packages/subculture-collective/arch/%s/$arch\n' "$channel" >>"/tmp/pacman-$channel.conf"
+            mapfile -t packages < build/packages/package-names.txt
+            pacman --config "/tmp/pacman-$channel.conf" -Syddw --noconfirm "${packages[@]}"
+          done
+          pacman --config /tmp/pacman-stable.conf -S --noconfirm subarchy
+          subcult --version
