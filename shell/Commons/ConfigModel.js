@@ -10,6 +10,33 @@ function clone(v) {
   return v === undefined ? undefined : JSON.parse(JSON.stringify(v))
 }
 
+// Dell controls now live in Battery. Resolve the old ID in memory without
+// rewriting any configuration file. Keep an explicit battery position;
+// otherwise the first Dell slot becomes Battery. Minimal bars are separate.
+function normalize(config) {
+  const out = clone(config) || {}
+  if (!isObject(out.layout))
+    return out
+  for (const sections of [["left", "center", "right"], ["minimal"]]) {
+    let present = sections.some(s => Array.isArray(out.layout[s]) && out.layout[s].indexOf("subcult.battery") >= 0)
+    for (const section of sections) {
+      if (!Array.isArray(out.layout[section]))
+        continue
+      const ids = []
+      for (const id of out.layout[section]) {
+        if (id !== "subcult.dell-power")
+          ids.push(id)
+        else if (!present) {
+          ids.push("subcult.battery")
+          present = true
+        }
+      }
+      out.layout[section] = ids
+    }
+  }
+  return out
+}
+
 function merge(defaults, user) {
   const out = clone(defaults) || {}
   if (!isObject(user))

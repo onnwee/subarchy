@@ -199,7 +199,7 @@ func TestDellPower(t *testing.T) {
 	var layer struct {
 		Enable []string `json:"enable"`
 	}
-	if err := json.Unmarshal(b, &layer); err != nil || len(layer.Enable) != 1 || layer.Enable[0] != "subcult.dell-power" {
+	if err := json.Unmarshal(b, &layer); err != nil || len(layer.Enable) != 1 || layer.Enable[0] != "subcult.battery" {
 		t.Errorf("machine layer: %s (%v)", b, err)
 	}
 	// Written again with the same content: nothing; an admin's own file: kept.

@@ -71,7 +71,7 @@ jobs:
     steps:
       - name: Install Quickshell, Qt and the headless test tools
         run: |
-          pacman -Syu --noconfirm --needed git make nodejs python python-gobject ffmpeg quickshell qt6-multimedia qt6-declarative sway grim imagemagick libnotify ttf-dejavu libqalculate fd unicode-emoji wtype librsvg
+          pacman -Syu --noconfirm --needed git make nodejs python python-gobject ffmpeg quickshell qt6-multimedia qt6-declarative sway grim imagemagick libnotify ttf-dejavu ttf-iosevkaterm-nerd libqalculate fd unicode-emoji wtype librsvg
           # Arch gives sway cap_sys_nice as a file capability, which a container
           # may not grant; without it the binary cannot start at all.
           setcap -r /usr/bin/sway
@@ -84,6 +84,7 @@ jobs:
           tools/test/lock-focus-test.sh
           python3 -m unittest discover -s tools/bluetooth -p 'test_*.py' -v
           tools/test/bluetooth-panel-test.sh build/bluetooth-preview
+          tools/test/battery-panel-test.sh build/battery-preview
           for scale in 1 1.6 2; do
             QT_SCALE_FACTOR="$scale" tools/test/greeter-test.sh "build/greeter-preview/scale-$scale"
           done
@@ -93,6 +94,14 @@ jobs:
         with:
           name: greeter-preview
           path: build/greeter-preview/
+          retention-days: 3
+          if-no-files-found: warn
+      - name: Keep native battery previews
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: battery-preview
+          path: build/battery-preview/
           retention-days: 3
           if-no-files-found: warn
       - name: Keep native Bluetooth previews

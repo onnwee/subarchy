@@ -5,6 +5,18 @@ import "../Model.js" as Model
 TestCase {
   name: "Battery"
 
+  function test_displayChoices() {
+    compare(Model.chargeDisplay({}), "icon-percentage")
+    compare(Model.profileDisplay({}), "icon-text")
+    for (const charge of ["icon", "icon-percentage"])
+      for (const profile of ["off", "icon", "icon-text"]) {
+        compare(Model.chargeDisplay({chargeDisplay: charge}), charge)
+        compare(Model.profileDisplay({profileDisplay: profile}), profile)
+      }
+    compare(Model.chargeDisplay({chargeDisplay: "broken"}), "icon-percentage")
+    compare(Model.profileDisplay({profileDisplay: "broken"}), "icon-text")
+  }
+
   function test_visible() {
     verify(Model.visible({ isPresent: true, isLaptopBattery: true }))
     verify(!Model.visible({ isPresent: true, isLaptopBattery: false }), "a mouse battery")

@@ -273,14 +273,14 @@ var catalogue = []Fix{
 		},
 	},
 	// Vendor add-ons (ADR 0021): the bar widget for Dell's firmware power and
-	// charging profiles ships off; a Dell with the dell-pc platform profile
-	// gets it through the machine layer of the bar config (ADR 0048).
+	// charging profiles are integrated into Battery; a Dell with the dell-pc
+	// profile enables that widget through the machine layer (ADR 0048).
 	{
 		Name:    "dell-power",
-		Summary: "Dell firmware power and charging profiles in the bar (the dell-power widget)",
+		Summary: "Dell firmware power and charging controls in the battery widget",
 		Source:  "plugin: omarchy-dell-power-profiles 1.2.2 (behaviour only)",
 		Files: map[string]string{
-			"etc/subcult/shell/bar.json": `{"#": "` + Header + ` dell-power (ADR 0021)", "enable": ["subcult.dell-power"]}` + "\n",
+			"etc/subcult/shell/bar.json": `{"#": "` + Header + ` dell-power (ADR 0021)", "enable": ["subcult.battery"]}` + "\n",
 		},
 		Note: "the widget writes the firmware files as the user; the package's udev rule hands them to wheel",
 		applies: func(m Machine) bool {

@@ -1,8 +1,12 @@
 {
   "id": "subcult.battery",
   "name": "Battery and power profile",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "api": 0,
   "kind": "bar-widget",
-  "panel": true
+  "panel": true,
+  "settings": {
+    "chargeDisplay": "icon-percentage",
+    "profileDisplay": "icon-text"
+  }
 }

@@ -260,9 +260,9 @@ need their own key-custody and recovery checkpoint.
 | NVIDIA | Both DKMS builds; GPU modes and `subcult gpu run` | DKMS/basic `nvidia-smi` passed. Three short offloaded Kitty launches reported NVIDIA OpenGL and exit zero; owner saw temporary disappearance, still unresolved. #218 |
 | Wi-Fi | Connect/reconnect and usable network after reboot | Installed reconnect/SSH passed; owner reports Wi-Fi working November 9 |
 | SOF audio | Speakers/headphones and microphone | Owner reports audio working November 9; microphone/headphones not separately identified |
-| Bluetooth | Pair, use and reconnect a real peripheral | Discovery observed; no pairing attempted. Native pairing merged in #222 with private-bus/UI checks and real BlueZ registration. Installed panel still uses the terminal; hardware test #217 remains pending |
+| Bluetooth | Pair, use and reconnect a real peripheral | Owner reports Soma playback through Bluetooth headphones and reconnection after lid resume on November 9. Native pairing merged in #222; pairing interaction itself was not identified in this report. #217 |
 | Suspend/lid | Suspend/resume, lid, unlock and network recovery | Failed: lock appears briefly, then black display; owner reboots. #213 |
-| Battery | Unplug/replug and automatic profile switching | Owner confirms changes take effect; Dell label stays stale until interaction. Source fix #219 passed regression/CI; deployment and retest pending |
+| Battery | Unplug/replug and automatic profile switching | Owner confirms Dell label changes on plug/unplug after updating. Custom charging controls disappeared because firmware values remained root-only after the boot service timed out. Permission repair restored Custom 50–85% without changing it; combined-widget source adds independent charge/profile display choices. #226 |
 | Splash | Graphical Plymouth and readable unlock prompt | Owner confirmation pending |
 | Secure Boot | Key custody/recovery, enrollment and enforced boot | Pending; not enabled during install |
 | TPM unlock | Recovery passphrase retained; real-TPM boot | Pending; no TPM token enrolled |
@@ -413,5 +413,34 @@ the charging controls did not appear during its wait. CLI readback shows
 power profiles available and charging controls unavailable. That separate
 hardware/service investigation is not an update-indicator failure and
 remains part of #75 follow-up.
+
+### Battery controls and another resume failure, November 9
+
+On core `0.0.0-425`, the owner confirms the Dell label follows plug/unplug.
+The missing custom profile means custom charging thresholds. On boot
+`0475fe0026414ae28605a9fdc1ae5189`, the charging attributes existed when
+inspected but their current values were root-only. The permission service
+had stopped after five seconds waiting for those attributes. After the
+owner rebooted to `988359811d6d4a2fb5f6361808cfa366`, restarting that service
+succeeded. User-level CLI readback restored **Custom, start 50%, stop 85%**;
+root readback before and after showed the same mode and values. No charging
+policy was changed. A longer startup wait and graceful handling of absent
+optional controls have regression coverage; a subsequent boot with the new
+helper is still needed for #226.
+
+The combined battery panel includes Dell power/charging controls and two
+independent persisted display choices: charge icon or icon with percentage;
+profile off, icon, or icon with text. Legacy Dell layout IDs resolve to one
+battery entry in memory. Firmware controls and the generic non-Dell profile
+fallback remain separate capabilities within that panel.
+
+The owner also reports Bluetooth headphone playback before lid closure,
+disconnection during sleep, reconnection and resumed audio on opening the
+lid, followed by a brief lock screen and black display. A previous attempt
+showed three failed unlock attempts but did not accept input. Logs from the
+11:57 CST attempt show suspend at 11:57:54, resume at 11:58:00 and shutdown
+at 11:58:08. The lock remained alive until shutdown; its video decoder
+started on resume and Wayland warned about disabling an unfocused text-input
+surface. Neither message establishes the cause. #213 remains open.
 
 Related: [[0049-installer|ADR 0049]] · [[0050-hardware-support|Hardware support]] · [[package-publishing|Package publishing]] · [[roadmap|Roadmap]] · [[review-index|Review index]]

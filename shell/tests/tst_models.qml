@@ -11,6 +11,22 @@ import "../Commons/WorkspacesModel.js" as WorkspacesModel
 TestCase {
   name: "Models"
 
+  function test_combinedBatteryMigration() {
+    const old = {primary: "DP-3", layout: {
+      left: ["subcult.clock"], right: ["subcult.battery", "subcult.audio", "subcult.dell-power"],
+      minimal: ["subcult.dell-power", "subcult.battery"]}, widgets: {"subcult.clock": {zone: "UTC"}}}
+    const next = ConfigModel.normalize(old)
+    compare(next.layout.right, ["subcult.battery", "subcult.audio"])
+    compare(next.layout.minimal, ["subcult.battery"])
+    compare(next.primary, "DP-3")
+    compare(next.widgets, old.widgets)
+    compare(old.layout.right.length, 3, "normalizing must not write the user file")
+    compare(ConfigModel.normalize(next), next, "normalizing is idempotent")
+    compare(ConfigModel.normalize({layout: {left: ["subcult.dell-power"], right: ["subcult.battery"]}}).layout,
+      {left: [], right: ["subcult.battery"]}, "keep the owner's battery position")
+    compare(ConfigModel.normalize({layout: {left: ["subcult.dell-power"]}}).layout.left, ["subcult.battery"])
+  }
+
   readonly property var weather: ({
     id: "subcult.weather", api: 0, kind: "bar-widget",
     cost: { timers: [{ name: "current", ac: 900, battery: 1800 }], network: ["api.open-meteo.com"] }
