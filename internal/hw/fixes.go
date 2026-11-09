@@ -38,6 +38,16 @@ const vendorBroadcom = 0x14e4
 
 var broadcomWLRadios = map[uint16]bool{0x43a0: true, 0x4331: true}
 
+// matches answers one of the matching questions (match.go) by name.
+func matches(m Machine, question string) bool {
+	mt, ok := FindMatcher(question)
+	return ok && mt.Test(m)
+}
+
+func isPantherLake(m Machine) bool {
+	return m.CPUVendor == "GenuineIntel" && m.Facts.CPUModel == intelPantherLake
+}
+
 func (m Machine) hasPCI(vendor uint16, devices map[uint16]bool) bool {
 	for _, d := range m.Devices {
 		if d.Bus == "pci" && d.Vendor == vendor && devices[d.Device] {
@@ -116,6 +126,82 @@ var catalogue = []Fix{
 			"etc/mkinitcpio.conf.d/nvidia.conf": "# Subarchy hardware fix nvidia-modeset (ADR 0050)\nMODULES+=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)\n",
 		},
 		applies: func(m Machine) bool { return m.nvidiaOpen() },
+	},
+	// Vendors (issue #82): ASUS, Dell, Framework, Lenovo, Tuxedo.
+	{
+		Name: "asus-rog", Summary: "ASUS ROG laptops: asusctl and its daemon for fans, keyboard lights and profiles",
+		Source: "install/hardware/asus-rog.sh", Packages: []string{"asusctl"}, Services: []string{"asusd"},
+		applies: func(m Machine) bool { return matches(m, "asus-rog") },
+	},
+	{
+		Name: "asus-z13-touchpad", Summary: "ASUS ROG Flow Z13 (GZ302): the detachable keyboard's touchpad counts as internal",
+		Source: "install/hardware/asus/fix-z13-touchpad.sh",
+		Files: map[string]string{"etc/udev/rules.d/99-subarchy-asus-z13-touchpad.rules": "# Subarchy hardware fix asus-z13-touchpad (ADR 0050)\n" +
+			"ACTION==\"add|change\", KERNEL==\"event*\", ATTRS{idVendor}==\"0b05\", ATTRS{idProduct}==\"1a30\", ENV{ID_INPUT_TOUCHPAD}==\"1\", ENV{ID_INPUT_TOUCHPAD_INTEGRATION}=\"internal\"\n"},
+		applies: func(m Machine) bool { return matches(m, "asus-rog") && m.Match("GZ302") },
+	},
+	{
+		Name: "asus-expertbook-b9406", Summary: "ASUS ExpertBook B9406 (Panther Lake): panel replay off, touchpad pressure quirk",
+		Source: "install/hardware/asus/fix-asus-ptl-b9406-display.sh, fix-asus-ptl-b9406-touchpad.sh",
+		Files: map[string]string{
+			"etc/limine-entry-tool.d/asus-expertbook-b9406-display.conf": "# Subarchy hardware fix asus-expertbook-b9406 (ADR 0050)\nKERNEL_CMDLINE[default]+=\" xe.enable_panel_replay=0\"\n",
+			"etc/libinput/asus-expertbook-b9406.quirks":                  "# Subarchy hardware fix asus-expertbook-b9406 (ADR 0050)\n[ASUS ExpertBook B9406 Touchpad]\nMatchBus=i2c\nMatchUdevType=touchpad\nMatchVendor=0x093A\nMatchProduct=0x4F05\nMatchDMIModalias=dmi:*svnASUS*:pn*B9406*\nAttrEventCode=-ABS_MT_PRESSURE;-ABS_PRESSURE;\n",
+		},
+		applies: func(m Machine) bool { return m.Match("B9406") && isPantherLake(m) },
+	},
+	{
+		Name: "asus-ptl-backlight", Summary: "ASUS Panther Lake laptops (ExpertBook B9406, Zenbook UX5406AA): backlight over DPCD",
+		Source:  "install/hardware/asus/fix-asus-ptl-display-backlight.sh",
+		Files:   map[string]string{"etc/limine-entry-tool.d/asus-ptl-display-backlight.conf": "# Subarchy hardware fix asus-ptl-backlight (ADR 0050)\nKERNEL_CMDLINE[default]+=\" xe.enable_dpcd_backlight=1\"\n"},
+		applies: func(m Machine) bool { return (m.Match("B9406") || m.Match("UX5406AA")) && isPantherLake(m) },
+	},
+	{
+		Name: "asus-proart-p14-speakers", Summary: "ASUS ProArt P14 (H7407BA) speaker firmware",
+		Source:  "install/hardware/asus/fix-asus-proart-p14-speakers.sh",
+		Note:    "asus-proart-p14-speaker-firmware is not in Arch's repositories; package it under packaging/aur before this fix can install it",
+		applies: func(m Machine) bool { return m.Match("H7407BA") },
+	},
+	{
+		Name: "framework16-qmk", Summary: "Framework Laptop 16: the input modules' QMK raw HID reachable by the logged-in user",
+		Source: "install/hardware/framework16.sh, framework/qmk-hid.sh",
+		Files: map[string]string{"etc/udev/rules.d/50-subarchy-framework16-qmk-hid.rules": "# Subarchy hardware fix framework16-qmk (ADR 0050)\n" +
+			"SUBSYSTEM==\"hidraw\", ATTRS{idVendor}==\"32ac\", ATTRS{idProduct}==\"0012\", MODE=\"0660\", TAG+=\"uaccess\"\n"},
+		Note:    "qmk-hid, the tool that talks to the modules, is not in Arch's repositories; package it under packaging/aur",
+		applies: func(m Machine) bool { return matches(m, "framework16") },
+	},
+	{
+		Name: "lenovo-yoga-pro7-bass", Summary: "Lenovo Yoga Pro 7 14IAH10: the bass speakers through the ALC287 Yoga 9 pin layout",
+		Source:  "install/hardware/lenovo/fix-yoga-pro7-bass-speakers.sh",
+		Files:   map[string]string{"etc/modprobe.d/lenovo-yoga-pro7-bass.conf": "# Subarchy hardware fix lenovo-yoga-pro7-bass (ADR 0050)\noptions snd-sof-intel-hda-generic hda_model=alc287-yoga9-bass-spk-pin\n"},
+		applies: func(m Machine) bool { return m.Match("Yoga Pro 7 14IAH10") },
+	},
+	{
+		Name: "dell-xps13-ptl-speakers", Summary: "Dell XPS 13 DX13260 (Panther Lake) speaker firmware",
+		Source:  "install/hardware/dell-xps13-ptl-speaker-firmware.sh",
+		Note:    "linux-firmware-cirrus-dx13260 is not in Arch's repositories; package it under packaging/aur before this fix can install it",
+		applies: func(m Machine) bool { return m.Match("DX13260") && isPantherLake(m) },
+	},
+	{
+		Name: "dell-xps13-sidecar-amps", Summary: "Dell XPS 13 DX13260 with the sidecar amplifiers (SKU 0E53)",
+		Source:  "install/hardware/dell-xps13-sidecar-amps.sh",
+		Note:    "dell-xps13-sidecar-amps and its apply step are not in Arch's repositories; package them under packaging/aur first",
+		applies: func(m Machine) bool { return m.Match("DX13260") && strings.EqualFold(m.Facts.ProductSKU, "0E53") },
+	},
+	{
+		Name: "dell-xps-haptic-touchpad", Summary: "Dell XPS haptic touchpad driver",
+		Source:  "install/hardware/dell-xps-touchpad-haptics.sh",
+		Note:    "dell-xps-touchpad-haptics is not in Arch's repositories; package it under packaging/aur before this fix can install it",
+		applies: func(m Machine) bool { return matches(m, "dell-xps-haptic-touchpad") },
+	},
+	{
+		Name: "tuxedo-keyboard", Summary: "TUXEDO and Slimbook laptops: the Clevo WMI module out of the way of the TUXEDO drivers",
+		Source: "install/hardware/fix-tuxedo-backlight.sh",
+		Files:  map[string]string{"etc/modprobe.d/blacklist-clevo-xsm-wmi.conf": "# Subarchy hardware fix tuxedo-keyboard (ADR 0050)\nblacklist clevo_xsm_wmi\n"},
+		Note:   "tuxedo-drivers-nocompatcheck-dkms is not in Arch's repositories; package it under packaging/aur before the keyboard backlight works",
+		applies: func(m Machine) bool {
+			v := strings.ToLower(m.Facts.SysVendor)
+			return strings.Contains(v, "tuxedo") || strings.Contains(v, "slimbook")
+		},
 	},
 	// Peripherals (issue #106).
 	{

@@ -200,3 +200,61 @@ func TestFixesPeripherals(t *testing.T) {
 		t.Errorf("apply: %v %v", written, err)
 	}
 }
+
+func TestFixesVendors(t *testing.T) {
+	cases := []struct {
+		name  string
+		files map[string]string
+		want  []string
+		file  string
+	}{
+		{"ROG Flow Z13", map[string]string{
+			"proc/cpuinfo":                "vendor_id\t: AuthenticAMD\nmodel\t\t: 112\n",
+			"sys/class/dmi/id/sys_vendor": "ASUSTeK COMPUTER INC.\n", "sys/class/dmi/id/product_name": "ROG Flow Z13 GZ302EA\n", "sys/class/dmi/id/product_family": "ROG Flow Z13\n",
+		}, []string{"asus-rog", "asus-z13-touchpad"}, "etc/udev/rules.d/99-subarchy-asus-z13-touchpad.rules"},
+		{"ExpertBook B9406 on Panther Lake", map[string]string{
+			"proc/cpuinfo":                "vendor_id\t: GenuineIntel\nmodel\t\t: 204\n",
+			"sys/class/dmi/id/sys_vendor": "ASUSTeK COMPUTER INC.\n", "sys/class/dmi/id/product_name": "ASUS EXPERTBOOK B9406CVA\n",
+		}, []string{"intel-fred", "asus-expertbook-b9406", "asus-ptl-backlight"}, "etc/libinput/asus-expertbook-b9406.quirks"},
+		{"Dell XPS 13 DX13260 with sidecar amps", map[string]string{
+			"proc/cpuinfo":                "vendor_id\t: GenuineIntel\nmodel\t\t: 204\n",
+			"sys/class/dmi/id/sys_vendor": "Dell Inc.\n", "sys/class/dmi/id/product_name": "XPS 13 DX13260\n", "sys/class/dmi/id/product_sku": "0E53\n",
+		}, []string{"dell-xps13-ptl-speakers", "dell-xps13-sidecar-amps"}, ""},
+		{"Yoga Pro 7", map[string]string{
+			"proc/cpuinfo":                "vendor_id\t: GenuineIntel\nmodel\t\t: 170\n",
+			"sys/class/dmi/id/sys_vendor": "LENOVO\n", "sys/class/dmi/id/product_name": "83JD\n", "sys/class/dmi/id/product_family": "Yoga Pro 7 14IAH10\n",
+		}, []string{"lenovo-yoga-pro7-bass"}, "etc/modprobe.d/lenovo-yoga-pro7-bass.conf"},
+		{"TUXEDO", map[string]string{
+			"proc/cpuinfo":                "vendor_id\t: GenuineIntel\nmodel\t\t: 186\n",
+			"sys/class/dmi/id/sys_vendor": "TUXEDO\n", "sys/class/dmi/id/product_name": "TUXEDO InfinityBook Pro 14\n",
+		}, []string{"tuxedo-keyboard"}, "etc/modprobe.d/blacklist-clevo-xsm-wmi.conf"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			m, err := Detect(fixtureRoot(t, c.files))
+			if err != nil {
+				t.Fatal(err)
+			}
+			got := fixNames(Fixes(m))
+			for _, w := range c.want {
+				if !contains(got, w) {
+					t.Errorf("fixes lack %s: %v", w, got)
+				}
+			}
+			if c.file != "" {
+				target := t.TempDir()
+				written, err := Apply(target, Fixes(m))
+				if err != nil || !contains(written, c.file) {
+					t.Errorf("apply: %v %v", written, err)
+				}
+			}
+		})
+	}
+	// A plain machine gets none of the vendor fixes.
+	m, _ := Detect(fixtureRoot(t, map[string]string{"proc/cpuinfo": "vendor_id\t: GenuineIntel\nmodel\t\t: 94\n", "sys/class/dmi/id/sys_vendor": "Acme\n", "sys/class/dmi/id/product_name": "Box\n"}))
+	for _, f := range Fixes(m) {
+		if strings.HasPrefix(f.Name, "asus-") || strings.HasPrefix(f.Name, "dell-") || strings.HasPrefix(f.Name, "lenovo-") || f.Name == "tuxedo-keyboard" || f.Name == "framework16-qmk" {
+			t.Errorf("vendor fix %s on a plain machine", f.Name)
+		}
+	}
+}

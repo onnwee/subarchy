@@ -92,6 +92,15 @@ port with them.
   NetworkManager were already enabled; thermald and SOF firmware were
   already chosen. Fixtures cover a Panther Lake laptop, an NVIDIA desktop
   and the VM.
+- 2026-11-08: the vendor fixes (issue #82): ASUS ROG (asusctl and asusd),
+  the ROG Flow Z13 touchpad rule, the ExpertBook B9406 panel-replay and
+  touchpad quirk, the DPCD backlight on the Panther Lake ASUS models, the
+  Framework 16 QMK HID rule, the Yoga Pro 7 bass speakers, and the Clevo WMI
+  blacklist on TUXEDO and Slimbook machines. Listed with notes, not
+  installed, because their packages are not in Arch's repositories: the
+  ProArt P14 speaker firmware, qmk-hid, the Dell XPS 13 DX13260 speaker
+  firmware and sidecar amplifiers, the Dell XPS haptic touchpad driver and
+  the TUXEDO drivers. The facts gain the DMI product SKU for the Dell match.
 - 2026-11-08: the peripheral fixes (issue #106): the Broadcom wl driver for
   BCM4360 and BCM4331, Synaptics touchpads over RMI4 (psmouse
   intertouch), and the Elgato Cam Link 4K as a v4l2loopback camera with

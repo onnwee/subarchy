@@ -34,6 +34,7 @@ type Facts struct {
 	Touchscreen   string   // the touchscreen's input device name
 	DeviceTree    string   // /proc/device-tree/compatible, aarch64 boards
 	Vulkan        bool     // a Vulkan ICD is installed
+	ProductSKU    string   // DMI product_sku (Dell writes a model code there)
 	CPUModel      int      // the CPU's model number from /proc/cpuinfo (family 6 on Intel)
 	Battery       bool     // a battery under /sys/class/power_supply
 	ACPIIDs       []string // ACPI device hardware ids (the hid files), e.g. OVTI08F4
@@ -53,6 +54,7 @@ func readFacts(root string) Facts {
 		return strings.TrimSpace(string(b))
 	}
 	f.SysVendor, f.ProductName, f.ProductFamily, f.ChassisType = dmi("sys_vendor"), dmi("product_name"), dmi("product_family"), dmi("chassis_type")
+	f.ProductSKU = dmi("product_sku")
 	if cpu, err := os.ReadFile(filepath.Join(root, "proc/cpuinfo")); err == nil {
 		for _, line := range strings.Split(string(cpu), "\n") {
 			if k, v, ok := strings.Cut(line, ":"); ok && strings.TrimSpace(k) == "model" && f.CPUModel == 0 {
