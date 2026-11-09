@@ -92,5 +92,6 @@ order.
 | [[0065-privacy-telemetry\|0065]] | Privacy and telemetry |
 | [[0066-versioning\|0066]] | Versioning |
 | [[0067-user-manual\|0067]] | User manual |
+| [[0069-update-authentication\|0069]] | Authenticate system updates |
 
 Related: [[home|Docs home]]

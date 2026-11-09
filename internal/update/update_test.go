@@ -20,9 +20,12 @@ type fake struct {
 	ran     []string
 }
 
-func (f *fake) Run(_ context.Context, argv ...string) error {
+func (f *fake) Run(ctx context.Context, argv ...string) error {
 	key := strings.Join(argv, " ")
 	f.ran = append(f.ran, key)
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if f.fail[key] {
 		return errors.New("failed")
 	}
@@ -102,6 +105,65 @@ func TestRunOrder(t *testing.T) {
 
 const shellRestart = "systemctl --user try-restart subcult-shell.service"
 
+const pauseReload = "hyprctl eval hl.config({ misc = { disable_autoreload = true } })"
+const resumeReload = "hyprctl eval hl.config({ misc = { disable_autoreload = false } })"
+
+func TestUpdatePausesHyprlandReload(t *testing.T) {
+	for _, tt := range []struct {
+		name, option, failure string
+		wantError             bool
+	}{
+		{name: "successful upgrade", option: `{"bool":false}`},
+		{name: "already disabled", option: `{"bool":true}`},
+		{name: "failed upgrade restores", option: `{"bool":false}`, failure: "sudo /usr/bin/subcult-update privileged upgrade --noconfirm", wantError: true},
+		{name: "failed migration restores", option: `{"bool":false}`, failure: "bash -euo pipefail", wantError: true},
+		{name: "cannot pause stops upgrade", option: `{"bool":false}`, failure: pauseReload, wantError: true},
+		{name: "unknown option stops upgrade", option: `{}`, wantError: true},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			f := &fake{tools: map[string]bool{"hyprctl": true}, outputs: map[string]string{"hyprctl -j getoption misc:disable_autoreload": tt.option}, fail: map[string]bool{tt.failure: true}}
+			u, _ := newUpdater(t, f, true)
+			u.O.HyprlandSession = true
+			if tt.failure == "bash -euo pipefail" {
+				script := filepath.Join(u.O.Migrations.Dir, "1794256000.sh")
+				if err := os.WriteFile(script, []byte("false\n"), 0o644); err != nil {
+					t.Fatal(err)
+				}
+				delete(f.fail, tt.failure)
+				f.fail["bash -euo pipefail "+script] = true
+			}
+			_, err := u.Run(context.Background())
+			if (err != nil) != tt.wantError {
+				t.Fatalf("error %v, wantError %v", err, tt.wantError)
+			}
+			upgrade := slices.Index(f.ran, "sudo /usr/bin/subcult-update privileged upgrade --noconfirm")
+			pause := slices.Index(f.ran, pauseReload)
+			if tt.failure == pauseReload || tt.option == `{}` {
+				if upgrade >= 0 {
+					t.Fatalf("unprotected upgrade: %v", f.ran)
+				}
+				return
+			}
+			if tt.option == `{"bool":true}` {
+				if slices.Contains(f.ran, resumeReload) {
+					t.Fatalf("enabled owner's disabled watcher: %v", f.ran)
+				}
+				return
+			}
+			resume := slices.Index(f.ran, resumeReload)
+			if pause < 0 || upgrade <= pause || resume <= upgrade {
+				t.Fatalf("watcher protection order: %v", f.ran)
+			}
+			if !tt.wantError && slices.Index(f.ran, "hyprctl reload") <= upgrade {
+				t.Fatalf("no final reload: %v", f.ran)
+			}
+			if tt.wantError && slices.Contains(f.ran, "hyprctl reload") {
+				t.Fatalf("reloaded incomplete update: %v", f.ran)
+			}
+		})
+	}
+}
+
 func TestRunRestartsShellWhenSubarchyChanged(t *testing.T) {
 	f := &fake{
 		tools:  map[string]bool{},
@@ -143,9 +205,10 @@ func TestRunLeavesShellWhenSubarchyUnchanged(t *testing.T) {
 
 func TestHyprlandReloadFailureDoesNotClaimSuccessOrSkipShell(t *testing.T) {
 	f := &fake{
-		tools:  map[string]bool{"hyprctl": true},
-		series: map[string][]string{"pacman -Q subarchy": {"subarchy 0.0.0-1", "subarchy 0.0.0-421"}},
-		fail:   map[string]bool{"hyprctl reload": true},
+		tools:   map[string]bool{"hyprctl": true},
+		outputs: map[string]string{"hyprctl -j getoption misc:disable_autoreload": `{"bool":false}`},
+		series:  map[string][]string{"pacman -Q subarchy": {"subarchy 0.0.0-1", "subarchy 0.0.0-421"}},
+		fail:    map[string]bool{"hyprctl reload": true},
 	}
 	u, out := newUpdater(t, f, true)
 	u.O.HyprlandSession = true
@@ -158,6 +221,34 @@ func TestHyprlandReloadFailureDoesNotClaimSuccessOrSkipShell(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), "Hyprland reload: failed (continuing)") || !rep.ShellRestarted {
 		t.Errorf("reload failure hid the error or skipped shell recovery: %s, %+v", out, rep)
+	}
+}
+
+func TestHyprlandWatcherRestoresAfterCancellation(t *testing.T) {
+	f := &fake{tools: map[string]bool{"hyprctl": true}, outputs: map[string]string{"hyprctl -j getoption misc:disable_autoreload": `{"bool":false}`}}
+	u, out := newUpdater(t, f, true)
+	u.O.HyprlandSession = true
+	ctx, cancel := context.WithCancel(context.Background())
+	restore, paused, err := u.pauseReload(ctx)
+	if err != nil || !paused {
+		t.Fatalf("pause = %v, %v", paused, err)
+	}
+	cancel()
+	restore()
+	if !slices.Contains(f.ran, resumeReload) || strings.Contains(out.String(), "could not be restored") {
+		t.Fatalf("canceled update left watcher paused: %v, %s", f.ran, out)
+	}
+}
+
+func TestHyprlandWatcherRestoreFailureWarns(t *testing.T) {
+	f := &fake{tools: map[string]bool{"hyprctl": true}, outputs: map[string]string{"hyprctl -j getoption misc:disable_autoreload": `{"bool":false}`}, fail: map[string]bool{resumeReload: true}}
+	u, out := newUpdater(t, f, true)
+	u.O.HyprlandSession = true
+	if _, err := u.Run(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "auto-reload could not be restored") {
+		t.Fatalf("missing recovery warning: %s", out)
 	}
 }
 
