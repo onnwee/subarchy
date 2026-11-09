@@ -99,4 +99,4 @@ with open(sys.argv[1]) as stream:
 assert doc["primary"] == "DP-3" and doc["widgets"]["subcult.clock"]["zone"] == "UTC", doc
 assert doc["widgets"]["subcult.battery"] == {"chargeDisplay":"icon-percentage", "profileDisplay":"icon-text"}, doc
 CHECK
-echo 'battery-panel-test: PASS (six displays, persistence, Dell/custom controls, fallback and error states)'
+echo 'battery-panel-test: PASS (six displays, persistence, Dell/custom controls, absent battery, fallback and error states)'

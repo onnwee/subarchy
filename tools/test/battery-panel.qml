@@ -129,6 +129,26 @@ ShellRoot {
         panel.shell = {config:{set: function() { return false }}}
         test.find(panel, "profileDisplay_off").picked()
         test.check(panel.saveError !== "", "failed save was silent")
+        // Dell power controls remain useful without UPower battery data.
+        // Never render a fictitious charge icon or percentage in that case.
+        UPower.displayDevice = {isPresent:false, isLaptopBattery:false}
+        DellPower.report = {available:true, profiles:[{id:"quiet",active:true}], charging:{available:false}}
+        test.phase++
+        break
+      case 9:
+        test.check(!test.find(widget, "batteryCharge").visible, "charge shown without a battery")
+        test.check(test.find(widget, "batteryProfile").visible && !widget.hidden, "Dell profile lost without a battery")
+        Config.set("subcult.battery", "profileDisplay", "off")
+        test.phase++
+        break
+      case 10:
+        test.check(widget.hidden, "empty widget shown with no battery and profile off")
+        Config.set("subcult.battery", "profileDisplay", "icon-text")
+        DellPower.report = {available:false}
+        test.phase++
+        break
+      case 11:
+        test.check(widget.hidden, "widget shown with neither a battery nor Dell controls")
         console.log("PASS: combined battery panel")
         Qt.quit()
         break

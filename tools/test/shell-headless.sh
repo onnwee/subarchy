@@ -419,10 +419,11 @@ st=$(status "$home1")
   fail "history body or app name not capped: $(json 'len(d["history"][0]["body"]), len(d["history"][0]["appName"])')"
 sleep 2
 
-# Without UPower (CI) there is no battery: the battery widget is not shown.
+# Without UPower (CI) there is no charge segment. This fixture has Dell
+# firmware, so the combined widget can still show its power profile.
 if [[ -n ${CI:-} ]]; then
-  [[ $(json '"subcult.battery" in d["shown"]["HEADLESS-1"]') == False && $(json 'd["onBattery"]') == False ]] ||
-    fail "a machine without a battery shows one: $st"
+  [[ $(HOME=$home1 quickshell ipc -p "$shell" call subcult.shell widgetProperty subcult.battery hasBattery) == false && $(json 'd["onBattery"]') == False ]] ||
+    fail "a machine without UPower reports battery charge: $st"
 fi
 
 # The OSD answers its IPC call (media keys use it; capslock needs no
