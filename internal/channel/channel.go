@@ -115,9 +115,11 @@ func Set(root, name string) (warning string, err error) {
 	if !Valid(name) {
 		return "", fmt.Errorf("unknown channel %q (stable or edge)", name)
 	}
+	// The state before only decides the warning: a mirrorlist without the
+	// header (edited by hand, or broken) is repaired, not refused.
 	before, err := Current(root)
 	if err != nil {
-		return "", err
+		before = State{}
 	}
 	snapshot := ""
 	if name == Stable {

@@ -45,3 +45,4 @@ git
 
 # Subarchy: subcult CLI, defaults, /etc/os-release
 subarchy
+subarchy-keyring

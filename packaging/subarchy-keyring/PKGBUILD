@@ -1,0 +1,24 @@
+# Maintainer: SUBCULT <info@subcult.tv>
+# The key pacman trusts for Subarchy's repository (ADR 0025, issue #64):
+# the Arch registry key of git.subcult.tv, which signs the database and
+# every package the registry serves (issue #44: Gitea signs with its own
+# key, not with a key of ours). registry.key is the key as the registry
+# publishes it at /api/packages/subculture-collective/arch/repository.key;
+# subarchy-trusted gives it full trust for `pacman-key --populate subarchy`.
+# A new registry key means a new release of this package.
+pkgname=subarchy-keyring
+pkgver=20261108
+pkgrel=1
+pkgdesc="Subarchy package signing key: the Arch registry key of git.subcult.tv"
+arch=('any')
+url="https://git.subcult.tv/subculture-collective/subarchy"
+license=('GPL-3.0-or-later')
+install=subarchy-keyring.install
+source=(registry.key subarchy-trusted subarchy-revoked)
+sha256sums=('SKIP' 'SKIP' 'SKIP')
+
+package() {
+  install -Dm644 registry.key "$pkgdir/usr/share/pacman/keyrings/subarchy.gpg"
+  install -Dm644 subarchy-trusted "$pkgdir/usr/share/pacman/keyrings/subarchy-trusted"
+  install -Dm644 subarchy-revoked "$pkgdir/usr/share/pacman/keyrings/subarchy-revoked"
+}

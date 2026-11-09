@@ -266,6 +266,8 @@ def boot(disk: Path, vars_file: Path) -> bool:
             ),
             "power_auto": serial.run("systemctl show -p Result --value subcult-power-auto; journalctl -b -u subcult-power-auto -o cat"),
             "plymouth": serial.run(f"{sudo} journalctl -b -o cat | grep -c 'Show Plymouth Boot Screen'"),
+            # The splash theme (ADR 0013): selected, and its files installed.
+            "plymouth_theme": serial.run("plymouth-set-default-theme; ls /usr/share/plymouth/themes/subarchy | sort | tr '\\n' ' '"),
             # Channels (ADR 0026): a new install is on stable; edge includes
             # Arch's mirrorlist; back to stable warns about newer packages.
             "channel": serial.run(
@@ -275,6 +277,11 @@ def boot(disk: Path, vars_file: Path) -> bool:
                 " grep -c subcult-mirrorlist /etc/pacman.conf",
                 timeout=60,
             ),
+            # The repository key is trusted (ADR 0025, subarchy-keyring).
+            "keyring": serial.run(f"{sudo} pacman-key --list-keys CCE8B0F3BCDD601D909773E4466AA6E8241453D2 2>&1 | grep -c 'Arch Registry'"),
+            # Hardware fixes (ADR 0050): the VM gets the ones every x86 machine
+            # gets; their files are in place; the regulatory domain follows the zone.
+            "fixes": serial.run("subcult hw fixes; echo ---; cat /etc/modprobe.d/hid_apple.conf; echo ---; grep '^WIRELESS_REGDOM=' /etc/conf.d/wireless-regdom"),
             # subcult update: snapshot, pacman -Syu, migrations, report.
             "update": serial.run(
                 # sudo -k and no stdin: the update must not need a password (ADR 0062).
@@ -299,6 +306,8 @@ def boot(disk: Path, vars_file: Path) -> bool:
         time.sleep(3)
         screendump(qmp, VM / "greeter.png")
         results["greeter_colours"] = distinct_colours(VM / "greeter.png")
+        results["greeter_palette"] = colours_in(VM / "greeter.png", 800)
+        results["sddm_log"] = serial.run("journalctl -b -o cat | grep -i 'qml' | grep -ci 'error\\|is not a type\\|cannot assign\\|Could not load' ; true")
         serial.run(
             f"echo {PASSWORD} | sudo -S -p '' -v && sudo mkdir -p /etc/sddm.conf.d"
             f" && printf '[Autologin]\\nUser={USER}\\nSession=subarchy.desktop\\n'"
@@ -353,7 +362,8 @@ def boot(disk: Path, vars_file: Path) -> bool:
         # Neovim's first launch needs no network (ADR 0045): run it in a
         # network namespace as the user, with the config from /etc/skel.
         results["nvim"] = serial.run(
-            f"{sudo} unshare -n runuser -u $(id -un) -- nvim --headless '+lua print(require(\"lazy\").stats().count)' +qa 2>&1; echo NVIM_RC=$?", timeout=120)
+            f"{sudo} unshare -n runuser -u $(id -un) -- nvim --headless '+lua print(require(\"lazy\").stats().count)'"
+            " '+lua print(\"SCHEME=\" .. tostring(vim.g.colors_name) .. \" LAYER=\" .. tostring(vim.g.subarchy_layer))' +qa 2>&1; echo NVIM_RC=$?", timeout=120)
         results["cursor"] = serial.run("ls /usr/share/icons/subcult-cursor/cursors/left_ptr /usr/share/icons/subcult-cursor/hyprcursors/default.hlc")
         # The bar and the idle sample come first, before any window is open.
         screendump(qmp, VM / "bar.png")
@@ -460,7 +470,10 @@ def boot(disk: Path, vars_file: Path) -> bool:
         "snapshot boot entry": "rootflags=subvol=/@/.snapshots/" in r["snapshot"],
         "no self-referencing EFI entry": "/EFI/BOOT/BOOTX64.EFI" not in r["snapshot"],
         "subcult update ran without a password": "UPDATE_EXIT=0" in r["update"] and "eboot needed" in r["update"],
+        "hardware fixes applied (hid_apple fnmode, regulatory domain US)": "hid-apple-fkeys" in r["fixes"]
+        and "options hid_apple fnmode=2" in r["fixes"] and 'WIRELESS_REGDOM="US"' in r["fixes"],
         "new install on the stable channel, switches to edge and back": channel_ok(r["channel"]),
+        "repository key trusted (subarchy-keyring)": r["keyring"].strip().splitlines()[-1:] == ["1"],
         "daily update check timer and count": r["update_timer"].splitlines()[0:1] == ["1"]
         and r["update_timer"].strip().splitlines()[-1].isdigit(),
         "power profile service (no battery: unchanged)": r["power_auto"].splitlines()[0:1] == ["success"]
@@ -484,6 +497,10 @@ def boot(disk: Path, vars_file: Path) -> bool:
         and r["plymouth"].strip().isdigit() and int(r["plymouth"].strip()) > 0,
         "SDDM greeter running": "sddm-greeter" in r["greeter"],
         "greeter drew something": r["greeter_colours"] > 1,
+        "greeter shows the theme (ink background, no QML errors)": "100B19" in r["greeter_palette"]
+        and r["sddm_log"].strip().splitlines()[-1:] == ["0"],
+        "Plymouth theme selected with its images": "subarchy" in r["plymouth_theme"].split()
+        and all(f in r["plymouth_theme"] for f in ("logo.png", "subarchy.script", "entry.png", "progress-bar.png")),
         "idle service runs the generated hypridle config, dpms dispatch accepted":
             r["idle_service"].strip().splitlines()[0:2] == ["active", "1"] and r["idle_service"].strip().splitlines()[-2:] == ["ok", "ok"],
         "lock locks, survives the shell dying, unlocks with the password": lock_ok(r["lock"]),
@@ -501,6 +518,7 @@ def boot(disk: Path, vars_file: Path) -> bool:
         "GTK icons and cursor": "'Papirus-Dark'" in r["gtk"] and "'subcult-cursor'" in r["gtk"],
         "cursor theme installed": "No such file" not in r["cursor"] and "left_ptr" in r["cursor"],
         "Neovim starts offline with its plugins": "NVIM_RC=0" in r["nvim"] and "Failed" not in r["nvim"],
+        "Neovim has the Subarchy layer and the subcult scheme": "LAYER=subarchy-nvim" in r["nvim"] and "SCHEME=subcult" in r["nvim"],
         "Discord web app and Vencord Web installed": "WEBAPP_OK" in r["discord"],
 
         "tender doctor passes with subcult-minimal applied": "TENDER_RC=0" in r["tender"] and "subcult-minimal" in r["tender"],

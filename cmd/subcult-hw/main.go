@@ -28,6 +28,13 @@ var routes = func() []dispatch.Described {
 		{Words: []string{"hw", "info"}, Metadata: dispatch.Metadata{
 			Summary: "Show the detected CPU, GPUs, radios, notes and matches", Args: "[--json]",
 			Examples: []string{"subcult hw info", "subcult hw info --json"}}},
+		{Words: []string{"hw", "fixes"}, Metadata: dispatch.Metadata{
+			Summary: "List the hardware fixes this machine gets (--all: the whole catalogue)", Args: "[--all] [--json]",
+			Examples: []string{"subcult hw fixes", "subcult hw fixes --all --json"}}},
+		{Words: []string{"hw", "apply"}, Metadata: dispatch.Metadata{
+			Summary: "Write the hardware fixes' files (modprobe, initramfs, kernel command line); the installer runs it on the target",
+			Args:    "[--target DIR]", RequiresSudo: true,
+			Examples: []string{"sudo subcult hw apply", "subcult hw apply --target /mnt"}}},
 		{Words: []string{"hw", "services"}, Metadata: dispatch.Metadata{
 			Summary:  "List the system services the installer enables for this hardware",
 			Examples: []string{"subcult hw services"}}},
@@ -53,11 +60,11 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return 0
 	}
 	if len(args) == 0 {
-		fmt.Fprintln(stderr, "Usage: subcult hw packages | services | info [--json] | match <text> | matches [--json] | <question>")
+		fmt.Fprintln(stderr, "Usage: subcult hw packages | services | fixes [--all] | apply [--target DIR] | info [--json] | match <text> | matches [--json] | <question>")
 		return 2
 	}
 	matcher, isMatcher := hw.FindMatcher(args[0])
-	if !isMatcher && args[0] != "packages" && args[0] != "services" && args[0] != "info" && args[0] != "match" && args[0] != "matches" {
+	if !isMatcher && args[0] != "packages" && args[0] != "services" && args[0] != "info" && args[0] != "match" && args[0] != "matches" && args[0] != "fixes" && args[0] != "apply" {
 		fmt.Fprintf(stderr, "subcult hw: unknown question %q; the questions are: %s\n", args[0], strings.Join(matcherNames(), ", "))
 		return 2
 	}
@@ -65,7 +72,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 	fs.SetOutput(stderr)
 	root := fs.String("root", "/", "directory holding proc/ and sys/ (tests)")
 	asJSON := fs.Bool("json", false, "machine-readable output")
-	all := fs.Bool("all", false, "every package the selection can pick, for the install image (packages)")
+	all := fs.Bool("all", false, "every package the selection can pick (packages), or the whole catalogue (fixes)")
+	target := fs.String("target", "/", "where apply writes the files (the installer's target)")
 	if err := fs.Parse(args[1:]); err != nil {
 		return 2
 	}
@@ -75,10 +83,37 @@ func run(args []string, stdout, stderr io.Writer) int {
 		}
 		return 0
 	}
+	if args[0] == "fixes" && *all {
+		return printFixes(hw.AllFixes(), *asJSON, stdout)
+	}
 	m, err := hw.Detect(*root)
 	if err != nil {
 		fmt.Fprintf(stderr, "subcult hw: %v\n", err)
 		return 1
+	}
+	if args[0] == "fixes" {
+		return printFixes(hw.Fixes(m), *asJSON, stdout)
+	}
+	if args[0] == "apply" {
+		if *target == "/" && os.Geteuid() != 0 {
+			fmt.Fprintln(stderr, "subcult hw apply: writes under /etc; run it as root, or give --target")
+			return 1
+		}
+		written, kept, err := hw.Apply(*target, hw.Fixes(m))
+		if err != nil {
+			fmt.Fprintf(stderr, "subcult hw apply: %v\n", err)
+			return 1
+		}
+		for _, p := range written {
+			fmt.Fprintln(stdout, "wrote", p)
+		}
+		for _, p := range kept {
+			fmt.Fprintln(stdout, "kept", p, "(yours; not a Subarchy file)")
+		}
+		if hw.NeedsInitramfs(written) {
+			fmt.Fprintln(stdout, "initramfs: the initramfs or kernel command line changed; rebuild with `mkinitcpio -P` and `limine-update`")
+		}
+		return 0
 	}
 	if isMatcher {
 		if matcher.Test(m) {
@@ -165,6 +200,28 @@ func run(args []string, stdout, stderr io.Writer) int {
 	fmt.Fprintf(stdout, "Matches:   %s\n", strings.Join(yes, " "))
 	for _, n := range sel.Notes {
 		fmt.Fprintf(stdout, "Note:      %s\n", n)
+	}
+	return 0
+}
+
+func printFixes(fixes []hw.Fix, asJSON bool, stdout io.Writer) int {
+	if asJSON {
+		enc := json.NewEncoder(stdout)
+		enc.SetIndent("", "  ")
+		if err := enc.Encode(fixes); err != nil {
+			return 1
+		}
+		return 0
+	}
+	for _, f := range fixes {
+		state := "untested"
+		if f.Tested {
+			state = "tested"
+		}
+		fmt.Fprintf(stdout, "%-22s %-9s %s\n", f.Name, state, f.Summary)
+		if f.Note != "" {
+			fmt.Fprintf(stdout, "%-22s           note: %s\n", "", f.Note)
+		}
 	}
 	return 0
 }

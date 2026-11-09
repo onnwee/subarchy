@@ -34,6 +34,11 @@ type Facts struct {
 	Touchscreen   string   // the touchscreen's input device name
 	DeviceTree    string   // /proc/device-tree/compatible, aarch64 boards
 	Vulkan        bool     // a Vulkan ICD is installed
+	ProductSKU    string   // DMI product_sku (Dell writes a model code there)
+	CPUModel      int      // the CPU's model number from /proc/cpuinfo (family 6 on Intel)
+	Battery       bool     // a battery under /sys/class/power_supply
+	ACPIIDs       []string // ACPI device hardware ids (the hid files), e.g. OVTI08F4
+	Modules       []string // loaded kernel modules (/proc/modules), on the live system
 }
 
 var archNames = map[string]string{"amd64": "x86_64", "arm64": "aarch64"}
@@ -50,8 +55,12 @@ func readFacts(root string) Facts {
 		return strings.TrimSpace(string(b))
 	}
 	f.SysVendor, f.ProductName, f.ProductFamily, f.ChassisType = dmi("sys_vendor"), dmi("product_name"), dmi("product_family"), dmi("chassis_type")
+	f.ProductSKU = dmi("product_sku")
 	if cpu, err := os.ReadFile(filepath.Join(root, "proc/cpuinfo")); err == nil {
 		for _, line := range strings.Split(string(cpu), "\n") {
+			if k, v, ok := strings.Cut(line, ":"); ok && strings.TrimSpace(k) == "model" && f.CPUModel == 0 {
+				f.CPUModel, _ = strconv.Atoi(strings.TrimSpace(v))
+			}
 			if k, v, ok := strings.Cut(line, ":"); ok && strings.TrimSpace(k) == "flags" {
 				for _, flag := range strings.Fields(v) {
 					if flag == "hypervisor" {
@@ -64,6 +73,24 @@ func readFacts(root string) Facts {
 	}
 	// omarchy-hw-laptop, omarchy-hw-laptop-closed: an ACPI lid, or an input
 	// device whose switch capabilities include SW_LID (bit 0).
+	for _, kind := range glob(root, "sys/class/power_supply/*/type") {
+		if b, err := os.ReadFile(kind); err == nil && strings.TrimSpace(string(b)) == "Battery" {
+			f.Battery = true
+		}
+	}
+	for _, hid := range glob(root, "sys/bus/acpi/devices/*/hid") {
+		if b, err := os.ReadFile(hid); err == nil {
+			f.ACPIIDs = append(f.ACPIIDs, strings.TrimSpace(string(b)))
+		}
+	}
+	sort.Strings(f.ACPIIDs)
+	if b, err := os.ReadFile(filepath.Join(root, "proc/modules")); err == nil {
+		for _, line := range strings.Split(string(b), "\n") {
+			if name, _, ok := strings.Cut(line, " "); ok && name != "" {
+				f.Modules = append(f.Modules, name)
+			}
+		}
+	}
 	for _, state := range glob(root, "proc/acpi/button/lid/*/state") {
 		f.LidSwitch = true
 		if b, err := os.ReadFile(state); err == nil && strings.Contains(string(b), "closed") {

@@ -74,6 +74,52 @@ port with them.
   `hw laptop-closed` reads the ACPI lid only. Not ported: `intel-ptl` (lspci
   text; needs PCI ids) and so `dell-xps-oled`, the `aarch64` board
   variants beyond Apple, and the platform `displays.conf` lists.
+- 2026-11-08: the Intel and general fixes (issue #81). `internal/hw/fixes.go`
+  is the catalogue: each fix names its Omarchy 4.5.0 source, whether it has
+  run on real hardware (none yet beyond what the VM exercises), the packages
+  and services it adds (which `hw packages` and `hw services` carry) and
+  the files it writes (modprobe options, initramfs modules, kernel command
+  line drop-ins). `subcult hw fixes` lists the machine's, `--all` the
+  catalogue, `subcult hw apply` writes the files, and the installer runs it
+  on the target before pacstrap so the UKIs carry them. Ported: Wi-Fi 7
+  EHT off on the two Intel radios that need it, FRED on Panther Lake,
+  intel-lpmd on the Intel laptops Omarchy lists, Intel video acceleration
+  (libvpl, vpl-gpu-rt beside the media driver), NVIDIA modeset and initramfs
+  modules, the Apple function-key row for every x86 keyboard, and the
+  wireless regulatory domain from the time zone (in the installer). The
+  IPU7 camera fix is listed with a note: `intel-ipu7-camera` is not in
+  Arch's repositories and needs packaging first. Bluetooth and
+  NetworkManager were already enabled; thermald and SOF firmware were
+  already chosen. Fixtures cover a Panther Lake laptop, an NVIDIA desktop
+  and the VM.
+- 2026-11-08: Apple and Surface (issue #105): Macs with the T2 chip get
+  the boot modules, the initramfs modules and the kernel command line the
+  t2linux kernel needs, and a note that the kernel, firmware and fan daemon
+  come from t2linux's repository, not Arch's; Intel Macs with Broadcom Wi-Fi
+  run the WPA handshake in software; the 2015 to 2017 MacBooks with the SPI
+  keyboard are noted (the driver package needs vendoring; the module list
+  goes in once it is there) and, where the NVMe drive breaks suspend, get a
+  unit that keeps it out of D3cold. The T2 kernel's own modules are noted
+  too, not listed, until that kernel is installed. Surface machines get the
+  Marvell firmware and the aggregator and keyboard modules in the
+  initramfs, with the pinctrl module read from the live medium's loaded
+  modules when one is loaded there.
+- 2026-11-08: the vendor fixes (issue #82): ASUS ROG (asusctl and asusd),
+  the ROG Flow Z13 touchpad rule, the ExpertBook B9406 panel-replay and
+  touchpad quirk, the DPCD backlight on the Panther Lake ASUS models, the
+  Framework 16 QMK HID rule, the Yoga Pro 7 bass speakers, and the Clevo WMI
+  blacklist on TUXEDO and Slimbook machines. Listed with notes, not
+  installed, because their packages are not in Arch's repositories: the
+  ProArt P14 speaker firmware, qmk-hid, the Dell XPS 13 DX13260 speaker
+  firmware and sidecar amplifiers, the Dell XPS haptic touchpad driver and
+  the TUXEDO drivers. The facts gain the DMI product SKU for the Dell match.
+- 2026-11-08: the peripheral fixes (issue #106): the Broadcom wl driver for
+  BCM4360 and BCM4331, the Synaptics intertouch step as a note (Omarchy
+  enables it for the running session only when the kernel's allowlist
+  agrees, which the installer cannot judge), and the Elgato Cam Link 4K as a v4l2loopback camera with
+  exclusive caps; the relay that feeds it (v4l2-relayd) is not in Arch's
+  repositories and is noted, not installed. The Motorcomm YT6801 script is
+  empty in Omarchy 4.5.0, so there is nothing to port.
 - 2026-11-07: DisplayLink (issue #107): `evdi-dkms` and `displaylink` are
   vendored under `packaging/aur/`; with a `17e9` USB adapter present,
   `subcult hw packages` adds them (and the kernel headers DKMS needs),
