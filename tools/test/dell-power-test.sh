@@ -76,10 +76,13 @@ run dell charging set custom 40 80 2>"$work/err" && fail "a start under the mini
 run dell charging set standard 60 80 2>"$work/err" && fail "thresholds were accepted for a fixed mode"
 run dell charging set turbo 2>/dev/null && fail "an unknown mode was accepted"
 
-# Without write permission the message names the udev rule.
-chmod a-w "$dell/platform-profile/platform-profile-0/profile"
-run dell set quiet 2>"$work/err" && fail "a read-only profile was written"
-grep -q "not writable" "$work/err" || fail "read-only message: $(cat "$work/err")"
-chmod u+w "$dell/platform-profile/platform-profile-0/profile"
+# Without write permission the message names the udev rule (root writes
+# anyway, so not under CI's root).
+if ((EUID != 0)); then
+  chmod a-w "$dell/platform-profile/platform-profile-0/profile"
+  run dell set quiet 2>"$work/err" && fail "a read-only profile was written"
+  grep -q "not writable" "$work/err" || fail "read-only message: $(cat "$work/err")"
+  chmod u+w "$dell/platform-profile/platform-profile-0/profile"
+fi
 
 echo "dell-power-test: ok"
