@@ -126,6 +126,12 @@ write_boot_config() {
   [[ -n ${conf[KERNEL_CMDLINE_EXTRA]} ]] && cmdline+=" ${conf[KERNEL_CMDLINE_EXTRA]}"
   install -d "$target"/etc/{kernel,mkinitcpio.conf.d,default}
   echo "$cmdline" >"$target/etc/kernel/cmdline"
+  # Hardware fixes (ADR 0050): modprobe options, initramfs modules and
+  # kernel command line drop-ins for this machine, written now so the UKIs
+  # pacstrap builds carry them.
+  if command -v subcult-hw >/dev/null; then
+    subcult-hw apply --target "$target" | grep -v '^initramfs:' || true
+  fi
   printf "KEYMAP=%s\nXKBLAYOUT=%s\n" "${conf[KEYMAP]}" "${conf[XKB_LAYOUT]}" >"$target/etc/vconsole.conf"
   cat >"$target/etc/mkinitcpio.conf.d/subarchy.conf" <<'EOF'
 # Subarchy (ADR 0008): systemd-based initramfs; sd-btrfs-overlayfs makes
@@ -214,6 +220,15 @@ configure_system() {
   ln -sf "/usr/share/zoneinfo/${conf[TIMEZONE]}" "$target/etc/localtime"
   sed -i "s/^#\(${conf[LOCALE]//./\\.} \)/\1/" "$target/etc/locale.gen"
   echo "LANG=${conf[LOCALE]}" >"$target/etc/locale.conf"
+  # The wireless regulatory domain from the time zone's country (ADR 0050,
+  # Omarchy's set-wireless-regdom as behaviour): zone.tab maps the zone to
+  # its ISO country.
+  local country
+  country=$(awk -v tz="${conf[TIMEZONE]}" '$1 !~ /^#/ && $3 == tz { print $1; exit }' /usr/share/zoneinfo/zone.tab 2>/dev/null || true)
+  if [[ $country =~ ^[A-Z]{2}$ ]]; then
+    install -d "$target/etc/conf.d"
+    printf 'WIRELESS_REGDOM="%s"\n' "$country" >>"$target/etc/conf.d/wireless-regdom"
+  fi
   arch-chroot "$target" locale-gen >/dev/null
   arch-chroot "$target" hwclock --systohc 2>/dev/null || true
 

@@ -102,9 +102,9 @@ func TestSelect(t *testing.T) {
 	}{
 		{
 			name: "sputnik", f: sputnik, hybrid: true, note: "hybrid graphics",
-			want: []string{"intel-media-driver", "intel-ucode", "libva-nvidia-driver", "linux-firmware-intel",
+			want: []string{"intel-media-driver", "intel-ucode", "libva-nvidia-driver", "libvpl", "linux-firmware-intel",
 				"linux-firmware-nvidia", "linux-lts-headers", "linux-zen-headers", "nvidia-open-dkms", "nvidia-utils",
-				"sof-firmware", "thermald", "vulkan-intel"},
+				"sof-firmware", "thermald", "vpl-gpu-rt", "vulkan-intel"},
 		},
 		{
 			name: "AMD laptop with MediaTek Wi-Fi",
@@ -122,7 +122,7 @@ func TestSelect(t *testing.T) {
 			name: "unknown network card falls back to all firmware",
 			f: fixture{cpu: "GenuineIntel", pci: [][3]uint32{
 				{0x8086, 0x46a6, 0x030000}, {0x1d6a, 0x07b1, 0x020000}}},
-			want: []string{"intel-media-driver", "intel-ucode", "linux-firmware", "thermald", "vulkan-intel"},
+			want: []string{"intel-media-driver", "intel-ucode", "libvpl", "linux-firmware", "thermald", "vpl-gpu-rt", "vulkan-intel"},
 			note: "unknown network device 1d6a:07b1",
 		},
 		{
@@ -140,7 +140,7 @@ func TestSelect(t *testing.T) {
 			name: "Surface is not a VM; Cirrus amps",
 			f: fixture{cpu: "GenuineIntel", vendor: "Microsoft Corporation", product: "Surface Laptop 5",
 				pci: [][3]uint32{{0x8086, 0xa7a0, 0x030000}}, acpi: []string{"CSC3551:00"}},
-			want: []string{"intel-media-driver", "intel-ucode", "linux-firmware-cirrus", "linux-firmware-intel", "thermald", "vulkan-intel"},
+			want: []string{"intel-media-driver", "intel-ucode", "libvpl", "linux-firmware-cirrus", "linux-firmware-intel", "thermald", "vpl-gpu-rt", "vulkan-intel"},
 		},
 		{
 			name: "Hyper-V guest",

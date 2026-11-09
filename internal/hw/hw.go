@@ -195,6 +195,11 @@ func Select(m Machine) Selection {
 		add("linux-firmware-cirrus")
 	}
 	var services []string
+	// The hardware fixes (fixes.go): their packages and services ride along.
+	for _, f := range Fixes(m) {
+		add(f.Packages...)
+		services = append(services, f.Services...)
+	}
 	if m.DisplayLink() {
 		// The evdi module is built by DKMS, so the kernel headers come too.
 		add("evdi-dkms", "displaylink", "linux-zen-headers", "linux-lts-headers")
