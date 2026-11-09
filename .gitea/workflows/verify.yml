@@ -37,7 +37,7 @@ jobs:
       image: archlinux:latest
     steps:
       - name: Install build tools
-        run: pacman -Syu --noconfirm --needed base-devel go git nodejs pacman-contrib fakeroot hypridle librsvg xorg-xcursorgen hyprcursor python lua python-pyte python-pillow ffmpeg ttf-dejavu
+        run: pacman -Syu --noconfirm --needed base-devel go git nodejs pacman-contrib fakeroot hypridle librsvg xorg-xcursorgen hyprcursor python lua python-pyte python-pillow ffmpeg ttf-dejavu qt6-multimedia
       - uses: actions/checkout@v4
       - name: Build and check the package as a normal user
         run: |
