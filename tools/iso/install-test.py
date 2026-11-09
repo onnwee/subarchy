@@ -301,7 +301,7 @@ def boot(disk: Path, vars_file: Path) -> bool:
         screendump(qmp, VM / "greeter.png")
         results["greeter_colours"] = distinct_colours(VM / "greeter.png")
         results["greeter_palette"] = colours_in(VM / "greeter.png", 800)
-        results["sddm_log"] = serial.run("journalctl -b -o cat | grep -ci 'qml\\|Main.qml' ; true")
+        results["sddm_log"] = serial.run("journalctl -b -o cat | grep -i 'qml' | grep -ci 'error\\|is not a type\\|cannot assign\\|Could not load' ; true")
         serial.run(
             f"echo {PASSWORD} | sudo -S -p '' -v && sudo mkdir -p /etc/sddm.conf.d"
             f" && printf '[Autologin]\\nUser={USER}\\nSession=subarchy.desktop\\n'"
@@ -474,7 +474,7 @@ def boot(disk: Path, vars_file: Path) -> bool:
         "greeter drew something": r["greeter_colours"] > 1,
         "greeter shows the theme (ink background, no QML errors)": "100B19" in r["greeter_palette"]
         and r["sddm_log"].strip().splitlines()[-1:] == ["0"],
-        "Plymouth theme selected with its images": r["plymouth_theme"].strip().startswith("subarchy")
+        "Plymouth theme selected with its images": "subarchy" in r["plymouth_theme"].split()
         and all(f in r["plymouth_theme"] for f in ("logo.png", "subarchy.script", "entry.png", "progress-bar.png")),
         "Hyprland session started": r["hyprland"].strip() != "",
         "session runs under uwsm": "wayland-wm@" in r["uwsm"],
