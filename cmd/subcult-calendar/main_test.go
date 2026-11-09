@@ -86,3 +86,31 @@ func TestNoConfigAndErrors(t *testing.T) {
 		t.Errorf("usage: %d", code)
 	}
 }
+
+func TestSyncRecoversCorruptCache(t *testing.T) {
+	for _, command := range []string{"sync", "list", "status"} {
+		t.Run(command, func(t *testing.T) {
+			a, out, errOut, p := harness(t, "schema = 1\n[[source]]\nname = \"feed\"\nkind = \"ical\"\nurl = \"https://x.test/f.ics\"\n")
+			if err := os.MkdirAll(filepath.Dir(p.cache), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(p.cache, []byte("{broken"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			code := a.run([]string{command})
+			if command != "sync" {
+				if code != 1 {
+					t.Fatalf("%s: want error, got %d", command, code)
+				}
+				return
+			}
+			if code != 0 || !strings.Contains(out.String(), "synced 1 events") {
+				t.Fatalf("sync did not recover: %d %s %s", code, out, errOut)
+			}
+			cache, err := calendar.ReadCache(p.cache)
+			if err != nil || len(cache.Events) != 1 {
+				t.Fatalf("bad recovered cache: %+v %v", cache, err)
+			}
+		})
+	}
+}

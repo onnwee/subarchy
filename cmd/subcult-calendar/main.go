@@ -13,7 +13,7 @@
 //	name = "work"            # the keyring entry and the calendar's label
 //	kind = "caldav"          # or "ical"
 //	url = "https://dav.example/user/calendar/"
-//	user = "me"              # caldav only
+//	user = "me"              # omit for a public ical feed
 //	[[source]]
 //	name = "holidays"
 //	kind = "ical"
@@ -23,6 +23,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -102,7 +103,12 @@ func (a *app) run(args []string) int {
 	}
 	cache, err := calendar.ReadCache(p.cache)
 	if err != nil {
-		return a.fail(err)
+		var pathErr *os.PathError
+		if args[0] != "sync" || errors.As(err, &pathErr) {
+			return a.fail(err)
+		}
+		fmt.Fprintf(a.stderr, "subcult calendar: ignoring corrupt cache: %v\n", err)
+		cache = calendar.Cache{}
 	}
 	switch args[0] {
 	case "sync":

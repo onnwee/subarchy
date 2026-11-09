@@ -52,4 +52,11 @@ if [[ -x $fontcmd ]]; then
   [[ $out == *"JetBrainsMono Nerd Font"* && $out == *"Terminess Nerd Font"* ]] || fail "subcult font list: $out"
 fi
 
+themecmd="$(dirname "$bin")/subcult-theme"
+if [[ -x $themecmd ]]; then
+  cp "$themecmd" "$dir/"
+  out=$(HOME="$dir" XDG_CONFIG_HOME="$dir/config" SUBCULT_PATH="$(git rev-parse --show-toplevel)" "$bin" theme apply-system --dry-run)
+  [[ $out == *"base=#100b19"* && $out == *"would run as root:"* ]] || fail "subcult theme apply-system: $out"
+fi
+
 echo "smoke: ok"
