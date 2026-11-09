@@ -23,6 +23,9 @@ type Fix struct {
 	Files    map[string]string `json:"files,omitempty"` // path under the root -> content
 	Note     string            `json:"note,omitempty"`  // what still needs a hand or a package
 	applies  func(Machine) bool
+	// build adds files that depend on the machine (the live system's loaded
+	// modules, say); Fixes merges them into Files.
+	build func(Machine) map[string]string
 }
 
 // Intel radios whose Wi-Fi 7 (EHT) mode fails; 802.11be is turned off.
@@ -219,11 +222,10 @@ var catalogue = []Fix{
 		Name: "apple-t2", Summary: "Macs with the T2 chip: the kernel, firmware and fan daemon of the t2linux project; boot modules and command line",
 		Source: "install/hardware/apple/fix-t2.sh",
 		Files: map[string]string{
-			"etc/modules-load.d/apple-t2.conf":          "# Subarchy hardware fix apple-t2 (ADR 0050)\nt2bce_vhci\nhci_bcm4377\n",
-			"etc/mkinitcpio.conf.d/apple-t2.conf":       "# Subarchy hardware fix apple-t2 (ADR 0050)\nMODULES+=(t2bce_vhci usbhid hid_apple hid_generic xhci_pci xhci_hcd)\n",
 			"etc/limine-entry-tool.d/apple-t2-mac.conf": "# Subarchy hardware fix apple-t2 (ADR 0050)\nKERNEL_CMDLINE[default]+=\" intel_iommu=on iommu=pt pm_async=off mem_sleep_default=deep\"\n",
 		},
-		Note:    "linux-t2, apple-t2-audio-config, apple-bcm-firmware-fetcher and t2fanrd come from the t2linux repository, not Arch's; add that repository or package them before this fix can install them",
+		Note: "linux-t2, apple-t2-audio-config, apple-bcm-firmware-fetcher and t2fanrd come from the t2linux repository, not Arch's; add that repository or package them first. " +
+			"The t2bce_vhci and hci_bcm4377 modules (boot and initramfs) belong to that kernel and are listed only once it is installed",
 		applies: func(m Machine) bool { return m.hasPCI(vendorApple, appleT2Bridges) },
 	},
 	{
@@ -237,9 +239,9 @@ var catalogue = []Fix{
 	},
 	{
 		Name: "apple-spi-keyboard", Summary: "MacBooks with the SPI keyboard and trackpad (2015 to 2017): the applespi driver in the initramfs",
-		Source:  "install/hardware/apple/fix-spi-keyboard.sh",
-		Files:   map[string]string{"etc/mkinitcpio.conf.d/macbook-spi.conf": "# Subarchy hardware fix apple-spi-keyboard (ADR 0050)\nMODULES+=(applespi intel_lpss_pci spi_pxa2xx_platform)\n"},
-		Note:    "macbook12-spi-driver-dkms is not in Arch's repositories; package it under packaging/aur. The MacBook8,1 needs spi_pxa2xx_pci instead of intel_lpss_pci",
+		Source: "install/hardware/apple/fix-spi-keyboard.sh",
+		Note: "macbook12-spi-driver-dkms is not in Arch's repositories; package it under packaging/aur. Once it is, the initramfs needs " +
+			"MODULES+=(applespi intel_lpss_pci spi_pxa2xx_platform), spi_pxa2xx_pci instead of intel_lpss_pci on the MacBook8,1",
 		applies: func(m Machine) bool { return appleSPIKeyboard.MatchString(m.Facts.ProductName) },
 	},
 	{
@@ -257,9 +259,18 @@ var catalogue = []Fix{
 	{
 		Name: "surface-keyboard", Summary: "Microsoft Surface: the aggregator and keyboard modules in the initramfs",
 		Source:  "install/hardware/fix-surface-keyboard.sh",
-		Files:   map[string]string{"etc/mkinitcpio.conf.d/surface-keyboard.conf": "# Subarchy hardware fix surface-keyboard (ADR 0050)\nMODULES+=(surface_aggregator surface_aggregator_registry surface_aggregator_hub surface_hid_core surface_hid surface_kbd intel_lpss_pci 8250_dw)\n"},
-		Note:    "the pin-control module of the machine (pinctrl_*) must be added to this list by hand; Omarchy reads it from the running system, which the installer cannot",
+		Note:    "the machine's pinctrl module is taken from the live system when it is loaded there; otherwise add it to the list by hand",
 		applies: func(m Machine) bool { return matches(m, "surface") && m.Facts.Arch == "x86_64" },
+		build: func(m Machine) map[string]string {
+			modules := "surface_aggregator surface_aggregator_registry surface_aggregator_hub surface_hid_core surface_hid surface_kbd intel_lpss_pci 8250_dw"
+			for _, mod := range m.Facts.Modules {
+				if strings.HasPrefix(mod, "pinctrl_") {
+					modules = mod + " " + modules
+					break
+				}
+			}
+			return map[string]string{"etc/mkinitcpio.conf.d/surface-keyboard.conf": Header + " surface-keyboard (ADR 0050)\nMODULES+=(" + modules + ")\n"}
+		},
 	},
 	// Peripherals (issue #106).
 	{
@@ -313,9 +324,20 @@ func AllFixes() []Fix {
 func Fixes(m Machine) []Fix {
 	var out []Fix
 	for _, f := range catalogue {
-		if f.applies(m) {
-			out = append(out, f)
+		if !f.applies(m) {
+			continue
 		}
+		if f.build != nil {
+			files := make(map[string]string, len(f.Files))
+			for k, v := range f.Files {
+				files[k] = v
+			}
+			for k, v := range f.build(m) {
+				files[k] = v
+			}
+			f.Files = files
+		}
+		out = append(out, f)
 	}
 	return out
 }

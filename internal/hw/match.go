@@ -38,6 +38,7 @@ type Facts struct {
 	CPUModel      int      // the CPU's model number from /proc/cpuinfo (family 6 on Intel)
 	Battery       bool     // a battery under /sys/class/power_supply
 	ACPIIDs       []string // ACPI device hardware ids (the hid files), e.g. OVTI08F4
+	Modules       []string // loaded kernel modules (/proc/modules), on the live system
 }
 
 var archNames = map[string]string{"amd64": "x86_64", "arm64": "aarch64"}
@@ -83,6 +84,13 @@ func readFacts(root string) Facts {
 		}
 	}
 	sort.Strings(f.ACPIIDs)
+	if b, err := os.ReadFile(filepath.Join(root, "proc/modules")); err == nil {
+		for _, line := range strings.Split(string(b), "\n") {
+			if name, _, ok := strings.Cut(line, " "); ok && name != "" {
+				f.Modules = append(f.Modules, name)
+			}
+		}
+	}
 	for _, state := range glob(root, "proc/acpi/button/lid/*/state") {
 		f.LidSwitch = true
 		if b, err := os.ReadFile(state); err == nil && strings.Contains(string(b), "closed") {

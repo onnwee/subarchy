@@ -288,9 +288,12 @@ func TestFixesAppleAndSurface(t *testing.T) {
 		t.Error("a MacBookPro16,1 has no SPI keyboard")
 	}
 	target := t.TempDir()
-	written, _ := Apply(target, Fixes(t2))
+	written, _, _ := Apply(target, Fixes(t2))
 	if !contains(written, "etc/limine-entry-tool.d/apple-t2-mac.conf") || !contains(written, "etc/modprobe.d/brcmfmac.conf") {
 		t.Errorf("T2 files: %v", written)
+	}
+	if contains(written, "etc/modules-load.d/apple-t2.conf") || contains(written, "etc/mkinitcpio.conf.d/apple-t2.conf") {
+		t.Error("modules of a kernel that is not installed were listed")
 	}
 
 	spi, _ := Detect(fixtureRoot(t, map[string]string{
@@ -313,6 +316,7 @@ func TestFixesAppleAndSurface(t *testing.T) {
 
 	surface, _ := Detect(fixtureRoot(t, map[string]string{
 		"proc/cpuinfo":                "vendor_id\t: GenuineIntel\nmodel\t\t: 126\n",
+		"proc/modules":                "pinctrl_icelake 16384 0 - Live 0x0\nsurface_aggregator 40960 1 - Live 0x0\n",
 		"sys/class/dmi/id/sys_vendor": "Microsoft Corporation\n", "sys/class/dmi/id/product_name": "Surface Laptop 3\n",
 	}))
 	got = fixNames(Fixes(surface))
@@ -323,5 +327,12 @@ func TestFixesAppleAndSurface(t *testing.T) {
 	}
 	if !contains(Select(surface).Packages, "linux-firmware-marvell") {
 		t.Errorf("Surface packages: %v", Select(surface).Packages)
+	}
+	target = t.TempDir()
+	if _, _, err := Apply(target, Fixes(surface)); err != nil {
+		t.Fatal(err)
+	}
+	if b, _ := os.ReadFile(filepath.Join(target, "etc/mkinitcpio.conf.d/surface-keyboard.conf")); !strings.Contains(string(b), "MODULES+=(pinctrl_icelake surface_aggregator") {
+		t.Errorf("the live system's pinctrl module is not in the list:\n%s", b)
 	}
 }
