@@ -80,6 +80,7 @@ jobs:
         run: |
           git config --global --add safe.directory "$PWD"
           make shell-test shell-lint shell-index-check
+          tools/test/dell-power-refresh.sh
       - name: Shell in a headless sway
         run: |
           useradd -m runner

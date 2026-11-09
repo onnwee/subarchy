@@ -2,12 +2,13 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Services.UPower
 import "../widgets/dell-power/Model.js" as Model
 
 // Dell firmware power and charging profiles (ADR 0021), shared by the bar
 // widget and its panel. The state comes from `subcult dell power state
-// --json` when the widget appears, when the panel opens and after each
-// change; nothing polls. Changes go through `subcult dell power set` and
+// --json` when the widget appears, when the panel opens and after a local
+// or daemon profile change; nothing polls. Changes go through `subcult dell power set` and
 // `charging set`, which write the firmware files the udev rule handed to
 // wheel. The IPC handler is for the tests.
 Singleton {
@@ -17,10 +18,18 @@ Singleton {
   property bool busy: false
   property string error: ""
   property int users: 0 // widgets in a bar; the state is read while one is
+  property bool refreshPending: false
 
   function refresh() {
-    if (!query.running)
+    if (query.running)
+      root.refreshPending = true
+    else
       query.running = true
+  }
+
+  Connections {
+    target: PowerProfiles
+    function onProfileChanged() { root.refresh() }
   }
 
   function setProfile(id) {
@@ -52,6 +61,12 @@ Singleton {
         const r = Model.parse(text)
         if (r)
           root.report = r
+      }
+    }
+    onExited: {
+      if (root.refreshPending) {
+        root.refreshPending = false
+        root.refresh()
       }
     }
   }
