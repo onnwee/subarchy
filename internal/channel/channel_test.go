@@ -130,4 +130,10 @@ func TestCurrentWithoutHeader(t *testing.T) {
 	if _, err := Current(r); err == nil {
 		t.Error("a mirrorlist without the header passed as a channel")
 	}
+	if _, err := Set(r, Stable); err != nil {
+		t.Errorf("a hand-edited mirrorlist cannot be repaired: %v", err)
+	}
+	if st, err := Current(r); err != nil || st.Channel != Stable {
+		t.Errorf("after the repair: %+v %v", st, err)
+	}
 }
