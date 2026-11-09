@@ -271,3 +271,68 @@ func TestFixesVendors(t *testing.T) {
 		}
 	}
 }
+
+func TestFixesAppleAndSurface(t *testing.T) {
+	t2, _ := Detect(fixtureRoot(t, map[string]string{
+		"proc/cpuinfo":                "vendor_id\t: GenuineIntel\nmodel\t\t: 158\n",
+		"sys/class/dmi/id/sys_vendor": "Apple Inc.\n", "sys/class/dmi/id/product_name": "MacBookPro16,1\n",
+		"sys/bus/pci/devices/0000:03:00.0/vendor": "0x106b\n", "sys/bus/pci/devices/0000:03:00.0/device": "0x1801\n", "sys/bus/pci/devices/0000:03:00.0/class": "0x0c0300\n",
+	}))
+	got := fixNames(Fixes(t2))
+	for _, w := range []string{"apple-t2", "apple-brcmfmac-supplicant"} {
+		if !contains(got, w) {
+			t.Errorf("T2 Mac lacks %s: %v", w, got)
+		}
+	}
+	if contains(got, "apple-spi-keyboard") {
+		t.Error("a MacBookPro16,1 has no SPI keyboard")
+	}
+	target := t.TempDir()
+	written, _, _ := Apply(target, Fixes(t2))
+	if !contains(written, "etc/limine-entry-tool.d/apple-t2-mac.conf") || !contains(written, "etc/modprobe.d/brcmfmac.conf") {
+		t.Errorf("T2 files: %v", written)
+	}
+	if contains(written, "etc/modules-load.d/apple-t2.conf") || contains(written, "etc/mkinitcpio.conf.d/apple-t2.conf") {
+		t.Error("modules of a kernel that is not installed were listed")
+	}
+
+	spi, _ := Detect(fixtureRoot(t, map[string]string{
+		"proc/cpuinfo":                "vendor_id\t: GenuineIntel\nmodel\t\t: 78\n",
+		"sys/class/dmi/id/sys_vendor": "Apple Inc.\n", "sys/class/dmi/id/product_name": "MacBookPro13,2\n",
+		"sys/bus/pci/devices/0000:02:00.0/vendor": "0x14e4\n", "sys/bus/pci/devices/0000:02:00.0/device": "0x43ba\n", "sys/bus/pci/devices/0000:02:00.0/class": "0x028000\n",
+	}))
+	got = fixNames(Fixes(spi))
+	for _, w := range []string{"apple-spi-keyboard", "apple-nvme-suspend", "apple-brcmfmac-supplicant"} {
+		if !contains(got, w) {
+			t.Errorf("2016 MacBook Pro lacks %s: %v", w, got)
+		}
+	}
+	if contains(got, "apple-t2") {
+		t.Error("a 2016 MacBook Pro has no T2")
+	}
+	if !contains(Select(spi).Services, "subarchy-apple-nvme-suspend") {
+		t.Errorf("services: %v", Select(spi).Services)
+	}
+
+	surface, _ := Detect(fixtureRoot(t, map[string]string{
+		"proc/cpuinfo":                "vendor_id\t: GenuineIntel\nmodel\t\t: 126\n",
+		"proc/modules":                "pinctrl_icelake 16384 0 - Live 0x0\nsurface_aggregator 40960 1 - Live 0x0\n",
+		"sys/class/dmi/id/sys_vendor": "Microsoft Corporation\n", "sys/class/dmi/id/product_name": "Surface Laptop 3\n",
+	}))
+	got = fixNames(Fixes(surface))
+	for _, w := range []string{"surface-firmware", "surface-keyboard"} {
+		if !contains(got, w) {
+			t.Errorf("Surface lacks %s: %v (surface matcher %v)", w, got, matches(surface, "surface"))
+		}
+	}
+	if !contains(Select(surface).Packages, "linux-firmware-marvell") {
+		t.Errorf("Surface packages: %v", Select(surface).Packages)
+	}
+	target = t.TempDir()
+	if _, _, err := Apply(target, Fixes(surface)); err != nil {
+		t.Fatal(err)
+	}
+	if b, _ := os.ReadFile(filepath.Join(target, "etc/mkinitcpio.conf.d/surface-keyboard.conf")); !strings.Contains(string(b), "MODULES+=(pinctrl_icelake surface_aggregator") {
+		t.Errorf("the live system's pinctrl module is not in the list:\n%s", b)
+	}
+}

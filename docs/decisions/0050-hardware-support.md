@@ -92,6 +92,18 @@ port with them.
   NetworkManager were already enabled; thermald and SOF firmware were
   already chosen. Fixtures cover a Panther Lake laptop, an NVIDIA desktop
   and the VM.
+- 2026-11-08: Apple and Surface (issue #105): Macs with the T2 chip get
+  the boot modules, the initramfs modules and the kernel command line the
+  t2linux kernel needs, and a note that the kernel, firmware and fan daemon
+  come from t2linux's repository, not Arch's; Intel Macs with Broadcom Wi-Fi
+  run the WPA handshake in software; the 2015 to 2017 MacBooks with the SPI
+  keyboard are noted (the driver package needs vendoring; the module list
+  goes in once it is there) and, where the NVMe drive breaks suspend, get a
+  unit that keeps it out of D3cold. The T2 kernel's own modules are noted
+  too, not listed, until that kernel is installed. Surface machines get the
+  Marvell firmware and the aggregator and keyboard modules in the
+  initramfs, with the pinctrl module read from the live medium's loaded
+  modules when one is loaded there.
 - 2026-11-08: the vendor fixes (issue #82): ASUS ROG (asusctl and asusd),
   the ROG Flow Z13 touchpad rule, the ExpertBook B9406 panel-replay and
   touchpad quirk, the DPCD backlight on the Panther Lake ASUS models, the

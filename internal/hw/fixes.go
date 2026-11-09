@@ -3,6 +3,7 @@ package hw
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 )
@@ -22,6 +23,9 @@ type Fix struct {
 	Files    map[string]string `json:"files,omitempty"` // path under the root -> content
 	Note     string            `json:"note,omitempty"`  // what still needs a hand or a package
 	applies  func(Machine) bool
+	// build adds files that depend on the machine (the live system's loaded
+	// modules, say); Fixes merges them into Files.
+	build func(Machine) map[string]string
 }
 
 // Intel radios whose Wi-Fi 7 (EHT) mode fails; 802.11be is turned off.
@@ -32,6 +36,21 @@ var intelEHTRadios = map[uint16]bool{0xe440: true, 0x272b: true}
 var intelLPMDModels = map[int]bool{151: true, 154: true, 170: true, 172: true, 183: true, 186: true, 189: true, 191: true, 204: true}
 
 const intelPantherLake = 204
+
+// Apple's T2 security chip appears as a PCI bridge; Macs with it need the
+// t2linux kernel and firmware.
+const vendorApple = 0x106b
+
+var appleT2Bridges = map[uint16]bool{0x1801: true, 0x1802: true}
+
+// Broadcom radios in Intel Macs whose WPA handshake must run in software.
+var appleBroadcomRadios = map[uint16]bool{0x43ba: true, 0x43bb: true, 0x43bc: true, 0x43a3: true, 0x43dc: true, 0x4464: true, 0x4488: true, 0x4425: true, 0x4433: true}
+
+// MacBooks with the SPI keyboard, and those whose NVMe drive breaks suspend.
+var (
+	appleSPIKeyboard = regexp.MustCompile(`^(MacBook[89],1|MacBook1[02],1|MacBookPro13,[123]|MacBookPro14,[123])$`)
+	appleNVMeSuspend = regexp.MustCompile(`^(MacBook(8,1|9,1|10,1)|MacBookPro13,[123]|MacBookPro14,[123])$`)
+)
 
 // Broadcom radios that need the proprietary wl driver (BCM4360, BCM4331).
 const vendorBroadcom = 0x14e4
@@ -198,6 +217,61 @@ var catalogue = []Fix{
 			return strings.Contains(v, "tuxedo") || strings.Contains(v, "slimbook")
 		},
 	},
+	// Apple (Intel Macs, T2) and Microsoft Surface (issue #105).
+	{
+		Name: "apple-t2", Summary: "Macs with the T2 chip: the kernel, firmware and fan daemon of the t2linux project; boot modules and command line",
+		Source: "install/hardware/apple/fix-t2.sh",
+		Files: map[string]string{
+			"etc/limine-entry-tool.d/apple-t2-mac.conf": "# Subarchy hardware fix apple-t2 (ADR 0050)\nKERNEL_CMDLINE[default]+=\" intel_iommu=on iommu=pt pm_async=off mem_sleep_default=deep\"\n",
+		},
+		Note: "linux-t2, apple-t2-audio-config, apple-bcm-firmware-fetcher and t2fanrd come from the t2linux repository, not Arch's; add that repository or package them first. " +
+			"The t2bce_vhci and hci_bcm4377 modules (boot and initramfs) belong to that kernel and are listed only once it is installed",
+		applies: func(m Machine) bool { return m.hasPCI(vendorApple, appleT2Bridges) },
+	},
+	{
+		Name: "apple-brcmfmac-supplicant", Summary: "Macs with Broadcom Wi-Fi: the WPA handshake in software (brcmfmac feature_disable)",
+		Source: "install/hardware/apple/fix-brcmfmac-supplicant.sh",
+		Files:  map[string]string{"etc/modprobe.d/brcmfmac.conf": "# Subarchy hardware fix apple-brcmfmac-supplicant (ADR 0050)\noptions brcmfmac feature_disable=0x82000\n"},
+		applies: func(m Machine) bool {
+			return m.hasPCI(vendorApple, appleT2Bridges) ||
+				(strings.HasPrefix(m.Facts.SysVendor, "Apple") && m.hasPCI(vendorBroadcom, appleBroadcomRadios))
+		},
+	},
+	{
+		Name: "apple-spi-keyboard", Summary: "MacBooks with the SPI keyboard and trackpad (2015 to 2017): the applespi driver in the initramfs",
+		Source: "install/hardware/apple/fix-spi-keyboard.sh",
+		Note: "macbook12-spi-driver-dkms is not in Arch's repositories; package it under packaging/aur. Once it is, the initramfs needs " +
+			"MODULES+=(applespi intel_lpss_pci spi_pxa2xx_platform), spi_pxa2xx_pci instead of intel_lpss_pci on the MacBook8,1",
+		applies: func(m Machine) bool { return appleSPIKeyboard.MatchString(m.Facts.ProductName) },
+	},
+	{
+		Name: "apple-nvme-suspend", Summary: "MacBooks whose NVMe drive must stay out of D3cold for suspend to work",
+		Source:   "install/hardware/apple/fix-suspend-nvme.sh",
+		Services: []string{"subarchy-apple-nvme-suspend"},
+		Files:    map[string]string{"etc/systemd/system/subarchy-apple-nvme-suspend.service": "# Subarchy hardware fix apple-nvme-suspend (ADR 0050)\n[Unit]\nDescription=Keep the MacBook's NVMe drive out of D3cold so suspend works\nConditionPathExists=/sys/bus/pci/devices/0000:01:00.0/d3cold_allowed\n\n[Service]\nType=oneshot\nExecStart=/bin/sh -c 'echo 0 > /sys/bus/pci/devices/0000:01:00.0/d3cold_allowed'\n\n[Install]\nWantedBy=multi-user.target\n"},
+		applies:  func(m Machine) bool { return appleNVMeSuspend.MatchString(m.Facts.ProductName) },
+	},
+	{
+		Name: "surface-firmware", Summary: "Microsoft Surface: the Marvell Wi-Fi firmware",
+		Source: "install/hardware/surface.sh", Packages: []string{"linux-firmware-marvell"},
+		applies: func(m Machine) bool { return matches(m, "surface") && m.Facts.Arch == "x86_64" },
+	},
+	{
+		Name: "surface-keyboard", Summary: "Microsoft Surface: the aggregator and keyboard modules in the initramfs",
+		Source:  "install/hardware/fix-surface-keyboard.sh",
+		Note:    "the machine's pinctrl module is taken from the live system when it is loaded there; otherwise add it to the list by hand",
+		applies: func(m Machine) bool { return matches(m, "surface") && m.Facts.Arch == "x86_64" },
+		build: func(m Machine) map[string]string {
+			modules := "surface_aggregator surface_aggregator_registry surface_aggregator_hub surface_hid_core surface_hid surface_kbd intel_lpss_pci 8250_dw"
+			for _, mod := range m.Facts.Modules {
+				if strings.HasPrefix(mod, "pinctrl_") {
+					modules = mod + " " + modules
+					break
+				}
+			}
+			return map[string]string{"etc/mkinitcpio.conf.d/surface-keyboard.conf": Header + " surface-keyboard (ADR 0050)\nMODULES+=(" + modules + ")\n"}
+		},
+	},
 	// Peripherals (issue #106).
 	{
 		Name: "broadcom-wl", Summary: "Broadcom BCM4360 and BCM4331 Wi-Fi through the wl driver (DKMS)",
@@ -250,9 +324,20 @@ func AllFixes() []Fix {
 func Fixes(m Machine) []Fix {
 	var out []Fix
 	for _, f := range catalogue {
-		if f.applies(m) {
-			out = append(out, f)
+		if !f.applies(m) {
+			continue
 		}
+		if f.build != nil {
+			files := make(map[string]string, len(f.Files))
+			for k, v := range f.Files {
+				files[k] = v
+			}
+			for k, v := range f.build(m) {
+				files[k] = v
+			}
+			f.Files = files
+		}
+		out = append(out, f)
 	}
 	return out
 }
