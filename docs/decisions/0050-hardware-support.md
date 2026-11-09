@@ -102,8 +102,9 @@ port with them.
   firmware and sidecar amplifiers, the Dell XPS haptic touchpad driver and
   the TUXEDO drivers. The facts gain the DMI product SKU for the Dell match.
 - 2026-11-08: the peripheral fixes (issue #106): the Broadcom wl driver for
-  BCM4360 and BCM4331, Synaptics touchpads over RMI4 (psmouse
-  intertouch), and the Elgato Cam Link 4K as a v4l2loopback camera with
+  BCM4360 and BCM4331, the Synaptics intertouch step as a note (Omarchy
+  enables it for the running session only when the kernel's allowlist
+  agrees, which the installer cannot judge), and the Elgato Cam Link 4K as a v4l2loopback camera with
   exclusive caps; the relay that feeds it (v4l2-relayd) is not in Arch's
   repositories and is noted, not installed. The Motorcomm YT6801 script is
   empty in Omarchy 4.5.0, so there is nothing to port.

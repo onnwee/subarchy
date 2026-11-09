@@ -58,8 +58,8 @@ func (m Machine) hasPCI(vendor uint16, devices map[uint16]bool) bool {
 }
 
 func (m Machine) hasDisplay(vendor uint16) bool {
-	for _, d := range m.Devices {
-		if d.Kind() == "display" && d.Vendor == vendor {
+	for _, d := range m.displays() {
+		if d.Vendor == vendor {
 			return true
 		}
 	}
@@ -75,13 +75,10 @@ func (m Machine) hasACPI(id string) bool {
 	return false
 }
 
+// nvidiaOpen: an NVIDIA GPU the open driver supports, the same test the
+// `nvidia-gsp` matcher and the package selection use.
 func (m Machine) nvidiaOpen() bool {
-	for _, d := range m.Devices {
-		if d.Kind() == "display" && d.Vendor == vendorNVIDIA && d.Device >= nvidiaTuring {
-			return true
-		}
-	}
-	return false
+	return m.nvidiaIn(nvidiaTuring, 0xffff)
 }
 
 // catalogue is every fix, in the order they apply.
@@ -94,11 +91,9 @@ var catalogue = []Fix{
 	},
 	{
 		Name: "intel-fred", Summary: "Flexible Return and Event Delivery on Panther Lake (kernel command line fred=on)",
-		Source: "install/hardware/intel/fred.sh",
-		Files:  map[string]string{"etc/limine-entry-tool.d/intel-panther-lake-fred.conf": "# Subarchy hardware fix intel-fred (ADR 0050)\nKERNEL_CMDLINE[default]+=\" fred=on\"\n"},
-		applies: func(m Machine) bool {
-			return m.CPUVendor == "GenuineIntel" && m.Facts.CPUModel == intelPantherLake
-		},
+		Source:  "install/hardware/intel/fred.sh",
+		Files:   map[string]string{"etc/limine-entry-tool.d/intel-panther-lake-fred.conf": "# Subarchy hardware fix intel-fred (ADR 0050)\nKERNEL_CMDLINE[default]+=\" fred=on\"\n"},
+		applies: isPantherLake,
 	},
 	{
 		Name: "intel-lpmd", Summary: "Intel Low Power Mode Daemon on the Intel laptops it supports",
@@ -211,9 +206,10 @@ var catalogue = []Fix{
 		applies:  func(m Machine) bool { return m.hasPCI(vendorBroadcom, broadcomWLRadios) },
 	},
 	{
-		Name: "synaptics-intertouch", Summary: "Synaptics touchpads over RMI4 instead of PS/2 (psmouse synaptics_intertouch=1)",
+		Name: "synaptics-intertouch", Summary: "Synaptics touchpads over RMI4 instead of PS/2 (psmouse synaptics_intertouch)",
 		Source: "install/hardware/fix-synaptic-touchpad.sh",
-		Files:  map[string]string{"etc/modprobe.d/psmouse-synaptics.conf": "# Subarchy hardware fix synaptics-intertouch (ADR 0050)\noptions psmouse synaptics_intertouch=1\n"},
+		Note: "Omarchy enables intertouch for the running session only when psmouse is not loaded, so the kernel's allowlist decides; " +
+			"a persistent option would force it on pads the allowlist excludes. Try `modprobe -r psmouse && modprobe psmouse synaptics_intertouch=1`, and keep it in /etc/modprobe.d by hand if it helps",
 		applies: func(m Machine) bool {
 			return strings.Contains(strings.ToLower(m.Facts.Touchpad), "synaptics")
 		},
@@ -261,11 +257,15 @@ func Fixes(m Machine) []Fix {
 	return out
 }
 
-// Apply writes the fixes' files under root, creating directories, and
-// returns the paths whose content changed. A file already holding the
-// content is left alone.
-func Apply(root string, fixes []Fix) ([]string, error) {
-	var written []string
+// Header opens every file a fix writes, so Apply can tell its own files
+// from the user's.
+const Header = "# Subarchy hardware fix"
+
+// Apply writes the fixes' files under root, creating directories. It
+// returns the paths it wrote and the paths it kept: a file already holding
+// the content is left alone, and so is a file that does not start with the
+// Header, which the user wrote or edited.
+func Apply(root string, fixes []Fix) (written, kept []string, err error) {
 	for _, f := range fixes {
 		paths := make([]string, 0, len(f.Files))
 		for p := range f.Files {
@@ -274,19 +274,25 @@ func Apply(root string, fixes []Fix) ([]string, error) {
 		sort.Strings(paths)
 		for _, p := range paths {
 			full := filepath.Join(root, p)
-			if old, err := os.ReadFile(full); err == nil && string(old) == f.Files[p] {
-				continue
+			if old, err := os.ReadFile(full); err == nil {
+				if string(old) == f.Files[p] {
+					continue
+				}
+				if !strings.HasPrefix(string(old), Header) {
+					kept = append(kept, p)
+					continue
+				}
 			}
 			if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
-				return written, err
+				return written, kept, err
 			}
 			if err := os.WriteFile(full, []byte(f.Files[p]), 0o644); err != nil {
-				return written, err
+				return written, kept, err
 			}
 			written = append(written, p)
 		}
 	}
-	return written, nil
+	return written, kept, nil
 }
 
 // NeedsInitramfs reports whether written files change what the initramfs

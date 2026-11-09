@@ -99,7 +99,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 			fmt.Fprintln(stderr, "subcult hw apply: writes under /etc; run it as root, or give --target")
 			return 1
 		}
-		written, err := hw.Apply(*target, hw.Fixes(m))
+		written, kept, err := hw.Apply(*target, hw.Fixes(m))
 		if err != nil {
 			fmt.Fprintf(stderr, "subcult hw apply: %v\n", err)
 			return 1
@@ -107,8 +107,11 @@ func run(args []string, stdout, stderr io.Writer) int {
 		for _, p := range written {
 			fmt.Fprintln(stdout, "wrote", p)
 		}
+		for _, p := range kept {
+			fmt.Fprintln(stdout, "kept", p, "(yours; not a Subarchy file)")
+		}
 		if hw.NeedsInitramfs(written) {
-			fmt.Fprintln(stdout, "initramfs: the initramfs and kernel command line changed; rebuild with mkinitcpio -P")
+			fmt.Fprintln(stdout, "initramfs: the initramfs or kernel command line changed; rebuild with `mkinitcpio -P` and `limine-update`")
 		}
 		return 0
 	}
