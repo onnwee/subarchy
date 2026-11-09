@@ -764,8 +764,8 @@ def lock_ok(out: str) -> bool:
 
 def theme_system_ok(out: str) -> bool:
     """Two apply-system runs (the first rebuilds the initramfs, the second changes nothing), then the files."""
-    parts = [p.strip() for p in out.split("---")]
-    if len(parts) < 3:
+    parts = [p.strip() for p in re.split(r"(?m)^---$", out)]
+    if len(parts) != 3:
         return False
     first, second, files = parts
     return (
