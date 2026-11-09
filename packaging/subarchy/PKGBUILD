@@ -11,10 +11,10 @@ pkgdesc="Subarchy: SUBCULT's Arch Linux desktop (subcult CLI, defaults and OS id
 arch=('x86_64')
 url="https://git.subcult.tv/subculture-collective/subarchy"
 license=('GPL-3.0-or-later')
-depends=('bash' 'glibc' 'pacman-contrib' 'fakeroot')
+depends=('bash' 'glibc' 'pacman-contrib' 'fakeroot' 'hypridle')
 makedepends=('go' 'git' 'librsvg' 'xorg-xcursorgen' 'hyprcursor')
 options=('!debug')
-backup=(etc/xdg/gtk-3.0/settings.ini etc/xdg/gtk-4.0/settings.ini etc/xdg/kitty/kitty.conf etc/xdg/kitty/subcult-ink.conf)
+backup=(etc/xdg/gtk-3.0/settings.ini etc/xdg/gtk-4.0/settings.ini etc/xdg/kitty/kitty.conf etc/xdg/kitty/subcult-ink.conf etc/pam.d/subcult-lock)
 
 _root() {
   realpath "$startdir/../.."
@@ -152,6 +152,21 @@ package() {
   # monitor event arrives.
   install -Dm644 "$sys/subcult-display.service" "$pkgdir/usr/lib/systemd/user/subcult-display.service"
   ln -s ../subcult-display.service "$pkgdir/usr/lib/systemd/user/graphical-session.target.wants/subcult-display.service"
+  # The lock screen (ADR 0036): its own program in its own unit, started on
+  # demand by hypridle or `subcult lock`; and the idle service that runs
+  # hypridle with the config generated from the user's idle settings.
+  (
+    cd "$root/lock"
+    find . -type f ! -path '*/tests/*' ! -name README.md -print0 |
+      while IFS= read -r -d '' f; do
+        install -Dm644 "$f" "$pkgdir/usr/share/subcult/lock/${f#./}"
+      done
+  )
+  install -Dm644 "$root/branding/studio/logos/lockup-dark.svg" "$pkgdir/usr/share/subcult/lock/lockup-dark.svg"
+  install -Dm644 "$root/default/pam/subcult-lock" "$pkgdir/etc/pam.d/subcult-lock"
+  install -Dm644 "$sys/subcult-lock.service" "$pkgdir/usr/lib/systemd/user/subcult-lock.service"
+  install -Dm644 "$sys/subcult-idle.service" "$pkgdir/usr/lib/systemd/user/subcult-idle.service"
+  ln -s ../subcult-idle.service "$pkgdir/usr/lib/systemd/user/graphical-session.target.wants/subcult-idle.service"
   # Clipboard history for the launcher (ADR 0056); wl-paste sleeps between copies.
   install -Dm644 "$sys/subcult-clipboard.service" "$pkgdir/usr/lib/systemd/user/subcult-clipboard.service"
   ln -s ../subcult-clipboard.service "$pkgdir/usr/lib/systemd/user/graphical-session.target.wants/subcult-clipboard.service"

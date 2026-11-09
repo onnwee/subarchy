@@ -16,7 +16,7 @@ QT6QML ?= /usr/lib/qt6/qml
 # for the shell's imports, quickshell; the CI shell job installs both.
 shell-test:
 	@mkdir -p $(BUILD)
-	@for d in shell/tests shell/widgets/*/tests; do \
+	@for d in shell/tests shell/widgets/*/tests lock/tests; do \
 	  [ -d "$$d" ] || continue; \
 	  echo "shell-test: $$d"; \
 	  $(QT6BIN)/qmltestrunner -platform offscreen -input "$$d" >$(BUILD)/shell-test.log 2>&1 || { cat $(BUILD)/shell-test.log; exit 1; }; \
@@ -38,7 +38,7 @@ shell-lint:
 	@gs=$(BUILD)/qml/Quickshell/Hyprland/_GlobalShortcuts; src=$(QT6QML)/Quickshell/Hyprland/_GlobalShortcuts; \
 	  if [ -f "$$src/qmldir" ]; then mkdir -p "$$gs" && cp "$$src"/*.qmltypes "$$gs"/ && \
 	  { cat "$$src/qmldir"; grep -qx 'depends Quickshell' "$$src/qmldir" || echo 'depends Quickshell'; } >"$$gs/qmldir"; fi
-	@files=$$(git ls-files 'shell/*.qml' | sed 's|^|$(CURDIR)/|'); [ -z "$$files" ] || $(QT6BIN)/qmllint --bare --max-warnings 0 -I $(CURDIR)/$(BUILD)/qml -I $(QT6QML) $$files
+	@files=$$(git ls-files 'shell/*.qml' 'lock/*.qml' | sed 's|^|$(CURDIR)/|'); [ -z "$$files" ] || $(QT6BIN)/qmllint --bare --max-warnings 0 -I $(CURDIR)/$(BUILD)/qml -I $(QT6QML) $$files
 
 verify: fmt-check vet test build smoke shellcheck docs-check hypr-check shell-index-check
 
