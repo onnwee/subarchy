@@ -1,6 +1,9 @@
 package apps
 
 import (
+	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -83,5 +86,63 @@ func TestDiscordEntryMatchesTheCatalogue(t *testing.T) {
 		if !strings.Contains(got, want) {
 			t.Errorf("lacks %q", want)
 		}
+	}
+}
+
+func TestWebappEscapesExecArgument(t *testing.T) {
+	for _, tt := range []struct{ url, exec string }{
+		{"https://x.test/a%20b%2Fc", "Exec=chromium --app=https://x.test/a%%20b%%2Fc\n"},
+		{"https://x.test/?q=a&b=c", "Exec=chromium \"--app=https://x.test/?q=a&b=c\"\n"},
+		{"https://x.test/?q=\"$`\\", "Exec=chromium \"--app=https://x.test/?q=\\\\\"\\\\$\\\\`\\\\\\\\\"\n"},
+	} {
+		t.Run(tt.url, func(t *testing.T) {
+			if got := WebappDesktop("Probe", tt.url, ""); !strings.Contains(got, tt.exec) {
+				t.Fatalf("entry does not contain %q:\n%s", tt.exec, got)
+			}
+		})
+	}
+}
+
+func TestWebappRemovesInstalledIconFormats(t *testing.T) {
+	for _, ext := range []string{"png", "svg", "jpg", "jpeg", "webp", "PNG", "custom"} {
+		t.Run(ext, func(t *testing.T) {
+			dir := t.TempDir()
+			appsDir, iconsDir := filepath.Join(dir, "applications"), filepath.Join(dir, "icons[private]")
+			icon := filepath.Join(dir, "source."+ext)
+			if err := os.WriteFile(icon, []byte("icon fixture"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			install, err := WebappPlan(appsDir, iconsDir, "Probe", "https://x.test", icon)
+			if err != nil {
+				t.Fatal(err)
+			}
+			installed := install[0].Argv[len(install[0].Argv)-1]
+			if err := exec.Command(install[0].Argv[0], install[0].Argv[1:]...).Run(); err != nil {
+				t.Fatal(err)
+			}
+			neighbor := filepath.Join(filepath.Dir(installed), "probe-other."+ext)
+			if err := os.WriteFile(neighbor, []byte("keep"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			protectedDir := filepath.Join(filepath.Dir(installed), "probe.directory")
+			if err := os.Mkdir(protectedDir, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			remove, err := WebappRemovePlan(appsDir, iconsDir, "Probe")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := exec.Command(remove[0].Argv[0], remove[0].Argv[1:]...).Run(); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := os.Stat(installed); !os.IsNotExist(err) {
+				t.Fatalf("installed icon remains: %v", err)
+			}
+			for _, kept := range []string{neighbor, protectedDir} {
+				if _, err := os.Stat(kept); err != nil {
+					t.Fatalf("unrelated path removed: %v", err)
+				}
+			}
+		})
 	}
 }

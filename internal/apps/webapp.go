@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -62,8 +63,19 @@ func WebappDesktop(name, u, icon string) string {
 	if icon == "" {
 		icon = "web-browser"
 	}
-	return fmt.Sprintf("[Desktop Entry]\nVersion=1.0\nType=Application\nName=%s\nComment=%s\nExec=chromium --app=%s\nIcon=%s\nStartupWMClass=%s\nStartupNotify=true\nTerminal=false\nCategories=Network;\n",
-		desktopEscape(name), desktopEscape(u), u, icon, WMClass(u))
+	return fmt.Sprintf("[Desktop Entry]\nVersion=1.0\nType=Application\nName=%s\nComment=%s\nExec=chromium %s\nIcon=%s\nStartupWMClass=%s\nStartupNotify=true\nTerminal=false\nCategories=Network;\n",
+		desktopEscape(name), desktopEscape(u), desktopExecArg("--app="+u), icon, WMClass(u))
+}
+
+// Desktop Exec uses its own quoting rules, then expands field codes. The
+// generic desktop string parser consumes one layer of backslash escapes first.
+func desktopExecArg(s string) string {
+	s = strings.ReplaceAll(s, "%", "%%")
+	if !strings.ContainsAny(s, " \t\n\"'\\><~|&;$*?#()`") {
+		return s
+	}
+	s = strings.NewReplacer(`\`, `\\\\`, `"`, `\\"`, "`", "\\\\`", "$", `\\$`).Replace(s)
+	return `"` + s + `"`
 }
 
 func desktopEscape(s string) string {
@@ -103,7 +115,16 @@ func WebappRemovePlan(appsDir, iconsDir, name string) ([]Step, error) {
 	if err != nil {
 		return nil, err
 	}
-	return []Step{{Argv: []string{"rm", "-f", filepath.Join(appsDir, id+".desktop"),
-		filepath.Join(iconsDir, "hicolor", "256x256", "apps", id+".png"),
-		filepath.Join(iconsDir, "hicolor", "256x256", "apps", id+".svg")}}}, nil
+	argv := []string{"rm", "-f", filepath.Join(appsDir, id+".desktop")}
+	dir := filepath.Join(iconsDir, "hicolor", "256x256", "apps")
+	entries, err := os.ReadDir(dir)
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return nil, err
+	}
+	for _, entry := range entries {
+		if !entry.IsDir() && strings.HasPrefix(entry.Name(), id+".") {
+			argv = append(argv, filepath.Join(dir, entry.Name()))
+		}
+	}
+	return []Step{{Argv: argv}}, nil
 }
