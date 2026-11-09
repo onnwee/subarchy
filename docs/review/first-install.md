@@ -4,80 +4,87 @@ type: review
 status: draft
 review: pending
 created: 2026-11-07
-updated: 2026-11-08
+updated: 2026-11-09
 tags: [review, installer]
 aliases: [First install, Install runbook]
 ---
 
 # First install on sputnik
 
+Subarchy was installed on Sputnik's SPCC second drive on November 8–9,
+2026 CST, coordinated from Kvant. **Both Subarchy and the existing Omarchy
+booted and accepted their separately trusted SSH connections.** The owner
+logged into both systems. Subarchy is running for owner testing; Omarchy
+remains the permanent firmware default.
+
 Issue [#75](https://git.subcult.tv/subculture-collective/subarchy/issues/75)
-owns the second-drive install and its hardware results. Kvant coordinates
-the installation so this session survives Sputnik reboots. The owner will
-perform the remaining physical acceptance tests. Keep the issue open until
-those results are recorded; a VM pass does not satisfy them.
+stays open until the owner records the remaining hardware results below.
+Installation, local checks, hosted CI, package publication and physical
+acceptance are separate claims.
 
-## Current desktop and evidence
+## Installed system
 
-Installer source `144cdf27ff561b18d6187606fecbc61406d5910c` (PR #207),
-checked on 2026-11-08, includes the Quickshell bar, launcher, notifications, widgets,
-standalone lock, themed screensaver, SDDM greeter and Hyprland session. The
-installer supplies kitty, Neovim with the packaged configuration, the shell
-and desktop dependencies. Additional applications come through
-`subcult app install`; the app catalog is not an installation receipt.
+The installed desktop includes the Quickshell bar, launcher, notifications,
+widgets, standalone lock, themed screensaver, SDDM and Hyprland. Kitty and
+Neovim with the packaged configuration are installed. Additional apps come
+through `subcult app install`; the catalog is not an installation receipt.
 
-The base system includes LUKS2, btrfs subvolumes and snapshots, linux-zen
-and linux-lts, Limine, zram, NetworkManager, PipeWire, Bluetooth, AppArmor
-and ufw. Hardware detection selects firmware and GPU packages. DisplayLink
-detection now selects `evdi-dkms` and `displaylink` and enables the service
-([[0050-hardware-support|ADR 0050]]). No DisplayLink adapter was attached
-during the November 8 preflight; test it with the dock attached.
+The base includes LUKS2, btrfs subvolumes and snapshots, linux-zen and
+linux-lts, Limine, zram, NetworkManager, PipeWire, Bluetooth, AppArmor and
+ufw. Hardware detection selected Intel/NVIDIA firmware and microcode,
+NVIDIA open DKMS and both kernel headers. OpenSSH and the DisplayLink
+packages/service were provisioned for this workstation's access and dock
+tests. No DisplayLink adapter was attached; dock behavior is untested.
 
-The source-thread receipt on Sputnik,
-`/home/onnwee/.t3/worktrees/Subarchy/t3-960119c8/build/vm-fixture-install3.log`,
-records 77 passing fresh VM checks (exit 0), as handed over by that thread.
-It covers the default shell/greeter, lock and battery behavior, theme
-idempotence, budgets, snapshots, Secure Boot and TPM with emulated hardware.
-That run combined a rebuilt package with an older live ISO. It does not
-qualify that ISO as a current offline installation artifact.
+Observed on November 9 at 00:03–00:05 CST:
 
-Main advanced to `e717f0e8a14f8dec6287b9885757954f48ae5413` (#208) during
-the new image build. Its changes are confined to CI and documentation;
-the installer, package recipes and runtime sources match the pinned build.
+- Subarchy: `ID=subarchy`, kernel `7.2.11-zen1-1-zen`, firmware entry
+  `0005` labelled **Subarchy (SPCC)**.
+- Root btrfs UUID `d02d895a-5cd1-4fe9-822f-069ce1e21f33`, subvolume
+  `@`, backed by the SPCC LUKS2 UUID
+  `1b3aee4a-ede2-4d97-b885-26f6681afffa`.
+- Its own 4 GiB ESP: PARTUUID
+  `d5d15d48-5033-4721-915e-887a8ddaf220`. The remaining partition is
+  995,908,853,248 bytes. Both UKIs and the read-only `@factory` snapshot
+  were checked before boot.
+- SSH, NetworkManager, SDDM, ufw and DisplayLink services active; no failed
+  system or user units after the power dependency repair.
+- The saved Wi-Fi profile reconnected automatically. Its interface-name
+  restriction was removed to tolerate live `wlan0` versus installed
+  `wlp0s20f3`. It is root-owned mode 600; credentials are not in this repo.
+- ufw denies incoming connections by default; its SSH exception allows
+  only Kvant's verified LAN address.
+- NVIDIA `615.78.08` and evdi `1.15.1` DKMS modules are installed for
+  `7.2.11-zen1-1-zen` and `6.18.57-2-lts`. `nvidia-smi` sees the
+  RTX 3050 Ti Laptop GPU. This does not establish GPU modes or rendering.
+- Shell and idle user services active; Hyprland configuration errors empty.
+  Quickshell loaded its configuration. Two portal app-ID warnings were
+  logged; no visible portal workflow was tested.
+- Secure Boot was not enabled and no TPM token was enrolled.
 
-The parent thread is fixing the missing signed `[subarchy]` repository
-section for installed systems under #67. After that change merges, install
-its updated core package and rerun `subcult channel set stable` before
-checking online updates. Record that package revision separately from this
-ISO; offline installation does not depend on the published repository.
+The core package is still the image's `subarchy 0.0.0-1`. The merged
+PR #209 channel-registration logic was built from
+`72314a1197f204e568657167eb534ee032ddfa10` and run once as a temporary
+helper. `[subarchy]` now requires package and database signatures and
+includes `/etc/pacman.d/subcult-repo`. The helper was removed; no
+package-owned binary was replaced by hand. The unsigned bootstrap sync
+database was moved into private recovery storage, not retained under the
+signed repository name. The first signed published core upgrade and
+online-update qualification remain parent-owned under #67. A client database
+sync with signatures required passed, but the core package was not present
+in the repository at the time of that check.
 
-## Live disk identification
+## Disk identities and the boot-order trap
 
-Observed directly on **Sputnik, 2026-11-08** from Kvant over SSH:
+Device numbering changed twice. **Never select a disk by NVMe number.**
 
-| Role | Model | Serial | Capacity | Device at observation |
-|---|---|---|---|---|
-| Proposed Subarchy target | SPCC M.2 PCIe SSD | `AA231221NV01KG05237` | 1,000,204,886,016 bytes | `/dev/nvme0n1` |
-| Existing Omarchy, retain | CT1000P5PSSD8 | `222839D04356` | 1,000,204,886,016 bytes | `/dev/nvme1n1` |
-| Proposed installer USB | USB DISK 3.0 | `07002AC6C31EA238` | 62,025,367,552 bytes | `/dev/sda` |
+| Role | Model | Serial | Capacity | Before USB boot | Live installer | Installed Subarchy |
+|---|---|---|---|---|---|---|
+| Subarchy | SPCC M.2 PCIe SSD | `AA231221NV01KG05237` | 1,000,204,886,016 bytes | `nvme0n1` | `nvme1n1` | `nvme0n1` |
+| Retained Omarchy | CT1000P5PSSD8 | `222839D04356` | 1,000,204,886,016 bytes | `nvme1n1` | `nvme0n1` | `nvme1n1` |
+| Installer USB | USB DISK 3.0 | `07002AC6C31EA238` | 62,025,367,552 bytes | `sda` | `sda` | `sda` |
 
-The SPCC has an empty GPT and no partitions or mounted filesystems in
-`lsblk`; `wipefs --no-act` reports GPT/PMBR signatures. This observation
-does not authorize erasure or prove old data cannot be recovered. The USB
-holds a Debian 13.7 installer and one automounted partition. Writing the
-new image will replace that installer.
-
-Omarchy's live root is `/dev/mapper/root`, backed by the Crucial's LUKS2
-partition 2; its FAT32 partition 1 is mounted at `/boot`. The root btrfs
-UUID is `4f537c0d-73ef-49cf-900e-9bb790d89001`; its LUKS UUID is
-`9ed35003-158c-46d6-bb75-d896f4ed5c04`. Firmware entry `0002` is the current
-Omarchy Limine entry on that disk. The observed boot order is
-`0002,0000,0001`. Secure Boot's EFI variable reads disabled.
-
-**Recheck these facts in the live environment immediately before erasing.**
-Use model, serial, byte size, by-id path and mounted-device ancestry;
-NVMe numbering and firmware entry numbers can change. Intended stable
-paths at preflight:
+The guarded install used these stable paths:
 
 ```text
 /dev/disk/by-id/nvme-SPCC_M.2_PCIe_SSD_AA231221NV01KG05237
@@ -85,150 +92,161 @@ paths at preflight:
 /dev/disk/by-id/usb-_USB_DISK_3.0_07002AC6C31EA238-0:0
 ```
 
-## Recovery and access before reboot
+Pre-install observation on November 8: the SPCC had an empty GPT with no
+partitions/mounts; the USB held a Debian 13.7 installer. The owner approved
+erasing both exact serials. Immediately before formatting, guards checked
+all three identities/capacities, no SSD mounts or active mappings, no swap,
+an empty target mountpoint and the live overlay root. Omarchy stayed closed
+and unmounted during installation, apart from temporary read-only ESP
+hash checks.
 
-Private receipts live at `~/.local/state/subarchy-install-75/` on Sputnik
-and `~/.local/state/subarchy-install-75/recovery/` on Kvant. The latter has
-matching SHA-256 copies of Omarchy's ESP archive and LUKS header, along
-with partition maps, disk evidence, ESP file hashes and firmware entry/order
-evidence. All 15 archived ESP files also match the live preflight file hashes. These are boot-recovery copies,
-not a backup of all Omarchy user data. Do not publish the archive,
-encrypted-volume header or network credentials.
+Omarchy recovery boot was observed at 23:52 CST: kernel
+`7.2.15-1-omarchy`, original root UUID
+`4f537c0d-73ef-49cf-900e-9bb790d89001`, Crucial serial
+`222839D04356`, firmware entry `0002`. Its LUKS UUID remains
+`9ed35003-158c-46d6-bb75-d896f4ed5c04`.
 
-Keep Omarchy's ESP, encrypted partition and boot entries intact. Subarchy
-gets its own 4 GiB ESP on the SPCC. After installer hooks run, inspect the
-new firmware entry's partition GUID and loader path, give it a distinct
-Subarchy label, and restore Omarchy's previous default order. Use
-`BootNext` for the first Subarchy boot. Re-read actual entry numbers before
-any `efibootmgr` write. Do not enable Secure Boot, replace firmware keys or
-enroll TPM unlock as part of the initial install.
+Observed firmware order after the Omarchy recovery boot started with Omarchy:
+`0002,0000,0003,0001,0005,0004`. Firmware automatically added a generic
+SPCC fallback entry `0004` on reboot. Entry `0005` is the distinct
+Subarchy Limine path on the new ESP; the existing Crucial entries remain.
+In-place relabelling with `efibootmgr -b -L` did not change the label, so
+only the newly created SPCC entry was recreated with the distinct label.
+GUID and loader-path readback guarded that operation.
 
-Kvant's SSH alias currently reaches Omarchy over Sputnik's Wi-Fi and
-trusts Omarchy's host key. The live image and installed Subarchy must have
-separate host-key identities and dedicated known-hosts entries. Do not
-disable host-key checks or replace Omarchy's trusted entry.
+Future normal reboots still default to Omarchy. Use F12 and select
+**Subarchy (SPCC)** to return to Subarchy. Re-read entry numbers before any
+`BootNext` or boot-order write. Subarchy's `UEFI_BOOT_ORDER=last` avoids
+taking the permanent default if its entry must be recreated.
 
-A private ISO overlay supplies a dedicated Kvant public login key, a
-live-medium SSH host key and key-only root SSH configuration. It contains
-no owner's login password, LUKS passphrase or Wi-Fi credentials. Keep this
-personalized image private. Verify its SSH identity and key login in a VM
-before booting hardware.
+## Artifact and recovery receipts
 
-The owner may need to select the USB in the firmware menu and connect
-Wi-Fi at the live console using `iwctl` (run `device list` first; interface
-names can change). Wired networking can avoid this Wi-Fi step. Verify
-trusted SSH from Kvant to the live environment before starting setup.
-Notify the parent thread before rebooting Sputnik and confirm its work
-has durable state.
+The installed artifact was built on Sputnik from source
+`144cdf27ff561b18d6187606fecbc61406d5910c` (#207). Main advanced to #208
+during the build; that diff changed only CI/docs. The changed core package
+was rebuilt. Reused non-core package recipes matched cache source
+`35b3058`; manifests record all 635 repository package files.
 
-## Installation sequence
-
-1. Build from pinned current `origin/main` in an independent checkout;
-   check space first. Reused caches do not establish freshness. Use a
-   unique `SUBARCHY_ISO_WORK` so another build's work is not removed.
-   Record the source revision, private access overlay, ISO hash and
-   package manifest. Keep build-only Python dependencies isolated.
-2. Run `make iso-test`, then `make install-test-offline` against that exact
-   ISO. The latter drives the image's own setup with the guest network
-   disabled. Record full results rather than substituting the earlier
-   fixture receipt.
-3. Present the USB's live model, serial, capacity and contents to the owner
-   and obtain the destructive checkpoint before writing. Unmount its
-   partitions, write only the approved whole-disk by-id path, flush writes
-   and compare the ISO bytes read back from the device.
-4. Boot the USB, establish trusted SSH and re-identify both SSDs. Check
-   that the SPCC has no mounts, swap or active mappings and that the
-   Crucial is not used as the target or ESP. Present the exact SPCC target
-   and partition/encryption plan for the owner's destructive checkpoint.
-5. Obtain the real account password and LUKS passphrase through T3's
-   `request_secret`, one secret per card. Use owner-only temporary files
-   in live RAM; never reuse VM credentials or print secrets. Use hostname
-   `sputnik`, user `onnwee`, America/Chicago, US keyboard and en_US.UTF-8
-   unless the owner requests otherwise.
-6. Install through `subarchy-setup` or its scripted `subarchy-install`
-   stage with the approved by-id target. Prefer the image's offline
-   repository to tie the installed set to the tested artifact. Keep the
-   Crucial unopened and unmounted. Capture installer/package and hardware
-   selection results without credentials.
-7. Before booting the new OS, mount only the SPCC for access provisioning.
-   Install OpenSSH from the image's repository, add the dedicated Kvant
-   public key for `onnwee`, enable `sshd`, and allow SSH through ufw only
-   from Kvant's verified LAN address. Copy only the needed Wi-Fi profile
-   through protected private storage; do not migrate Omarchy's home, T3
-   state or VPN identity. Generate new SSH host keys and pin their public
-   identity on Kvant. Check permissions, services and firewall rules.
-8. Inspect firmware entries and the new ESP; mount Omarchy's ESP read-only
-   only for the post-install hash comparison. Restore the Omarchy default,
-   then set the one-time Subarchy boot. The owner must type the passphrase
-   locally at first boot; SSH starts after disk unlock. Verify trusted
-   SSH, new root/ESP ancestry on the SPCC, installed revision evidence,
-   kernels, failed units and login session. Compare Omarchy's ESP hashes
-   and partition map with preflight.
-9. Arrange an Omarchy boot through the firmware menu and verify its actual
-   root and SSH identity before marking recovery boot passed. Return to
-   Subarchy for owner testing. Delete temporary password files after use;
-   keep private recovery receipts on Kvant.
-
-## Installation results
-
-Artifact prepared on Sputnik, 2026-11-08:
-
-- ISO: `~/.cache/subarchy-install-75/source/build/iso/subarchy-2026.11.08-x86_64.iso`,
-  4,346,556,416 bytes. Independent Kvant copy:
-  `~/.local/state/subarchy-install-75/subarchy-2026.11.08-x86_64.iso`.
-- Both ISO copies: SHA-256
+- ISO: `subarchy-2026.11.08-x86_64.iso`, 4,346,556,416 bytes.
+- ISO SHA-256:
   `84de29b725a4e311ca13817cccacf1fa197729c3e9bbd4fb25d3e1d5fcee8c31`.
-- Rebuilt core package: SHA-256
+- Core package SHA-256:
   `f69eba323240ae3b6e4bec4ced369fac6849f07969bb91faedd1204a0bd0396c`.
-  A manifest records all 635 repository package files. Reused non-core
-  recipes are unchanged from cache source `35b3058`; the core was rebuilt.
-- Live boot: **PASS**, five checks, kernel `7.2.14-zen1-1-zen`, system
-  `running`. Trusted Kvant-to-live-VM key login: **PASS**, with password
-  and keyboard-interactive authentication disabled.
-- Guided offline installer: **PASS**, completed in 262 seconds with the
-  guest network disabled. The complete run passed **78 checks, 0 failed,
-  exit 0**, including snapshots and emulated Secure Boot/TPM. Subsequent
-  installed-system checks enable VM networking; they do not qualify
-  physical hardware. High-level receipts are copied to Kvant's private
-  state directory as `boot-test.log`, `offline-install-test.log` and
-  `kvant-live-ssh-test.log`.
-- Real Sputnik recheck at 23:02 CST: all 15 Omarchy ESP file hashes still
-  match preflight; firmware boot order remains `0002,0000,0001`.
+- Fresh live boot: **PASS**, five checks.
+- Strict key-only SSH from Kvant to the live VM: **PASS**.
+- Guided offline install from that exact image: **PASS**, 262 seconds
+  with the VM network disabled.
+- Complete VM run: **78 checks passed, 0 failed, exit 0**, including
+  snapshots and emulated Secure Boot/TPM. Post-install VM checks enable
+  networking; these results do not qualify physical hardware.
+- Physical USB write: full readback matched the ISO hash at 23:13:25 CST.
+  Direct probing showed `SUBARCHY_202611`; the earlier Debian label in
+  `lsblk` was stale cached metadata.
 
-The owner approved erasing USB serial `07002AC6C31EA238` and SPCC serial
-`AA231221NV01KG05237` in the coordinator conversation on November 8.
-The USB was written after live serial/size/root-ancestry guards passed.
-Readback of all 4,346,556,416 bytes matched the ISO SHA-256 at 23:13:25 CST.
-Fresh probing reports `SUBARCHY_202611`; its FAT32 EFI partition 2 contains
-the loader and Subarchy boot entry. The earlier Debian label in `lsblk`
-was stale cached metadata; direct `blkid -p` identified the new image.
+Kvant's private `~/.local/state/subarchy-install-75/` holds the independent
+ISO copy, manifests, logs, live guards and actual boot proofs. Its
+`recovery/` holds Omarchy's ESP archive, LUKS header and partition/firmware
+evidence; `real-install/` includes the new LUKS header and install/boot
+receipts. All 15 archived ESP file hashes matched preflight. After the live
+boot, only the 32-byte `loader/random-seed` differed; the other 14 boot
+files still matched. Before installation it received a separate explicit
+baseline. All 15 files matched that baseline after installation, and the
+Crucial partition map was unchanged.
 
-The parent was notified before reboot and reported its work pushed, durable
-continuation on Kvant and no local parent processes. The owner confirmed
-console availability. A reboot to the USB has been requested. Live boot,
-trusted SSH reconnection and both SSD identities must still be checked.
-The SPCC has not been erased or installed yet.
+The seed change is consistent with
+[systemd's documented boot-seed rotation](https://www.freedesktop.org/software/systemd/man/latest/systemd-boot-random-seed.service.html).
+Its exact writer was not identified; the live userspace service reported
+no ESP. Do not restore an old random seed to hide a hash difference.
+
+These are boot-recovery copies, not a full Omarchy user-data backup. Keep
+archives, encrypted-volume headers, network credentials and the personalized
+access-enabled ISO private. Real account/disk secrets came through separate
+secure cards and were used from owner-only RAM files, never VM credentials.
+The live files were removed before reboot; Kvant's temporary password files
+were removed after the final checks. The dedicated SSH key remains private.
+
+## Install findings and repairs
+
+[Issue #210](https://git.subcult.tv/subculture-collective/subarchy/issues/210):
+the image's installer completed the base system and factory snapshot, then
+exited 5 at its final LUKS close. Live-service mount namespaces retained
+`/mnt/run` and later serial-getty credential submounts. Only those
+installer subtrees were unmounted; the mapping open count fell from 1 to 0
+and close succeeded. No destructive stage was repeated and no service was
+stopped. Access provisioning in an outer private mount namespace closed
+cleanly.
+
+The source fix isolates the whole installer before any mounts. The root-only
+probe `sudo bash tools/test/installer-mount-test.sh` reproduces the old
+retained mount and passes with isolation using a private tmpfs tree. Local
+`make verify` passed. The ISO recorded above predates this fix; a rebuilt
+fixed ISO has not been qualified.
+
+[Issue #211](https://git.subcult.tv/subculture-collective/subarchy/issues/211):
+`powerprofilesctl` could not import `gi.repository`, so automatic power
+selection failed on the real battery-equipped laptop. The no-battery VM
+path had bypassed that import. Installing `python-gobject 3.58.1-1` and its
+two missing dependencies repaired the CLI and service: `Result=success`,
+`ExecMainStatus=0`, AC profile `balanced`, no failed units. The source
+package now requires the daemon and bindings; VM qualification also invokes
+the CLI without a battery. Physical unplug/replug remains untested.
+
+The ufw exception was written before its chroot command tried to reload the
+live firewall and returned an error. Its on-disk rule was checked, and the
+real installed boot subsequently loaded ufw with the intended Kvant-only
+exception. This was access-provisioning recovery, not a claimed clean
+installer exit.
+
+## Procedure for a repeat install
+
+1. Build from pinned current main in an independent checkout. Check space,
+   use a unique `SUBARCHY_ISO_WORK`, record source/overlay/package hashes,
+   and qualify the exact image with live-boot and guided offline tests.
+2. Identify USB and SSDs by model, serial, capacity, mount ancestry and
+   holders. Present a concrete erase plan and obtain the owner's destructive
+   checkpoint. Revalidate identities after reboot; do not ask again for the
+   same approved identities merely because device numbers changed.
+3. Preserve private boot-recovery copies and existing firmware trust.
+   Prepare distinct live/installed SSH identities and network continuity.
+   Notify the parent before reboot; keep its work durable on Kvant.
+4. Write only the approved USB, flush and read back all ISO bytes. Boot it,
+   connect Wi-Fi locally if needed and establish trusted live SSH.
+5. Obtain real passwords through secure cards and keep files mode 600 in
+   live RAM. Install only to the approved by-id disk, with its own ESP and
+   LUKS2/btrfs remainder. Keep the other encrypted disk closed.
+6. Use the fixed installer's private mount namespace. If recovering an
+   older image's final-close failure, inspect mount namespaces and saved
+   logs; never rerun partitioning to repair cleanup.
+7. Provision only the new OS's SSH key, Wi-Fi profile and restricted
+   firewall rule. Do not migrate Omarchy's home, T3 or VPN identity.
+   Generate/pin new host keys and check package/service state.
+8. Verify the protected ESP and partition map. Restore Omarchy's firmware
+   default. Verify its actual recovery boot, then use a one-time Subarchy
+   boot and finish there. The owner unlocks the corresponding disk locally.
+9. Verify new root/ESP ancestry, trusted SSH, units, session and receipt
+   source. Apply merged client fixes separately from the image; require
+   signature verification before claiming published updates work.
+   Remove temporary credential files after use.
 
 ## Owner hardware acceptance
 
-For each row, record the date, kernel and result on #75. Leave untested
-rows pending. Turn reproducible failures into linked roadmap issues.
-Firmware-key changes and TPM enrollment need a concrete recovery plan and
-checkpoint.
+Record date, kernel and observations on #75. Leave untested rows pending;
+turn reproducible failures into roadmap issues. Secure Boot/TPM changes
+need their own key-custody and recovery checkpoint.
 
 | Check | Required observation | Result |
 |---|---|---|
-| Dual boot | Subarchy on SPCC; Omarchy still boots from firmware menu | Pending |
-| NVIDIA | DKMS for both kernels; GPU modes and `subcult gpu run` | Pending |
-| Wi-Fi | Connect/reconnect and usable network after reboot | Pending |
-| SOF audio | Speaker/headphone output and microphone input | Pending |
+| Dual boot | Subarchy on SPCC; original Omarchy boots via its firmware entry | Passed November 8–9 |
+| NVIDIA | Both DKMS builds; GPU modes and `subcult gpu run` | DKMS and basic `nvidia-smi` passed; modes/rendering pending |
+| Wi-Fi | Connect/reconnect and usable network after reboot | Installed reconnect/SSH passed; owner exercise pending |
+| SOF audio | Speakers/headphones and microphone | Pending |
 | Bluetooth | Pair and use a real peripheral | Pending |
-| Suspend/lid | Suspend/resume, close/open lid, unlock and network recovery | Pending |
-| Battery | Unplug/replug and automatic power-profile switching | Pending |
-| Splash | Graphical Plymouth and readable disk-unlock prompt | Pending |
-| Secure Boot | Planned key custody/recovery, enrollment and enforced boot | Pending |
-| TPM unlock | Recovery passphrase retained; successful real-TPM boot | Pending |
-| DisplayLink | Attach dock; evdi/service, displays and reconnect behavior | Pending |
-| Shell at 1.6 | Bar, launcher, notifications, lock and greeter usable | Pending |
+| Suspend/lid | Suspend/resume, lid, unlock and network recovery | Pending |
+| Battery | Unplug/replug and automatic profile switching | AC service passed after #211 repair; switching pending |
+| Splash | Graphical Plymouth and readable unlock prompt | Owner confirmation pending |
+| Secure Boot | Key custody/recovery, enrollment and enforced boot | Pending; not enabled during install |
+| TPM unlock | Recovery passphrase retained; real-TPM boot | Pending; no TPM token enrolled |
+| DisplayLink | Dock, displays and reconnect behavior | Packages/modules/service present; physical test pending |
+| Shell at 1.6 | Bar, launcher, notifications, lock and greeter usability | Session/config checks passed; scale-1.6 test pending |
 
-Related: [[0049-installer|ADR 0049]] · [[0050-hardware-support|Hardware support]] · [[roadmap|Roadmap]] · [[review-index|Review index]]
+Related: [[0049-installer|ADR 0049]] · [[0050-hardware-support|Hardware support]] · [[package-publishing|Package publishing]] · [[roadmap|Roadmap]] · [[review-index|Review index]]
