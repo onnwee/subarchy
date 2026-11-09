@@ -334,14 +334,46 @@ VCS revision, eight changed source files and packaged artwork match the
 qualified source. This core-file evidence is separate from parent-owned
 registry-wide publishing qualification under #67.
 
-The installed package remains `0.0.0-1`. A guarded core-only update is
+At the overnight checkpoint the installed package was `0.0.0-1`. A guarded core-only update was
 prepared: recheck SPCC root/ESP identity and the signed artifact, save the
 old cached package, create pre/post snapshots, then verify that only the core
-changed and the boot ID/firmware order stayed the same. `sudo -n` requires
-the owner's password; T3's secure file prompt has been requested. No installation
-secret was retained or recovered. The running shell disables file watching,
-and the existing display watcher keeps its old binary, so package replacement
-alone will not establish active desktop behavior. New desktop behavior and
-the physical tests remain pending on #75.
+changed and the boot ID/firmware order stayed the same. `sudo -n` required
+the owner's password; T3's secure file prompt was requested. No installation
+secret was retained or recovered. The running shell disabled file watching,
+and the existing display watcher kept its old binary, so package replacement
+alone would not establish active desktop behavior. New desktop behavior and
+the physical tests remained pending on #75.
+
+### Owner update and emergency-binding recovery
+
+The owner ran the normal updater on November 9. Installed versions are now
+Subarchy `0.0.0-421`, linux-zen `7.2.14.zen1-1` and Hyprland `0.57.1-1`.
+The updater reported snapshot 3, a shell restart and a required kernel
+reboot. The running kernel remained `7.2.11-zen1-1-zen` on the same boot.
+The earlier staged core-only update is no longer needed; do not downgrade
+to package 418 or provide a password for that superseded plan.
+
+During that update, Hyprland displayed an emergency banner saying it could
+not open `default/hypr/bootstrap.lua`. The file was present again afterward,
+but only three emergency bindings were registered. The configuration passed
+parser validation. A user-session `hyprctl reload` returned `ok` and restored
+52 normal bindings, including both scale shortcuts; the configuration-error
+query was empty. No compositor restart, logout or reboot was performed.
+Kvant reconnected at Wi-Fi `10.0.0.63` using the installed OS's pinned key.
+
+The updater restarted the shell but had no final Hyprland reload after core
+file replacement. The source fix reloads the caller's configuration after
+the package, migrations and cleanup complete, before the shell restart.
+It runs only when the core version changed, a Hyprland instance signature
+is present and `hyprctl` is available. Reload failure is reported without
+claiming success or skipping shell recovery. Regression checks cover the
+active-session case, unchanged core, non-Hyprland calls, missing tool and
+reload failure.
+
+The updater process used to install this fix may still be the older binary.
+If the banner occurs during that transition, run `hyprctl reload` once in a
+terminal inside the session. Later update runs use the corrected updater.
+The remaining physical checks and suspend/NVIDIA investigations stay open
+on #75; this recovery does not qualify them.
 
 Related: [[0049-installer|ADR 0049]] · [[0050-hardware-support|Hardware support]] · [[package-publishing|Package publishing]] · [[roadmap|Roadmap]] · [[review-index|Review index]]
