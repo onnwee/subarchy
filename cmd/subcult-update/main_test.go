@@ -98,13 +98,25 @@ func TestUpdateYes(t *testing.T) {
 	if code := a.main(context.Background(), []string{"--yes", "--no-snapshot"}); code != 0 {
 		t.Fatalf("exit %d: %s", code, errOut)
 	}
-	// The stable mirrorlist is refreshed first, then the upgrade runs.
-	if len(r.ran) < 2 || r.ran[0] != "sudo /usr/bin/subcult-channel refresh --quiet" ||
-		r.ran[1] != "sudo /usr/bin/subcult-update privileged upgrade --noconfirm" {
+	// Authorization precedes every root step, even with --yes.
+	if len(r.ran) < 3 || r.ran[0] != "sudo true" ||
+		r.ran[1] != "sudo /usr/bin/subcult-channel refresh --quiet" ||
+		r.ran[2] != "sudo /usr/bin/subcult-update privileged upgrade --noconfirm" {
 		t.Errorf("ran %q", r.ran)
 	}
 	if !strings.Contains(out.String(), "reboot") {
 		t.Errorf("no report:\n%s", out)
+	}
+}
+
+func TestAuthorizationFailureStopsUpdate(t *testing.T) {
+	r := &fakeRunner{tools: map[string]bool{"snapper": true}, fail: map[string]bool{"sudo true": true}}
+	a, _, errOut := newApp(t, r)
+	if code := a.main(context.Background(), []string{"--yes"}); code != 1 {
+		t.Fatalf("exit %d: %s", code, errOut)
+	}
+	if !slices.Equal(r.ran, []string{"sudo true"}) {
+		t.Fatalf("update proceeded without authorization: %v", r.ran)
 	}
 }
 
@@ -161,15 +173,18 @@ func TestCoreUpdateReloadsHyprlandConfiguration(t *testing.T) {
 		hyprctl, reload      bool
 	}{
 		{"core changed in session", "test-instance", "subarchy 0.0.0-421", true, true},
-		{"unchanged core", "test-instance", "subarchy 0.0.0-1", true, false},
+		{"unchanged core applies deferred changes", "test-instance", "subarchy 0.0.0-1", true, true},
 		{"outside Hyprland", "", "subarchy 0.0.0-421", true, false},
 		{"hyprctl unavailable", "test-instance", "subarchy 0.0.0-421", false, false},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Setenv("HYPRLAND_INSTANCE_SIGNATURE", tt.session)
 			r := &fakeRunner{
-				tools:  map[string]bool{"hyprctl": tt.hyprctl, "paccache": true},
-				series: map[string][]string{"pacman -Q subarchy": {"subarchy 0.0.0-1", tt.after}},
+				tools: map[string]bool{"hyprctl": tt.hyprctl, "paccache": true},
+				series: map[string][]string{
+					"pacman -Q subarchy":                           {"subarchy 0.0.0-1", tt.after},
+					"hyprctl -j getoption misc:disable_autoreload": {`{"bool":false}`},
+				},
 			}
 			a, out, errOut := newApp(t, r)
 			if code := a.main(context.Background(), []string{"--yes", "--no-snapshot"}); code != 0 {
@@ -179,8 +194,9 @@ func TestCoreUpdateReloadsHyprlandConfiguration(t *testing.T) {
 			if (i >= 0) != tt.reload {
 				t.Fatalf("reload = %v, want %v: %v", i >= 0, tt.reload, r.ran)
 			}
+			restart := slices.Index(r.ran, "systemctl --user try-restart subcult-shell.service")
 			if tt.reload && (i <= slices.Index(r.ran, "sudo /usr/bin/subcult-update privileged prune") ||
-				i >= slices.Index(r.ran, "systemctl --user try-restart subcult-shell.service")) {
+				restart >= 0 && i >= restart) {
 				t.Errorf("reload must follow package cleanup and precede shell restart: %v", r.ran)
 			}
 			if strings.Contains(out.String(), "The Hyprland configuration was reloaded.") != tt.reload {

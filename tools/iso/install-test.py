@@ -299,8 +299,11 @@ def boot(disk: Path, vars_file: Path) -> bool:
             ),
             # subcult update: snapshot, pacman -Syu, migrations, report.
             "update": serial.run(
-                # sudo -k and no stdin: the update must not need a password (ADR 0062).
-                "sudo -k; subcult update --yes </dev/null; echo UPDATE_EXIT=$?"
+                # Authenticate with this disposable VM's password, then share
+                # its sudo timestamp. Never use this password on a real host.
+                "sudo -k; sudo -n /usr/bin/subcult-update privileged services >/dev/null 2>&1; echo UNAUTH_STEP_EXIT=$?;"
+                " setsid --wait subcult update --yes </dev/null; echo UNAUTH_UPDATE_EXIT=$?;"
+                f" {sudo} true && subcult update --yes </dev/null; echo UPDATE_EXIT=$?"
                 f" && {sudo} snapper -c root list --columns description",
                 timeout=900,
             ),
@@ -517,7 +520,9 @@ finally:
         "both UKIs present": "subarchy_linux-zen.efi" in r["uki"] and "subarchy_linux-lts.efi" in r["uki"],
         "snapshot boot entry": "rootflags=subvol=/@/.snapshots/" in r["snapshot"],
         "no self-referencing EFI entry": "/EFI/BOOT/BOOTX64.EFI" not in r["snapshot"],
-        "subcult update ran without a password": "UPDATE_EXIT=0" in r["update"] and "eboot needed" in r["update"],
+        "subcult update authenticates before privileged work": "UNAUTH_STEP_EXIT=1" in r["update"]
+        and "UNAUTH_UPDATE_EXIT=1" in r["update"],
+        "subcult update reuses authorized sudo": "\nUPDATE_EXIT=0" in r["update"] and "eboot needed" in r["update"],
         "hardware fixes applied (hid_apple fnmode, regulatory domain US)": "hid-apple-fkeys" in r["fixes"]
         and "options hid_apple fnmode=2" in r["fixes"] and 'WIRELESS_REGDOM="US"' in r["fixes"],
         "new install on the stable channel, switches to edge and back": channel_ok(r["channel"]),

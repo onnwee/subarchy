@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 
 	"git.subcult.tv/subculture-collective/subarchy/internal/dispatch"
 	"git.subcult.tv/subculture-collective/subarchy/internal/update"
@@ -37,7 +38,7 @@ var routes = []dispatch.Described{
 		Args:    "snapshot | upgrade [--noconfirm] | prune", Hidden: true, RequiresSudo: true}},
 }
 
-// selfPath is the path sudoers names for the privileged steps.
+// selfPath is the installed helper used for the privileged steps.
 const selfPath = "/usr/bin/subcult-update"
 
 type app struct {
@@ -51,7 +52,7 @@ type app struct {
 }
 
 func main() {
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
 	defer stop()
 	a := &app{
 		stdin: os.Stdin, stdout: os.Stdout, stderr: os.Stderr,
@@ -144,6 +145,12 @@ func (a *app) update(ctx context.Context, yes, noSnapshot, dryRun bool) int {
 	r := a.runner
 	if dryRun {
 		r = update.DryRunner{Runner: r, Out: a.stdout}
+	} else {
+		stopAuthorization, err := update.Authorize(ctx, r)
+		if err != nil {
+			return a.fail(err)
+		}
+		defer stopAuthorization()
 	}
 	u := &update.Updater{R: r, O: update.Options{
 		Yes: yes, NoSnapshot: noSnapshot || dryRun, Version: dispatch.Version,
@@ -170,8 +177,8 @@ func (a *app) update(ctx context.Context, yes, noSnapshot, dryRun bool) int {
 
 // check prints the number of available updates. Exit 0 when there are
 // updates, 2 when there are none (checkupdates' convention), 1 on error.
-// privileged runs one fixed root step; sudoers allows exactly these
-// command lines for wheel without a password (ADR 0062).
+// privileged runs one fixed root step after normal sudo authentication
+// (ADR 0069).
 func (a *app) privileged(ctx context.Context, step string) int {
 	argv, ok := update.PrivilegedSteps(dispatch.Version)[step]
 	if !ok && step != "services" {

@@ -26,8 +26,8 @@ type Options struct {
 	Stdin      io.Reader
 	Stdout     io.Writer
 	// Privileged runs a fixed root step, e.g. ["sudo",
-	// "/usr/bin/subcult-update", "privileged"]; sudoers lets wheel run those
-	// exact command lines without a password (ADR 0062).
+	// "/usr/bin/subcult-update", "privileged"], after normal sudo
+	// authentication (ADR 0069).
 	Privileged []string
 	// ChannelRefresh rewrites the stable channel's mirrorlist from the
 	// snapshot date the installed package ships, so a snapshot advance
@@ -72,8 +72,8 @@ type Report struct {
 	// ShellRestarted: the subarchy package changed, so the desktop shell was
 	// restarted to run the new one.
 	ShellRestarted bool
-	// HyprlandReloaded: the core changed in a Hyprland session, so its
-	// configuration was reloaded after the replacement files were in place.
+	// HyprlandReloaded: configuration changes deferred during the update
+	// were loaded after the replacement files were in place.
 	HyprlandReloaded bool
 	// ServicesToRestart still run files the upgrade replaced; "(user)"
 	// marks user services. Nothing restarts them.
@@ -111,6 +111,11 @@ func (u *Updater) Run(ctx context.Context) (Report, error) {
 		}
 	}
 	shellBefore := u.pkgVersion(ctx, "subarchy")
+	restoreReload, paused, err := u.pauseReload(ctx)
+	if err != nil {
+		return rep, err
+	}
+	defer restoreReload()
 	say("upgrading packages")
 	args := u.priv("upgrade")
 	if u.O.Yes {
@@ -170,18 +175,21 @@ func (u *Updater) Run(ctx context.Context) (Report, error) {
 	// off), so after the subarchy package changed it runs the old tree
 	// until restarted. Last, so migrations and cleanup are done. As the
 	// user, not through the privileged path.
-	if after := u.pkgVersion(ctx, "subarchy"); after != "" && after != shellBefore {
-		// Hyprland may have reloaded while pacman temporarily removed a
-		// sourced Lua file and stayed in emergency mode. Retry only after
-		// the complete package and migrations are in place.
-		if u.O.HyprlandSession && u.R.Has("hyprctl") {
-			say("reloading the Hyprland configuration")
-			if err := u.R.Run(ctx, "hyprctl", "reload"); err != nil {
-				fmt.Fprintf(u.O.Stdout, "   Hyprland reload: %v (continuing)\n", err)
-			} else {
-				rep.HyprlandReloaded = true
-			}
+	after := u.pkgVersion(ctx, "subarchy")
+	coreChanged := after != "" && after != shellBefore
+	// Apply deferred file changes only after the transaction and migrations
+	// finish. A failed upgrade restores the watcher without loading an
+	// incomplete configuration. Retain recovery for an older updater that
+	// began this transaction before the guard was installed.
+	if (paused || coreChanged) && u.O.HyprlandSession && u.R.Has("hyprctl") {
+		say("reloading the Hyprland configuration")
+		if err := u.R.Run(ctx, "hyprctl", "reload"); err != nil {
+			fmt.Fprintf(u.O.Stdout, "   Hyprland reload: %v (continuing)\n", err)
+		} else {
+			rep.HyprlandReloaded = true
 		}
+	}
+	if coreChanged {
 		say("restarting the desktop shell")
 		if err := u.R.Run(ctx, "systemctl", "--user", "try-restart", "subcult-shell.service"); err != nil {
 			fmt.Fprintf(u.O.Stdout, "   shell restart: %v (continuing)\n", err)

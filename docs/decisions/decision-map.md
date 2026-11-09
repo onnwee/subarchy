@@ -64,7 +64,7 @@ NVMe.
 | S10 | Time, locale and input methods | tzupdate, fcitx5 | [[0024-time-locale-input\|ADR 0024]]: auto time zone, input methods on demand |
 | S11 | Containers | Docker, socket-activated; user not in `docker` group | [[0055-containers\|ADR 0055]]: same as Omarchy |
 | S12 | VPN and mesh networking | Tailscale panel, Taildrop receive service (optional install) | [[0058-tailscale\|ADR 0058]]: Tailscale preinstalled, panel, Taildrop |
-| S13 | sudo and polkit policy | Password; optional permanent passwordless toggle | [[0062-privilege-policy\|ADR 0062]]: listed actions skip it; "skip sudo for X minutes" |
+| S13 | sudo and polkit policy | Password; optional permanent passwordless toggle | [[0062-privilege-policy\|ADR 0062]]: listed actions skip it; "skip sudo for X minutes". [[0069-update-authentication\|ADR 0069]]: updates authenticate |
 | S14 | Security hardening | ufw, faillock lockout settings | [[0063-security-hardening\|ADR 0063]]: AppArmor, sysctl, lockdown with Secure Boot, security fast path |
 | S15 | Privacy and telemetry | — | [[0065-privacy-telemetry\|ADR 0065]]: nothing leaves unless the user acts |
 

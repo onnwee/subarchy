@@ -30,7 +30,7 @@ for path in usr/bin/subcult usr/bin/sub usr/bin/subcult-app usr/bin/subcult-upda
   usr/share/wayland-sessions/subarchy.desktop usr/lib/sddm/sddm.conf.d/subarchy.conf \
   usr/lib/sysctl.d/90-subarchy-hardening.conf usr/lib/systemd/resolved.conf.d/50-subarchy.conf \
   usr/lib/NetworkManager/conf.d/50-subarchy-dns.conf usr/lib/systemd/coredump.conf.d/50-subarchy.conf \
-  etc/sudoers.d/50-subarchy-update usr/lib/systemd/user/timers.target.wants/subcult-update-check.timer \
+  usr/lib/systemd/user/timers.target.wants/subcult-update-check.timer \
   usr/lib/udev/rules.d/90-subarchy-power.rules usr/bin/subcult-power-auto \
   usr/lib/udev/rules.d/70-subarchy-gpu.rules usr/share/uwsm/env-hyprland.d/50-subarchy-gpu \
   usr/bin/subcult-gpu-env usr/bin/subcult-gpu-run usr/bin/subcult-gpu-mode \
@@ -85,8 +85,9 @@ if grep -q '^usr/share/subcult/shell/.*tests/' <<<"$list"; then fail "shell test
 grep -qx "icon-theme='Papirus-Dark'" <(bsdtar -xOf "$pkg" usr/share/glib-2.0/schemas/90-subarchy.gschema.override) ||
   fail "GSettings override lacks Papirus-Dark"
 
-perm=$(bsdtar -tvf "$pkg" etc/sudoers.d/50-subarchy-update | cut -c1-10)
-[[ $perm == -r--r----- ]] || fail "sudoers drop-in mode $perm, want 0440"
+if grep -qx etc/sudoers.d/50-subarchy-update <<<"$list"; then
+  fail "the obsolete passwordless update grant is packaged"
+fi
 
 osr=$(bsdtar -xOf "$pkg" etc/os-release)
 for want in 'NAME="Subarchy"' 'ID=subarchy' 'ID_LIKE=arch' 'VERSION_ID=0.0.0'; do
