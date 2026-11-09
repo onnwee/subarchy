@@ -173,7 +173,10 @@ def install(iso: Path, disk: Path, vars_file: Path, timeout: float, guided_setup
             f"mkdir -p /run/src /run/pkgcache && mount -t 9p -o {opts},ro src /run/src"
             f" && mount -t 9p -o {opts} pkgcache /run/pkgcache && echo MOUNTED"
         )
-        serial.run("systemctl is-system-running --wait >/dev/null; pacman-key --init >/dev/null 2>&1; true", timeout=180)
+        # Bounded: with no network device the live medium's startup never
+        # settles (its network-online units wait their full timeouts), and
+        # the installer does not need it to.
+        serial.run("timeout 90 systemctl is-system-running --wait >/dev/null; pacman-key --init >/dev/null 2>&1; true", timeout=180)
         if guided_setup:
             # The image's own subarchy-setup, installer and repository.
             out = guided(serial, timeout)
