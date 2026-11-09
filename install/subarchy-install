@@ -130,7 +130,9 @@ write_boot_config() {
   # kernel command line drop-ins for this machine, written now so the UKIs
   # pacstrap builds carry them.
   if command -v subcult-hw >/dev/null; then
-    subcult-hw apply --target "$target" | grep -v '^initramfs:' || true
+    subcult-hw apply --target "$target" >"$target/var/log/subarchy-hw-apply.log" ||
+      die "hardware fixes could not be written (see $target/var/log/subarchy-hw-apply.log)"
+    grep -v '^initramfs:' "$target/var/log/subarchy-hw-apply.log" || true
   fi
   printf "KEYMAP=%s\nXKBLAYOUT=%s\n" "${conf[KEYMAP]}" "${conf[XKB_LAYOUT]}" >"$target/etc/vconsole.conf"
   cat >"$target/etc/mkinitcpio.conf.d/subarchy.conf" <<'EOF'
@@ -253,7 +255,8 @@ EOF
   if command -v subcult-hw >/dev/null; then
     local svc
     while read -r svc; do
-      [[ -n $svc && -e $target/usr/lib/systemd/system/$svc.service ]] || continue
+      # A unit the package ships, or one a hardware fix wrote under /etc.
+      [[ -n $svc && (-e $target/usr/lib/systemd/system/$svc.service || -e $target/etc/systemd/system/$svc.service) ]] || continue
       arch-chroot "$target" systemctl enable --quiet "$svc"
     done < <(subcult-hw services)
   fi
