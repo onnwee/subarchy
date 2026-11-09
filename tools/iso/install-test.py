@@ -274,6 +274,8 @@ def boot(disk: Path, vars_file: Path) -> bool:
                 " grep -c subcult-mirrorlist /etc/pacman.conf",
                 timeout=60,
             ),
+            # The repository key is trusted (ADR 0025, subarchy-keyring).
+            "keyring": serial.run(f"{sudo} pacman-key --list-keys CCE8B0F3BCDD601D909773E4466AA6E8241453D2 2>&1 | grep -c 'Arch Registry'"),
             # subcult update: snapshot, pacman -Syu, migrations, report.
             "update": serial.run(
                 # sudo -k and no stdin: the update must not need a password (ADR 0062).
@@ -445,6 +447,7 @@ def boot(disk: Path, vars_file: Path) -> bool:
         "no self-referencing EFI entry": "/EFI/BOOT/BOOTX64.EFI" not in r["snapshot"],
         "subcult update ran without a password": "UPDATE_EXIT=0" in r["update"] and "eboot needed" in r["update"],
         "new install on the stable channel, switches to edge and back": channel_ok(r["channel"]),
+        "repository key trusted (subarchy-keyring)": r["keyring"].strip().splitlines()[-1:] == ["1"],
         "daily update check timer and count": r["update_timer"].splitlines()[0:1] == ["1"]
         and r["update_timer"].strip().splitlines()[-1].isdigit(),
         "power profile service (no battery: unchanged)": r["power_auto"].splitlines()[0:1] == ["success"]

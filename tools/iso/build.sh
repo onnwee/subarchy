@@ -40,13 +40,15 @@ pacman -T go >/dev/null 2>&1 || nodeps=(--nodeps)
 # (packaging/aur/build.sh) land here too, and pacstrap in the installer sees
 # only what the database lists, not what sits beside it.
 repo-add --quiet "$repo/subarchy.db.tar.gz" "$repo"/*.pkg.tar.zst >/dev/null
-# A package Subarchy builds itself that the install lists name must be in
-# the repository now; otherwise the installer fails late, inside the VM.
+# A package Subarchy builds itself that the install lists or the hardware
+# catalog name must be in the repository now; otherwise the installer fails
+# late, inside the VM, and the offline set cannot resolve it.
+mapfile -t install_set < <(sed 's/#.*//; /^[[:space:]]*$/d' "$root"/install/packages/*.txt; (cd "$root" && go run ./cmd/subcult-hw packages --all))
 missing=()
 for dir in "$root"/packaging/*/ "$root"/packaging/aur/*/; do
   [[ -f $dir/PKGBUILD ]] || continue
   name=$(bash -c "source '$dir/PKGBUILD'; echo \"\${pkgname[0]}\"")
-  sed 's/#.*//; /^[[:space:]]*$/d' "$root"/install/packages/*.txt | grep -qx "$name" || continue
+  printf '%s\n' "${install_set[@]}" | grep -qx "$name" || continue
   compgen -G "$repo/$name-[0-9]*.pkg.tar.zst" >/dev/null || missing+=("$name")
 done
 ((${#missing[@]} == 0)) || { echo "build.sh: not in build/repo: ${missing[*]} (run packaging/aur/build.sh ${missing[*]})" >&2; exit 1; }
@@ -60,7 +62,6 @@ echo ">> downloading the install set into the repository"
 # files already in build/repo are not fetched again.
 offline_db="$root/build/offline-db"
 mkdir -p "$offline_db"
-mapfile -t install_set < <(sed 's/#.*//; /^[[:space:]]*$/d' "$root"/install/packages/*.txt; (cd "$root" && go run ./cmd/subcult-hw packages --all))
 cat >"$root/build/offline-pacman.conf" <<EOF
 [options]
 Architecture = auto
