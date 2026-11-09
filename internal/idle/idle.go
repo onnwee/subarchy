@@ -55,7 +55,7 @@ func Render(s Settings) string {
 	b.WriteString("general {\n")
 	b.WriteString("    lock_cmd = systemctl --user start subcult-lock.service\n")
 	b.WriteString("    before_sleep_cmd = loginctl lock-session\n")
-	b.WriteString("    after_sleep_cmd = hyprctl dispatch 'hl.dsp.dpms({ mode = \"on\" })'\n")
+	b.WriteString("    after_sleep_cmd = hyprctl dispatch 'hl.dsp.dpms({ action = \"on\" })'\n")
 	b.WriteString("    ignore_dbus_inhibit = false\n")
 	b.WriteString("}\n")
 	if s.LockAfterMinutes > 0 {
@@ -63,8 +63,8 @@ func Render(s Settings) string {
 	}
 	if s.DisplayOffAfterMinutes > 0 {
 		fmt.Fprintf(&b, "\n# Display off after %d min, back on at the first input.\nlistener {\n    timeout = %d\n", s.DisplayOffAfterMinutes, s.DisplayOffAfterMinutes*60)
-		b.WriteString("    on-timeout = hyprctl dispatch 'hl.dsp.dpms({ mode = \"off\" })'\n")
-		b.WriteString("    on-resume = hyprctl dispatch 'hl.dsp.dpms({ mode = \"on\" })'\n}\n")
+		b.WriteString("    on-timeout = hyprctl dispatch 'hl.dsp.dpms({ action = \"off\" })'\n")
+		b.WriteString("    on-resume = hyprctl dispatch 'hl.dsp.dpms({ action = \"on\" })'\n}\n")
 	}
 	if s.SuspendAfterMinutes > 0 {
 		fmt.Fprintf(&b, "\n# Suspend after %d min; a keep-awake inhibitor holds this off.\nlistener {\n    timeout = %d\n    on-timeout = systemctl suspend\n}\n", s.SuspendAfterMinutes, s.SuspendAfterMinutes*60)

@@ -31,7 +31,7 @@ func TestLoad(t *testing.T) {
 func TestRender(t *testing.T) {
 	out := Render(Defaults())
 	for _, want := range []string{"lock_cmd = systemctl --user start subcult-lock.service", "timeout = 420", "timeout = 600", "timeout = 900",
-		"on-timeout = loginctl lock-session", `hl.dsp.dpms({ mode = "off" })`, "on-timeout = systemctl suspend"} {
+		"on-timeout = loginctl lock-session", `hl.dsp.dpms({ action = "off" })`, "on-timeout = systemctl suspend"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("render lacks %q:\n%s", want, out)
 		}
@@ -42,5 +42,20 @@ func TestRender(t *testing.T) {
 	}
 	if Summary(Settings{LockAfterMinutes: 3}) != "lock after 3 min, display off never, suspend never" {
 		t.Errorf("summary: %q", Summary(Settings{LockAfterMinutes: 3}))
+	}
+}
+
+func TestDPMSCommandsSetExplicitState(t *testing.T) {
+	// Lua DPMS reads action; an unrecognized field defaults to toggle.
+	// This must remain correct even with the idle display timer disabled:
+	// after_sleep_cmd runs when the compositor may already have woken outputs.
+	for _, settings := range []Settings{Defaults(), {}} {
+		out := Render(settings)
+		if !strings.Contains(out, `after_sleep_cmd = hyprctl dispatch 'hl.dsp.dpms({ action = "on" })'`) {
+			t.Errorf("resume must explicitly power on outputs:\n%s", out)
+		}
+		if strings.Contains(out, "mode =") {
+			t.Errorf("unsupported DPMS mode defaults to toggle:\n%s", out)
+		}
 	}
 }

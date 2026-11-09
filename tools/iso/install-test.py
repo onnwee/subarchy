@@ -20,6 +20,7 @@ import atexit
 import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -352,11 +353,31 @@ def boot(disk: Path, vars_file: Path) -> bool:
             " | grep -vE 'Failed to (connect|create) pipewire context|MESA|ZINK'"
             " | grep -E 'ERROR|TypeError|ReferenceError|is not a type|Cannot assign' | head -5")
         results["layers"] = serial.run("hyprctl -i 0 layers | grep -c 'namespace: subcult-bar'")
-        # Idle (ADR 0036): hypridle runs from the generated config; the
-        # display-power dispatcher the config uses is accepted.
+        # Exercise the generated commands twice from each state. Merely
+        # accepting dispatch is insufficient: an unknown Lua field toggles.
+        dpms_probe = r"""
+import json, os, pathlib, shlex, subprocess, time
+config = pathlib.Path('/run/user', str(os.getuid()), 'subcult/hypridle.conf').read_text()
+commands = dict(line.strip().split(' = ', 1) for line in config.splitlines()
+                if ' = ' in line and 'dpms(' in line)
+on = shlex.split(commands['after_sleep_cmd'])
+off = shlex.split(commands['on-timeout'])
+for command in (on, off):
+    command[1:1] = ['-i', '0']
+try:
+    for expected, command in ((True, on), (False, off), (True, on)):
+        for _ in range(2):
+            subprocess.run(command, check=True, capture_output=True)
+            time.sleep(0.3)
+            monitors = json.loads(subprocess.check_output(['hyprctl', '-i', '0', '-j', 'monitors']))
+            assert monitors and all(m['dpmsStatus'] == expected for m in monitors), monitors
+    print('DPMS_IDEMPOTENT')
+finally:
+    subprocess.run(on, check=True, capture_output=True)
+"""
         results["idle_service"] = serial.run(
-            "systemctl --user is-active subcult-idle.service; grep -c 'timeout = 420' /run/user/$(id -u)/subcult/hypridle.conf;"
-            " hyprctl -i 0 dispatch 'hl.dsp.dpms({ mode = \"off\" })'; sleep 1; hyprctl -i 0 dispatch 'hl.dsp.dpms({ mode = \"on\" })'", timeout=60)
+            "systemctl --user is-active subcult-idle.service; grep -c 'timeout = 420' /run/user/$(id -u)/subcult/hypridle.conf; "
+            + "python3 -c " + shlex.quote(dpms_probe), timeout=60)
         # The lock (ADR 0036): its own unit locks the session; the shell dying
         # leaves it locked; the password typed into it unlocks and the
         # program exits; the shell comes back on its own.
@@ -530,8 +551,8 @@ def boot(disk: Path, vars_file: Path) -> bool:
         "theme apply-system recolours SDDM, Limine and the splash, rebuilding the initramfs once": theme_system_ok(r["theme_system"]),
         "Plymouth theme selected with its images": "subarchy" in r["plymouth_theme"].split()
         and all(f in r["plymouth_theme"] for f in ("logo.png", "subarchy.script", "entry.png", "progress-bar.png")),
-        "idle service runs the generated hypridle config, dpms dispatch accepted":
-            r["idle_service"].strip().splitlines()[0:2] == ["active", "1"] and r["idle_service"].strip().splitlines()[-2:] == ["ok", "ok"],
+        "idle service runs generated config and DPMS on/off are idempotent":
+            r["idle_service"].strip().splitlines()[0:2] == ["active", "1"] and "DPMS_IDEMPOTENT" in r["idle_service"],
         "lock locks, survives the shell dying, unlocks with the password": lock_ok(r["lock"]),
         "Hyprland session started": r["hyprland"].strip() != "",
         "session runs under uwsm": "wayland-wm@" in r["uwsm"],
