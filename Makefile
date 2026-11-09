@@ -63,6 +63,7 @@ smoke: build
 	tools/test/fontconfig-test.sh
 	tools/test/hypr-theme-test.sh
 	tools/test/hypr-motion-test.sh
+	tools/test/nvim-theme-test.sh
 
 shellcheck:
 	@if [ -n "$(SHELL_SCRIPTS)" ]; then shellcheck -x $(SHELL_SCRIPTS); fi

@@ -49,4 +49,11 @@ Hyprland. Artwork and text are replaced (R4).
   a test-only autologin and finds Hyprland under `wayland-wm@`. The greeter
   still uses SDDM's stock theme; the Subarchy QML theme is open.
 
+- 2026-11-08: the greeter theme (issue #73): `default/sddm/theme/` is a
+  small Qt 6 QML theme in the palette, the SUBCULT lockup over the last user
+  and a passphrase field; Enter logs in, a failure says so and clears the
+  field. Installed to `/usr/share/sddm/themes/subarchy` and selected by the
+  package's `sddm.conf.d` file. The VM test's greeter screendump shows the
+  ink background and the greeter log has no QML error.
+
 Related: [[decision-map|Decision map]] · [[0031-session-manager|ADR 0031]] · [[0013-boot-splash|ADR 0013]]

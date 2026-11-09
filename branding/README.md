@@ -25,5 +25,8 @@ The marks, logos and backgrounds are SUBCULT's own work. The fonts are
 redistributed under the OFL files beside them. Check the backgrounds with
 `cd branding/backgrounds && sha256sum --check backgrounds.sha256`.
 
+The boot splash (`default/plymouth/`) renders `marks/mark-dark.svg`; the
+greeter (`default/sddm/theme/`) shows `studio/logos/lockup-dark.svg`.
+
 The palette Theme Tender ships for Subarchy (`default/theme/palette.json`,
 subcult-minimal) keeps these roles: violet, ink, acid and paper.

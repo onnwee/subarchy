@@ -1,0 +1,11 @@
+[SddmGreeterTheme]
+Name=Subarchy
+Description=SUBCULT // Subarchy greeter: the lockup on ink, the last user and a passphrase field
+Author=SUBCULT
+License=GPL-3.0-or-later
+Type=sddm-theme
+Version=1
+Website=https://git.subcult.tv/subculture-collective/subarchy
+MainScript=Main.qml
+QtVersion=6
+Theme-Id=subarchy

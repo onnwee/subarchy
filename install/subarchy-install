@@ -124,8 +124,12 @@ write_boot_config() {
   # AppArmor (ADR 0063) and the Plymouth splash (ADR 0013).
   cmdline+=" lsm=landlock,lockdown,yama,integrity,apparmor,bpf quiet splash"
   [[ -n ${conf[KERNEL_CMDLINE_EXTRA]} ]] && cmdline+=" ${conf[KERNEL_CMDLINE_EXTRA]}"
-  install -d "$target"/etc/{kernel,mkinitcpio.conf.d,default}
+  install -d "$target"/etc/{kernel,mkinitcpio.conf.d,default,plymouth}
   echo "$cmdline" >"$target/etc/kernel/cmdline"
+  # The Subarchy splash (ADR 0013), chosen before pacstrap so the UKIs it
+  # builds carry the theme; pacman leaves this file and writes its own as
+  # plymouthd.conf.pacnew.
+  printf '[Daemon]\nTheme=subarchy\n' >"$target/etc/plymouth/plymouthd.conf"
   # Hardware fixes (ADR 0050): modprobe options, initramfs modules and
   # kernel command line drop-ins for this machine, written now so the UKIs
   # pacstrap builds carry them.
@@ -241,6 +245,9 @@ zram-size = ram / 2
 compression-algorithm = zstd
 EOF
 
+  # Trust the Subarchy repository's key (ADR 0025); pacstrap -K initialised
+  # the keyring before the keyring package's install script could.
+  arch-chroot "$target" pacman-key --populate subarchy >/dev/null
   arch-chroot "$target" systemctl enable --quiet NetworkManager systemd-timesyncd sddm \
     systemd-resolved ufw apparmor avahi-daemon bluetooth power-profiles-daemon subcult-power-auto
   # New installs follow the stable channel (ADR 0026): Arch packages from the
