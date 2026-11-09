@@ -36,7 +36,7 @@ func newApp(t *testing.T) (*app, *bytes.Buffer, *bytes.Buffer, *[][]string) {
 
 func TestApplySystemPicksTheUserPaletteAndElevates(t *testing.T) {
 	a, out, _, calls := newApp(t)
-	if code := a.run([]string{"theme", "apply-system", "--dry-run"}); code != 0 {
+	if code := a.run([]string{"apply-system", "--dry-run"}); code != 0 {
 		t.Fatalf("dry run from the system palette: %d %s", code, out.String())
 	}
 	if !strings.Contains(out.String(), "system/default/theme/palette.json") || !strings.Contains(out.String(), "base=#100b19,text=#f0ece4") || len(*calls) != 0 {
@@ -46,20 +46,20 @@ func TestApplySystemPicksTheUserPaletteAndElevates(t *testing.T) {
 	os.MkdirAll(filepath.Dir(user), 0o755)
 	os.WriteFile(user, []byte(palette), 0o644)
 	out.Reset()
-	if code := a.run([]string{"theme", "apply-system"}); code != 0 {
+	if code := a.run([]string{"apply-system"}); code != 0 {
 		t.Fatalf("apply: %d %s", code, out.String())
 	}
-	if len(*calls) != 1 || (*calls)[0][0] != "pkexec" || (*calls)[0][1] != selfPath || !strings.Contains(strings.Join((*calls)[0], " "), "--colors base=#eff1f5,mauve=#8839ef,text=#4c4f69 --appearance light") {
+	if len(*calls) != 1 || (*calls)[0][0] != "pkexec" || (*calls)[0][1] != selfPath || (*calls)[0][2] != "system-apply" || !strings.Contains(strings.Join((*calls)[0], " "), "--colors base=#eff1f5,mauve=#8839ef,text=#4c4f69 --appearance light") {
 		t.Errorf("elevation: %v", *calls)
 	}
-	if code := a.run([]string{"theme", "apply-system", "--elevate", "sudo"}); code != 0 || (*calls)[1][0] != "sudo" {
+	if code := a.run([]string{"apply-system", "--elevate", "sudo"}); code != 0 || (*calls)[1][0] != "sudo" {
 		t.Errorf("sudo elevation: %d %v", code, *calls)
 	}
-	if code := a.run([]string{"theme", "apply-system", "--elevate", "doas"}); code != 2 {
+	if code := a.run([]string{"apply-system", "--elevate", "doas"}); code != 2 {
 		t.Error("an unknown elevation tool was accepted")
 	}
 	os.WriteFile(user, []byte(`{"colors": {"base": "url(evil)"}}`), 0o644)
-	if code := a.run([]string{"theme", "apply-system"}); code != 1 || len(*calls) != 2 {
+	if code := a.run([]string{"apply-system"}); code != 1 || len(*calls) != 2 {
 		t.Error("a bad palette reached the privileged half")
 	}
 }
@@ -74,17 +74,17 @@ func TestSystemApplyWritesUnderRoot(t *testing.T) {
 		os.MkdirAll(filepath.Join(root, filepath.Dir(rel)), 0o755)
 		os.WriteFile(filepath.Join(root, rel), []byte(c), 0o644)
 	}
-	if code := a.run([]string{"theme", "system-apply", "--root", root, "--colors", "base=#000000,text=#ffffff", "--appearance", "dark"}); code != 0 {
+	if code := a.run([]string{"system-apply", "--root", root, "--colors", "base=#000000,text=#ffffff", "--appearance", "dark"}); code != 0 {
 		t.Fatalf("system-apply: %d %s %s", code, out.String(), errOut.String())
 	}
 	s := out.String()
 	if !strings.Contains(s, "wrote /usr/share/sddm/themes/subarchy/theme.conf") || !strings.Contains(s, "wrote /boot/limine.conf") || !strings.Contains(s, "skipped: Plymouth") || !strings.Contains(s, "no initramfs rebuild") {
 		t.Errorf("report: %s", s)
 	}
-	if code := a.run([]string{"theme", "system-apply", "--root", root, "--colors", "base=#zzzzzz"}); code != 2 {
+	if code := a.run([]string{"system-apply", "--root", root, "--colors", "base=#zzzzzz"}); code != 2 {
 		t.Error("a bad colour was accepted by the privileged half")
 	}
-	if code := a.run([]string{"theme", "system-apply", "--root", root}); code != 2 {
+	if code := a.run([]string{"system-apply", "--root", root}); code != 2 {
 		t.Error("no colours was accepted")
 	}
 }

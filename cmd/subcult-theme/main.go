@@ -51,15 +51,15 @@ func (a *app) run(args []string) int {
 		}
 		return 0
 	}
-	if len(args) < 2 || args[0] != "theme" {
+	if len(args) == 0 {
 		fmt.Fprintln(a.stderr, "Usage: subcult theme apply-system [--dry-run] [--elevate pkexec|sudo]")
 		return 2
 	}
-	switch args[1] {
+	switch args[0] {
 	case "apply-system":
-		return a.applySystem(args[2:])
+		return a.applySystem(args[1:])
 	case "system-apply":
-		return a.systemApply(args[2:])
+		return a.systemApply(args[1:])
 	}
 	fmt.Fprintln(a.stderr, "Usage: subcult theme apply-system [--dry-run] [--elevate pkexec|sudo]")
 	return 2
@@ -106,7 +106,7 @@ func (a *app) applySystem(args []string) int {
 		return 1
 	}
 	fmt.Fprintf(a.stdout, "palette: %s (%s, %d colours)\n", path, p.Appearance, len(p.Colors))
-	privileged := []string{"theme", "system-apply", "--colors", p.Args(), "--appearance", p.Appearance}
+	privileged := []string{"system-apply", "--colors", p.Args(), "--appearance", p.Appearance}
 	if *dry {
 		fmt.Fprintln(a.stdout, "would run as root:", selfPath, strings.Join(privileged, " "))
 		fmt.Fprintln(a.stdout, "targets: SDDM theme.conf, /boot/limine.conf colours, the Plymouth user theme (initramfs when it changes), Chromium's colour policy")
