@@ -67,7 +67,7 @@ func TestFixesPantherLakeLaptop(t *testing.T) {
 		t.Errorf("services: %v", sel.Services)
 	}
 	target := t.TempDir()
-	written, err := Apply(target, Fixes(m))
+	written, _, err := Apply(target, Fixes(m))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,9 +82,19 @@ func TestFixesPantherLakeLaptop(t *testing.T) {
 	if !NeedsInitramfs(written) {
 		t.Error("modprobe and command line changes need an initramfs rebuild")
 	}
-	again, err := Apply(target, Fixes(m))
+	again, _, err := Apply(target, Fixes(m))
 	if err != nil || len(again) != 0 {
 		t.Errorf("second apply wrote %v (%v)", again, err)
+	}
+	// A file the user wrote is kept, and said so.
+	own := filepath.Join(target, "etc/modprobe.d/iwlwifi-disable-eht.conf")
+	os.WriteFile(own, []byte("options iwlwifi disable_11be=N\n"), 0o644)
+	w, kept, err := Apply(target, Fixes(m))
+	if err != nil || len(w) != 0 || !contains(kept, "etc/modprobe.d/iwlwifi-disable-eht.conf") {
+		t.Errorf("a user file was not kept: wrote %v kept %v (%v)", w, kept, err)
+	}
+	if b, _ := os.ReadFile(own); string(b) != "options iwlwifi disable_11be=N\n" {
+		t.Error("the user's file was overwritten")
 	}
 }
 
@@ -102,7 +112,7 @@ func TestFixesNvidiaDesktop(t *testing.T) {
 		t.Errorf("fixes: %v", got)
 	}
 	target := t.TempDir()
-	written, _ := Apply(target, Fixes(m))
+	written, _, _ := Apply(target, Fixes(m))
 	if b, _ := os.ReadFile(filepath.Join(target, "etc/mkinitcpio.conf.d/nvidia.conf")); !strings.Contains(string(b), "MODULES+=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)") {
 		t.Errorf("nvidia initramfs modules: %s (written %v)", b, written)
 	}

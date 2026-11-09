@@ -276,7 +276,7 @@ def boot(disk: Path, vars_file: Path) -> bool:
             ),
             # Hardware fixes (ADR 0050): the VM gets the ones every x86 machine
             # gets; their files are in place; the regulatory domain follows the zone.
-            "fixes": serial.run("subcult hw fixes; echo ---; cat /etc/modprobe.d/hid_apple.conf; echo ---; grep WIRELESS_REGDOM= /etc/conf.d/wireless-regdom"),
+            "fixes": serial.run("subcult hw fixes; echo ---; cat /etc/modprobe.d/hid_apple.conf; echo ---; grep '^WIRELESS_REGDOM=' /etc/conf.d/wireless-regdom"),
             # subcult update: snapshot, pacman -Syu, migrations, report.
             "update": serial.run(
                 # sudo -k and no stdin: the update must not need a password (ADR 0062).
