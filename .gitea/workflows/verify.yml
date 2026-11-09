@@ -38,6 +38,11 @@ jobs:
     steps:
       - name: Install build tools
         run: pacman -Syu --noconfirm --needed base-devel go git nodejs pacman-contrib fakeroot hypridle librsvg xorg-xcursorgen hyprcursor python lua python-pyte python-pillow ffmpeg ttf-dejavu qt6-multimedia
+      - name: Check Node startup before checkout
+        run: |
+          cat /sys/fs/cgroup/pids.current /sys/fs/cgroup/pids.max
+          node --version
+          node -e 'console.log(JSON.stringify(process.versions))'
       - uses: actions/checkout@v4
       - name: Build and check the package as a normal user
         run: |
