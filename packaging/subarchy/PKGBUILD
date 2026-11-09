@@ -68,6 +68,7 @@ package() {
     [[ -e $f ]] || continue
     install -Dm755 "$f" "$pkgdir/usr/bin/$(basename "$f")"
   done
+  install -Dm755 "$root/tools/bluetooth/pair-agent.py" "$pkgdir/usr/lib/subcult/bluetooth-pair-agent"
 
   # OS identity (ADR 0052). /etc/os-release takes precedence over the
   # filesystem package's /usr/lib/os-release.
