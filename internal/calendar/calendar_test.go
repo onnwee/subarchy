@@ -3,6 +3,9 @@ package calendar
 import (
 	"context"
 	"errors"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -301,5 +304,43 @@ func TestOnBattery(t *testing.T) {
 	desktop := t.TempDir()
 	if OnBattery(desktop) {
 		t.Error("no battery is AC")
+	}
+}
+
+func TestDurationPropertyOrder(t *testing.T) {
+	start := "DTSTART:20261108T120000Z\n"
+	for _, properties := range []string{
+		start + "DURATION:PT1H\n",
+		"DURATION:PT1H\n" + start,
+		"DURATION:PT2H\n" + start + "DTEND:20261108T130000Z\n",
+		"DTEND:20261108T130000Z\nDURATION:PT2H\n" + start,
+	} {
+		t.Run(properties, func(t *testing.T) {
+			events, err := parseICS("BEGIN:VEVENT\nUID:order\n"+properties+"END:VEVENT\n", time.UTC)
+			if err != nil || len(events) != 1 {
+				t.Fatalf("parse: %+v %v", events, err)
+			}
+			if got := events[0].end.Sub(events[0].start); got != time.Hour {
+				t.Fatalf("duration: got %v, want 1h", got)
+			}
+		})
+	}
+}
+
+func TestAuthenticatedICalSync(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, password, ok := r.BasicAuth()
+		if !ok || user != "reader" || password != "feed-password" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		fmt.Fprint(w, "BEGIN:VEVENT\nUID:protected\nDTSTART:20261108T120000Z\nDURATION:PT1H\nEND:VEVENT\n")
+	}))
+	defer server.Close()
+	cfg := Config{Sources: []Source{{Name: "private-feed", Kind: "ical", URL: server.URL, User: "reader"}}}
+	now := time.Date(2026, 11, 8, 10, 0, 0, 0, time.UTC)
+	cache := Sync(context.Background(), cfg, Cache{}, now, HTTPFetcher{Client: server.Client()}, fakeSecrets{"private-feed": "feed-password"})
+	if len(cache.Events) != 1 || !cache.Sources[0].OK {
+		t.Fatalf("protected feed did not sync: %+v", cache)
 	}
 }

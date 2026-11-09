@@ -10,14 +10,14 @@ import (
 )
 
 // Source is one calendar: a CalDAV collection or an iCal feed. Nothing
-// secret lives here: a CalDAV password is read from the keyring under the
+// secret lives here: a source password is read from the keyring under the
 // source's name (`secret-tool lookup service subcult-calendar source
 // <name>`).
 type Source struct {
 	Name string `toml:"name"`
 	Kind string `toml:"kind"` // "caldav" or "ical"
 	URL  string `toml:"url"`
-	User string `toml:"user"` // CalDAV user name; the password is in the keyring
+	User string `toml:"user"` // optional for public iCal feeds; password is in the keyring
 }
 
 // Config is ~/.config/subcult/calendar.toml.

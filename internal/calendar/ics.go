@@ -128,6 +128,8 @@ type vevent struct {
 func parseICS(text string, loc *time.Location) ([]vevent, error) {
 	var events []vevent
 	var cur *vevent
+	var duration time.Duration
+	var hasDuration bool
 	for _, line := range unfold(text) {
 		p, ok := parseProperty(line)
 		if !ok {
@@ -136,10 +138,13 @@ func parseICS(text string, loc *time.Location) ([]vevent, error) {
 		switch {
 		case p.name == "BEGIN" && strings.EqualFold(p.value, "VEVENT"):
 			cur = &vevent{exdates: map[string]bool{}}
+			duration, hasDuration = 0, false
 		case p.name == "END" && strings.EqualFold(p.value, "VEVENT"):
 			if cur != nil && cur.uid != "" && !cur.start.IsZero() {
 				if cur.end.IsZero() {
-					if cur.allDay {
+					if hasDuration {
+						cur.end = cur.start.Add(duration)
+					} else if cur.allDay {
 						cur.end = cur.start.AddDate(0, 0, 1)
 					} else {
 						cur.end = cur.start
@@ -182,10 +187,8 @@ func parseICS(text string, loc *time.Location) ([]vevent, error) {
 				return nil, fmt.Errorf("DTEND %q: %w", p.value, err)
 			}
 			cur.end = t
-		case p.name == "DURATION" && cur.end.IsZero():
-			if d, ok := parseDuration(p.value); ok {
-				cur.end = cur.start.Add(d)
-			}
+		case p.name == "DURATION":
+			duration, hasDuration = parseDuration(p.value)
 		}
 	}
 	return events, nil
