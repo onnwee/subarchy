@@ -30,12 +30,32 @@ ShellRoot {
     }
   }
 
+  // Once unlocked the program exits: on the compositor's word, or shortly
+  // after asking, since a compositor that never confirmed the lock (secure
+  // stays false, as under a headless sway) does not answer the unlock.
+  function finish() {
+    if (!quit.running)
+      quit.start()
+  }
+
+  Timer {
+    id: quit
+    interval: 300
+    onTriggered: Qt.quit()
+  }
+
+  Timer {
+    id: hardExit
+    interval: 3000
+    onTriggered: Qt.exit(0)
+  }
+
   WlSessionLock {
     id: lock
     locked: true
     onLockedChanged: {
       if (!locked)
-        Qt.quit()
+        root.finish()
     }
 
     WlSessionLockSurface {
@@ -62,6 +82,8 @@ ShellRoot {
       if (result === PamResult.Success) {
         root.lockState = Model.unlocked(root.lockState)
         lock.locked = false
+        hardExit.start()
+        root.finish()
       } else {
         root.lockState = Model.failed(root.lockState, Model.failureMessage(root.lockState.attempts + 1))
       }
