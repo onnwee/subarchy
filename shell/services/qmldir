@@ -6,3 +6,4 @@ singleton Downloads 1.0 Downloads.qml
 singleton Soma 1.0 Soma.qml
 singleton Weather 1.0 Weather.qml
 singleton DellPower 1.0 DellPower.qml
+singleton BluetoothPairing 1.0 BluetoothPairing.qml

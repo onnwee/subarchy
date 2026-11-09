@@ -26,5 +26,20 @@ TestCase {
     compare(Model.action(buds), "disconnect")
     compare(Model.action(mouse), "connect")
     compare(Model.action(bonded), "", "nothing while connecting")
+    compare(Model.action({ pairing: true }), "")
+    compare(Model.stateText({ pairing: true }), "Pairing…")
+  }
+
+  function test_nearby() {
+    compare(Model.nearby([buds, mouse, stranger, bonded, null, "invalid"]).map(Model.label), ["Phone"])
+  }
+
+  function test_pairing_messages() {
+    compare(Model.pairingEvent('{"event":"ready"}').event, "ready")
+    compare(Model.pairingEvent('{"event":"prompt","id":1,"kind":"confirmation","code":"000123"}').code, "000123")
+    for (const line of ['null', '[]', '{}', 'bad', '{"event":"prompt","id":true,"kind":"pin"}', '{"event":"prompt","id":1,"kind":"confirmation","code":"<b>"}', '{"event":"result","ok":"true","message":"wrong type"}'])
+      compare(Model.pairingEvent(line), null)
+    verify(Model.promptText({ kind: "pin" }, "Keys").indexOf("Keys") >= 0)
+    verify(Model.promptText({ kind: "confirmation" }, "Keys").indexOf("match") >= 0)
   }
 }

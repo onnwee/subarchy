@@ -97,6 +97,7 @@ mkdir "$work/root"
 bsdtar -xf "$pkg" -C "$work/root" usr
 cmp "$work/root/usr/share/sddm/themes/subarchy/lockup-dark.png" \
   "$work/root/usr/share/subcult/lock/lockup-dark.png" || fail "greeter and lock artwork differ"
+[[ -x $work/root/usr/lib/subcult/bluetooth-pair-agent ]] || fail "pairing helper is missing or not executable"
 "$work/root/usr/bin/subcult" --version | grep -qx 'subcult 0.0.0' || fail "subcult --version"
 "$work/root/usr/bin/subcult-app" validate "$work/root/usr/share/subcult/default/apps.toml" >/dev/null ||
   fail "shipped app catalogue does not validate"

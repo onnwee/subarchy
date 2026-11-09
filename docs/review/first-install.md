@@ -249,7 +249,7 @@ need their own key-custody and recovery checkpoint.
 | NVIDIA | Both DKMS builds; GPU modes and `subcult gpu run` | DKMS/basic `nvidia-smi` passed; owner saw only offloaded Kitty disappear temporarily, duration unknown. Inconclusive, #218 |
 | Wi-Fi | Connect/reconnect and usable network after reboot | Installed reconnect/SSH passed; owner reports Wi-Fi working November 9 |
 | SOF audio | Speakers/headphones and microphone | Owner reports audio working November 9; microphone/headphones not separately identified |
-| Bluetooth | Pair and use a real peripheral | Discovery observed; no pairing attempted. Panel delegates pairing to terminal, #217 |
+| Bluetooth | Pair, use and reconnect a real peripheral | Discovery observed; no pairing attempted. Installed panel still delegates pairing to terminal. Native panel pairing is in development for #217; private-bus and UI tests do not prove hardware pairing |
 | Suspend/lid | Suspend/resume, lid, unlock and network recovery | Failed: lock appears briefly, then black display; owner reboots. #213 |
 | Battery | Unplug/replug and automatic profile switching | Owner confirms changes take effect; Dell label stays stale until interaction, #214 |
 | Splash | Graphical Plymouth and readable unlock prompt | Owner confirmation pending |
