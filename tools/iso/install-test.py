@@ -326,7 +326,7 @@ def boot(disk: Path, vars_file: Path) -> bool:
         results["layers"] = serial.run("hyprctl -i 0 layers | grep -c 'namespace: subcult-bar'")
         # Idle (ADR 0036): hypridle runs from the generated config; the
         # display-power dispatcher the config uses is accepted.
-        results["idle"] = serial.run(
+        results["idle_service"] = serial.run(
             "systemctl --user is-active subcult-idle.service; grep -c 'timeout = 420' /run/user/$(id -u)/subcult/hypridle.conf;"
             " hyprctl -i 0 dispatch 'hl.dsp.dpms({ mode = \"off\" })'; sleep 1; hyprctl -i 0 dispatch 'hl.dsp.dpms({ mode = \"on\" })'", timeout=60)
         # The lock (ADR 0036): its own unit locks the session; the shell dying
@@ -485,7 +485,7 @@ def boot(disk: Path, vars_file: Path) -> bool:
         "SDDM greeter running": "sddm-greeter" in r["greeter"],
         "greeter drew something": r["greeter_colours"] > 1,
         "idle service runs the generated hypridle config, dpms dispatch accepted":
-            r["idle"].strip().splitlines()[0:2] == ["active", "1"] and r["idle"].strip().splitlines()[-2:] == ["ok", "ok"],
+            r["idle_service"].strip().splitlines()[0:2] == ["active", "1"] and r["idle_service"].strip().splitlines()[-2:] == ["ok", "ok"],
         "lock locks, survives the shell dying, unlocks with the password": lock_ok(r["lock"]),
         "Hyprland session started": r["hyprland"].strip() != "",
         "session runs under uwsm": "wayland-wm@" in r["uwsm"],
