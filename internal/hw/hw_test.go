@@ -140,7 +140,7 @@ func TestSelect(t *testing.T) {
 			name: "Surface is not a VM; Cirrus amps",
 			f: fixture{cpu: "GenuineIntel", vendor: "Microsoft Corporation", product: "Surface Laptop 5",
 				pci: [][3]uint32{{0x8086, 0xa7a0, 0x030000}}, acpi: []string{"CSC3551:00"}},
-			want: []string{"intel-media-driver", "intel-ucode", "libvpl", "linux-firmware-cirrus", "linux-firmware-intel", "thermald", "vpl-gpu-rt", "vulkan-intel"},
+			want: []string{"intel-media-driver", "intel-ucode", "libvpl", "linux-firmware-cirrus", "linux-firmware-intel", "linux-firmware-marvell", "thermald", "vpl-gpu-rt", "vulkan-intel"},
 		},
 		{
 			name: "Hyper-V guest",
