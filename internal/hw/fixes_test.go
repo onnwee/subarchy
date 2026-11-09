@@ -1,6 +1,7 @@
 package hw
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -144,7 +145,8 @@ func TestFixesVM(t *testing.T) {
 func TestCatalogueIsSound(t *testing.T) {
 	seen := map[string]bool{}
 	for _, f := range AllFixes() {
-		if f.Name == "" || f.Summary == "" || !strings.HasPrefix(f.Source, "install/hardware/") || f.applies == nil {
+		omarchy := strings.HasPrefix(f.Source, "install/hardware/") || strings.HasPrefix(f.Source, "plugin: ")
+		if f.Name == "" || f.Summary == "" || !omarchy || f.applies == nil {
 			t.Errorf("incomplete fix: %+v", f)
 		}
 		if seen[f.Name] {
@@ -165,6 +167,48 @@ func TestCatalogueIsSound(t *testing.T) {
 				t.Errorf("fix %s adds %s, which the package catalogue lacks", f.Name, p)
 			}
 		}
+	}
+}
+
+func TestDellPower(t *testing.T) {
+	dell, _ := Detect(fixtureRoot(t, map[string]string{
+		"proc/cpuinfo":                "vendor_id\t: GenuineIntel\nmodel\t\t: 170\n",
+		"sys/class/dmi/id/sys_vendor": "Dell Inc.\n", "sys/class/dmi/id/product_name": "XPS 13 9350\n",
+		"sys/class/platform-profile/platform-profile-0/name": "dell-pc\n",
+	}))
+	if !contains(fixNames(Fixes(dell)), "dell-power") {
+		t.Errorf("a Dell with the dell-pc profile gets no dell-power fix: %v", fixNames(Fixes(dell)))
+	}
+	other, _ := Detect(fixtureRoot(t, map[string]string{
+		"proc/cpuinfo":                "vendor_id\t: GenuineIntel\nmodel\t\t: 170\n",
+		"sys/class/dmi/id/sys_vendor": "Dell Inc.\n", "sys/class/dmi/id/product_name": "OptiPlex 7010\n",
+		"sys/class/platform-profile/platform-profile-0/name": "acpi-platform-profile\n",
+	}))
+	if contains(fixNames(Fixes(other)), "dell-power") {
+		t.Error("a Dell without the dell-pc profile got the dell-power fix")
+	}
+	target := t.TempDir()
+	written, _, err := Apply(target, Fixes(dell))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !contains(written, "etc/subcult/shell/bar.json") {
+		t.Errorf("the machine layer was not written: %v", written)
+	}
+	b, _ := os.ReadFile(filepath.Join(target, "etc/subcult/shell/bar.json"))
+	var layer struct {
+		Enable []string `json:"enable"`
+	}
+	if err := json.Unmarshal(b, &layer); err != nil || len(layer.Enable) != 1 || layer.Enable[0] != "subcult.dell-power" {
+		t.Errorf("machine layer: %s (%v)", b, err)
+	}
+	// Written again with the same content: nothing; an admin's own file: kept.
+	if w, _, _ := Apply(target, Fixes(dell)); len(w) != 0 {
+		t.Errorf("rewritten unchanged: %v", w)
+	}
+	os.WriteFile(filepath.Join(target, "etc/subcult/shell/bar.json"), []byte(`{"enable": []}`), 0o644)
+	if _, kept, _ := Apply(target, Fixes(dell)); !contains(kept, "etc/subcult/shell/bar.json") {
+		t.Errorf("an admin's machine layer was not kept: %v", kept)
 	}
 }
 

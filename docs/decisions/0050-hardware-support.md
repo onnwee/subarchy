@@ -104,6 +104,12 @@ port with them.
   Marvell firmware and the aggregator and keyboard modules in the
   initramfs, with the pinctrl module read from the live medium's loaded
   modules when one is loaded there.
+- 2026-11-08: the Dell power add-on (issue #91): the `dell-power` fix writes
+  the machine layer of the bar config that enables the widget on a machine
+  whose firmware registers the dell-pc platform profile (a new fact, from
+  `/sys/class/platform-profile`); the fix catalogue accepts a plugin as a
+  source, and a JSON file counts as the fixes' own when its first line
+  carries the header in a `"#"` key.
 - 2026-11-08: the vendor fixes (issue #82): ASUS ROG (asusctl and asusd),
   the ROG Flow Z13 touchpad rule, the ExpertBook B9406 panel-replay and
   touchpad quirk, the DPCD backlight on the Panther Lake ASUS models, the

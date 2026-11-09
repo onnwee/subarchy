@@ -1,0 +1,7 @@
+# Subarchy (ADR 0021): on Dell laptops wheel sets the firmware power profile
+# and the charging mode from the bar (subcult dell power). The platform
+# profile is handed over here; the charging attributes appear after their
+# device, so a short service waits for them.
+# Installed to /usr/lib/udev/rules.d/90-subarchy-dell-power.rules.
+ACTION=="add", SUBSYSTEM=="platform-profile", ATTR{name}=="dell-pc", RUN+="/usr/bin/chgrp wheel /sys/class/platform-profile/%k/profile", RUN+="/usr/bin/chmod g+w /sys/class/platform-profile/%k/profile"
+ACTION=="add", SUBSYSTEM=="firmware-attributes", KERNEL=="dell-wmi-sysman", TAG+="systemd", ENV{SYSTEMD_WANTS}+="subcult-dell-power-permissions.service"

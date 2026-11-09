@@ -4,18 +4,22 @@ import Quickshell
 import Quickshell.Io
 import "ConfigModel.js" as ConfigModel
 
-// The bar's layered config (ADR 0048): system defaults under the user's
-// file, which is watched even before it exists. A broken user file logs
-// one warning and the defaults stay in use.
+// The bar's layered config (ADR 0048): system defaults, then the machine
+// layer `subcult hw apply` writes under /etc for the hardware it found, then
+// the user's file; both files are watched even before they exist. A broken
+// file logs one warning and the layers under it stay in use.
 Singleton {
   id: root
 
   readonly property string systemPath: (Quickshell.env("SUBCULT_PATH") || "/usr/share/subcult") + "/default/shell/bar.json"
+  readonly property string machinePath: (Quickshell.env("SUBCULT_ETC") || "/etc/subcult") + "/shell/bar.json"
   readonly property string userPath: Quickshell.env("HOME") + "/.config/subcult/shell/bar.json"
 
   property var defaults: ({})
   property string lastWarning: ""
-  readonly property var parsed: ConfigModel.parse(userFile.text, defaults)
+  property string lastMachineWarning: ""
+  readonly property var machine: ConfigModel.machine(defaults, machineFile.text)
+  readonly property var parsed: ConfigModel.parse(userFile.text, machine.config)
   // The user's file as written, for the settings panel's own merge.
   readonly property string userText: userFile.text
   readonly property var bar: parsed.config
@@ -24,6 +28,12 @@ Singleton {
     if (parsed.warning !== "" && parsed.warning !== lastWarning)
       console.warn("subcult shell config:", userPath + ":", parsed.warning)
     lastWarning = parsed.warning
+  }
+
+  onMachineChanged: {
+    if (machine.warning !== "" && machine.warning !== lastMachineWarning)
+      console.warn("subcult shell config:", machinePath + ":", machine.warning)
+    lastMachineWarning = machine.warning
   }
 
   // Writes one setting of one widget into the user's file, leaving
@@ -52,6 +62,11 @@ Singleton {
         console.warn("subcult shell config: system defaults are broken:", e.message)
       }
     }
+  }
+
+  WatchedFile {
+    id: machineFile
+    path: root.machinePath
   }
 
   WatchedFile {

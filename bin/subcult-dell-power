@@ -1,0 +1,264 @@
+#!/usr/bin/env bash
+# subcult:summary=Dell firmware power and charging profiles
+# subcult:args=probe | state [--json] | set <quiet|cool|balanced|performance> | charging set <adaptive|standard|express|primarily-ac|custom [START STOP]>
+# subcult:examples=subcult dell power state | subcult dell power set quiet | subcult dell power charging set custom 60 80
+#
+# ADR 0021: the vendor add-on for Dell laptops, with omarchy-dell-power-
+# profiles as the model for its behaviour. The firmware's platform profile
+# (quiet, cool, balanced, performance) is set together with the
+# power-profiles-daemon profile it fits; the charging mode and the custom
+# thresholds are the dell-wmi-sysman firmware attributes. The udev rule
+# and `permissions` (run as root by its service) hand those files to wheel,
+# so the bar widget writes them as the user. `state` on a machine without
+# the firmware says so and exits 0; the widget stays hidden.
+set -euo pipefail
+
+sysfs=${SUBCULT_SYSFS:-/sys}
+attributes=$sysfs/class/firmware-attributes/dell-wmi-sysman/attributes
+
+die() {
+  echo "subcult dell power: $*" >&2
+  exit 1
+}
+
+# The platform-profile device the Dell firmware registers.
+profile_dir() {
+  local d
+  for d in "$sysfs"/class/platform-profile/*; do
+    [[ -r $d/name && -r $d/choices && -r $d/profile ]] || continue
+    [[ $(<"$d/name") == dell-pc ]] || continue
+    echo "$d"
+    return 0
+  done
+  return 1
+}
+
+charging_available() {
+  [[ -r $attributes/PrimaryBattChargeCfg/current_value && -r $attributes/PrimaryBattChargeCfg/possible_values ]]
+}
+
+custom_available() {
+  local a
+  for a in CustomChargeStart CustomChargeStop; do
+    [[ -r $attributes/$a/current_value && -r $attributes/$a/min_value && -r $attributes/$a/max_value && -r $attributes/$a/scalar_increment ]] || return 1
+  done
+}
+
+# power-profiles-daemon's profile for a firmware profile.
+os_profile_for() {
+  case $1 in
+    quiet | cool) echo power-saver ;;
+    balanced | performance) echo "$1" ;;
+    *) return 1 ;;
+  esac
+}
+
+# The firmware's name for a charging mode, and back.
+firmware_mode_for() {
+  case $1 in
+    adaptive) echo Adaptive ;;
+    standard) echo Standard ;;
+    express) echo Express ;;
+    primarily-ac) echo PrimAcUse ;;
+    custom) echo Custom ;;
+    *) return 1 ;;
+  esac
+}
+
+mode_for_firmware() {
+  case $1 in
+    Adaptive) echo adaptive ;;
+    Standard) echo standard ;;
+    Express) echo express ;;
+    PrimAcUse) echo primarily-ac ;;
+    Custom) echo custom ;;
+    *) return 1 ;;
+  esac
+}
+
+# The firmware profiles this machine offers, in the order the panel shows.
+available_profiles() {
+  local dir=$1 choices p
+  read -r -a choices <"$dir/choices"
+  for p in quiet cool balanced performance; do
+    [[ " ${choices[*]} " == *" $p "* ]] && echo "$p"
+  done
+  return 0
+}
+
+available_modes() {
+  local raw m
+  IFS=';' read -r -a raw <"$attributes/PrimaryBattChargeCfg/possible_values"
+  for m in "${raw[@]}"; do
+    mode_for_firmware "$m" || true
+  done
+}
+
+integer_attr() { # file description
+  local v
+  [[ -r $1 ]] || die "$2 is unavailable"
+  v=$(<"$1")
+  [[ $v =~ ^[0-9]+$ ]] || die "$2 is not a number: $v"
+  echo "$((10#$v))"
+}
+
+# Writes a sysfs file and checks the firmware took the value.
+write_attr() { # file value description
+  [[ -w $1 ]] || die "$3 is not writable (the udev rule hands it to wheel; is the user in wheel, and the rule installed?)"
+  printf '%s\n' "$2" >"$1" 2>/dev/null || die "the firmware refused $3"
+  [[ $(<"$1") == "$2" ]] || die "the firmware did not apply $3"
+}
+
+json_list() { # ids... (active id in $active)
+  local sep="" id
+  printf '['
+  for id in "$@"; do
+    printf '%s{"id": "%s", "active": %s}' "$sep" "$id" "$([[ $id == "$active" ]] && echo true || echo false)"
+    sep=", "
+  done
+  printf ']'
+}
+
+state() {
+  local json=0 dir active profiles modes mode custom=""
+  [[ ${1:-} == --json ]] && json=1
+  if ! dir=$(profile_dir); then
+    if ((json)); then echo '{"available": false}'; else echo "no Dell platform profile on this machine"; fi
+    return 0
+  fi
+  active=$(<"$dir/profile")
+  mapfile -t profiles < <(available_profiles "$dir")
+  if charging_available; then
+    mapfile -t modes < <(available_modes)
+    mode=$(mode_for_firmware "$(<"$attributes/PrimaryBattChargeCfg/current_value")" || echo "")
+    if custom_available; then
+      custom=$(printf '{"start": %d, "stop": %d, "startMin": %d, "startMax": %d, "stopMin": %d, "stopMax": %d, "step": %d}' \
+        "$(integer_attr "$attributes/CustomChargeStart/current_value" "the custom start")" \
+        "$(integer_attr "$attributes/CustomChargeStop/current_value" "the custom stop")" \
+        "$(integer_attr "$attributes/CustomChargeStart/min_value" "the custom start minimum")" \
+        "$(integer_attr "$attributes/CustomChargeStart/max_value" "the custom start maximum")" \
+        "$(integer_attr "$attributes/CustomChargeStop/min_value" "the custom stop minimum")" \
+        "$(integer_attr "$attributes/CustomChargeStop/max_value" "the custom stop maximum")" \
+        "$(integer_attr "$attributes/CustomChargeStart/scalar_increment" "the custom step")")
+    fi
+  else
+    modes=()
+    mode=""
+  fi
+  if ((json)); then
+    printf '{"available": true, "profiles": '
+    json_list "${profiles[@]}"
+    printf ', "charging": '
+    if charging_available; then
+      active=$mode
+      printf '{"available": true, "modes": '
+      json_list "${modes[@]}"
+      [[ -n $custom ]] && printf ', "custom": %s' "$custom"
+      printf '}'
+    else
+      printf '{"available": false}'
+    fi
+    printf '}\n'
+  else
+    echo "profile: $active (${profiles[*]})"
+    if charging_available; then
+      echo "charging: ${mode:-unknown} (${modes[*]})"
+      [[ -n $custom ]] && echo "custom: $custom"
+    else
+      echo "charging: no controls"
+    fi
+  fi
+}
+
+set_profile() {
+  local profile=${1:-} dir os previous
+  dir=$(profile_dir) || die "no Dell platform profile on this machine"
+  [[ -n $profile ]] || die "usage: subcult dell power set <quiet|cool|balanced|performance>"
+  available_profiles "$dir" | grep -qx "$profile" || die "the firmware does not offer '$profile' (it has: $(available_profiles "$dir" | tr '\n' ' '))"
+  os=$(os_profile_for "$profile")
+  if command -v powerprofilesctl >/dev/null; then
+    previous=$(powerprofilesctl get 2>/dev/null || echo "")
+    if [[ $previous != "$os" ]]; then
+      powerprofilesctl set "$os" || die "power-profiles-daemon refused '$os'"
+    fi
+  fi
+  if [[ $(<"$dir/profile") != "$profile" ]]; then
+    if ! write_attr "$dir/profile" "$profile" "the firmware profile"; then
+      [[ -n ${previous:-} ]] && powerprofilesctl set "$previous" >/dev/null 2>&1 || true
+      exit 1
+    fi
+  fi
+  echo "set $profile (power-profiles-daemon: $os)"
+}
+
+set_charging() {
+  local mode=${1:-} start=${2:-} stop=${3:-} fw current previous_stop
+  charging_available || die "no Dell charging controls on this machine"
+  fw=$(firmware_mode_for "$mode") || die "usage: subcult dell power charging set <adaptive|standard|express|primarily-ac|custom [START STOP]>"
+  available_modes | grep -qx "$mode" || die "the firmware does not offer '$mode' (it has: $(available_modes | tr '\n' ' '))"
+  if [[ $mode == custom && -n $start ]]; then
+    custom_available || die "the custom thresholds are unavailable"
+    [[ $start =~ ^[0-9]+$ && $stop =~ ^[0-9]+$ ]] || die "the thresholds are whole percentages"
+    local smin smax tmin tmax step
+    smin=$(integer_attr "$attributes/CustomChargeStart/min_value" "the start minimum")
+    smax=$(integer_attr "$attributes/CustomChargeStart/max_value" "the start maximum")
+    tmin=$(integer_attr "$attributes/CustomChargeStop/min_value" "the stop minimum")
+    tmax=$(integer_attr "$attributes/CustomChargeStop/max_value" "the stop maximum")
+    step=$(integer_attr "$attributes/CustomChargeStart/scalar_increment" "the step")
+    start=$((10#$start)); stop=$((10#$stop))
+    ((start >= smin && start <= smax)) || die "the start is between $smin and $smax"
+    ((stop >= tmin && stop <= tmax)) || die "the stop is between $tmin and $tmax"
+    (((start - smin) % step == 0 && (stop - tmin) % step == 0)) || die "the thresholds move in steps of $step"
+    ((stop >= start + 5)) || die "the stop is at least 5 above the start"
+  elif [[ -n $start ]]; then
+    die "only the custom mode takes thresholds"
+  fi
+  current=$(<"$attributes/PrimaryBattChargeCfg/current_value")
+  [[ $current == "$fw" ]] || write_attr "$attributes/PrimaryBattChargeCfg/current_value" "$fw" "the charging mode"
+  if [[ $mode == custom && -n $start ]]; then
+    previous_stop=$(<"$attributes/CustomChargeStop/current_value")
+    # The firmware rejects a start too close to the stop it has, so the
+    # value that widens the gap goes first.
+    if ((start > previous_stop - 5)); then
+      write_attr "$attributes/CustomChargeStop/current_value" "$stop" "the custom stop"
+      write_attr "$attributes/CustomChargeStart/current_value" "$start" "the custom start"
+    else
+      write_attr "$attributes/CustomChargeStart/current_value" "$start" "the custom start"
+      write_attr "$attributes/CustomChargeStop/current_value" "$stop" "the custom stop"
+    fi
+    echo "set charging $mode $start-$stop"
+  else
+    echo "set charging $mode"
+  fi
+}
+
+# Run as root by subcult-dell-power-permissions.service once udev saw the
+# firmware device: the attribute files appear a moment later.
+permissions() {
+  local files=("$attributes/PrimaryBattChargeCfg/current_value" "$attributes/CustomChargeStart/current_value" "$attributes/CustomChargeStop/current_value")
+  local i f ready
+  for ((i = 0; i < 50; i++)); do
+    ready=1
+    for f in "${files[@]}"; do [[ -e $f ]] || ready=0; done
+    ((ready)) && break
+    sleep 0.1
+  done
+  ((ready)) || die "the Dell charging controls did not appear"
+  chgrp wheel "${files[@]}" && chmod g+rw "${files[@]}"
+  echo "charging controls handed to wheel"
+}
+
+case ${1:-} in
+  probe) profile_dir >/dev/null ;;
+  state) state "${2:-}" ;;
+  set) set_profile "${2:-}" ;;
+  charging)
+    [[ ${2:-} == set ]] || die "usage: subcult dell power charging set <mode> [START STOP]"
+    set_charging "${3:-}" "${4:-}" "${5:-}"
+    ;;
+  permissions) permissions ;;
+  *)
+    echo "usage: subcult dell power probe | state [--json] | set <profile> | charging set <mode> [START STOP]" >&2
+    exit 2
+    ;;
+esac
