@@ -153,4 +153,16 @@ which Subarchy does not use.
   with a catalog theme recolours borders, bar and lock on a Subarchy
   install; the headless check covers the lock's palette until then.
 
+- 2026-11-08: Qt and GTK apps (issue #101). Pult gets `gtk3` and `gtk4`
+  entries (pult#78): `@import url("pult.css");` at the top of
+  `~/.config/gtk-3.0/gtk.css` and `gtk-4.0/gtk.css` pulls in an owned
+  stylesheet of Adwaita's and libadwaita's named colours from the palette,
+  as Omarchy's glass mode imports its own stylesheet; apps read it when
+  they start. Qt apps follow through qt6-base's gtk3 platform theme
+  (`QT_QPA_PLATFORMTHEME=gtk3` in `default/hypr/envs.lua`, as Omarchy sets
+  it), so Dolphin, Okular, Ark and VLC need no kdeglobals or Kvantum theme;
+  that is the third way of the table above and the one taken. The
+  screendump of a themed GTK app and Dolphin on an install waits for the
+  Pult release that carries the entries.
+
 Related: [[decision-map|Decision map]] · [[0048-config-ownership|ADR 0048]] · [[brand-identity|Brand identity]] · [[0038-wallpaper|ADR 0038]] · [[0039-fonts-icons|ADR 0039]]
