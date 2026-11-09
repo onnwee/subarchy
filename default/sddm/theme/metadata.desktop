@@ -7,5 +7,6 @@ Type=sddm-theme
 Version=1
 Website=https://git.subcult.tv/subculture-collective/subarchy
 MainScript=Main.qml
+ConfigFile=theme.conf
 QtVersion=6
 Theme-Id=subarchy

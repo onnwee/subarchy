@@ -186,4 +186,21 @@ which Subarchy does not use.
   is root-owned, so it goes with SDDM, Plymouth and Limine through polkit
   (issue #103).
 
+- 2026-11-08: the root-owned screens (issue #103). `subcult theme
+  apply-system` (`cmd/subcult-theme`, `internal/systheme`) reads the
+  palette Pult wrote (else Subarchy's default), checks that every value is
+  a `#rrggbb` colour, and runs its privileged half through pkexec
+  (`default/polkit/tv.subcult.theme.policy`, an administrator's password,
+  kept as polkit does) with the colours as arguments, so root never opens a
+  user file. The privileged half writes SDDM's `theme.conf` (Main.qml reads
+  the roles from `config`), the colour lines of `/boot/limine.conf`'s
+  preamble (branding, terminal palette from the ANSI roles, background and
+  foreground; the entries stay the Limine tools'), a recoloured copy of the
+  packaged Plymouth theme as `subarchy-user` with the images linked, selects
+  it in `plymouthd.conf`, and Chromium's `color.json` where `/etc/chromium`
+  exists. The initramfs is rebuilt only when the splash files or their
+  selection changed. The VM test applies a palette twice: the first run
+  rebuilds, the second changes nothing. `--elevate sudo` is for scripts
+  and that test, where no polkit agent runs.
+
 Related: [[decision-map|Decision map]] · [[0048-config-ownership|ADR 0048]] · [[brand-identity|Brand identity]] · [[0038-wallpaper|ADR 0038]] · [[0039-fonts-icons|ADR 0039]]

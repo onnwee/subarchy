@@ -282,6 +282,16 @@ def boot(disk: Path, vars_file: Path) -> bool:
             # Hardware fixes (ADR 0050): the VM gets the ones every x86 machine
             # gets; their files are in place; the regulatory domain follows the zone.
             "fixes": serial.run("subcult hw fixes; echo ---; cat /etc/modprobe.d/hid_apple.conf; echo ---; grep '^WIRELESS_REGDOM=' /etc/conf.d/wireless-regdom"),
+            # The system screens take the user's palette (ADR 0037): SDDM's
+            # theme.conf, Limine's colours, a recoloured splash (one initramfs
+            # rebuild), Chromium skipped since it is not installed; again: nothing.
+            "theme_system": serial.run(
+                "mkdir -p ~/.config/subcult/theme && printf '%s' '{\"schema\": 1, \"appearance\": \"dark\", \"colors\": {\"base\": \"#1a1b26\", \"text\": \"#c0caf5\", \"mauve\": \"#bb9af7\", \"surface0\": \"#24283b\"}}' > ~/.config/subcult/theme/palette.json;"
+                " subcult theme apply-system --elevate sudo; echo ---; subcult theme apply-system --elevate sudo; echo ---;"
+                " grep -c '^base=#1a1b26' /usr/share/sddm/themes/subarchy/theme.conf; grep -c '^interface_branding_colour: bb9af7' /boot/limine.conf;"
+                " plymouth-set-default-theme; grep -c 'SetBackgroundTopColor(0.102, 0.106, 0.149)' /usr/share/plymouth/themes/subarchy-user/subarchy-user.script",
+                timeout=600,
+            ),
             # subcult update: snapshot, pacman -Syu, migrations, report.
             "update": serial.run(
                 # sudo -k and no stdin: the update must not need a password (ADR 0062).
@@ -499,6 +509,7 @@ def boot(disk: Path, vars_file: Path) -> bool:
         "greeter drew something": r["greeter_colours"] > 1,
         "greeter shows the theme (ink background, no QML errors)": "100B19" in r["greeter_palette"]
         and r["sddm_log"].strip().splitlines()[-1:] == ["0"],
+        "theme apply-system recolours SDDM, Limine and the splash, rebuilding the initramfs once": theme_system_ok(r["theme_system"]),
         "Plymouth theme selected with its images": "subarchy" in r["plymouth_theme"].split()
         and all(f in r["plymouth_theme"] for f in ("logo.png", "subarchy.script", "entry.png", "progress-bar.png")),
         "idle service runs the generated hypridle config, dpms dispatch accepted":
@@ -730,6 +741,20 @@ def lock_ok(out: str) -> bool:
         return False
     tail = parts[2].splitlines()
     return first.get("locked") is True and second.get("locked") is True and tail[-2:] == ["inactive", "active"]
+
+
+def theme_system_ok(out: str) -> bool:
+    """Two apply-system runs (the first rebuilds the initramfs, the second changes nothing), then the files."""
+    parts = [p.strip() for p in out.split("---")]
+    if len(parts) < 3:
+        return False
+    first, second, files = parts
+    return (
+        "rebuilding the initramfs" in first and "wrote /usr/share/sddm/themes/subarchy/theme.conf" in first
+        and "skipped: Chromium" in first
+        and "no initramfs rebuild" in second and "wrote" not in second
+        and files.splitlines()[-4:-1] == ["1", "1", "subarchy-user"] and files.splitlines()[-1] == "1"
+    )
 
 
 def channel_ok(out: str) -> bool:

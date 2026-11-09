@@ -34,6 +34,14 @@ Accepted 2026-11-07.
 The owner asked for "some actions" to skip the prompt and left the starting
 list to the agent (2026-11-07); the list above is that starting list.
 
+## Actions added since
+
+- `tv.subcult.theme.system-apply` (issue #103): the privileged half of
+  `subcult theme apply-system`, through pkexec; the action names the exact
+  program (`/usr/bin/subcult-theme`), which takes only colours as arguments.
+  It asks for an administrator's password (`auth_admin_keep`), as the
+  default above says; it is not on the password-free list.
+
 ## Borrowed from Omarchy
 
 `omarchy sudo passwordless` (permanent toggle) and `omarchy-sudo-keepalive`,
