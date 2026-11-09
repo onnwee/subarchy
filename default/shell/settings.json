@@ -10,9 +10,9 @@
     {"id": "font.serif", "group": "Fonts", "label": "Serif", "kind": "font", "role": "serif", "flags": ["--serif"]},
     {"id": "cursor.role", "group": "Cursor", "label": "Colour (palette role)", "kind": "choice", "choices": ["lavender", "green", "pink", "mauve", "teal", "sky", "peach", "yellow", "red", "text"], "file": "cursor.json", "path": ["role"], "default": "lavender", "after": ["subcult", "cursor", "apply"]},
     {"id": "cursor.size", "group": "Cursor", "label": "Size (px)", "kind": "choice", "choices": [24, 32, 48], "file": "cursor.json", "path": ["size"], "default": 24, "after": ["subcult", "cursor", "apply"]},
-    {"id": "idle.lock", "group": "Idle", "label": "Lock after (minutes, 0 never)", "kind": "number", "min": 0, "max": 240, "file": "idle.json", "path": ["lockAfterMinutes"], "default": 7},
-    {"id": "idle.displayOff", "group": "Idle", "label": "Display off after (minutes, 0 never)", "kind": "number", "min": 0, "max": 240, "file": "idle.json", "path": ["displayOffAfterMinutes"], "default": 10},
-    {"id": "idle.suspend", "group": "Idle", "label": "Suspend after (minutes, 0 never)", "kind": "number", "min": 0, "max": 720, "file": "idle.json", "path": ["suspendAfterMinutes"], "default": 15},
+    {"id": "idle.lock", "group": "Idle", "label": "Lock after (minutes, 0 never)", "kind": "number", "min": 0, "max": 240, "file": "idle.json", "path": ["lockAfterMinutes"], "default": 7, "after": ["subcult", "idle", "apply"]},
+    {"id": "idle.displayOff", "group": "Idle", "label": "Display off after (minutes, 0 never)", "kind": "number", "min": 0, "max": 240, "file": "idle.json", "path": ["displayOffAfterMinutes"], "default": 10, "after": ["subcult", "idle", "apply"]},
+    {"id": "idle.suspend", "group": "Idle", "label": "Suspend after (minutes, 0 never)", "kind": "number", "min": 0, "max": 720, "file": "idle.json", "path": ["suspendAfterMinutes"], "default": 15, "after": ["subcult", "idle", "apply"]},
     {"id": "motion.mode", "group": "Motion", "label": "Interface motion", "kind": "choice", "choices": ["auto", "on", "off"], "file": "motion.json", "path": ["mode"], "default": "auto"}
   ]
 }

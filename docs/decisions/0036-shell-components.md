@@ -84,6 +84,19 @@ be drawn by the lock screen, which hyprlock cannot do.
 
 ## Progress
 
+- 2026-11-08: the lock program and idle (issue #46). `lock/` is its own
+  Quickshell program: a session-lock surface per output with the SUBCULT
+  lockup and the clock, a prompt that appears on the first key, PAM through
+  `/etc/pam.d/subcult-lock`, and a status IPC. It runs in
+  `subcult-lock.service`, apart from the shell and restarted if it dies, so
+  a shell crash leaves the session locked. `subcult-idle.service` runs
+  hypridle with a config generated from `~/.config/subcult/idle.json` (lock
+  7 min, display off 10, suspend 15 by default; the settings panel's Idle
+  group writes the file and `subcult idle apply` restarts the service).
+  `subcult lock` locks by hand. The VM test locks, kills the shell, finds
+  the session still locked, types the password and sees the unlock; the
+  headless test does the same under sway with a permit PAM stack. Not yet:
+  the screensaver loop (#96) and fingerprint (#117).
 - 2026-11-08: spike #47, how a `ttfx` effect becomes a video loop:
   `tools/screensaver/capture.sh` records the effect under `script` with
   timings, `render.py` replays it through pyte and draws the frames with

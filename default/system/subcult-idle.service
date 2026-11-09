@@ -1,0 +1,16 @@
+[Unit]
+Description=Subarchy idle handling: hypridle with the user's idle settings (ADR 0036)
+PartOf=graphical-session.target
+After=graphical-session.target
+Requisite=graphical-session.target
+
+[Service]
+Type=exec
+# Generates the hypridle config from ~/.config/subcult/idle.json, then runs
+# hypridle on it. `subcult idle apply` restarts this unit after a change.
+ExecStart=/usr/bin/subcult-idle run
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target
