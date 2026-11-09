@@ -171,4 +171,19 @@ which Subarchy does not use.
   screendump of a themed GTK app and Dolphin on an install waits for the
   Pult release that carries the entries.
 
+- 2026-11-08: editors, CLI tools and Chromium (issue #102), the part that
+  fits Pult as it is. Already covered: bat, git-delta and eza have Pult
+  entries (bat and delta on the terminal's 16 colours, eza through its
+  theme file); Neovim's `subcult` scheme reads the palette file the
+  `subarchy-shell` entry writes ([[0045-editor|ADR 0045]]); fastfetch
+  uses the terminal's colours by default. New: fzf through
+  `FZF_DEFAULT_OPTS_FILE` (set here in `default/hypr/envs.lua` to
+  `~/.config/fzf/fzfrc`), where Pult's `fzf` entry puts `--color="16"`
+  (pult#79). Left for later, since Pult's `keys` method writes TOML and
+  YAML only and the registry cannot enumerate Obsidian vaults or register
+  a VS Code extension: swayimg (INI keys), VS Code (JSON keys and an
+  extension entry), Obsidian (a theme per vault). Chromium's colour policy
+  is root-owned, so it goes with SDDM, Plymouth and Limine through polkit
+  (issue #103).
+
 Related: [[decision-map|Decision map]] · [[0048-config-ownership|ADR 0048]] · [[brand-identity|Brand identity]] · [[0038-wallpaper|ADR 0038]] · [[0039-fonts-icons|ADR 0039]]

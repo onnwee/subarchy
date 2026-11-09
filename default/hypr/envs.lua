@@ -19,6 +19,10 @@ hl.env("XDG_SESSION_DESKTOP", "Hyprland")
 
 hl.env("SUBCULT_PATH", os.getenv("SUBCULT_PATH") or "/usr/share/subcult")
 
+-- fzf has no config file; this options file is where Pult puts
+-- --color="16", so fzf follows the terminal's palette (ADR 0037).
+hl.env("FZF_DEFAULT_OPTS_FILE", (os.getenv("XDG_CONFIG_HOME") or (os.getenv("HOME") .. "/.config")) .. "/fzf/fzfrc")
+
 -- The cursor size chosen with `subcult cursor set`, if any.
 local cursor_env = os.getenv("HOME") .. "/.config/subcult/cursor-env.lua"
 local f = io.open(cursor_env, "r")
