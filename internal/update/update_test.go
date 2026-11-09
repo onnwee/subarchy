@@ -141,6 +141,26 @@ func TestRunLeavesShellWhenSubarchyUnchanged(t *testing.T) {
 	}
 }
 
+func TestHyprlandReloadFailureDoesNotClaimSuccessOrSkipShell(t *testing.T) {
+	f := &fake{
+		tools:  map[string]bool{"hyprctl": true},
+		series: map[string][]string{"pacman -Q subarchy": {"subarchy 0.0.0-1", "subarchy 0.0.0-421"}},
+		fail:   map[string]bool{"hyprctl reload": true},
+	}
+	u, out := newUpdater(t, f, true)
+	u.O.HyprlandSession = true
+	rep, err := u.Run(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rep.HyprlandReloaded || strings.Contains(rep.Summary(), "The Hyprland configuration was reloaded.") {
+		t.Errorf("failed reload reported success: %+v", rep)
+	}
+	if !strings.Contains(out.String(), "Hyprland reload: failed (continuing)") || !rep.ShellRestarted {
+		t.Errorf("reload failure hid the error or skipped shell recovery: %s, %+v", out, rep)
+	}
+}
+
 func TestSnapshotFailureStops(t *testing.T) {
 	f := &fake{tools: map[string]bool{"snapper": true}, fail: map[string]bool{snapshotCmd: true}}
 	u, _ := newUpdater(t, f, true)

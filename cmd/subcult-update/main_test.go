@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -16,18 +17,26 @@ import (
 
 // fakeRunner answers queries; err is returned from Output when set.
 type fakeRunner struct {
-	tools map[string]bool
-	out   string
-	err   error
-	ran   []string
+	tools  map[string]bool
+	out    string
+	err    error
+	series map[string][]string
+	ran    []string
 }
 
 func (f *fakeRunner) Run(_ context.Context, argv ...string) error {
 	f.ran = append(f.ran, strings.Join(argv, " "))
 	return nil
 }
-func (f *fakeRunner) Output(context.Context, ...string) (string, error) { return f.out, f.err }
-func (f *fakeRunner) Has(name string) bool                              { return f.tools[name] }
+func (f *fakeRunner) Output(_ context.Context, argv ...string) (string, error) {
+	key := strings.Join(argv, " ")
+	if values := f.series[key]; f.err == nil && len(values) > 0 {
+		f.series[key] = values[1:]
+		return values[0], nil
+	}
+	return f.out, f.err
+}
+func (f *fakeRunner) Has(name string) bool { return f.tools[name] }
 
 func newApp(t *testing.T, r update.Runner, scripts ...string) (*app, *bytes.Buffer, *bytes.Buffer) {
 	t.Helper()
@@ -90,6 +99,41 @@ func TestUpdateYes(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), "reboot") {
 		t.Errorf("no report:\n%s", out)
+	}
+}
+
+func TestCoreUpdateReloadsHyprlandConfiguration(t *testing.T) {
+	for _, tt := range []struct {
+		name, session, after string
+		hyprctl, reload      bool
+	}{
+		{"core changed in session", "test-instance", "subarchy 0.0.0-421", true, true},
+		{"unchanged core", "test-instance", "subarchy 0.0.0-1", true, false},
+		{"outside Hyprland", "", "subarchy 0.0.0-421", true, false},
+		{"hyprctl unavailable", "test-instance", "subarchy 0.0.0-421", false, false},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv("HYPRLAND_INSTANCE_SIGNATURE", tt.session)
+			r := &fakeRunner{
+				tools:  map[string]bool{"hyprctl": tt.hyprctl, "paccache": true},
+				series: map[string][]string{"pacman -Q subarchy": {"subarchy 0.0.0-1", tt.after}},
+			}
+			a, out, errOut := newApp(t, r)
+			if code := a.main(context.Background(), []string{"--yes", "--no-snapshot"}); code != 0 {
+				t.Fatalf("exit %d: %s", code, errOut)
+			}
+			i := slices.Index(r.ran, "hyprctl reload")
+			if (i >= 0) != tt.reload {
+				t.Fatalf("reload = %v, want %v: %v", i >= 0, tt.reload, r.ran)
+			}
+			if tt.reload && (i <= slices.Index(r.ran, "sudo /usr/bin/subcult-update privileged prune") ||
+				i >= slices.Index(r.ran, "systemctl --user try-restart subcult-shell.service")) {
+				t.Errorf("reload must follow package cleanup and precede shell restart: %v", r.ran)
+			}
+			if strings.Contains(out.String(), "The Hyprland configuration was reloaded.") != tt.reload {
+				t.Errorf("reload summary: %s", out)
+			}
+		})
 	}
 }
 

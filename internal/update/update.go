@@ -33,6 +33,9 @@ type Options struct {
 	// snapshot date the installed package ships, so a snapshot advance
 	// applies on the next update (ADR 0026). Empty skips it.
 	ChannelRefresh []string
+	// HyprlandSession is true when the caller has a Hyprland instance
+	// signature. Never reload another session from a TTY or SSH update.
+	HyprlandSession bool
 }
 
 // PrivilegedSteps are the root steps `subcult-update privileged` accepts,
@@ -69,6 +72,9 @@ type Report struct {
 	// ShellRestarted: the subarchy package changed, so the desktop shell was
 	// restarted to run the new one.
 	ShellRestarted bool
+	// HyprlandReloaded: the core changed in a Hyprland session, so its
+	// configuration was reloaded after the replacement files were in place.
+	HyprlandReloaded bool
 	// ServicesToRestart still run files the upgrade replaced; "(user)"
 	// marks user services. Nothing restarts them.
 	ServicesToRestart []string
@@ -165,6 +171,17 @@ func (u *Updater) Run(ctx context.Context) (Report, error) {
 	// until restarted. Last, so migrations and cleanup are done. As the
 	// user, not through the privileged path.
 	if after := u.pkgVersion(ctx, "subarchy"); after != "" && after != shellBefore {
+		// Hyprland may have reloaded while pacman temporarily removed a
+		// sourced Lua file and stayed in emergency mode. Retry only after
+		// the complete package and migrations are in place.
+		if u.O.HyprlandSession && u.R.Has("hyprctl") {
+			say("reloading the Hyprland configuration")
+			if err := u.R.Run(ctx, "hyprctl", "reload"); err != nil {
+				fmt.Fprintf(u.O.Stdout, "   Hyprland reload: %v (continuing)\n", err)
+			} else {
+				rep.HyprlandReloaded = true
+			}
+		}
 		say("restarting the desktop shell")
 		if err := u.R.Run(ctx, "systemctl", "--user", "try-restart", "subcult-shell.service"); err != nil {
 			fmt.Fprintf(u.O.Stdout, "   shell restart: %v (continuing)\n", err)
@@ -310,6 +327,9 @@ func (r Report) Summary() string {
 	}
 	for _, p := range r.DKMSProblems {
 		fmt.Fprintf(&b, "DKMS module not built: %s. Boot the other kernel or the snapshot if it fails.\n", p)
+	}
+	if r.HyprlandReloaded {
+		b.WriteString("The Hyprland configuration was reloaded.\n")
 	}
 	if r.ShellRestarted {
 		b.WriteString("The desktop shell was restarted.\n")
