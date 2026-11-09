@@ -8,7 +8,7 @@ import "LockModel.js" as Model
 FocusScope {
   id: view
 
-  property var state: Model.initial()
+  property var lockState: Model.initial()
 
   signal key(string name, string text)
 
@@ -60,16 +60,16 @@ FocusScope {
 
       Rectangle {
         id: field
-        visible: view.state.prompt
+        visible: view.lockState.prompt
         width: parent.width
         height: 40
         color: "#1F1830"
         border.width: 1
-        border.color: view.state.checking ? "#5E5570" : "#8B5CF6"
+        border.color: view.lockState.checking ? "#5E5570" : "#8B5CF6"
 
         Text {
           anchors.centerIn: parent
-          text: view.state.checking ? "Checking…" : Model.bullets(view.state.password.length)
+          text: view.lockState.checking ? "Checking…" : Model.bullets(view.lockState.password.length)
           color: "#F0ECE4"
           font.family: "monospace"
           font.pixelSize: 18
@@ -80,8 +80,8 @@ FocusScope {
         anchors.top: field.bottom
         anchors.topMargin: 8
         anchors.horizontalCenter: parent.horizontalCenter
-        visible: view.state.prompt && view.state.message !== ""
-        text: view.state.message
+        visible: view.lockState.prompt && view.lockState.message !== ""
+        text: view.lockState.message
         color: "#D52032"
         font.family: "sans-serif"
         font.pixelSize: 14
@@ -89,7 +89,7 @@ FocusScope {
 
       Text {
         anchors.centerIn: parent
-        visible: !view.state.prompt
+        visible: !view.lockState.prompt
         text: "Press a key to unlock"
         color: "#5E5570"
         font.family: "sans-serif"
