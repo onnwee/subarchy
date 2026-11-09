@@ -34,7 +34,7 @@ var (
 	snapshotRe = regexp.MustCompile(`^\d{4}/\d{2}/\d{2}$`)
 	headerRe   = regexp.MustCompile(`(?m)^# subcult channel: (stable|edge)(?: \(snapshot (\d{4}/\d{2}/\d{2})\))?$`)
 	includeRe  = regexp.MustCompile(`(?m)^(\s*Include\s*=\s*)/etc/pacman\.d/mirrorlist\s*$`)
-	repoRe     = regexp.MustCompile(`(?m)^\[subarchy\][\t ]*$`)
+	repoRe     = regexp.MustCompile(`(?m)^[\t ]*\[subarchy\][\t ]*(?:#.*)?$`)
 )
 
 // Valid reports whether name is a channel.

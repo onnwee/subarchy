@@ -85,8 +85,8 @@ feed it to `tea actions secrets create --login subcult-agent --stdin
 SUBARCHY_PACKAGE_TOKEN` through private standard input, and run a main
 publication. Check its signed client verification before revoking the old
 token by name in the agent account's application settings. Preserve other
-device/service credentials. If publication fails, the old token can be
-restored through the same secret interface while diagnosing the failure.
+device/service credentials. If the replacement fails, correct it or issue
+another package-only replacement and verify publication before cleanup.
 Never put either token in a URL, command argument, issue or Git file.
 
 Related: [[0025-package-repository|Package repository and signing]] · [[ci-runner|KVM CI runner]] · [[0066-versioning|Versioning]]

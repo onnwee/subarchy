@@ -118,6 +118,22 @@ func TestSetRegistersSignedRepository(t *testing.T) {
 	}
 }
 
+func TestSetKeepsCustomSubarchyRepository(t *testing.T) {
+	r := root(t, "2026/11/08")
+	path := filepath.Join(r, PacmanConf)
+	custom := "  [subarchy] # local mirror\nSigLevel = Required\nServer = https://example.test/$arch\n"
+	if err := os.WriteFile(path, []byte(read(t, path)+custom), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Set(r, Stable); err != nil {
+		t.Fatal(err)
+	}
+	conf := read(t, path)
+	if strings.Count(conf, "[subarchy]") != 1 || !strings.HasSuffix(conf, custom) {
+		t.Fatalf("custom repository changed or duplicated:\n%s", conf)
+	}
+}
+
 func TestSnapshotValidation(t *testing.T) {
 	r := root(t, "08-11-2026")
 	if _, err := Snapshot(r); err == nil {
