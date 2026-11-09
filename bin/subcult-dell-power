@@ -184,7 +184,9 @@ set_profile() {
   fi
   if [[ $(<"$dir/profile") != "$profile" ]]; then
     if ! write_attr "$dir/profile" "$profile" "the firmware profile"; then
-      [[ -n ${previous:-} ]] && powerprofilesctl set "$previous" >/dev/null 2>&1 || true
+      if [[ -n ${previous:-} ]]; then
+        powerprofilesctl set "$previous" >/dev/null 2>&1 || true
+      fi
       exit 1
     fi
   fi
