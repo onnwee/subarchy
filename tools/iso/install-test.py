@@ -278,6 +278,9 @@ def boot(disk: Path, vars_file: Path) -> bool:
             ),
             # The repository key is trusted (ADR 0025, subarchy-keyring).
             "keyring": serial.run(f"{sudo} pacman-key --list-keys CCE8B0F3BCDD601D909773E4466AA6E8241453D2 2>&1 | grep -c 'Arch Registry'"),
+            # Hardware fixes (ADR 0050): the VM gets the ones every x86 machine
+            # gets; their files are in place; the regulatory domain follows the zone.
+            "fixes": serial.run("subcult hw fixes; echo ---; cat /etc/modprobe.d/hid_apple.conf; echo ---; grep '^WIRELESS_REGDOM=' /etc/conf.d/wireless-regdom"),
             # subcult update: snapshot, pacman -Syu, migrations, report.
             "update": serial.run(
                 # sudo -k and no stdin: the update must not need a password (ADR 0062).
@@ -451,6 +454,8 @@ def boot(disk: Path, vars_file: Path) -> bool:
         "snapshot boot entry": "rootflags=subvol=/@/.snapshots/" in r["snapshot"],
         "no self-referencing EFI entry": "/EFI/BOOT/BOOTX64.EFI" not in r["snapshot"],
         "subcult update ran without a password": "UPDATE_EXIT=0" in r["update"] and "eboot needed" in r["update"],
+        "hardware fixes applied (hid_apple fnmode, regulatory domain US)": "hid-apple-fkeys" in r["fixes"]
+        and "options hid_apple fnmode=2" in r["fixes"] and 'WIRELESS_REGDOM="US"' in r["fixes"],
         "new install on the stable channel, switches to edge and back": channel_ok(r["channel"]),
         "repository key trusted (subarchy-keyring)": r["keyring"].strip().splitlines()[-1:] == ["1"],
         "daily update check timer and count": r["update_timer"].splitlines()[0:1] == ["1"]

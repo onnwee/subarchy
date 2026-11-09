@@ -126,7 +126,7 @@ func Catalog() []string {
 		"linux-firmware", "linux-firmware-intel", "linux-firmware-amdgpu", "linux-firmware-nvidia", "linux-firmware-cirrus",
 		"vulkan-intel", "intel-media-driver", "vulkan-radeon",
 		"nvidia-open-dkms", "nvidia-utils", "libva-nvidia-driver", "linux-zen-headers", "linux-lts-headers",
-		"evdi-dkms", "displaylink"}
+		"evdi-dkms", "displaylink", "intel-lpmd", "libvpl", "vpl-gpu-rt"}
 	seen := map[string]bool{}
 	for _, p := range pkgs {
 		seen[p] = true
@@ -195,6 +195,11 @@ func Select(m Machine) Selection {
 		add("linux-firmware-cirrus")
 	}
 	var services []string
+	// The hardware fixes (fixes.go): their packages and services ride along.
+	for _, f := range Fixes(m) {
+		add(f.Packages...)
+		services = append(services, f.Services...)
+	}
 	if m.DisplayLink() {
 		// The evdi module is built by DKMS, so the kernel headers come too.
 		add("evdi-dkms", "displaylink", "linux-zen-headers", "linux-lts-headers")
