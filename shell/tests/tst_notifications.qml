@@ -90,6 +90,16 @@ TestCase {
     compare(Model.updateRecord(h, 9, { summary: "x" }).map(e => e.summary), ["s2", "s1"], "an unknown id changes nothing")
   }
 
+  function test_restoreSkipsNonRecords() {
+    const saved = JSON.stringify([null, 1, "bad", false, [], entry(1), Object.assign(entry(2), { read: true })])
+    const history = Model.restore(saved, 100)
+    compare(history.map(e => e.id), [1, 2])
+    compare(Model.unread(history), 1)
+    compare(Model.unread(Model.markAllRead(history)), 0)
+    compare(Model.removeRecord(history, 1).map(e => e.id), [2])
+    compare(Model.restore(saved, 1).map(e => e.id), [1], "cap counts valid records")
+  }
+
   function test_restore() {
     compare(Model.restore('[{"id":1,"summary":"a","read":true}]', 100).length, 1)
     compare(Model.restore("broken", 100), [])

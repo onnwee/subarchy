@@ -113,7 +113,8 @@ chmod +x "$work/bin/yt-dlp"
 # its command line stays visible and SIGTERM ends it.
 cat >"$work/bin/systemd-inhibit" <<'STUB'
 #!/bin/sh
-trap 'kill "$child" 2>/dev/null; exit 0' TERM INT
+printf '%s\n' "$$" >"$HOME/inhibitor.pid"
+trap 'kill "$child" 2>/dev/null; rm -f "$HOME/inhibitor.pid"; exit 0' TERM INT
 sleep infinity & child=$!
 wait "$child"
 STUB
@@ -597,8 +598,20 @@ ls=$(lstate "sig")
 launcher close >/dev/null
 
 # Keep-awake holds a logind idle inhibitor (the stub here) and writes its
-# state file; off releases it and removes the file.
-inhibitor() { pgrep -u "$(id -u)" -f '[s]ystemd-inhibit --what=idle --who=SUBCULT' >/dev/null; }
+# state file; off releases it and removes the file. A separate fixture has
+# the same arguments as a real desktop's inhibitor and must stay untouched.
+mkdir -p "$work/other-bin" "$work/other-home"
+cp "$work/bin/systemd-inhibit" "$work/other-bin/systemd-inhibit"
+HOME=$work/other-home "$work/other-bin/systemd-inhibit" --what=idle --who=SUBCULT --mode=block sleep infinity &
+other_inhibitor=$!
+pids+=("$other_inhibitor")
+
+inhibitor() {
+  local pid
+  [[ -r $home1/inhibitor.pid ]] || return 1
+  read -r pid <"$home1/inhibitor.pid"
+  [[ $pid =~ ^[0-9]+$ ]] && kill -0 "$pid" 2>/dev/null
+}
 HOME=$home1 quickshell ipc -p "$shell" call subcult.shell keepAwake true >/dev/null
 for _ in $(seq 10); do inhibitor && break; sleep 0.5; done
 inhibitor || fail "keep-awake holds no inhibitor: $(status "$home1")"
@@ -608,9 +621,10 @@ st=$(status "$home1")
 [[ $(json 'd.get("keepAwake")') == True ]] || fail "keep-awake not reported on: $st"
 HOME=$home1 quickshell ipc -p "$shell" call subcult.shell keepAwake false >/dev/null
 for _ in $(seq 10); do inhibitor || break; sleep 0.5; done
-! inhibitor || fail "keep-awake off left the inhibitor: $(pgrep -u "$(id -u)" -af '[s]ystemd-inhibit --what=idle' | head -3); $(status "$home1")"
+! inhibitor || fail "keep-awake off left the inhibitor: $(cat "$home1/inhibitor.pid" 2>/dev/null); $(status "$home1")"
 for _ in $(seq 10); do [[ ! -e "$home1/.local/state/subcult/keep-awake" ]] && break; sleep 0.5; done
 [[ ! -e "$home1/.local/state/subcult/keep-awake" ]] || fail "keep-awake off left the state file"
+kill -0 "$other_inhibitor" || fail "the unrelated inhibitor was stopped"
 
 # The media widget loads and stays hidden without a player (no MPRIS here).
 st=$(status "$home1")

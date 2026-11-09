@@ -64,7 +64,9 @@ function markAllRead(history) {
 function restore(text, cap) {
   try {
     const list = JSON.parse(text)
-    return Array.isArray(list) ? list.slice(0, cap) : []
+    return Array.isArray(list)
+      ? list.filter(e => e !== null && typeof e === "object" && !Array.isArray(e)).slice(0, cap)
+      : []
   } catch (e) {
     return []
   }
