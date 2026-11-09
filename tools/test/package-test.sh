@@ -38,6 +38,22 @@ for path in usr/bin/subcult usr/bin/sub usr/bin/subcult-app usr/bin/subcult-upda
   grep -qx "$path" <<<"$list" || fail "missing $path"
 done
 
+# The lock ships videos, stills and the captures used to recolour them.
+for name in beams decrypt matrix; do
+  for ext in webm png; do
+    path="usr/share/subcult/screensaver/$name.$ext"
+    grep -qx "$path" <<<"$list" || fail "missing $path"
+  done
+  grep -qx "usr/share/subcult/screensaver/captures/$name.log.gz" <<<"$list" || fail "missing capture $name"
+  bsdtar -xOf "$pkg" "usr/share/subcult/screensaver/$name.webm" >"$work/$name.webm"
+  ffprobe -v error -show_entries stream=codec_name,width,height -of csv=p=0 "$work/$name.webm" | \
+    grep -qx 'vp9,960,540' || fail "bad video $name"
+done
+for path in usr/bin/subcult-screensaver-render usr/share/subcult/screensaver/index.json \
+  usr/lib/systemd/user/subcult-screensaver.service; do
+  grep -qx "$path" <<<"$list" || fail "missing $path"
+done
+
 # Look layer (shell and look design): GTK, kitty and Neovim defaults.
 for path in usr/share/glib-2.0/schemas/90-subarchy.gschema.override etc/xdg/gtk-3.0/settings.ini \
   etc/xdg/gtk-4.0/settings.ini etc/xdg/kitty/kitty.conf etc/xdg/kitty/subcult-ink.conf \

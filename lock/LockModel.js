@@ -21,6 +21,7 @@ function key(state, name, text) {
   const s = Object.assign({}, state)
   if (s.checking)
     return { state: s, submit: false }
+  s.prompt = true
   if (name === "Return" || name === "Enter") {
     if (s.password === "")
       return { state: s, submit: false }
@@ -28,7 +29,6 @@ function key(state, name, text) {
     s.message = ""
     return { state: s, submit: true }
   }
-  s.prompt = true
   if (name === "Backspace") {
     s.password = s.password.slice(0, -1)
   } else if (name === "Escape") {

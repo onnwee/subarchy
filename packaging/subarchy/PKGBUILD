@@ -11,8 +11,8 @@ pkgdesc="Subarchy: SUBCULT's Arch Linux desktop (subcult CLI, defaults and OS id
 arch=('x86_64')
 url="https://git.subcult.tv/subculture-collective/subarchy"
 license=('GPL-3.0-or-later')
-depends=('bash' 'glibc' 'pacman-contrib' 'fakeroot' 'hypridle')
-makedepends=('go' 'git' 'librsvg' 'xorg-xcursorgen' 'hyprcursor')
+depends=('bash' 'glibc' 'pacman-contrib' 'fakeroot' 'hypridle' 'python-pyte' 'python-pillow' 'ffmpeg' 'qt6-multimedia')
+makedepends=('go' 'git' 'librsvg' 'xorg-xcursorgen' 'hyprcursor' 'ttf-dejavu')
 options=('!debug')
 backup=(etc/xdg/gtk-3.0/settings.ini etc/xdg/gtk-4.0/settings.ini etc/xdg/kitty/kitty.conf etc/xdg/kitty/subcult-ink.conf etc/pam.d/subcult-lock)
 
@@ -38,6 +38,8 @@ build() {
   for f in bullet entry lock progress-bar progress-box; do
     rsvg-convert -o "$srcdir/plymouth/$f.png" "$root/default/plymouth/$f.svg"
   done
+  python3 bin/subcult-screensaver-render --out "$srcdir/screensaver" \
+    --palette default/theme/palette.json --captures branding/screensaver
 }
 
 check() {
@@ -45,6 +47,7 @@ check() {
   root=$(_root)
   cd "$root"
   go test -count=1 ./...
+  python3 tools/screensaver/test_render.py
 }
 
 package() {
@@ -173,6 +176,14 @@ package() {
   install -Dm644 "$sys/subcult-lock.service" "$pkgdir/usr/lib/systemd/user/subcult-lock.service"
   install -Dm644 "$sys/subcult-idle.service" "$pkgdir/usr/lib/systemd/user/subcult-idle.service"
   ln -s ../subcult-idle.service "$pkgdir/usr/lib/systemd/user/graphical-session.target.wants/subcult-idle.service"
+  for f in "$root"/branding/screensaver/*.gz; do
+    install -Dm644 "$f" "$pkgdir/usr/share/subcult/screensaver/captures/$(basename "$f")"
+  done
+  for f in "$srcdir"/screensaver/*; do
+    install -Dm644 "$f" "$pkgdir/usr/share/subcult/screensaver/$(basename "$f")"
+  done
+  install -Dm644 "$sys/subcult-screensaver.service" "$pkgdir/usr/lib/systemd/user/subcult-screensaver.service"
+  ln -s ../subcult-screensaver.service "$pkgdir/usr/lib/systemd/user/graphical-session.target.wants/subcult-screensaver.service"
   # Clipboard history for the launcher (ADR 0056); wl-paste sleeps between copies.
   install -Dm644 "$sys/subcult-clipboard.service" "$pkgdir/usr/lib/systemd/user/subcult-clipboard.service"
   ln -s ../subcult-clipboard.service "$pkgdir/usr/lib/systemd/user/graphical-session.target.wants/subcult-clipboard.service"

@@ -2,10 +2,12 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Services.UPower
 import Quickshell.Services.Pam
 import Quickshell.Wayland
 import "LockModel.js" as Model
 import "ThemeModel.js" as ThemeModel
+import "MotionModel.js" as MotionModel
 
 // Subarchy's lock screen (ADR 0036): its own Quickshell program, apart from
 // the desktop shell, so a shell crash cannot unlock the session. It locks
@@ -56,6 +58,48 @@ ShellRoot {
     onLoaded: root.user = root.colorsOf(text())
   }
 
+  readonly property string systemArt: (Quickshell.env("SUBCULT_PATH") || "/usr/share/subcult") + "/screensaver"
+  readonly property string userArt: (Quickshell.env("XDG_CACHE_HOME") || Quickshell.env("HOME") + "/.cache") + "/subcult/screensaver"
+  property var systemLoops: []
+  property var userLoops: []
+  readonly property string artDir: userLoops.length ? userArt : systemArt
+  readonly property var loops: userLoops.length ? userLoops : systemLoops
+  readonly property int choice: Math.floor(Math.random() * 100000)
+  readonly property string effect: loops.length ? loops[choice % loops.length] : ""
+  // Battery always uses still art, even if motion is forced on.
+  readonly property bool animate: !UPower.onBattery && MotionModel.enabled(MotionModel.mode(motion.text), UPower.onBattery)
+  property int playing: 0
+
+  function readLoops(text) {
+    try {
+      const doc = JSON.parse(text)
+      return doc.schema === 1 && Array.isArray(doc.loops) ? doc.loops.filter(n => typeof n === "string" && /^[a-z0-9-]+$/.test(n)) : []
+    } catch (e) {
+      return []
+    }
+  }
+
+  FileView {
+    path: root.systemArt + "/index.json"
+    blockLoading: true
+    printErrors: false
+    onLoaded: root.systemLoops = root.readLoops(text())
+  }
+  FileView {
+    path: root.userArt + "/index.json"
+    blockLoading: true
+    printErrors: false
+    onLoaded: root.userLoops = root.readLoops(text())
+  }
+  WatchedFile {
+    id: motion
+    path: Quickshell.env("HOME") + "/.config/subcult/motion.json"
+  }
+
+  function wake() {
+    root.lockState = Object.assign({}, root.lockState, { prompt: true })
+  }
+
   // One key from any output's surface.
   function key(name, text) {
     const r = Model.key(root.lockState, name, text)
@@ -103,6 +147,11 @@ ShellRoot {
         anchors.fill: parent
         lockState: root.lockState
         theme: root.theme
+        animate: root.animate
+        video: root.effect ? "file://" + root.artDir + "/" + root.effect + ".webm" : ""
+        still: root.effect ? "file://" + root.artDir + "/" + root.effect + ".png" : ""
+        onWake: root.wake()
+        onPlaybackChanged: (active) => root.playing += active ? 1 : -1
         onKey: (name, text) => root.key(name, text)
       }
     }
@@ -137,7 +186,8 @@ ShellRoot {
       return JSON.stringify({
         locked: lock.locked, secure: lock.secure, prompt: root.lockState.prompt, checking: root.lockState.checking,
         attempts: root.lockState.attempts, message: root.lockState.message, typed: root.lockState.password.length,
-        base: String(root.theme.base || "")
+        base: String(root.theme.base || ""), screensaver: !root.lockState.prompt,
+        motion: root.animate, playing: root.playing, effect: root.effect, artDir: root.artDir
       })
     }
   }

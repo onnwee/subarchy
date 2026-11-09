@@ -1,0 +1,12 @@
+[Unit]
+Description=Render SUBCULT screensaver in the user palette
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/subcult-screensaver-render --user
+Nice=19
+IOSchedulingClass=idle
+TimeoutStartSec=15min
+
+[Install]
+WantedBy=graphical-session.target

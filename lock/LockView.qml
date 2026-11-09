@@ -1,4 +1,6 @@
+pragma ComponentBehavior: Bound
 import QtQuick
+import QtMultimedia
 import Quickshell
 import "LockModel.js" as Model
 
@@ -12,12 +14,62 @@ FocusScope {
   // The shell's colour tokens (base, text, subtext, muted, surface, border, error).
   property var theme: ({})
 
+  property bool animate: false
+  property url video: ""
+  property url still: ""
+
   signal key(string name, string text)
+  signal wake()
+  signal playbackChanged(bool active)
 
   focus: true
   Keys.onPressed: (event) => {
     view.key(Model.keyName(event.key), event.text)
     event.accepted = true
+  }
+
+  Image {
+    anchors.fill: parent
+    visible: !view.lockState.prompt
+    source: view.still
+    fillMode: Image.PreserveAspectFit
+    smooth: true
+  }
+
+  // Destroy the decoder as soon as input opens the prompt or motion stops.
+  Loader {
+    anchors.fill: parent
+    active: !view.lockState.prompt && view.animate && view.video.toString() !== ""
+    sourceComponent: Video {
+      source: view.video
+      autoPlay: true
+      loops: MediaPlayer.Infinite
+      fillMode: VideoOutput.PreserveAspectFit
+      muted: true
+      property bool reported: false
+      onPlaybackStateChanged: {
+        const active = playbackState === MediaPlayer.PlayingState
+        if (active !== reported) {
+          reported = active
+          view.playbackChanged(active)
+        }
+      }
+      Component.onDestruction: { if (reported) view.playbackChanged(false) }
+    }
+  }
+
+  MouseArea {
+    anchors.fill: parent
+    hoverEnabled: true
+    // The initial enter isn't input; wait for a position change after it.
+    property bool havePosition: false
+    onEntered: havePosition = false
+    onPositionChanged: {
+      if (havePosition) view.wake()
+      havePosition = true
+    }
+    onPressed: view.wake()
+    onWheel: view.wake()
   }
 
   SystemClock {
@@ -26,6 +78,7 @@ FocusScope {
   }
 
   Column {
+    visible: view.lockState.prompt || view.still.toString() === ""
     anchors.centerIn: parent
     spacing: 28
 

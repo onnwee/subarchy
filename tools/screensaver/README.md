@@ -1,28 +1,39 @@
 # screensaver
 
-The pipeline that turns a `ttfx` text effect into a video loop for the lock
-screen (ADR 0036; spike #47, 2026-11-08). The effect never runs on the
-locked machine: the loop is rendered when the art or theme changes and the
-lock program plays it.
+`capture.sh` records `ttfx` effects under `script`; the package renders the
+compressed captures in `branding/screensaver/` into VP9 WebM loops and PNG
+stills. The locked session only plays video; it never runs `ttfx`.
 
-1. `capture.sh <effect> <text> <prefix> [cols] [rows] [ttfx options]` runs the
-   effect in a pseudo-terminal of that size under `script`, which logs the
-   output and the delay before each chunk.
-2. `render.py <prefix>.log <prefix>.tm frames/ 30 [cols] [rows] [cell px]`
-   replays the capture through pyte, a terminal emulator in Python, and draws
-   a PNG per frame with Pillow in the palette (needs `python-pyte`,
-   `python-pillow`).
-3. `ffmpeg -framerate 30 -i frames/f%05d.png -c:v libvpx-vp9 -b:v 0 -crf 34 -pix_fmt yuv420p loop.webm`
+The shipped captures use a 96×27 terminal and the SUBCULT text in
+`branding/screensaver/subcult.txt`: beams, decrypt and matrix. To replace
+one, record at that size, gzip its `.log` and `.tm`, then rebuild. The
+captures contain terminal output and timing only.
 
-Measured on `sputnik` with `ttfx matrix --rain-time 8` on three lines, 80×24
-cells, 9.8 s at 30 fps:
+```bash
+python3 bin/subcult-screensaver-render --out build/screensaver \
+  --palette default/theme/palette.json --captures branding/screensaver
+```
 
-| Output | Size | Decode (ffmpeg, software) |
-|---|---|---|
-| VP9 800×480 | 54 KB | 0.09 s CPU for 9.8 s: under 1 % of a core |
-| VP9 1920×1152 | 107 KB | 0.49 s CPU for 9.8 s: about 5 % of a core |
-| H.264 1920×1152 | 128 KB | 0.92 s CPU for 9.8 s: about 9 % of a core, or hardware decode where VA-API has it |
+The renderer needs pyte, Pillow, ffmpeg and a monospace font. It streams
+frames to ffmpeg at 960×540, 30 fps by default. ANSI colours use the palette;
+recorded truecolour gradients keep their brightness and take its lavender.
+The last frame becomes still art. Input hashes include the palette, captures,
+renderer and output settings; unchanged inputs do nothing. A lock serialises
+renders, outputs replace atomically, and the index publishes last.
 
-Decision: VP9 in WebM at the output's size, 30 fps, loops of about ten
-seconds; the lock program plays it with Qt Multimedia. On battery the lock
-shows still art instead (ADR 0036), so the decode cost is an AC cost.
+The shell watches the user's palette file, which Pult writes. After a
+750 ms debounce it restarts the low-priority `subcult-screensaver.service`
+in the background, replacing any render of a previous theme. A session
+start also checks for an existing palette.
+`subcult screensaver render --user` does the same by hand. Both write into
+`~/.cache/subcult/screensaver` (or `$XDG_CACHE_HOME/subcult/screensaver`).
+The lock prefers that completed index over `/usr/share/subcult/screensaver`.
+
+The standalone lock chooses one loop per lock, stops its decoder on input,
+and shows the password prompt while remaining locked. On battery or with
+motion off it uses the still. Keyboard, pointer movement, buttons and scroll
+open the prompt. The motion setting is shared with the shell and Hyprland.
+
+The original spike on Sputnik, 2026-11-08, decoded a 9.8 s matrix capture
+in software using 0.09 s CPU at 800×480 and 0.49 s at 1920×1152. These are
+spike measurements, not a budget claim for the shipped captures.

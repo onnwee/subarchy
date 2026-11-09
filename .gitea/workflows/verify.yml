@@ -5,6 +5,13 @@ on:
     branches: [main]
   pull_request:
 
+# Bound worker pools to the job quota rather than the host CPU count.
+env:
+  GOMAXPROCS: "2"
+  GOFLAGS: "-p=2"
+  LP_NUM_THREADS: "2"
+  UV_THREADPOOL_SIZE: "2"
+
 permissions:
   contents: read
 
@@ -35,9 +42,16 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: archlinux:latest
+      # Reap orphaned package-hook processes and leave room for build/render
+      # threads. The runner default of 512 prevented even checkout from forking.
+      options: --init --pids-limit=1024
     steps:
       - name: Install build tools
-        run: pacman -Syu --noconfirm --needed base-devel go git nodejs pacman-contrib fakeroot hypridle librsvg xorg-xcursorgen hyprcursor python lua
+        run: pacman -Syu --noconfirm --needed base-devel go git nodejs pacman-contrib fakeroot hypridle librsvg xorg-xcursorgen hyprcursor python lua python-pyte python-pillow ffmpeg ttf-dejavu qt6-multimedia
+      - name: Check process budget
+        run: |
+          cat /sys/fs/cgroup/pids.current /sys/fs/cgroup/pids.max
+          ps -eLo comm= | sort | uniq -c | sort -nr | head -10
       - uses: actions/checkout@v4
       - name: Build and check the package as a normal user
         run: |
@@ -51,10 +65,13 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: archlinux:latest
+      # Reap orphaned package-hook processes and leave room for build/render
+      # threads. The runner default of 512 prevented even checkout from forking.
+      options: --init --pids-limit=1024
     steps:
       - name: Install Quickshell, Qt and the headless test tools
         run: |
-          pacman -Syu --noconfirm --needed git make nodejs python quickshell qt6-declarative sway grim imagemagick libnotify ttf-dejavu libqalculate fd unicode-emoji wtype
+          pacman -Syu --noconfirm --needed git make nodejs python ffmpeg quickshell qt6-multimedia qt6-declarative sway grim imagemagick libnotify ttf-dejavu libqalculate fd unicode-emoji wtype
           # Arch gives sway cap_sys_nice as a file capability, which a container
           # may not grant; without it the binary cannot start at all.
           setcap -r /usr/bin/sway
