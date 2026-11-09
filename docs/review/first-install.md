@@ -376,4 +376,31 @@ terminal inside the session. Later update runs use the corrected updater.
 The remaining physical checks and suspend/NVIDIA investigations stay open
 on #75; this recovery does not qualify them.
 
+### Reboot and stale update indicator
+
+The owner rebooted on November 9. Sputnik returned over Wi-Fi with kernel
+`7.2.14-zen1-1-zen`, core `0.0.0-421` and a new boot ID. The bar still showed
+the count `80` saved at 02:02. Its scheduled check had not run yet: startup
+checks wait 15 minutes and can add up to an hour of randomized delay.
+
+`subcult update check --quiet --state` returned exit 2 (no updates) and wrote
+`0`. The live bar's IPC then reported update-widget count `0` and
+`hidden=true`, without a shell restart. The stable registry also served
+core 421 at this observation. This was stale indicator data, not evidence
+that the completed upgrade had failed.
+
+The updater source now refreshes the persisted count after a successful
+upgrade. It records any genuine remaining updates, accepts the no-updates
+exit code and warns if checking fails. Dry runs and failed upgrades leave
+the count alone. Regression tests start from the stale count 80 and cover
+zero, remaining updates, check failure, dry run and upgrade failure.
+An older updater used to install this fix may still need the manual check
+above once; later update runs refresh the indicator themselves.
+
+This boot also reported a failed `subcult-dell-power-permissions.service`:
+the charging controls did not appear during its wait. CLI readback shows
+power profiles available and charging controls unavailable. That separate
+hardware/service investigation is not an update-indicator failure and
+remains part of #75 follow-up.
+
 Related: [[0049-installer|ADR 0049]] · [[0050-hardware-support|Hardware support]] · [[package-publishing|Package publishing]] · [[roadmap|Roadmap]] · [[review-index|Review index]]
