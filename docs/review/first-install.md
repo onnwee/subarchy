@@ -246,16 +246,16 @@ need their own key-custody and recovery checkpoint.
 | Check | Required observation | Result |
 |---|---|---|
 | Dual boot | Subarchy on SPCC; original Omarchy boots via its firmware entry | Passed November 8–9 |
-| NVIDIA | Both DKMS builds; GPU modes and `subcult gpu run` | DKMS/basic `nvidia-smi` passed; owner saw only offloaded Kitty disappear temporarily, duration unknown. Inconclusive, #218 |
+| NVIDIA | Both DKMS builds; GPU modes and `subcult gpu run` | DKMS/basic `nvidia-smi` passed. Three short offloaded Kitty launches reported NVIDIA OpenGL and exit zero; owner saw temporary disappearance, still unresolved. #218 |
 | Wi-Fi | Connect/reconnect and usable network after reboot | Installed reconnect/SSH passed; owner reports Wi-Fi working November 9 |
 | SOF audio | Speakers/headphones and microphone | Owner reports audio working November 9; microphone/headphones not separately identified |
-| Bluetooth | Pair, use and reconnect a real peripheral | Discovery observed; no pairing attempted. Installed panel still delegates pairing to terminal. Native panel pairing is in development for #217; private-bus and UI tests do not prove hardware pairing |
+| Bluetooth | Pair, use and reconnect a real peripheral | Discovery observed; no pairing attempted. Native pairing merged in #222 with private-bus/UI checks and real BlueZ registration. Installed panel still uses the terminal; hardware test #217 remains pending |
 | Suspend/lid | Suspend/resume, lid, unlock and network recovery | Failed: lock appears briefly, then black display; owner reboots. #213 |
-| Battery | Unplug/replug and automatic profile switching | Owner confirms changes take effect; Dell label stays stale until interaction, #214 |
+| Battery | Unplug/replug and automatic profile switching | Owner confirms changes take effect; Dell label stays stale until interaction. Source fix #219 passed regression/CI; deployment and retest pending |
 | Splash | Graphical Plymouth and readable unlock prompt | Owner confirmation pending |
 | Secure Boot | Key custody/recovery, enrollment and enforced boot | Pending; not enabled during install |
 | TPM unlock | Recovery passphrase retained; real-TPM boot | Pending; no TPM token enrolled |
-| DisplayLink | Dock, displays and reconnect behavior | Owner confirms dock works with lid open; lid closure leaves panel on, #215 |
+| DisplayLink | Dock, displays and reconnect behavior | Owner confirms dock works with lid open; lid closure leaves panel on. Source fixes #220/#223 passed regression/CI; deployment and physical retest pending, #215 |
 | Shell at 1.6 | Bar, launcher, notifications, lock and greeter usability | Owner accepts scaling appearance and display output; live scale was 2, so 1.6 remains pending. Scale shortcut #215; greeter appearance #216 |
 
 ### November 9 owner follow-up
@@ -280,5 +280,68 @@ global Omarchy alias and the owner's Wi-Fi connection were left alone.
 
 Issues #213–#218 track the failures, inconclusive GPU result and requested
 interface improvements. They do not count as completed physical retests.
+
+### Overnight source qualification
+
+PRs #219–#223 merged after exact-head CI on November 9:
+
+- [#219](https://git.subcult.tv/subculture-collective/subarchy/pulls/219)
+  refreshes the Dell label when the power-profile daemon changes. Its
+  isolated QML check fails on the baseline and passes with the fix.
+- [#220](https://git.subcult.tv/subculture-collective/subarchy/pulls/220)
+  implements the requested docked-lid behavior and Omarchy-style scale
+  shortcuts: `Super + /` increases scale and `Super + Alt + /` decreases it,
+  following the [Omarchy monitor guide](https://learn.omacom.io/books/2/pages/86).
+  [#223](https://git.subcult.tv/subculture-collective/subarchy/pulls/223)
+  fixes two review findings: colliding concurrent profile writes and scale
+  rounding beyond 4. The same regressions fail before the fixes and pass
+  afterward, including 32 writers and the 2160×1350 scale case.
+- [#221](https://git.subcult.tv/subculture-collective/subarchy/pulls/221)
+  improves the greeter form, focus, small-screen scrolling and authentication
+  states. A PNG rendered from the unchanged brand master includes the mark
+  Qt's SVG renderer omitted. Greeter and lock share the packaged artwork;
+  native Qt checks pass at scales 1, 1.6 and 2. Owner appearance acceptance
+  remains on #216.
+- [#222](https://git.subcult.tv/subculture-collective/subarchy/pulls/222)
+  provides native device search, pairing prompts and cancellation. Thirteen
+  Gio tests use a private D-Bus daemon; the native panel fixture checks
+  search ownership, PIN clearing and graceful helper shutdown. The staged
+  helper also registered on Sputnik's real BlueZ and exited normally without
+  pairing or discovery. Pairing/use/reconnection of an actual peripheral
+  remains on #217.
+
+The scoped code/testing review covered installer mount isolation, display
+state/persistence, lock/greeter, Dell refresh, Bluetooth input/lifecycle and
+the touched package/CI paths. `make verify`, focused Go race checks, QML
+models/lint/index and the native tests passed. Kvant skips missing graphics
+and font tools; hosted Arch checks supply separate package and shell proof.
+No suspend, reboot, GPU-mode switch or desktop restart was performed during
+the unattended investigation.
+
+For #218, three owned Kitty launches ran timed three-second children and
+exited zero. Debug output reported NVIDIA OpenGL 3.1/driver 615.78.08, with
+context creation at 1.570 seconds, then 0.123 and 0.119 seconds. Hyprland
+samples through 1.2 seconds showed mapped, unhidden windows. This limited
+sampling does not establish the cause or resolution of the owner's visual
+report; full GPU-mode acceptance remains pending.
+
+Core package `0.0.0-418`, built from merged source `609b5d7`, is staged on
+Kvant and Sputnik. Its SHA-256 is
+`222f4d8f941e855b1c45da9e9b976c76acd1034d096b5f08ad4b2cc6036d627d`.
+Package and database signatures validate against the shipped registry key
+`CCE8B0F3BCDD601D909773E4466AA6E8241453D2`. The recipe hash, compiled binary's
+VCS revision, eight changed source files and packaged artwork match the
+qualified source. This core-file evidence is separate from parent-owned
+registry-wide publishing qualification under #67.
+
+The installed package remains `0.0.0-1`. A guarded core-only update is
+prepared: recheck SPCC root/ESP identity and the signed artifact, save the
+old cached package, create pre/post snapshots, then verify that only the core
+changed and the boot ID/firmware order stayed the same. `sudo -n` requires
+the owner's password; T3's secure file prompt has been requested. No installation
+secret was retained or recovered. The running shell disables file watching,
+and the existing display watcher keeps its old binary, so package replacement
+alone will not establish active desktop behavior. New desktop behavior and
+the physical tests remain pending on #75.
 
 Related: [[0049-installer|ADR 0049]] · [[0050-hardware-support|Hardware support]] · [[package-publishing|Package publishing]] · [[roadmap|Roadmap]] · [[review-index|Review index]]
