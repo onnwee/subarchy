@@ -3,6 +3,8 @@ import QtQuick
 import Quickshell.Services.UPower
 import qs.Commons
 import qs.Ui
+import qs.services
+import "../dell-power/Model.js" as DellModel
 import "Model.js" as Model
 import "../../Commons/Glyphs.js" as Glyphs
 
@@ -21,8 +23,18 @@ PanelBase {
   readonly property string current: PowerProfiles.profile === PowerProfile.PowerSaver ? "power-saver"
     : PowerProfiles.profile === PowerProfile.Performance ? "performance" : "balanced"
 
-  implicitWidth: 300
+  readonly property bool dell: DellModel.visible(DellPower.report)
+  property string saveError: ""
+
+  implicitWidth: 340
   implicitHeight: column.implicitHeight
+
+  Component.onCompleted: DellPower.refresh()
+
+  function setDisplay(key, value) {
+    panel.saveError = panel.shell.config && panel.shell.config.set(key, value)
+      ? "" : "Could not save the display setting. Check the bar configuration file."
+  }
 
   function select(id) {
     PowerProfiles.profile = id === "power-saver" ? PowerProfile.PowerSaver : id === "performance" ? PowerProfile.Performance : PowerProfile.Balanced
@@ -34,6 +46,7 @@ PanelBase {
     spacing: 8
 
     Row {
+      visible: Model.visible(panel.device)
       spacing: 10
       Text {
         anchors.verticalCenter: parent.verticalCenter
@@ -61,7 +74,7 @@ PanelBase {
     }
 
     Text {
-      visible: text !== ""
+      visible: Model.visible(panel.device) && text !== ""
       text: [panel.rate, panel.health].filter(s => s !== "").join("   ")
       color: Theme.subtext
       font.family: Style.uiFontFamily
@@ -74,7 +87,14 @@ PanelBase {
       color: Theme.surface
     }
 
+    DellControls {
+      objectName: "dellControls"
+      visible: panel.dell
+      width: parent.width
+    }
+
     Text {
+      visible: !panel.dell
       text: "Power profile"
       color: Theme.subtext
       font.family: Style.uiFontFamily
@@ -82,31 +102,18 @@ PanelBase {
       font.bold: true
     }
 
-    Row {
+    Flow {
+      visible: !panel.dell
+      width: parent.width
       spacing: 6
       Repeater {
         model: Model.profiles(PowerProfiles.hasPerformanceProfile)
-        delegate: Rectangle {
-          id: choice
+        delegate: Choice {
           required property var modelData
-          readonly property bool active: choice.modelData.id === panel.current
-          width: 92
-          height: 28
-          radius: 3
-          color: active ? Theme.selection : Theme.base
-          border.width: 1
-          border.color: active ? Theme.accent : Theme.surface
-          Text {
-            anchors.centerIn: parent
-            text: choice.modelData.name
-            color: choice.active ? Theme.text : Theme.subtext
-            font.family: Style.uiFontFamily
-            font.pixelSize: Style.fontSize - 1
-          }
-          MouseArea {
-            anchors.fill: parent
-            onClicked: panel.select(choice.modelData.id)
-          }
+          objectName: "powerProfile_" + modelData.id
+          label: modelData.name
+          active: modelData.id === panel.current
+          onPicked: panel.select(modelData.id)
         }
       }
     }
@@ -115,6 +122,54 @@ PanelBase {
       visible: PowerProfiles.degradationReason !== PerformanceDegradationReason.None // qmllint disable missing-property
       width: parent.width
       text: "Performance is held back: " + PerformanceDegradationReason.toString(PowerProfiles.degradationReason) // qmllint disable missing-property
+      wrapMode: Text.Wrap
+      color: Theme.warning
+      font.family: Style.uiFontFamily
+      font.pixelSize: Style.fontSize - 1
+    }
+
+    Rectangle { width: parent.width; height: 1; color: Theme.surface }
+    Text {
+      text: "Bar display"
+      color: Theme.subtext
+      font.family: Style.uiFontFamily
+      font.pixelSize: Style.fontSize - 1
+      font.bold: true
+    }
+    Text { text: "Battery"; color: Theme.subtext; font.family: Style.uiFontFamily; font.pixelSize: Style.fontSize - 1 }
+    Flow {
+      width: parent.width
+      spacing: 6
+      Repeater {
+        model: [{id: "icon", name: "Icon"}, {id: "icon-percentage", name: "Icon and percentage"}]
+        delegate: Choice {
+          required property var modelData
+          objectName: "chargeDisplay_" + modelData.id
+          label: modelData.name
+          active: modelData.id === Model.chargeDisplay(panel.settings)
+          onPicked: panel.setDisplay("chargeDisplay", modelData.id)
+        }
+      }
+    }
+    Text { text: "Power profile"; color: Theme.subtext; font.family: Style.uiFontFamily; font.pixelSize: Style.fontSize - 1 }
+    Flow {
+      width: parent.width
+      spacing: 6
+      Repeater {
+        model: [{id: "off", name: "Off"}, {id: "icon", name: "Icon"}, {id: "icon-text", name: "Icon and text"}]
+        delegate: Choice {
+          required property var modelData
+          objectName: "profileDisplay_" + modelData.id
+          label: modelData.name
+          active: modelData.id === Model.profileDisplay(panel.settings)
+          onPicked: panel.setDisplay("profileDisplay", modelData.id)
+        }
+      }
+    }
+    Text {
+      visible: panel.saveError !== ""
+      width: parent.width
+      text: panel.saveError
       wrapMode: Text.Wrap
       color: Theme.warning
       font.family: Style.uiFontFamily

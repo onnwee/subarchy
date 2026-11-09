@@ -22,7 +22,7 @@ Singleton {
   readonly property var parsed: ConfigModel.parse(userFile.text, machine.config)
   // The user's file as written, for the settings panel's own merge.
   readonly property string userText: userFile.text
-  readonly property var bar: parsed.config
+  readonly property var bar: ConfigModel.normalize(parsed.config)
 
   onParsedChanged: {
     if (parsed.warning !== "" && parsed.warning !== lastWarning)

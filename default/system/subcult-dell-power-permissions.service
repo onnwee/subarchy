@@ -4,5 +4,5 @@ ConditionPathExists=/sys/class/firmware-attributes/dell-wmi-sysman
 
 [Service]
 Type=oneshot
-TimeoutStartSec=15s
+TimeoutStartSec=45s
 ExecStart=/usr/bin/subcult-dell-power permissions

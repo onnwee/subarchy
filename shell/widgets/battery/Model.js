@@ -2,6 +2,15 @@
 // Shown only for a present laptop battery; mice, headsets and UPSes have
 // their own UPower devices. The panel's texts come from here too.
 
+function chargeDisplay(settings) {
+  return settings && settings.chargeDisplay === "icon" ? "icon" : "icon-percentage"
+}
+
+function profileDisplay(settings) {
+  const value = settings && settings.profileDisplay
+  return value === "off" || value === "icon" ? value : "icon-text"
+}
+
 function visible(device) {
   return !!device && !!device.isPresent && !!device.isLaptopBattery
 }

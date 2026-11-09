@@ -992,24 +992,24 @@ if command -v wtype >/dev/null; then
 else
   echo "shell-headless: wtype not installed, lock check skipped"
 fi
-# Dell power (ADR 0021), off by default: the machine layer `subcult hw
-# apply` writes under /etc enables it; it reads the (fake) firmware, shows
+# Dell power (ADR 0021) now lives in Battery. A legacy machine-layer ID
+# resolves to the combined widget; it reads the (fake) firmware, shows
 # the profile, sets one through the command (the stub daemon follows), sets
-# a custom charging window, and leaves the bar when the layer goes.
+# a custom charging window, and keeps a single combined entry after removal.
 mkdir -p "$work/etc/shell"
 printf '{"#": "# Subarchy hardware fix dell-power (ADR 0021)", "enable": ["subcult.dell-power"]}\n' >"$work/etc/shell/bar.json"
 printf '{"layout": {"left": ["subcult.test-probe"]}}\n' >"$home1/.config/subcult/shell/bar.json"
 sleep 2
 st=$(status "$home1")
-[[ $(json '"subcult.dell-power" in d["shown"]["HEADLESS-1"]') == True ]] || fail "the machine layer did not enable dell-power: $st"
+[[ $(json '"subcult.battery" in d["shown"]["HEADLESS-1"] and "subcult.dell-power" not in d["shown"]["HEADLESS-1"]') == True ]] || fail "the machine layer did not enable dell-power: $st"
 for _ in $(seq 20); do dp=$(HOME=$home1 quickshell ipc -p "$shell" call subcult.dell-power state); [[ $dp == *'"available":true'* ]] && break; sleep 0.5; done
-[[ $(HOME=$home1 quickshell ipc -p "$shell" call subcult.shell widgetProperty subcult.dell-power label) == Balanced ]] ||
-  fail "dell-power label: $(HOME=$home1 quickshell ipc -p "$shell" call subcult.shell widgetProperty subcult.dell-power label) ($dp)"
+[[ $(HOME=$home1 quickshell ipc -p "$shell" call subcult.shell widgetProperty subcult.battery label) == Balanced ]] ||
+  fail "dell-power label: $(HOME=$home1 quickshell ipc -p "$shell" call subcult.shell widgetProperty subcult.battery label) ($dp)"
 HOME=$home1 quickshell ipc -p "$shell" call subcult.dell-power setProfile quiet >/dev/null
 for _ in $(seq 20); do [[ $(<"$dell/platform-profile/platform-profile-0/profile") == quiet ]] && break; sleep 0.5; done
 [[ $(<"$dell/platform-profile/platform-profile-0/profile") == quiet && $(<"$work/ppd") == power-saver ]] || fail "quiet did not reach the firmware and the daemon: $(cat "$dell/platform-profile/platform-profile-0/profile" "$work/ppd" 2>&1)"
-for _ in $(seq 20); do [[ $(HOME=$home1 quickshell ipc -p "$shell" call subcult.shell widgetProperty subcult.dell-power label) == Quiet ]] && break; sleep 0.5; done
-[[ $(HOME=$home1 quickshell ipc -p "$shell" call subcult.shell widgetProperty subcult.dell-power label) == Quiet ]] || fail "the label did not follow the change"
+for _ in $(seq 20); do [[ $(HOME=$home1 quickshell ipc -p "$shell" call subcult.shell widgetProperty subcult.battery label) == Quiet ]] && break; sleep 0.5; done
+[[ $(HOME=$home1 quickshell ipc -p "$shell" call subcult.shell widgetProperty subcult.battery label) == Quiet ]] || fail "the label did not follow the change"
 HOME=$home1 quickshell ipc -p "$shell" call subcult.dell-power setCharging custom 60 90 >/dev/null
 for _ in $(seq 20); do [[ $(<"$dellattrs/CustomChargeStop/current_value") == 90 ]] && break; sleep 0.5; done
 [[ $(<"$dellattrs/PrimaryBattChargeCfg/current_value") == Custom && $(<"$dellattrs/CustomChargeStart/current_value") == 60 && $(<"$dellattrs/CustomChargeStop/current_value") == 90 ]] ||
@@ -1017,14 +1017,15 @@ for _ in $(seq 20); do [[ $(<"$dellattrs/CustomChargeStop/current_value") == 90 
 HOME=$home1 quickshell ipc -p "$shell" call subcult.dell-power setCharging custom 80 80 >/dev/null
 for _ in $(seq 20); do dp=$(HOME=$home1 quickshell ipc -p "$shell" call subcult.dell-power state); [[ $dp == *'at least 5 above'* ]] && break; sleep 0.5; done
 [[ $dp == *'at least 5 above'* ]] || fail "a refused change did not report its reason: $dp"
-HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.dell-power >/dev/null
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.battery >/dev/null
 sleep 1
 st=$(status "$home1")
-[[ $(json 'd.get("panel")') == subcult.dell-power ]] || fail "the dell-power panel did not open: $st"
+[[ $(json 'd.get("panel")') == subcult.battery ]] || fail "the dell-power panel did not open: $st"
 HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
 rm "$work/etc/shell/bar.json"
 sleep 2
 st=$(status "$home1")
 [[ $(json '"subcult.dell-power" in d["shown"]["HEADLESS-1"]') == False ]] || fail "dell-power stayed after the machine layer went: $st"
+[[ $(json 'd["shown"]["HEADLESS-1"].count("subcult.battery")') == 1 ]] || fail "the combined battery entry was lost or duplicated: $st"
 
 echo "shell-headless: ok"

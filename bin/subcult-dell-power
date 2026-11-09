@@ -239,13 +239,23 @@ set_charging() {
 permissions() {
   local files=("$attributes/PrimaryBattChargeCfg/current_value" "$attributes/CustomChargeStart/current_value" "$attributes/CustomChargeStop/current_value")
   local i f ready
-  for ((i = 0; i < 50; i++)); do
+  for ((i = 0; i < 300; i++)); do
     ready=1
     for f in "${files[@]}"; do [[ -e $f ]] || ready=0; done
     ((ready)) && break
     sleep 0.1
   done
-  ((ready)) || die "the Dell charging controls did not appear"
+  if ((!ready)); then
+    # Some Dell firmware exposes only the mode, or no charging controls.
+    # Hand over supported files without failing an optional boot service.
+    local supported=()
+    for f in "${files[@]}"; do [[ ! -e $f ]] || supported+=("$f"); done
+    if ((${#supported[@]} == 0)); then
+      echo "charging controls unavailable on this firmware; skipped"
+      return 0
+    fi
+    files=("${supported[@]}")
+  fi
   chgrp wheel "${files[@]}" && chmod g+rw "${files[@]}"
   echo "charging controls handed to wheel"
 }

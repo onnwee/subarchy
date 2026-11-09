@@ -85,4 +85,42 @@ if ((EUID != 0)); then
   chmod u+w "$dell/platform-profile/platform-profile-0/profile"
 fi
 
+# The udev device event can precede its attributes by more than five
+# seconds. Simulate the wait without delaying CI or touching host sysfs.
+mkdir -p "$work/late/class/firmware-attributes/dell-wmi-sysman/attributes"
+export DELL_PERMISSIONS_TEST="$work"
+cat >"$work/bin/sleep" <<'STUB'
+#!/bin/bash
+read -r count <"$DELL_PERMISSIONS_TEST/waits" || count=0
+echo "$((count + 1))" >"$DELL_PERMISSIONS_TEST/waits"
+if ((count == 54)); then
+  cp -r "$DELL_PERMISSIONS_TEST/dell/class/firmware-attributes/dell-wmi-sysman/attributes/." \
+    "$DELL_PERMISSIONS_TEST/late/class/firmware-attributes/dell-wmi-sysman/attributes/"
+fi
+STUB
+cat >"$work/bin/chgrp" <<'STUB'
+#!/bin/bash
+printf '%s\n' "$*" >>"$DELL_PERMISSIONS_TEST/permissions"
+STUB
+cp "$work/bin/chgrp" "$work/bin/chmod"
+chmod +x "$work/bin/sleep" "$work/bin/chgrp" "$work/bin/chmod"
+echo 0 >"$work/waits"
+run late permissions >"$work/permission-result" || fail "delayed charging attributes were abandoned"
+[[ $(wc -l <"$work/permissions") == 2 ]] || fail "missing permission commands"
+[[ $(<"$work/permissions") == *'CustomChargeStop/current_value'* ]] || fail "missing threshold permission"
+[[ $(<"$work/permissions") != *'authentication'* ]] || fail "permissions touched credentials"
+for attr in PrimaryBattChargeCfg CustomChargeStart CustomChargeStop; do
+  cmp "$attrs/$attr/current_value" "$work/late/class/firmware-attributes/dell-wmi-sysman/attributes/$attr/current_value" || fail "permission repair changed the charging policy"
+done
+rm "$work/permissions"
+run other permissions >"$work/permission-result" || fail "unsupported controls should skip cleanly"
+[[ ! -e $work/permissions ]] || fail "permissions ran without charging attributes"
+grep -q unavailable "$work/permission-result" || fail "unsupported controls were not explained"
+
+# Firmware that exposes only a charging mode still gets that control.
+mkdir -p "$work/partial/class/firmware-attributes/dell-wmi-sysman/attributes/PrimaryBattChargeCfg"
+cp "$attrs/PrimaryBattChargeCfg/current_value" "$work/partial/class/firmware-attributes/dell-wmi-sysman/attributes/PrimaryBattChargeCfg/"
+run partial permissions >"$work/permission-result" || fail "partial charging support failed"
+[[ $(<"$work/permissions") == *'PrimaryBattChargeCfg/current_value'* && $(<"$work/permissions") != *'CustomCharge'* ]] || fail "permissions touched unsupported attributes"
+
 echo "dell-power-test: ok"
