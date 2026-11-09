@@ -22,12 +22,24 @@ below. Subarchy is running for owner testing.
 close/open cycle with a visible lock, working password input and no Hyprland
 warning flash. The tested repair explicitly sets DPMS `action`, restores
 lock-view focus on click/activation/Tab, and waits for the Wayland lock
-notification before sleep. Local service overrides retain this candidate
-across logins while [PR #229](https://git.subcult.tv/subculture-collective/subarchy/pulls/229)
-awaits CI and package publication. The installation coordinator will retire
-those overrides after verifying the fixed installed package. The earlier
-failed cycles below remain diagnostic history; other hardware acceptance
-checks remain open.
+notification before sleep. [PR #229](https://git.subcult.tv/subculture-collective/subarchy/pulls/229)
+merged as `aa5080e`. The owner upgraded core425 to434 at 14:17 CST;
+eleven checked installed battery/lock/helper files match the qualified
+package. The coordinator retired only the byte-checked temporary overrides.
+The packaged idle/lock units are selected for future starts; the running,
+corrected private idle process was left alone. A fresh cycle using the
+packaged services and the other hardware acceptance checks remain open.
+
+**Update feedback, November 9 CST:** core434 still briefly reports the
+missing Lua file during replacement, then clears it with its final reload.
+General sudo still asks for authentication, but the packaged update-specific
+NOPASSWD rules explain why updates do not. [[0069-update-authentication|ADR
+0069]] records the owner's request to authenticate updates. Source fix
+[PR #232](https://git.subcult.tv/subculture-collective/subarchy/pulls/232)
+adds initial authorization, a bounded-lifetime noninteractive keepalive and
+watcher pause/restore around the update. These changes are not in core434;
+an older updater installing them can still show the warning once. The native
+watcher-setting probe passed and left the original setting unchanged.
 
 Issue [#75](https://git.subcult.tv/subculture-collective/subarchy/issues/75)
 stays open until the owner records the remaining hardware results below.
