@@ -323,14 +323,14 @@ source = "repo"
 packages = ["qalculate-qt", "libqalculate"]
 
 [[app]]
-id = "theme-tender"
-name = "Theme Tender"
+id = "pult"
+name = "Pult"
 roles = ["theme-manager"]
 default_for = ["theme-manager"]
 preinstalled = true
 source = "build"
-packages = ["theme-tender"]
-notes = "Not released as a package yet (ADR 0037)"
+packages = ["pult"]
+notes = "Theme Tender until 0.2.0; built from its release PKGBUILD (ADR 0037)"
 
 # --- Viewers and capture -------------------------------------------------
 [[app]]

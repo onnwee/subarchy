@@ -17,8 +17,10 @@ Decision map item D5. Accepted 2026-11-06; theme format and tool settled
 ## Decision
 
 **Theme Tender is Subarchy's theming system.** The owner's tool
-([`subculture-collective/theme-tender`](https://git.subcult.tv/subculture-collective/theme-tender),
-local checkout `~/Work/Subcult/theme-tender`) applies one palette across every
+([`subculture-collective/pult`](https://git.subcult.tv/subculture-collective/pult),
+local checkout `~/Work/Subcult/theme-tender`; renamed **Pult** with its
+0.2.0 release on 2026-11-08, binary `pult`, so the `tender` in the text
+below is Pult now) applies one palette across every
 installed app, changes only colours, and can undo every change. Subarchy does
 not build its own palette format, template renderer or theme switcher.
 
@@ -137,5 +139,10 @@ which Subarchy does not use.
   release PKGBUILD, vendored) and is in the desktop package set; the
   installer runs `tender apply -profile default/theme/subarchy.toml` for
   the new user, and the VM test checks `tender doctor` (issue #72).
+
+- 2026-11-08: Pult 0.2.0 replaces Theme Tender 0.1.0 (`packaging/pult`, its
+  release PKGBUILD vendored; `install/packages/desktop.txt`, the app table,
+  the installer and the VM test call `pult`). The 0.2.0 registry has no
+  Subarchy entries yet; they arrive with the release after pult#77.
 
 Related: [[decision-map|Decision map]] · [[0048-config-ownership|ADR 0048]] · [[brand-identity|Brand identity]] · [[0038-wallpaper|ADR 0038]] · [[0039-fonts-icons|ADR 0039]]

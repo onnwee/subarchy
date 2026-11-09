@@ -356,8 +356,8 @@ def boot(disk: Path, vars_file: Path) -> bool:
             "test -f /usr/share/applications/discord.desktop"
             " && test -f /usr/share/chromium/extensions/cbghhgpcnddeihccjmnadmkaejncjndb.json && echo WEBAPP_OK")
 
-        # Theme Tender applied the default theme for the new user (ADR 0037).
-        results["tender"] = serial.run("tender doctor 2>&1; echo TENDER_RC=$?", timeout=60)
+        # Pult applied the default theme for the new user (ADR 0037).
+        results["pult"] = serial.run("pult doctor 2>&1; echo PULT_RC=$?", timeout=60)
 
         # Neovim's first launch needs no network (ADR 0045): run it in a
         # network namespace as the user, with the config from /etc/skel.
@@ -521,7 +521,7 @@ def boot(disk: Path, vars_file: Path) -> bool:
         "Neovim has the Subarchy layer and the subcult scheme": "LAYER=subarchy-nvim" in r["nvim"] and "SCHEME=subcult" in r["nvim"],
         "Discord web app and Vencord Web installed": "WEBAPP_OK" in r["discord"],
 
-        "tender doctor passes with subcult-minimal applied": "TENDER_RC=0" in r["tender"] and "subcult-minimal" in r["tender"],
+        "pult doctor passes with subcult-minimal applied": "PULT_RC=0" in r["pult"] and "subcult-minimal" in r["pult"],
         "shell sees battery power": '"onBattery":true' in r["battery"],
         "shell back on AC with the real UPower": '"onBattery":false' in r["ac_again"],
         "keep-awake inhibits idle, survives a shell restart, releases": r["keep_awake"].split() == ["1", "1", "0"],

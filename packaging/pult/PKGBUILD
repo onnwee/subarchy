@@ -1,0 +1,45 @@
+# Maintainer: SUBCULT <info@subcult.tv>
+# Pult (ADR 0037, issue #72), the theming system Subarchy applies at
+# install and later through `pult`; Theme Tender until its 0.2.0 release.
+# This is the PKGBUILD Pult published with v0.2.0 (release asset
+# PKGBUILD.pult, rendered by its scripts/render-packaging.sh), vendored here
+# unchanged below this header; sources are release tarballs, sha256-pinned
+# (pult-0.2.0-SHA256SUMS of the release).
+#
+# Licence: GPL-3.0-only for the code, MIT for the templates and registry
+# (LICENSE and LICENSES/MIT.txt in the source tarball), both installed
+# under /usr/share/licenses/pult/. Checked at v0.2.0.
+pkgname=pult
+pkgver=0.2.0
+pkgrel=1
+pkgdesc='Apply one palette across your terminal apps, and undo every change'
+arch=('x86_64' 'aarch64')
+url='https://git.subcult.tv/subculture-collective/pult'
+license=('GPL-3.0-only' 'MIT')
+makedepends=('go')
+source=("https://git.subcult.tv/subculture-collective/pult/releases/download/v0.2.0/pult-0.2.0-src.tar.gz"
+        "https://git.subcult.tv/subculture-collective/pult/releases/download/v0.2.0/pult-0.2.0-catalog.db.zst")
+noextract=("pult-0.2.0-catalog.db.zst")
+sha256sums=('2f6023abe8505b44724e65696ab9b004f3580f6ef19062e80c2156fc26269cb7'
+            '5c8aa7a5bf4d96964c6202966e6a33de55bb8776d61842cd94c548f5006ff477')
+
+build() {
+  cd "pult-$pkgver"
+  cp "$srcdir/pult-$pkgver-catalog.db.zst" builtin/catalog.db.zst
+  export CGO_ENABLED=0
+  export GOFLAGS='-buildmode=pie -trimpath -mod=readonly -modcacherw'
+  go build -ldflags "-s -w -X main.version=$pkgver -X git.subcult.tv/subculture-collective/pult.BuiltinVersion=2026.11.08.0" -o pult ./cmd/pult
+}
+
+check() {
+  cd "pult-$pkgver"
+  CGO_ENABLED=0 go test ./...
+}
+
+package() {
+  cd "pult-$pkgver"
+  install -Dm755 pult "$pkgdir/usr/bin/pult"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm644 LICENSES/MIT.txt "$pkgdir/usr/share/licenses/$pkgname/MIT.txt"
+  install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
+}
