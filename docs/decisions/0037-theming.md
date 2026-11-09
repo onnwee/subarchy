@@ -17,8 +17,10 @@ Decision map item D5. Accepted 2026-11-06; theme format and tool settled
 ## Decision
 
 **Theme Tender is Subarchy's theming system.** The owner's tool
-([`subculture-collective/theme-tender`](https://git.subcult.tv/subculture-collective/theme-tender),
-local checkout `~/Work/Subcult/theme-tender`) applies one palette across every
+([`subculture-collective/pult`](https://git.subcult.tv/subculture-collective/pult),
+local checkout `~/Work/Subcult/theme-tender`; renamed **Pult** with its
+0.2.0 release on 2026-11-08, binary `pult`, so the `tender` in the text
+below is Pult now) applies one palette across every
 installed app, changes only colours, and can undo every change. Subarchy does
 not build its own palette format, template renderer or theme switcher.
 
@@ -152,6 +154,10 @@ which Subarchy does not use.
   installer and VM test still call `tender`), after which `pult apply`
   with a catalog theme recolours borders, bar and lock on a Subarchy
   install; the headless check covers the lock's palette until then.
+- 2026-11-08: Pult 0.2.0 replaces Theme Tender 0.1.0 (`packaging/pult`, its
+  release PKGBUILD vendored; `install/packages/desktop.txt`, the app table,
+  the installer and the VM test call `pult`). The 0.2.0 registry has no
+  Subarchy entries yet; they arrive with the release after pult#77.
 
 - 2026-11-08: Qt and GTK apps (issue #101). Pult gets `gtk3` and `gtk4`
   entries (pult#78): `@import url("pult.css");` at the top of

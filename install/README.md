@@ -50,8 +50,8 @@ With no network the install runs from the repository on the image alone,
 which carries the whole install set (`make iso` downloads it); with network
 the Arch mirrors come first and the image's copies serve as a cache.
 
-The two Limine tools are AUR packages, and Theme Tender is Subarchy's own
-package (`packaging/theme-tender`), rebuilt locally into `build/repo` by
+The two Limine tools are AUR packages, and Pult is vendored from its
+release PKGBUILD (`packaging/pult`), rebuilt locally into `build/repo` by
 
 The two Limine tools are AUR packages, and the prebuilt Neovim is Subarchy's
 own package (`packaging/subarchy-nvim`), rebuilt locally into `build/repo` by

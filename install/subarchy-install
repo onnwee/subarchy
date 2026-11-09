@@ -284,11 +284,11 @@ EOF
   arch-chroot "$target" chown "$user:$user" "/home/$user/.zshrc"
   # A new user starts current: migrations shipped so far are already done.
   arch-chroot "$target" runuser -u "$user" -- subcult-update migrate --mark-all
-  # The default theme, through Theme Tender (ADR 0037): the user's own
-  # copy of each themed app config, which `tender uninstall` undoes.
+  # The default theme, through Pult (ADR 0037): the user's own copy of
+  # each themed app config, which `pult uninstall` undoes.
   arch-chroot "$target" runuser -u "$user" -- env HOME="/home/$user" \
-    tender apply -yes -profile /usr/share/subcult/default/theme/subarchy.toml ||
-    echo "subarchy-install: tender apply failed; run it after login" >&2
+    pult apply -yes -profile /usr/share/subcult/default/theme/subarchy.toml ||
+    echo "subarchy-install: pult apply failed; run it after login" >&2
   # The user's Hyprland config: Subarchy's defaults plus room for overrides
   # (ADR 0048). Written once; updates never touch it.
   arch-chroot "$target" runuser -u "$user" -- install -Dm644 \

@@ -22,8 +22,8 @@ realtime-privileges
 # Terminal (ADR 0040)
 kitty
 
-# Desktop shell and look (shell and look design); theme-tender from
-# packaging/theme-tender (ADR 0037)
+# Desktop shell and look (shell and look design); pult from
+# packaging/pult (ADR 0037)
 
 # Editor (ADR 0045): Neovim with LazyVim prebuilt, from packaging/subarchy-nvim
 neovim
@@ -31,7 +31,7 @@ subarchy-nvim
 
 # Desktop shell and look (shell and look design)
 quickshell
-theme-tender
+pult
 papirus-icon-theme
 brightnessctl
 libnotify
