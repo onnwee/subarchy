@@ -287,7 +287,8 @@ def boot(disk: Path, vars_file: Path) -> bool:
             # rebuild), Chromium skipped since it is not installed; again: nothing.
             "theme_system": serial.run(
                 "mkdir -p ~/.config/subcult/theme && printf '%s' '{\"schema\": 1, \"appearance\": \"dark\", \"colors\": {\"base\": \"#1a1b26\", \"text\": \"#c0caf5\", \"mauve\": \"#bb9af7\", \"surface0\": \"#24283b\"}}' > ~/.config/subcult/theme/palette.json;"
-                " subcult theme apply-system --elevate sudo; echo ---; subcult theme apply-system --elevate sudo; echo ---;"
+                f" subcult theme apply-system --elevate sudo; {sudo} cp /boot/limine.conf /tmp/limine-after-theme.conf; echo ---;"
+                f" subcult theme apply-system --elevate sudo; {sudo} diff -u /tmp/limine-after-theme.conf /boot/limine.conf; echo ---;"
                 f" grep -c '^base=#1a1b26' /usr/share/sddm/themes/subarchy/theme.conf; {sudo} grep -c '^interface_branding_colour: bb9af7' /boot/limine.conf;"
                 " plymouth-set-default-theme; grep -c 'SetBackgroundTopColor(0.102, 0.106, 0.149)' /usr/share/plymouth/themes/subarchy-user/subarchy-user.script",
                 timeout=600,

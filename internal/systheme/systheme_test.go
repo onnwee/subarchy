@@ -1,6 +1,7 @@
 package systheme
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -189,5 +190,22 @@ func TestPlymouthDaemonConf(t *testing.T) {
 		if got := plymouthDaemonConf(in, "subarchy-user"); got != want {
 			t.Errorf("%q: got %q want %q", in, got, want)
 		}
+	}
+}
+
+func TestLimineConfKeepsEntryTrailingWhitespace(t *testing.T) {
+	p, err := ParsePalette([]byte(`{"colors":{"base":"#112233","text":"#ffeedd","mauve":"#abcdef","surface0":"#334455"}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	preamble := "interface_branding_colour: abcdef\nterm_background: 00112233\nterm_foreground: ffeedd\nterm_background_bright: 334455\nterm_foreground_bright: ffeedd\n"
+	for _, ending := range []string{"", "\n", "\n\n", "\n\n\n"} {
+		t.Run(fmt.Sprintf("trailing-newlines-%d", len(ending)), func(t *testing.T) {
+			existing := preamble + "/+Subarchy\n    //linux-zen\n        protocol: linux" + ending
+			got, changed := LimineConf([]byte(existing), p)
+			if changed || string(got) != existing {
+				t.Fatalf("an already themed config was rewritten: got %q, want %q", got, existing)
+			}
+		})
 	}
 }
