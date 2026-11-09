@@ -1,0 +1,106 @@
+# Subarchy boot splash (ADR 0013), written for Subarchy against Plymouth's
+# script module. Ink background, the SUBCULT mark in the middle, a thin
+# violet track under it that fills with acid green as boot progresses, the
+# passphrase prompt as a field with a lock and bullets, and messages in
+# paper. Colours are the SUBCULT roles: ink #100B19, surface #1F1830,
+# violet #8B5CF6, acid #00FF88, paper #F0ECE4.
+
+Window.SetBackgroundTopColor(0.063, 0.043, 0.098);
+Window.SetBackgroundBottomColor(0.063, 0.043, 0.098);
+
+centre_x = Window.GetX() + Window.GetWidth() / 2;
+centre_y = Window.GetY() + Window.GetHeight() / 2;
+
+# The mark, a little above the middle.
+logo.image = Image("logo.png");
+logo.sprite = Sprite(logo.image);
+logo.x = centre_x - logo.image.GetWidth() / 2;
+logo.y = centre_y - logo.image.GetHeight() / 2 - 48;
+logo.sprite.SetPosition(logo.x, logo.y, 1);
+
+# The progress track and the bar that fills it.
+track.image = Image("progress-box.png");
+track.sprite = Sprite(track.image);
+track.x = centre_x - track.image.GetWidth() / 2;
+track.y = logo.y + logo.image.GetHeight() + 56;
+track.sprite.SetPosition(track.x, track.y, 1);
+
+bar.full = Image("progress-bar.png");
+bar.sprite = Sprite();
+bar.sprite.SetPosition(track.x, track.y, 2);
+bar.width = 0;
+
+fun progress_callback(duration, progress) {
+  local.width = Math.Int(bar.full.GetWidth() * progress);
+  if (width < 1) width = 1;
+  if (width != bar.width) {
+    bar.width = width;
+    bar.sprite.SetImage(bar.full.Scale(width, bar.full.GetHeight()));
+  }
+}
+Plymouth.SetBootProgressFunction(progress_callback);
+
+# The passphrase prompt: a field under the track with a lock on its left;
+# one bullet per character typed.
+fun dialog_setup() {
+  local.entry;
+  local.lock;
+  entry.image = Image("entry.png");
+  entry.sprite = Sprite(entry.image);
+  entry.x = centre_x - entry.image.GetWidth() / 2;
+  entry.y = track.y + 40;
+  entry.sprite.SetPosition(entry.x, entry.y, 3);
+  lock.image = Image("lock.png");
+  lock.sprite = Sprite(lock.image);
+  lock.sprite.SetPosition(entry.x - lock.image.GetWidth() - 14,
+    entry.y + (entry.image.GetHeight() - lock.image.GetHeight()) / 2, 3);
+  global.dialog.entry = entry;
+  global.dialog.lock = lock;
+  global.dialog.bullet_image = Image("bullet.png");
+  dialog_opacity(1);
+}
+
+fun dialog_opacity(opacity) {
+  dialog.entry.sprite.SetOpacity(opacity);
+  dialog.lock.sprite.SetOpacity(opacity);
+  for (index = 0; dialog.bullet[index]; index++)
+    dialog.bullet[index].sprite.SetOpacity(opacity);
+}
+
+fun display_normal_callback() {
+  if (global.dialog)
+    dialog_opacity(0);
+}
+
+fun display_password_callback(prompt, bullets) {
+  if (!global.dialog)
+    dialog_setup();
+  else
+    dialog_opacity(1);
+  for (index = 0; dialog.bullet[index] || index < bullets; index++) {
+    if (!dialog.bullet[index]) {
+      dialog.bullet[index].sprite = Sprite(dialog.bullet_image);
+      dialog.bullet[index].sprite.SetX(dialog.entry.x + 14 + index * (dialog.bullet_image.GetWidth() + 6));
+      dialog.bullet[index].sprite.SetY(dialog.entry.y + dialog.entry.image.GetHeight() / 2 - dialog.bullet_image.GetHeight() / 2);
+      dialog.bullet[index].sprite.SetZ(4);
+    }
+    if (index < bullets)
+      dialog.bullet[index].sprite.SetOpacity(1);
+    else
+      dialog.bullet[index].sprite.SetOpacity(0);
+  }
+}
+
+Plymouth.SetDisplayNormalFunction(display_normal_callback);
+Plymouth.SetDisplayPasswordFunction(display_password_callback);
+
+# Messages (a filesystem check, a failure) in paper under everything else.
+message.sprite = Sprite();
+message.sprite.SetPosition(0, 0, 5);
+
+fun message_callback(text) {
+  local.image = Image.Text(text, 0.941, 0.925, 0.894);
+  message.sprite.SetImage(image);
+  message.sprite.SetPosition(centre_x - image.GetWidth() / 2, track.y + 110, 5);
+}
+Plymouth.SetMessageFunction(message_callback);

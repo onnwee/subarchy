@@ -265,6 +265,8 @@ def boot(disk: Path, vars_file: Path) -> bool:
             ),
             "power_auto": serial.run("systemctl show -p Result --value subcult-power-auto; journalctl -b -u subcult-power-auto -o cat"),
             "plymouth": serial.run(f"{sudo} journalctl -b -o cat | grep -c 'Show Plymouth Boot Screen'"),
+            # The splash theme (ADR 0013): selected, and its files installed.
+            "plymouth_theme": serial.run("plymouth-set-default-theme; ls /usr/share/plymouth/themes/subarchy | sort | tr '\\n' ' '"),
             # Channels (ADR 0026): a new install is on stable; edge includes
             # Arch's mirrorlist; back to stable warns about newer packages.
             "channel": serial.run(
@@ -300,6 +302,8 @@ def boot(disk: Path, vars_file: Path) -> bool:
         time.sleep(3)
         screendump(qmp, VM / "greeter.png")
         results["greeter_colours"] = distinct_colours(VM / "greeter.png")
+        results["greeter_palette"] = colours_in(VM / "greeter.png", 800)
+        results["sddm_log"] = serial.run("journalctl -b -o cat | grep -i 'qml' | grep -ci 'error\\|is not a type\\|cannot assign\\|Could not load' ; true")
         serial.run(
             f"echo {PASSWORD} | sudo -S -p '' -v && sudo mkdir -p /etc/sddm.conf.d"
             f" && printf '[Autologin]\\nUser={USER}\\nSession=subarchy.desktop\\n'"
@@ -471,6 +475,10 @@ def boot(disk: Path, vars_file: Path) -> bool:
         and r["plymouth"].strip().isdigit() and int(r["plymouth"].strip()) > 0,
         "SDDM greeter running": "sddm-greeter" in r["greeter"],
         "greeter drew something": r["greeter_colours"] > 1,
+        "greeter shows the theme (ink background, no QML errors)": "100B19" in r["greeter_palette"]
+        and r["sddm_log"].strip().splitlines()[-1:] == ["0"],
+        "Plymouth theme selected with its images": "subarchy" in r["plymouth_theme"].split()
+        and all(f in r["plymouth_theme"] for f in ("logo.png", "subarchy.script", "entry.png", "progress-bar.png")),
         "Hyprland session started": r["hyprland"].strip() != "",
         "session runs under uwsm": "wayland-wm@" in r["uwsm"],
         "Subarchy Hyprland defaults loaded (flat look)": "gap data: 0 0 0 0" in r["hypr_opts"]
