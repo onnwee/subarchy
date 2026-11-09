@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// Secrets looks a CalDAV password up by source name.
+// Secrets looks a calendar source password up by source name.
 type Secrets interface {
 	Password(name string) (string, error)
 }
@@ -63,7 +63,7 @@ func Sync(ctx context.Context, cfg Config, prev Cache, now time.Time, fetch Fetc
 		res := SourceResult{Name: s.Name}
 		password := ""
 		var err error
-		if s.Kind == "caldav" {
+		if s.Kind == "caldav" || s.User != "" {
 			password, err = secrets.Password(s.Name)
 		}
 		var texts []string
