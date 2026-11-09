@@ -34,6 +34,7 @@ var (
 	snapshotRe = regexp.MustCompile(`^\d{4}/\d{2}/\d{2}$`)
 	headerRe   = regexp.MustCompile(`(?m)^# subcult channel: (stable|edge)(?: \(snapshot (\d{4}/\d{2}/\d{2})\))?$`)
 	includeRe  = regexp.MustCompile(`(?m)^(\s*Include\s*=\s*)/etc/pacman\.d/mirrorlist\s*$`)
+	repoRe     = regexp.MustCompile(`(?m)^\[subarchy\][\t ]*$`)
 )
 
 // Valid reports whether name is a channel.
@@ -160,8 +161,8 @@ func Refresh(root string) (changed bool, err error) {
 }
 
 // pointIncludes turns every `Include = /etc/pacman.d/mirrorlist` in
-// pacman.conf into the channel's mirrorlist. A pacman.conf without one
-// (already converted, or custom) is left as it is.
+// pacman.conf into the channel's mirrorlist and registers Subarchy's signed
+// repository on a fresh system. An existing Subarchy section is left intact.
 func pointIncludes(path string) error {
 	b, err := os.ReadFile(path)
 	if errors.Is(err, os.ErrNotExist) {
@@ -171,6 +172,9 @@ func pointIncludes(path string) error {
 		return err
 	}
 	out := includeRe.ReplaceAllString(string(b), "${1}/etc/pacman.d/subcult-mirrorlist")
+	if !repoRe.MatchString(out) {
+		out = strings.TrimRight(out, "\n") + "\n\n[subarchy]\nSigLevel = Required\nInclude = /etc/pacman.d/subcult-repo\n"
+	}
 	if out == string(b) {
 		return nil
 	}

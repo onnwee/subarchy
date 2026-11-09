@@ -105,6 +105,19 @@ func TestRefresh(t *testing.T) {
 	}
 }
 
+func TestSetRegistersSignedRepository(t *testing.T) {
+	r := root(t, "2026/11/08")
+	for _, name := range []string{Stable, Edge, Stable} {
+		if _, err := Set(r, name); err != nil {
+			t.Fatal(err)
+		}
+		conf := read(t, filepath.Join(r, PacmanConf))
+		if strings.Count(conf, "[subarchy]") != 1 || !strings.Contains(conf, "[subarchy]\nSigLevel = Required\nInclude = /etc/pacman.d/subcult-repo\n") {
+			t.Fatalf("signed repository missing or duplicated:\n%s", conf)
+		}
+	}
+}
+
 func TestSnapshotValidation(t *testing.T) {
 	r := root(t, "08-11-2026")
 	if _, err := Snapshot(r); err == nil {
