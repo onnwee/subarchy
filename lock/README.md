@@ -10,7 +10,12 @@ apart from the desktop shell, so a shell crash cannot unlock the session.
   unlocked. `subcult.lock status` over IPC reports the state; nothing
   unlocks over IPC.
 - `LockView.qml` is one output's surface: the SUBCULT lockup, the clock, and
-  the prompt that opens on the first key.
+  the prompt that opens on the first key. Its colours are the shell's tokens
+  (ADR 0037): `shell.qml` reads Subarchy's palette under the user's
+  `~/.config/subcult/theme/palette.json`, the file Pult writes, through the
+  shell's `ThemeModel.js` (a copy here, since Quickshell refuses imports
+  outside the program; `make shell-index-check` keeps the two equal), once
+  at start.
 - `LockModel.js` holds the state and key handling, tested in `tests/`.
 
 `subcult lock` starts the unit by hand; hypridle starts it on idle through
