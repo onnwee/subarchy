@@ -335,6 +335,7 @@ finish() {
 
 main() {
   local config="" yes=0
+  local -a args=("$@")
   while (($#)); do
     case $1 in
       --config) config=${2:?--config needs a file}; shift 2 ;;
@@ -346,6 +347,12 @@ main() {
   [[ -n $config ]] || die "--config FILE is required"
   ((EUID == 0)) || die "run as root"
   [[ -d /run/archiso ]] || die "run this from the Subarchy live ISO"
+  # arch-chroot binds /run privately. On a shared live mount tree, copies
+  # can remain in service namespaces after our unmount and keep LUKS busy.
+  # Isolate the whole install before creating any mounts.
+  if [[ ${SUBARCHY_INSTALL_PRIVATE_MOUNTS:-} != 1 ]]; then
+    exec unshare --mount --propagation private env SUBARCHY_INSTALL_PRIVATE_MOUNTS=1 "$0" "${args[@]}"
+  fi
   read_config "$config"
   check_disk
   ((yes)) || die "this wipes ${conf[DISK]}; pass --yes to continue"

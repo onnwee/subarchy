@@ -252,6 +252,9 @@ def boot(disk: Path, vars_file: Path) -> bool:
             "sysctl": serial.run("sysctl -n kernel.kptr_restrict kernel.dmesg_restrict net.ipv4.tcp_syncookies"),
             "dns": serial.run("resolvectl status | grep -i -m1 dnsovertls; resolvectl query archlinux.org", timeout=60),
             "services": serial.run("systemctl is-active avahi-daemon power-profiles-daemon; systemctl is-enabled bluetooth"),
+            # Exercise the CLI even without a battery: the auto-profile
+            # service otherwise exits before importing its Python bindings.
+            "power_cli": serial.run("powerprofilesctl --help >/dev/null; echo POWER_CLI_EXIT=$?"),
             "cmdline": serial.run("cat /proc/cmdline"),
             # GPU modes (ADR 0006): a VM has no hybrid graphics, so the uwsm
             # hook must stay silent and the session start in its default.
@@ -501,6 +504,7 @@ def boot(disk: Path, vars_file: Path) -> bool:
         and r["update_timer"].strip().splitlines()[-1].isdigit(),
         "power profile service (no battery: unchanged)": r["power_auto"].splitlines()[0:1] == ["success"]
         and "no system battery" in r["power_auto"],
+        "powerprofilesctl Python bindings available without a battery": "POWER_CLI_EXIT=0" in r["power_cli"],
         "update took a snapshot": "subcult update" in r["update"].split("UPDATE_EXIT")[-1],
         "marker created after the snapshots": "MARKED" in r["marker"],
         "@factory snapshot": any(line.endswith(" path @factory") for line in r["subvols"].splitlines()),
