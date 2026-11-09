@@ -6,7 +6,8 @@ import (
 )
 
 // CleanScale rounds a scale up to a value the mode can represent in
-// Hyprland's 1/120 steps, following Omarchy's display scale controls.
+// Hyprland's 1/120 steps, following Omarchy's display scale controls. At the
+// upper limit it uses the highest representable scale at or below 4.
 func CleanScale(width, height int, scale float64) (float64, error) {
 	if width <= 0 || height <= 0 || math.IsNaN(scale) || math.IsInf(scale, 0) || scale < 1 || scale > 4 {
 		return 0, fmt.Errorf("scale needs an active mode and a value from 1 to 4")
@@ -16,11 +17,18 @@ func CleanScale(width, height int, scale float64) (float64, error) {
 		a, b = b, a%b
 	}
 	k := int(math.Round(scale * 120))
-	if k > a {
-		k = a
+	upper := min(a, 4*120)
+	if k > upper {
+		k = upper
 	}
-	for a%k != 0 {
+	for k <= upper && a%k != 0 {
 		k++
+	}
+	if k > upper {
+		k = upper
+		for a%k != 0 {
+			k--
+		}
 	}
 	return float64(k) / 120, nil
 }
