@@ -56,5 +56,13 @@ Decision map item A3. Accepted 2026-11-06.
   needs no network (issue #74). One starter file is changed and marked in
   `NOTICE`: the update checker is off and the bootstrap clone is gone. The
   branding layer is #121.
+- 2026-11-08: the branding layer (issue #121): `lua/plugins/subarchy.lua`
+  in the starter config puts the SUBCULT mark (block characters rendered
+  from `branding/marks/mark-dark.svg`) on the snacks dashboard and sets the
+  colour scheme to `subcult`, a scheme the subarchy package installs that
+  reads the palette Theme Tender applies (`~/.config/subcult/theme/
+  palette.json`, else the system default) and maps its roles to highlight
+  groups; without a palette it is Subcult Ink. `vim.g.subarchy_layer` names
+  the layer. The VM test checks both after the offline start.
 
 Related: [[decision-map|Decision map]] · [[0044-default-apps|ADR 0044]] · [[0037-theming|ADR 0037]]

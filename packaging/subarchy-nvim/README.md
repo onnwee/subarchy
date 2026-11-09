@@ -1,7 +1,9 @@
 # subarchy-nvim
 
 Neovim with stock LazyVim, prebuilt (ADR 0045): the LazyVim starter at a
-pinned commit, one changed file (`subarchy-lazy.lua`, see `NOTICE`), and
+pinned commit, one changed file (`subarchy-lazy.lua`, see `NOTICE`), one
+added plugin layer (`subarchy.lua`: the SUBCULT mark on the dashboard and the
+`subcult` colour scheme that follows the active theme, #121), and
 every plugin at the commit `lazy-lock.json` names, cached in the package.
 The installer's new user gets both from `/etc/skel`, so the first `nvim`
 needs no network.

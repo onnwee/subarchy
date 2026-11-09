@@ -128,6 +128,7 @@ package() {
   install -Dm644 "$root/default/kitty/kitty.conf" "$pkgdir/etc/xdg/kitty/kitty.conf"
   install -Dm644 "$root/default/kitty/subcult-ink.conf" "$pkgdir/etc/xdg/kitty/subcult-ink.conf"
   install -Dm644 "$root/default/nvim/colors/subcult-ink.lua" "$pkgdir/usr/share/nvim/site/colors/subcult-ink.lua"
+  install -Dm644 "$root/default/nvim/colors/subcult.lua" "$pkgdir/usr/share/nvim/site/colors/subcult.lua"
   install -Dm644 "$root/default/nvim/plugin/subarchy-colors.lua" "$pkgdir/usr/share/nvim/site/plugin/subarchy-colors.lua"
 
   install -Dm644 "$root/default/fontconfig/44-subarchy-roles.conf" "$pkgdir/usr/share/fontconfig/conf.avail/44-subarchy-roles.conf"
