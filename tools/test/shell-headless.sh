@@ -351,8 +351,7 @@ mkdir -p "$home1/.config/subcult/shell"
 printf '{"layout": {"left": ["subcult.test-probe", "subcult.menu"]}}\n' >"$home1/.config/subcult/shell/bar.json"
 start_shell "$home1" "$work/qs1.log"
 check_log "$work/qs1.log"
-# On a CPU-limited runner, shader compilation can finish after IPC loads.
-# Wait for the rendered frame instead of treating process startup as paint.
+# IPC readiness precedes painting; require the rendered frame as well.
 for _ in $(seq 30); do
   shot HEADLESS-1
   [[ $(pixel 640 25) == 1F1830 ]] && break
