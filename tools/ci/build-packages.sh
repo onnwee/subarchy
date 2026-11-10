@@ -23,6 +23,10 @@ export MAKEFLAGS=-j4
 export JAVA_TOOL_OPTIONS=-XX:ActiveProcessorCount=4
 export GRADLE_OPTS='-Dorg.gradle.workers.max=2 -Dorg.gradle.daemon=false -Xmx512m'
 
+# What each channel's signed database lists, as "<channel> <name-version>".
+# A file lookup by name is not enough: see publish-packages.py.
+published=$(python3 "$root/tools/ci/publish-packages.py" --published)
+
 for dir in "$root"/packaging/*/ "$root"/packaging/aur/*/; do
   [[ -f $dir/PKGBUILD ]] || continue
   cd "$dir"
@@ -32,17 +36,14 @@ for dir in "$root"/packaging/*/ "$root"/packaging/aur/*/; do
   [[ -n $file_list ]] || { echo "build-packages: empty package list for $dir" >&2; exit 1; }
   mapfile -t files <<<"$file_list"
   # Published package versions are immutable. Always build the core and
-  # keyring; otherwise reuse a version only if both channels already have it.
+  # keyring; otherwise reuse a version only if both channels' databases
+  # list every package the PKGBUILD makes.
   cached=1
   for file in "${files[@]}"; do
+    entry=$(basename "$file" .pkg.tar.zst)
+    entry=${entry%-*}
     for channel in stable edge; do
-      status=$(curl --silent --show-error --head --output /dev/null --write-out '%{http_code}' \
-        "https://git.subcult.tv/api/packages/subculture-collective/arch/$channel/x86_64/$(basename "$file")?ci-check=$(date +%s%N)")
-      case $status in
-        200) ;;
-        404) cached=0 ;;
-        *) echo "build-packages: registry lookup returned HTTP $status" >&2; exit 1 ;;
-      esac
+      grep -qxF "$channel $entry" <<<"$published" || cached=0
     done
   done
   if ((cached)) && [[ $dir != "$root/packaging/subarchy/" && $dir != "$root/packaging/subarchy-keyring/" ]]; then

@@ -1,38 +1,51 @@
 #!/usr/bin/env python3
 """Upload immutable packages from a main CI run; Gitea signs what it serves."""
 
+import io
 import os
 from pathlib import Path
+import sys
+import tarfile
 import time
 import urllib.error
 import urllib.request
 
 
 REGISTRY = "https://git.subcult.tv/api/packages/subculture-collective/arch"
+CHANNELS = ("stable", "edge")
 
 
-def exists(url):
+def entry(package):
+    """A package file's database entry: its name without architecture and suffix."""
+    return package.name.removesuffix(".pkg.tar.zst").rsplit("-", 1)[0]
+
+
+def published(channel):
+    """The name-version entries in a channel's database, which is what pacman
+    resolves against. A lookup by file name is not enough: the registry
+    answers a request for nvidia-580xx-utils-... with
+    lib32-nvidia-580xx-utils-..., whose name ends the same way."""
+    # The query keeps a stale copy out of the CDN's answer.
+    request = urllib.request.Request(
+        f"{REGISTRY}/{channel}/x86_64/subarchy.db?ci-check={time.time_ns()}",
+        headers={"User-Agent": "subarchy-ci/1"},
+        method="GET",
+    )
     try:
-        # Keep a pre-upload 404 out of the CDN cache for pacman's download URL.
-        request = urllib.request.Request(
-            f"{url}?ci-check={time.time_ns()}",
-            headers={"User-Agent": "subarchy-ci/1"},
-            method="HEAD",
-        )
         with urllib.request.urlopen(request, timeout=60) as response:
-            if response.status != 200:
-                raise RuntimeError(f"registry lookup returned HTTP {response.status}")
-            return True
+            data = response.read()
     except urllib.error.HTTPError as error:
         error.close()
         if error.code == 404:
-            return False
+            return set()  # no database before the channel's first upload
         raise RuntimeError(f"registry lookup returned HTTP {error.code}") from None
+    with tarfile.open(fileobj=io.BytesIO(data)) as database:
+        return {name.removesuffix("/desc") for name in database.getnames() if name.endswith("/desc")}
 
 
-def publish(package, channel, token):
+def publish(package, channel, token, listed):
     url = f"{REGISTRY}/{channel}"
-    if exists(f"{url}/x86_64/{package.name}"):
+    if entry(package) in listed:
         print(f"already published: {channel}/{package.name}")
         return
     # Stream the file, with credentials only in the request header. Never
@@ -65,16 +78,23 @@ def main():
     token = os.environ.get("SUBARCHY_PACKAGE_TOKEN", "")
     if not token:
         raise SystemExit("SUBARCHY_PACKAGE_TOKEN is missing")
+    listed = {channel: published(channel) for channel in CHANNELS}
     packages = sorted(Path("build/packages").glob("*.pkg.tar.zst"))
     if not packages:
         raise SystemExit("no packages to publish")
     for package in packages:
-        for channel in ("stable", "edge"):
-            publish(package, channel, token)
+        for channel in CHANNELS:
+            publish(package, channel, token, listed[channel])
 
 
 if __name__ == "__main__":
     try:
-        main()
+        if sys.argv[1:] == ["--published"]:
+            # Read-only, for the builder: "<channel> <name-version>" per line.
+            for channel in CHANNELS:
+                for name in sorted(published(channel)):
+                    print(channel, name)
+        else:
+            main()
     except (RuntimeError, urllib.error.URLError) as error:
         raise SystemExit(str(error)) from None
