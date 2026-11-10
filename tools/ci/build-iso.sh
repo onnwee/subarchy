@@ -60,7 +60,8 @@ done
 pacman --config /tmp/registry-pacman.conf -Syddw --noconfirm "${names[@]}" ||
   { echo "build-iso: a pinned package is not in the stable registry; the packages workflow publishes them on main" >&2; exit 1; }
 rm -f -- "$repo"/*.sig
-chown -R builder: "$repo"
+# build/ and the repository were made by root just now.
+chown -R builder: "$root/build"
 
 cd "$root"
 runuser -u builder -- make iso
