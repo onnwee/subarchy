@@ -125,18 +125,42 @@ class Serial:
         start = echoes[-1] + 1 if echoes else 0
         return "\n".join(lines[start:-1])
 
-    def claim_prompt(self, timeout: float) -> None:
+    def settle(self, quiet: float, timeout: float) -> None:
+        """Read until the guest has printed nothing for `quiet` seconds."""
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline and self.sel.select(quiet):
+            chunk = self.proc.stdout.read(65536) or b""
+            self.buf += chunk
+            self.log.write(chunk)
+            self.log.flush()
+
+    def claim_prompt(self, timeout: float, attempt: float = 5) -> None:
         """Replace the login shell with a plain bash, retrying until its prompt shows.
 
         zsh prompts (grml on the ISO) redraw themselves, so the tests run
         bash. The quoted halves keep the echoed command from matching PROMPT.
         """
         deadline = time.monotonic() + timeout
+        # A shell that is still starting loses what is typed at it, so wait
+        # for the login's output to stop first.
+        self.settle(min(1.0, attempt), min(15.0, timeout))
+        first = True
         while time.monotonic() < deadline:
-            # A serial console is 80 columns; tools like findmnt truncate to fit.
-            self.send("stty cols 1000; exec env TERM=dumb PS1='SUBARCHY''-READY> ' bash --norc --noprofile -i\n")
+            # The front of the line can still be lost. What is left may end
+            # inside a quote, and zsh then holds every later line as its
+            # continuation; Ctrl-C abandons that. Not on the first try,
+            # where it could still reach the login prompt.
+            if not first:
+                self.send("\x03")
+            first = False
+            self.send("exec env TERM=dumb PS1='SUBARCHY''-READY> ' bash --norc --noprofile -i\n")
             try:
-                self.expect(PROMPT, 5)
+                self.expect(PROMPT, attempt)
+                # A serial console is 80 columns; tools like findmnt truncate
+                # to fit. Set at the claimed prompt, where nothing is lost.
+                self.buf = b""
+                self.send("stty cols 1000\n")
+                self.expect(PROMPT, attempt)
                 self.buf = b""
                 return
             except TimeoutError:
