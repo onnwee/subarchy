@@ -29,8 +29,15 @@ type ExecRunner struct {
 }
 
 // Run executes argv with the terminal attached.
+//
+// When ctx is cancelled (Ctrl+C, a closed terminal, SIGTERM) the command
+// gets SIGINT and is waited for, not killed. These commands change the
+// system: pacman finishes the package it is on and removes its lock on
+// SIGINT, and a killed pacman leaves a half-installed package and
+// /var/lib/pacman/db.lck behind.
 func (r ExecRunner) Run(ctx context.Context, argv ...string) error {
 	cmd := exec.CommandContext(ctx, argv[0], argv[1:]...)
+	cmd.Cancel = func() error { return cmd.Process.Signal(os.Interrupt) }
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = r.Stdin, r.Stdout, r.Stderr
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("%s: %w", strings.Join(argv, " "), err)
