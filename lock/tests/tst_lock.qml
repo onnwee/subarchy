@@ -40,6 +40,34 @@ TestCase {
     compare(Model.key(r.state, "text", "x").state.password, "pw", "nothing changes while checking")
   }
 
+  // pam_unix holds a failure for about two seconds. A retry typed during
+  // that wait must not lose its first characters: three failures reach
+  // faillock's default limit.
+  function test_typingDuringACheckIsKeptForTheRetry() {
+    let s = Model.key(type(Model.initial(), "wrong"), "Return", "\r").state
+    s = type(s, "rightx")
+    s = Model.key(s, "Backspace", "").state
+    compare(s.password, "wrong", "the password being checked is untouched")
+    compare(Model.key(s, "Return", "\r").submit, false, "no second check while one runs")
+    s = Model.failed(s, Model.failureMessage(1))
+    compare(s.password, "right", "what was typed during the check is the next attempt")
+    verify(!s.checking)
+    let ok = Model.key(type(Model.initial(), "pw"), "Return", "\r").state
+    ok = Model.unlocked(type(ok, "more"))
+    compare(ok.password, "")
+    compare(ok.typedAhead, "", "nothing typed is kept after the unlock")
+    let cleared = Model.key(type(Model.initial(), "pw"), "Return", "\r").state
+    cleared = Model.key(type(cleared, "abc"), "Escape", "").state
+    compare(Model.failed(cleared, "x").password, "", "Escape during a check clears what was typed ahead")
+  }
+
+  function test_deleteAddsNothing() {
+    compare(Model.keyName(16777223), "Delete")
+    const s = type(Model.initial(), "pw")
+    compare(Model.key(s, Model.keyName(16777223), "\u007f").state.password, "pw")
+    compare(Model.key(s, "text", "\u007f").state.password, "pw", "U+007F is not a character of a password")
+  }
+
   function test_controlCharactersIgnored() {
     const s = Model.key(Model.initial(), "text", "\u001b").state
     compare(s.password, "")
