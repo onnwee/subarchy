@@ -24,6 +24,7 @@ func newApp(t *testing.T) (*app, *bytes.Buffer, *bytes.Buffer, *[][]string) {
 			return nil
 		},
 		initramfs: func() error { return errors.New("mkinitcpio should not run in tests") },
+		euid:      func() int { return 1000 },
 	}
 	if err := os.MkdirAll(filepath.Join(home, "system/default/theme"), 0o755); err != nil {
 		t.Fatal(err)
@@ -93,5 +94,22 @@ func TestMetadata(t *testing.T) {
 	a, out, _, _ := newApp(t)
 	if code := a.run([]string{"--subcult-metadata"}); code != 0 || !strings.Contains(out.String(), `"apply-system"`) || !strings.Contains(out.String(), `"hidden":true`) {
 		t.Errorf("metadata: %d %s", code, out.String())
+	}
+}
+
+// pkexec authorizes the program, whatever its arguments. As root, --root
+// would let the caller point the rewrites at files of its choosing.
+func TestSystemApplyRefusesAnotherRootAsRoot(t *testing.T) {
+	a, _, errOut, _ := newApp(t)
+	a.euid = func() int { return 0 }
+	root := t.TempDir()
+	if code := a.run([]string{"system-apply", "--root", root, "--colors", "base=#000000,text=#ffffff"}); code != 2 {
+		t.Fatalf("exit %d, want 2; stderr: %s", code, errOut)
+	}
+	if entries, _ := os.ReadDir(root); len(entries) != 0 {
+		t.Errorf("something was written under the given root: %v", entries)
+	}
+	if !strings.Contains(errOut.String(), "--root") {
+		t.Errorf("the refusal does not name the option: %q", errOut)
 	}
 }

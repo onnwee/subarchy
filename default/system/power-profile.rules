@@ -1,4 +1,9 @@
 # Subarchy (ADR 0021): pick the power profile when the power source changes.
 # Installed to /usr/lib/udev/rules.d/90-subarchy-power.rules.
-SUBSYSTEM=="power_supply", ATTR{type}=="Mains", RUN+="/usr/bin/systemd-run --no-block --collect --unit=subcult-power-auto-udev --property=After=power-profiles-daemon.service /usr/bin/subcult-power-auto"
-SUBSYSTEM=="power_supply", ATTR{type}=="USB", RUN+="/usr/bin/systemd-run --no-block --collect --unit=subcult-power-auto-udev --property=After=power-profiles-daemon.service /usr/bin/subcult-power-auto"
+# Unplugging a USB-C charger raises an event for each supply (ACPI Mains
+# and UCSI USB) within milliseconds. Each gets a run of its own, one after
+# the other under a lock, so the last one reads the settled state. A fixed
+# unit name made systemd refuse the second run while the first was loaded,
+# and the first could have read the other supply as still online.
+SUBSYSTEM=="power_supply", ATTR{type}=="Mains", RUN+="/usr/bin/systemd-run --no-block --collect --property=After=power-profiles-daemon.service /usr/bin/flock /run/subcult-power-auto.lock /usr/bin/subcult-power-auto"
+SUBSYSTEM=="power_supply", ATTR{type}=="USB", RUN+="/usr/bin/systemd-run --no-block --collect --property=After=power-profiles-daemon.service /usr/bin/flock /run/subcult-power-auto.lock /usr/bin/subcult-power-auto"

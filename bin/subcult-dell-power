@@ -183,7 +183,8 @@ set_profile() {
     fi
   fi
   if [[ $(<"$dir/profile") != "$profile" ]]; then
-    if ! write_attr "$dir/profile" "$profile" "the firmware profile"; then
+    # In a subshell: write_attr fails through die, which exits.
+    if ! (write_attr "$dir/profile" "$profile" "the firmware profile"); then
       if [[ -n ${previous:-} ]]; then
         powerprofilesctl set "$previous" >/dev/null 2>&1 || true
       fi

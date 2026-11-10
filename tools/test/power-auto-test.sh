@@ -35,4 +35,11 @@ expect laptop-battery "would set power-saver"
 expect usb-c "would set balanced"
 expect desktop "no system battery; profile unchanged"
 expect desktop-mouse "no system battery; profile unchanged"
+# The udev rule: two events arrive together when a USB-C charger is pulled.
+# A fixed transient unit name makes systemd refuse the second run while the
+# first is loaded, so the rule must not name one, and the runs share a lock.
+rules="$root/default/system/power-profile.rules"
+! grep -v '^#' "$rules" | grep -q -- '--unit=' || { echo "power-auto-test: the udev rule names its transient unit; a second event would be dropped" >&2; exit 1; }
+[[ $(grep -v '^#' "$rules" | grep -c '/usr/bin/flock /run/subcult-power-auto.lock /usr/bin/subcult-power-auto"$') == 2 ]] ||
+  { echo "power-auto-test: both udev rules must run subcult-power-auto under the shared lock" >&2; exit 1; }
 echo "power-auto-test: ok"
