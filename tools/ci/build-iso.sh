@@ -24,15 +24,19 @@ printf 'Server = https://archive.archlinux.org/repos/%s/$repo/os/$arch\n' "$snap
 sed -i '/^\[options\]/a DisableDownloadTimeout' /etc/pacman.conf
 # The container may be newer than Subarchy's staged Arch snapshot.
 pacman -Syyuu --noconfirm
-pacman -S --noconfirm --needed base-devel git go python sudo archiso qemu-system-x86 edk2-ovmf \
-  pacman-contrib fakeroot hypridle librsvg xorg-xcursorgen hyprcursor python-pyte python-pillow \
-  ffmpeg ttf-dejavu qt6-multimedia
+pacman -S --noconfirm --needed base-devel git go python sudo archiso qemu-system-x86 edk2-ovmf
 
 # makepkg refuses to run as root; build.sh uses sudo for pacman and mkarchiso.
 useradd -m builder
 echo 'builder ALL=(ALL) NOPASSWD: ALL' >/etc/sudoers.d/builder
 chown -R builder: "$root"
 runuser -u builder -- git config --global --add safe.directory "$root"
+
+# What the core package needs to build and to pass makepkg's dependency
+# check, read from its PKGBUILD so this list cannot fall behind it.
+mapfile -t deps < <(cd "$root/packaging/subarchy" && runuser -u builder -- makepkg --printsrcinfo |
+  awk '$1 ~ /^(make)?depends$/ {print $3}' | sort -u)
+pacman -S --noconfirm --needed "${deps[@]}"
 
 # The same version the packages workflow publishes for this commit.
 sed -i "s/^pkgrel=.*/pkgrel=$(git rev-list --count HEAD)/" "$root/packaging/subarchy/PKGBUILD"
