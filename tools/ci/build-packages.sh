@@ -3,13 +3,8 @@
 set -euo pipefail
 
 root=$(git rev-parse --show-toplevel)
-snapshot=$(cat "$root/default/pacman/snapshot")
-[[ $snapshot =~ ^[0-9]{4}/[0-9]{2}/[0-9]{2}$ ]] || { echo "build-packages: invalid snapshot date" >&2; exit 1; }
-# Pacman expands its own repository and architecture placeholders.
-# shellcheck disable=SC2016
-printf 'Server = https://archive.archlinux.org/repos/%s/$repo/os/$arch\n' "$snapshot" >/etc/pacman.d/mirrorlist
 # The container may be newer than Subarchy's staged Arch snapshot.
-pacman -Syyuu --noconfirm
+"$root/tools/ci/pin-snapshot.sh"
 out="$root/build/packages"
 mkdir -p "$out"
 useradd -m builder
