@@ -2,7 +2,7 @@
 # subcult:summary=Unlock the disk with the TPM instead of typing the passphrase
 # subcult:args=enable | disable | status
 # subcult:requires-sudo=true
-# subcult:examples=sudo subcult disk tpm enable | subcult disk tpm status
+# subcult:examples=sudo subcult disk tpm enable | sudo subcult disk tpm status
 #
 # ADR 0010 and 0012. Binds the LUKS volume to TPM PCR 7, which records the
 # Secure Boot state and keys, so kernel and bootloader updates do not break
@@ -12,7 +12,11 @@
 set -euo pipefail
 
 die() { echo "subcult disk tpm: $*" >&2; exit 1; }
-sb_var=/sys/firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c
+# SUBCULT_TEST_ROOT: a stand-in filesystem root for tools/test/secureboot-test.sh.
+root=${SUBCULT_TEST_ROOT:-}
+sb_var=$root/sys/firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c
+# Reading the volume's state needs root, like changing it.
+need_root() { [[ -n $root ]] || ((EUID == 0)) || die "run with sudo"; }
 
 luks_device() {
   local dev
@@ -26,10 +30,14 @@ has_tpm_slot() {
 }
 
 set_cmdline_option() { # add|remove
-  local conf=/etc/default/limine
+  local conf=$root/etc/default/limine
   if [[ $1 == add ]]; then
     grep -q 'tpm2-device=auto' "$conf" ||
       sed -i 's/rd\.luks\.options=discard/rd.luks.options=discard,tpm2-device=auto/' "$conf"
+    # The edit looks for the option the installer wrote. Without it nothing
+    # changed, and the disk would keep asking for the passphrase.
+    grep -q 'tpm2-device=auto' "$conf" ||
+      die "$conf has no rd.luks.options=discard to extend; add rd.luks.options=tpm2-device=auto to its kernel command line and run this again"
   else
     sed -i 's/,tpm2-device=auto//' "$conf"
   fi
@@ -37,23 +45,29 @@ set_cmdline_option() { # add|remove
 
 case ${1:-status} in
   status)
+    need_root
     dev=$(luks_device)
     if has_tpm_slot "$dev"; then echo "TPM unlock: on ($dev)"; else echo "TPM unlock: off ($dev)"; fi
     ;;
   enable)
-    ((EUID == 0)) || die "run with sudo"
+    need_root
     [[ -r $sb_var && $(od -An -t u1 -j4 -N1 "$sb_var" | tr -d ' ') == 1 ]] ||
       die "turn Secure Boot on first (sudo subcult secureboot setup)"
-    [[ -e /dev/tpmrm0 ]] || die "no TPM 2.0 found"
+    [[ -e $root/dev/tpmrm0 ]] || die "no TPM 2.0 found"
     dev=$(luks_device)
-    has_tpm_slot "$dev" && die "TPM unlock is already on"
-    systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 "$dev"
+    # A key enrolled by a run that then failed is kept; the boot entry is
+    # what is still missing, so go on to it.
+    if has_tpm_slot "$dev"; then
+      echo "The TPM key is already enrolled; updating the boot entry."
+    else
+      systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 "$dev"
+    fi
     set_cmdline_option add
     limine-update
     echo "TPM unlock is on. The passphrase still works as the recovery key."
     ;;
   disable)
-    ((EUID == 0)) || die "run with sudo"
+    need_root
     dev=$(luks_device)
     systemd-cryptenroll --wipe-slot=tpm2 "$dev"
     set_cmdline_option remove
