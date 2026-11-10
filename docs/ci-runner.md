@@ -3,7 +3,7 @@ title: "KVM CI runner"
 type: guide
 status: active
 created: 2026-11-08
-updated: 2026-11-08
+updated: 2026-11-09
 tags: [guide, ci, delivery]
 ---
 
@@ -23,7 +23,8 @@ not mount it into jobs. Actions caching is disabled.
 The label uses an Arch container. `.gitea/workflows/kvm.yml` checks at least
 60 GB free on its filesystem, then starts QEMU with `-enable-kvm` and
 requires the monitor to report `kvm support: enabled`. This is a runner
-capability check; ISO builds and installed-system tests are separate jobs.
+capability check. `.gitea/workflows/iso.yml` builds the live ISO and boots
+it on this runner (#60); the installed-system test is a separate job (#68).
 
 ## Operation and recovery
 

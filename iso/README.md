@@ -29,5 +29,11 @@ says Subarchy, the kernel is `linux-zen`, and systemd reports `running` or
 greeting after 12 s, shell after 34 s, state `running`, no failed units.
 The image is 1.6 GB.
 
-CI does not build the ISO yet: `mkarchiso` needs root and mount namespaces,
-which the Gitea runners' containers do not grant.
+CI builds and boots the image in `.gitea/workflows/iso.yml` on the
+`subarchy-kvm` runner, whose job containers are privileged and have
+`/dev/kvm` ([KVM CI runner](../docs/ci-runner.md)): on `main`, on demand
+(`workflow_dispatch`), and on pull requests that change the image or the
+pipeline. `tools/ci/build-iso.sh` builds the core package from the checkout,
+takes the pinned rebuilds from the signed stable registry and the install
+set from Subarchy's Arch snapshot, then runs `make iso` and the boot test.
+The image is kept as the `subarchy-iso` artifact for 7 days.
