@@ -11,3 +11,6 @@ __pycache__/
 .obsidian/plugins/table-editor-obsidian/data.json
 .trash/
 build/
+
+# Locally built Go binaries
+/subarchy-setup
