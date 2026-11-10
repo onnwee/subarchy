@@ -31,7 +31,7 @@ function needsPassword(n) {
 // Sorted for the list: connected, known, then signal; one row per name
 // (the strongest access point), nameless networks dropped.
 function sortNetworks(list) {
-  const seen = {}
+  const seen = Object.create(null) // names are free text; no Object members
   const out = []
   for (const n of list || []) {
     if (!n || !n.name)

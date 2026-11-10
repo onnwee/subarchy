@@ -227,7 +227,9 @@ function quicklinks(systemText, userText) {
   }
   const sys = read(systemText)
   const user = read(userText)
-  const links = {}
+  // No prototype: the table is looked up by the first word of what the user
+  // typed, and "constructor" or "toString" must not find Object's members.
+  const links = Object.create(null)
   for (const src of [sys.quicklinks, user.quicklinks]) {
     if (!src || typeof src !== "object")
       continue
@@ -263,6 +265,13 @@ function webTarget(ql, text) {
   if (!def)
     return null
   return { key: ql.default, name: def.name, query: t, url: fill(def.url, t) }
+}
+
+// Whether an Enter key event confirms the dangerous command the launcher
+// is asking about. A repeat of a held key does not: the press that asked
+// is still down, and the warning has not been read.
+function confirms(isAutoRepeat) {
+  return !isAutoRepeat
 }
 
 // --- Script commands, aliases and snippets --------------------------------
