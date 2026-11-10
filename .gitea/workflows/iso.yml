@@ -1,0 +1,60 @@
+name: iso
+
+# Builds the live ISO and boots it in QEMU (issue #60). On main, on demand,
+# and on pull requests that change the image or this pipeline: the runner
+# takes one job at a time, so other pull requests do not wait for an image.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .gitea/workflows/iso.yml
+      - tools/ci/build-iso.sh
+      - tools/iso/**
+      - iso/**
+
+permissions:
+  contents: read
+
+concurrency:
+  group: iso-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  GOMAXPROCS: "4"
+
+jobs:
+  build:
+    runs-on: subarchy-kvm
+    timeout-minutes: 120
+    steps:
+      - name: Check disk reserve
+        run: test "$(df -B1 --output=avail / | tail -1)" -ge 60000000000
+      - name: Install checkout tools
+        run: pacman -Syu --noconfirm --needed git nodejs
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Build the ISO and boot it
+        run: |
+          git config --global --add safe.directory "$PWD"
+          tools/ci/build-iso.sh
+      - name: Keep the build logs
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: iso-logs
+          path: |
+            build/makepkg.log
+            build/offline-download.log
+            build/iso-boot.log
+          retention-days: 7
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v3
+        with:
+          name: subarchy-iso
+          path: build/iso/*.iso
+          retention-days: 7
+          if-no-files-found: error
