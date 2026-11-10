@@ -3,7 +3,7 @@ title: "Package publishing"
 type: guide
 status: active
 created: 2026-11-08
-updated: 2026-11-08
+updated: 2026-11-09
 tags: [guide, ci, packages]
 ---
 
@@ -38,8 +38,14 @@ release number. The build uses a full history checkout.
 
 Other PKGBUILDs retain their reviewed versions. Bump `pkgver` or `pkgrel`
 when changing their content. Published versions are immutable: the uploader
-leaves an existing file alone, and the builder can reuse a pinned version
+leaves an existing version alone, and the builder can reuse a pinned version
 already present in both channels. It always rebuilds the core and keyring.
+Both read "present" from the channel's signed database, the list pacman
+resolves against. A request for a package file by name does not prove it:
+the registry answered one for `nvidia-580xx-utils-…` with
+`lib32-nvidia-580xx-utils-…`, so the 64-bit package and
+`opencl-nvidia-580xx` were skipped as published and never uploaded, and
+every publication on `main` failed its verification (found 2026-11-09).
 An upload error fails the job; rerunning after a partial upload skips the
 files that reached the registry. No existing package is deleted or replaced.
 
