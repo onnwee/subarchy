@@ -93,7 +93,8 @@ func buildShape(ctx context.Context, r update.Runner, o BuildOptions, s Shape, w
 		if err := r.Run(ctx, "rsvg-convert", "-w", fmt.Sprint(size), "-h", fmt.Sprint(size), "-o", png, svgPath); err != nil {
 			return err
 		}
-		fmt.Fprintf(&cfg, "%d %d %d %s\n", size, s.HotX*size/32, s.HotY*size/32, png)
+		// Rounded to the nearest pixel: truncating put 13/32 at 24 px on 9, not 10.
+		fmt.Fprintf(&cfg, "%d %d %d %s\n", size, (s.HotX*size+16)/32, (s.HotY*size+16)/32, png)
 	}
 	cfgPath := filepath.Join(work, s.Name+".cfg")
 	if err := os.WriteFile(cfgPath, []byte(cfg.String()), 0o644); err != nil {
@@ -124,12 +125,21 @@ func buildShape(ctx context.Context, r update.Runner, o BuildOptions, s Shape, w
 }
 
 // swap replaces dst with src: the old theme moves aside to old (inside the
-// build's scratch folder, removed with it), the new one takes its name.
+// build's scratch folder, removed with it), the new one takes its name. If
+// the new one cannot move in, the old theme goes back.
 func swap(src, dst, old string) error {
+	moved := false
 	if _, err := os.Lstat(dst); err == nil {
 		if err := os.Rename(dst, old); err != nil {
 			return err
 		}
+		moved = true
 	}
-	return os.Rename(src, dst)
+	err := os.Rename(src, dst)
+	if err != nil && moved {
+		if back := os.Rename(old, dst); back != nil {
+			return fmt.Errorf("%w; the previous theme is still at %s: %v", err, old, back)
+		}
+	}
+	return err
 }

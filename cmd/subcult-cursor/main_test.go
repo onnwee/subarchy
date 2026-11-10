@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"git.subcult.tv/subculture-collective/subarchy/internal/cursor/cursortest"
 )
 
 type noRunner struct{ calls int }
@@ -77,5 +79,23 @@ func TestSetRejectsBadSize(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(e.home, ".config", "subcult", "cursor.json")); !os.IsNotExist(err) {
 		t.Error("cursor.json written after a refused set")
+	}
+}
+
+func TestApplyUsesTheDefaultSizeForASavedSizeThatIsNotOffered(t *testing.T) {
+	e, errb := testEnv(t, "")
+	e.runner = &cursortest.Tools{}
+	out := e.stdout.(*bytes.Buffer)
+	settings := filepath.Join(e.home, ".config", "subcult", "cursor.json")
+	os.MkdirAll(filepath.Dir(settings), 0o755)
+	os.WriteFile(settings, []byte(`{"role": "lavender", "size": 30}`), 0o644)
+	if code := run(context.Background(), []string{"apply"}, e); code != 0 {
+		t.Fatalf("exit %d, want 0; stderr: %s", code, errb)
+	}
+	if !strings.Contains(out.String(), "at 24 px") {
+		t.Errorf("want the default size, got %q", out)
+	}
+	if !strings.Contains(errb.String(), "size 30") {
+		t.Errorf("want a warning naming the bad size, got %q", errb)
 	}
 }
