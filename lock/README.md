@@ -32,4 +32,10 @@ by name. DPMS commands explicitly use `action`, so repeated wake requests keep
 the display on. The password handler reclaims keyboard focus on activation,
 click and Tab; the visible prompt shows its focus and an empty-field label.
 
+If the lock program dies while locked, Hyprland keeps the session locked and
+the unit starts a replacement that takes the lock over; the Hyprland
+defaults set `misc.allow_session_lock_restore` for that
+([ADR 0070](../docs/decisions/0070-lock-crash-recovery.md), which also has
+the recovery from a text console when the replacement keeps failing).
+
 Fingerprint unlock remains in #117.

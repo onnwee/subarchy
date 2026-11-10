@@ -59,6 +59,13 @@ def colours_in(png: Path, rows: int) -> set[str]:
     return {m.upper() for m in re.findall(r"#([0-9A-Fa-f]{6})", out.stdout)}
 
 
+def has_colour(png: Path, colour: str) -> bool:
+    """Whether any pixel of an image has this RRGGBB colour."""
+    out = subprocess.run(["magick", str(png), "-format", "%c", "histogram:info:-"],
+                         capture_output=True, text=True, check=True)
+    return colour.upper() in {m.upper() for m in re.findall(r"#([0-9A-Fa-f]{6})", out.stdout)}
+
+
 def qemu_command(vars_file: Path, *extra: str, memory: str = "4096", network: bool = True) -> list[str]:
     """Base QEMU command line: q35, OVMF, serial on stdio, user networking (or none)."""
     cmd = [

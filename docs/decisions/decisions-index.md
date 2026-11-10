@@ -93,5 +93,6 @@ order.
 | [[0066-versioning\|0066]] | Versioning |
 | [[0067-user-manual\|0067]] | User manual |
 | [[0069-update-authentication\|0069]] | Authenticate system updates |
+| [[0070-lock-crash-recovery\|0070]] | Lock crash recovery |
 
 Related: [[home|Docs home]]
