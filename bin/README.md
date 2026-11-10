@@ -15,6 +15,7 @@ the launcher and the user manual read:
 # subcult:examples=subcult theme set subcult-minimal | subcult theme list
 # subcult:requires-sudo=true    # optional
 # subcult:dangerous=true        # optional: the launcher asks before running it
+# subcult:silent=true           # optional: no output to read; the launcher opens no terminal
 # subcult:hidden=true           # optional: left out of `subcult commands`
 ```
 

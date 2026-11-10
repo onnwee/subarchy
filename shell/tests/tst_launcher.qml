@@ -111,6 +111,7 @@ TestCase {
     { route: "subcult font set", group: "font", summary: "Use a font", args: "<family>", dangerous: false },
     { route: "subcult font", group: "font", summary: "Fonts", args: "", dangerous: false },
     { route: "subcult app remove", group: "app", summary: "Remove apps", args: "<id>...", dangerous: true },
+    { route: "subcult lock", group: "lock", summary: "Lock the session", args: "", silent: true },
     { route: "subcult secret", group: "secret", summary: "", hidden: true },
     { route: "other thing", group: "x" }
   ] })
@@ -144,12 +145,23 @@ TestCase {
 
   function test_commands() {
     const c = Model.commands(commandsJson)
-    compare(c.map(x => x.id), ["subcult font set", "subcult font", "subcult app remove"], "hidden and foreign routes left out")
+    compare(c.map(x => x.id), ["subcult font set", "subcult font", "subcult app remove", "subcult lock"], "hidden and foreign routes left out")
     compare(c[0].name, "font set")
     compare(c[2].dangerous, true)
     compare(c[0].kind, "command")
     compare(Model.commands("{broken"), [])
     verify(Model.match(c[0], "font") > 0, "commands rank like apps")
+    compare(c.map(x => x.silent), [false, false, false, true])
+  }
+
+  function test_commandArgv() {
+    const c = Model.commands(commandsJson)
+    const font = Model.commandArgv(Object.assign({}, c[0], { args: ["Iosevka Term"] }))
+    compare(font.slice(0, 5), ["uwsm-app", "--", "xdg-terminal-exec", "sh", "-c"])
+    verify(font[5].indexOf("Press Enter to close") >= 0, "the output stays readable")
+    compare(font.slice(-4), ["sh", "font", "set", "Iosevka Term"])
+    compare(Model.commandArgv(c[0]).slice(-3), ["sh", "font", "set"], "the usage text is not an argument")
+    compare(Model.commandArgv(c[3]), ["uwsm-app", "--", "subcult", "lock"], "a silent command opens no terminal")
   }
 
   function test_commandCall() {

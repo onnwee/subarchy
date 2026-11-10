@@ -9,6 +9,7 @@
 //	# subcult:hidden=true
 //	# subcult:requires-sudo=true
 //	# subcult:dangerous=true
+//	# subcult:silent=true
 package dispatch
 
 import (
@@ -34,6 +35,9 @@ type Metadata struct {
 	Hidden       bool     `json:"hidden"`
 	RequiresSudo bool     `json:"requires_sudo"`
 	Dangerous    bool     `json:"dangerous"`
+	// Silent marks a command with no output to read; the launcher runs it
+	// without a terminal.
+	Silent bool `json:"silent"`
 }
 
 // ReadMetadata parses the metadata header of the file at path. Binary files
@@ -93,6 +97,8 @@ func ParseMetadata(r io.Reader) (Metadata, error) {
 			m.RequiresSudo = value == "true"
 		case "dangerous":
 			m.Dangerous = value == "true"
+		case "silent":
+			m.Silent = value == "true"
 		}
 	}
 	if err := sc.Err(); err != nil {

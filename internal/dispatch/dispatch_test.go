@@ -38,8 +38,8 @@ func TestParseMetadata(t *testing.T) {
 		in   string
 		want Metadata
 	}{
-		{"full header", "#!/bin/bash\n# subcult:summary=Apply a theme\n# subcult:args=<id>\n# subcult:examples=a | b |\n# subcult:hidden=true\n# subcult:requires-sudo=true\n# subcult:dangerous=true\n",
-			Metadata{Summary: "Apply a theme", Args: "<id>", Examples: []string{"a", "b"}, Hidden: true, RequiresSudo: true, Dangerous: true}},
+		{"full header", "#!/bin/bash\n# subcult:summary=Apply a theme\n# subcult:args=<id>\n# subcult:examples=a | b |\n# subcult:hidden=true\n# subcult:requires-sudo=true\n# subcult:dangerous=true\n# subcult:silent=true\n",
+			Metadata{Summary: "Apply a theme", Args: "<id>", Examples: []string{"a", "b"}, Hidden: true, RequiresSudo: true, Dangerous: true, Silent: true}},
 		{"blank lines and other comments", "#!/bin/bash\n\n# set -e explanation\n# subcult:summary=Ok\n", Metadata{Summary: "Ok"}},
 		{"stops at first code line", "#!/bin/bash\nset -e\n# subcult:summary=Too late\n", Metadata{}},
 		{"malformed key ignored", "# subcult:summary\n# subcult:args=x\n", Metadata{Args: "x"}},

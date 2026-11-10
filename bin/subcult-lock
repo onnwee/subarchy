@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # subcult:summary=Lock the session with Subarchy's lock screen
 # subcult:examples=subcult lock
+# subcult:silent=true
 # The lock program runs in its own user unit (ADR 0036), apart from the
 # shell; hypridle starts the same unit on idle.
 set -euo pipefail

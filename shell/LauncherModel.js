@@ -177,11 +177,24 @@ function commands(text) {
         keywords: ["subcult"].concat(c.group ? [c.group] : []),
         args: c.args || "",
         dangerous: c.dangerous === true,
+        silent: c.silent === true,
         icon: "utilities-terminal"
       }))
   } catch (e) {
     return []
   }
+}
+
+// The argv that runs a command row: in a terminal that stays open, so its
+// output can be read. A silent command has none and starts directly. A row
+// from the list carries its usage text in args, which is not an argument;
+// only typed arguments (an array) are passed.
+function commandArgv(row) {
+  const words = row.id.split(" ").slice(1).concat(Array.isArray(row.args) ? row.args : [])
+  if (row.silent)
+    return ["uwsm-app", "--", "subcult"].concat(words)
+  return ["uwsm-app", "--", "xdg-terminal-exec", "sh", "-c",
+    'subcult "$@"; s=$?; printf "\\n[exit %d] Press Enter to close." "$s"; read -r _', "sh"].concat(words)
 }
 
 // A query that starts with a whole command's words runs that command, with
