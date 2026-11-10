@@ -94,7 +94,9 @@ func unescape(s string) string {
 }
 
 // parseTime reads a DATE or DATE-TIME value: floating times are local,
-// Z is UTC, TZID names a zone (unknown zones fall back to local).
+// Z is UTC, TZID names a zone (unknown zones fall back to local). The time
+// stays in the zone it was written in, so a recurrence can step through
+// that zone's calendar; Occurrences converts to the local zone.
 func parseTime(p property, loc *time.Location) (time.Time, bool, error) {
 	v := strings.TrimSpace(p.value)
 	if p.params["VALUE"] == "DATE" || (len(v) == 8 && !strings.Contains(v, "T")) {
@@ -109,10 +111,10 @@ func parseTime(p property, loc *time.Location) (time.Time, bool, error) {
 	}
 	if strings.HasSuffix(v, "Z") {
 		t, err := time.Parse("20060102T150405Z", v)
-		return t.In(loc), false, err
+		return t, false, err
 	}
 	t, err := time.ParseInLocation("20060102T150405", v, zone)
-	return t.In(loc), false, err
+	return t, false, err
 }
 
 type vevent struct {
@@ -121,7 +123,8 @@ type vevent struct {
 	allDay                      bool
 	rrule                       string
 	exdates                     map[string]bool
-	recurrenceID                time.Time // the occurrence this VEVENT replaces
+	recurrenceID                time.Time      // the occurrence this VEVENT replaces
+	loc                         *time.Location // the zone occurrences are reported in
 }
 
 // parseICS reads every VEVENT of an iCalendar text.
@@ -130,14 +133,22 @@ func parseICS(text string, loc *time.Location) ([]vevent, error) {
 	var cur *vevent
 	var duration time.Duration
 	var hasDuration bool
+	nested := 0 // components open inside the current VEVENT, such as VALARM
 	for _, line := range unfold(text) {
 		p, ok := parseProperty(line)
 		if !ok {
 			continue
 		}
 		switch {
+		case cur != nil && p.name == "BEGIN":
+			nested++
+		case cur != nil && nested > 0:
+			// An alarm's UID, SUMMARY and DURATION are not the event's.
+			if p.name == "END" {
+				nested--
+			}
 		case p.name == "BEGIN" && strings.EqualFold(p.value, "VEVENT"):
-			cur = &vevent{exdates: map[string]bool{}}
+			cur = &vevent{exdates: map[string]bool{}, loc: loc}
 			duration, hasDuration = 0, false
 		case p.name == "END" && strings.EqualFold(p.value, "VEVENT"):
 			if cur != nil && cur.uid != "" && !cur.start.IsZero() {
@@ -172,7 +183,7 @@ func parseICS(text string, loc *time.Location) ([]vevent, error) {
 			for _, v := range strings.Split(p.value, ",") {
 				t, _, err := parseTime(property{name: "EXDATE", params: p.params, value: v}, loc)
 				if err == nil {
-					cur.exdates[t.Format(time.RFC3339)] = true
+					cur.exdates[t.UTC().Format(time.RFC3339)] = true
 				}
 			}
 		case p.name == "DTSTART":
@@ -241,8 +252,10 @@ func parseDuration(s string) (time.Duration, bool) {
 
 // Occurrences expands the events into the window: single events as they
 // are, recurring ones by their RRULE (daily, weekly with BYDAY, monthly by
-// day of month, yearly; INTERVAL, COUNT, UNTIL, EXDATE). Overridden
-// occurrences (RECURRENCE-ID) replace the generated one.
+// day of month or by BYDAY with an ordinal such as 2TU or -1FR, yearly;
+// INTERVAL, COUNT, UNTIL, EXDATE). A series steps through the calendar of
+// the zone its DTSTART was written in. Overridden occurrences
+// (RECURRENCE-ID) replace the generated one.
 func Occurrences(calendar string, events []vevent, w Window) []Event {
 	overrides := map[string]bool{}
 	for _, e := range events {
@@ -254,6 +267,9 @@ func Occurrences(calendar string, events []vevent, w Window) []Event {
 	for _, e := range events {
 		dur := e.end.Sub(e.start)
 		add := func(start time.Time) {
+			if e.loc != nil {
+				start = start.In(e.loc)
+			}
 			if start.Before(w.To) && start.Add(dur).After(w.From) {
 				out = append(out, Event{
 					ID: e.uid + "@" + start.Format(time.RFC3339), Calendar: calendar, Title: e.summary,
@@ -266,7 +282,7 @@ func Occurrences(calendar string, events []vevent, w Window) []Event {
 			continue
 		}
 		for _, start := range expand(e, w) {
-			if e.exdates[start.Format(time.RFC3339)] || overrides[e.uid+"@"+start.UTC().Format(time.RFC3339)] {
+			if e.exdates[start.UTC().Format(time.RFC3339)] || overrides[e.uid+"@"+start.UTC().Format(time.RFC3339)] {
 				continue
 			}
 			add(start)
@@ -365,13 +381,93 @@ func expand(e vevent, w Window) []time.Time {
 			}
 		}
 	case "MONTHLY":
-		for t := e.start; emit(t); t = e.start.AddDate(0, interval*total, 0) {
+		for n := 0; ; n += interval {
+			first := monthStart(e.start, n)
+			if !first.Before(until) {
+				break
+			}
+			done := false
+			for _, t := range monthDays(e.start, first, rule["BYDAY"]) {
+				if !t.Before(e.start) && !emit(t) {
+					done = true
+					break
+				}
+			}
+			if done {
+				break
+			}
 		}
 	case "YEARLY":
-		for t := e.start; emit(t); t = e.start.AddDate(interval*total, 0, 0) {
+		// A date a year lacks (February 29) skips that year (RFC 5545).
+		for n := 0; ; n += interval {
+			t := e.start.AddDate(n, 0, 0)
+			if t.Month() != e.start.Month() {
+				if !monthStart(e.start, 12*n).Before(until) {
+					break
+				}
+				continue
+			}
+			if !emit(t) {
+				break
+			}
 		}
 	default:
 		starts = append(starts, e.start)
 	}
 	return starts
+}
+
+// monthStart is the first day of the month n months after start's, at
+// start's time of day.
+func monthStart(start time.Time, n int) time.Time {
+	return time.Date(start.Year(), start.Month()+time.Month(n), 1,
+		start.Hour(), start.Minute(), start.Second(), 0, start.Location())
+}
+
+// monthDays lists a monthly rule's days in the month beginning at first,
+// in order: the weekdays BYDAY names (2TU the second Tuesday, -1FR the
+// last Friday, TU every Tuesday), or start's day of the month. A day the
+// month lacks, such as the 31st in a 30-day month, gives nothing: the rule
+// skips that month (RFC 5545).
+func monthDays(start, first time.Time, byday string) []time.Time {
+	last := first.AddDate(0, 1, -1).Day()
+	on := func(d int) time.Time { return first.AddDate(0, 0, d-1) }
+	if byday == "" {
+		if start.Day() > last {
+			return nil
+		}
+		return []time.Time{on(start.Day())}
+	}
+	picked := map[int]bool{}
+	for _, entry := range strings.Split(byday, ",") {
+		code := strings.TrimLeft(entry, "+-0123456789")
+		wd, ok := weekdays[code]
+		if !ok {
+			continue
+		}
+		var matches []int
+		for d := 1; d <= last; d++ {
+			if on(d).Weekday() == wd {
+				matches = append(matches, d)
+			}
+		}
+		ordinal, _ := strconv.Atoi(strings.TrimSuffix(entry, code))
+		switch {
+		case ordinal == 0:
+			for _, d := range matches {
+				picked[d] = true
+			}
+		case ordinal > 0 && ordinal <= len(matches):
+			picked[matches[ordinal-1]] = true
+		case ordinal < 0 && -ordinal <= len(matches):
+			picked[matches[len(matches)+ordinal]] = true
+		}
+	}
+	var days []time.Time
+	for d := 1; d <= last; d++ {
+		if picked[d] {
+			days = append(days, on(d))
+		}
+	}
+	return days
 }
