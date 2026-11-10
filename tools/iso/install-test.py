@@ -125,6 +125,7 @@ def guided(serial: Serial, timeout: float) -> str:
         " --package-cache /run/pkgcache; echo EXIT=$?\n"
     )
     answers = [
+        (rb"Keyboard layout \[us\]: ", ""),
         (rb"disk number: ", "1"),
         (rb"Computer name \[subarchy\]: ", "subarchy-vm"),
         (rb"Your user name: ", USER),
@@ -133,7 +134,6 @@ def guided(serial: Serial, timeout: float) -> str:
         (rb"Disk passphrase: ", PASSPHRASE),
         (rb"Disk passphrase again: ", PASSPHRASE),
         (rb"Time zone \[UTC\]: ", "America/Chicago"),
-        (rb"Keyboard layout \[us\]: ", ""),
         (rb"Type vda to erase it", "vda"),
     ]
     for prompt, answer in answers:

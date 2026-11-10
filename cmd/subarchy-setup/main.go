@@ -86,11 +86,17 @@ type env struct {
 	installMedia func() string
 	zoneinfo     string
 	keymaps      string
+	// kbdModelMap is systemd's table from console keymaps to desktop
+	// layouts (/usr/share/systemd/kbd-model-map).
+	kbdModelMap string
+	// loadKeymap makes the console use a keymap now (loadkeys).
+	loadKeymap func(keymap string) error
 }
 
 // collect asks every question and returns the answers.
 func collect(p *prompter, e env, repo, cmdlineExtra string) (setup.Answers, error) {
 	a := setup.Answers{Repo: repo, CmdlineExtra: cmdlineExtra}
+	// Without a disk there is nothing to ask.
 	raw, err := e.lsblk()
 	if err != nil {
 		return a, fmt.Errorf("list disks: %w", err)
@@ -101,6 +107,20 @@ func collect(p *prompter, e env, repo, cmdlineExtra string) (setup.Answers, erro
 	}
 	if len(disks) == 0 {
 		return a, fmt.Errorf("no disk of at least %s found", setup.HumanSize(setup.MinDiskBytes))
+	}
+	// The keyboard is the first question, and loaded at once: the installed
+	// system uses this layout at the disk prompt and the login screen, so
+	// the password and passphrase below must be typed with it. Typed under
+	// the live image's US layout, they would not unlock the new system on
+	// any keyboard where those keys differ.
+	if a.Keymap, err = p.ask("Keyboard layout", "us", func(s string) error { return setup.ValidKeymap(e.keymaps, s) }); err != nil {
+		return a, err
+	}
+	a.XKBLayout, a.XKBVariant = xkbFor(e.kbdModelMap, a.Keymap)
+	if e.loadKeymap != nil {
+		if err := e.loadKeymap(a.Keymap); err != nil {
+			fmt.Fprintf(p.out, "Could not switch this console to %s (%v); it still types as before.\n", a.Keymap, err)
+		}
 	}
 	fmt.Fprintln(p.out, "\nDisks (the chosen one is erased; the others are not touched):")
 	for i, d := range disks {
@@ -135,15 +155,31 @@ func collect(p *prompter, e env, repo, cmdlineExtra string) (setup.Answers, erro
 	if a.Timezone, err = p.ask("Time zone", "UTC", func(s string) error { return setup.ValidTimezone(e.zoneinfo, s) }); err != nil {
 		return a, err
 	}
-	if a.Keymap, err = p.ask("Keyboard layout", "us", func(s string) error { return setup.ValidKeymap(e.keymaps, s) }); err != nil {
-		return a, err
-	}
-	a.XKBLayout = xkbLayout(a.Keymap)
 	return a, nil
 }
 
-// xkbLayout maps a console keymap to the desktop layout: "de-latin1" is
-// "de", "uk" is "gb".
+// xkbFor maps a console keymap to the desktop layout and variant, from
+// systemd's table: "sv-latin1" is "se", "la-latin1" is "latam", "dvorak"
+// is "us" with the variant "dvorak". Cutting the name at its dash gives
+// "la", which is Lao. Without the table or an entry, that cut is all
+// there is.
+func xkbFor(modelMap, keymap string) (layout, variant string) {
+	if data, err := os.ReadFile(modelMap); err == nil {
+		for _, line := range strings.Split(string(data), "\n") {
+			f := strings.Fields(line)
+			if len(f) >= 4 && f[0] == keymap {
+				if f[3] != "-" {
+					variant = f[3]
+				}
+				return f[1], variant
+			}
+		}
+	}
+	return xkbLayout(keymap), ""
+}
+
+// xkbLayout guesses the desktop layout from a console keymap's name:
+// "de-latin1" is "de", "uk" is "gb".
 func xkbLayout(keymap string) string {
 	layout, _, _ := strings.Cut(keymap, "-")
 	if layout == "uk" {
@@ -233,6 +269,10 @@ func main() {
 		installMedia: installMedium,
 		zoneinfo:     "/usr/share/zoneinfo",
 		keymaps:      "/usr/share/kbd/keymaps",
+		kbdModelMap:  "/usr/share/systemd/kbd-model-map",
+		loadKeymap: func(keymap string) error {
+			return exec.Command("loadkeys", keymap).Run()
+		},
 	}
 	installer := func(conf string) error {
 		path, err := exec.LookPath("subarchy-install")

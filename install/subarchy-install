@@ -21,6 +21,7 @@
 #   LOCALE                e.g. en_US.UTF-8 (default)
 #   KEYMAP                console keymap (default us)
 #   XKB_LAYOUT            desktop keyboard layout (default us)
+#   XKB_VARIANT           its variant, such as dvorak (default none)
 #   SUBARCHY_REPO         pacman Server URL for the [subarchy] repository (required)
 #   PACKAGE_CACHE         pacman cache directory to reuse (optional)
 #   OFFLINE               1 to skip the mirrors and install from SUBARCHY_REPO alone (optional)
@@ -35,10 +36,10 @@ die() { echo "subarchy-install: $*" >&2; exit 1; }
 step() { echo ">> $*"; }
 
 declare -A conf=(
-  [TIMEZONE]=UTC [LOCALE]=en_US.UTF-8 [KEYMAP]=us [XKB_LAYOUT]=us
+  [TIMEZONE]=UTC [LOCALE]=en_US.UTF-8 [KEYMAP]=us [XKB_LAYOUT]=us [XKB_VARIANT]=""
   [PACKAGE_CACHE]="" [KERNEL_CMDLINE_EXTRA]="" [OFFLINE]=""
 )
-keys=" DISK HOSTNAME USERNAME USER_PASSWORD_FILE LUKS_PASSPHRASE_FILE TIMEZONE LOCALE KEYMAP XKB_LAYOUT SUBARCHY_REPO PACKAGE_CACHE KERNEL_CMDLINE_EXTRA OFFLINE "
+keys=" DISK HOSTNAME USERNAME USER_PASSWORD_FILE LUKS_PASSPHRASE_FILE TIMEZONE LOCALE KEYMAP XKB_LAYOUT XKB_VARIANT SUBARCHY_REPO PACKAGE_CACHE KERNEL_CMDLINE_EXTRA OFFLINE "
 
 read_config() {
   local line key value n=0
@@ -60,13 +61,25 @@ read_config() {
   [[ -s ${conf[LUKS_PASSPHRASE_FILE]} ]] || die "LUKS_PASSPHRASE_FILE: missing or empty"
 }
 
+# busy_volumes DISK: active LVM, RAID and LUKS volumes on the disk. The live
+# image starts the ones it finds, and wipefs refuses a disk they hold with
+# only "Device or resource busy".
+busy_volumes() {
+  lsblk -lno TYPE,NAME "$1" | awk '$1 ~ /^(lvm|crypt|md|raid[0-9]+)$/ {print $2}'
+}
+
 check_disk() {
-  local disk=${conf[DISK]}
+  local disk=${conf[DISK]} busy
   [[ -b $disk ]] || die "DISK $disk is not a block device"
   [[ $(lsblk -dno TYPE "$disk") == disk ]] || die "DISK $disk is not a whole disk"
   if lsblk -no MOUNTPOINTS "$disk" | grep -q .; then
     die "DISK $disk has mounted partitions"
   fi
+  [[ ! -e /dev/mapper/root ]] ||
+    die "an encrypted volume named root is already open (left by an install that failed?); close it with: cryptsetup close root"
+  busy=$(busy_volumes "$disk" | tr '\n' ' ')
+  [[ -z $busy ]] ||
+    die "DISK $disk holds active volumes ($busy); stop them first (vgchange -an, mdadm --stop, cryptsetup close)"
   if [[ -e /run/archiso/bootmnt ]] && [[ $(findmnt -no SOURCE /run/archiso/bootmnt) == "$disk"* ]]; then
     die "DISK $disk is the install medium"
   fi
@@ -94,7 +107,27 @@ encrypt() {
   cryptsetup luksFormat --type luks2 --batch-mode --label subarchy-luks \
     --key-file <(printf '%s' "$(<"$key")") "$luks"
   cryptsetup open --key-file <(printf '%s' "$(<"$key")") "$luks" root
+  luks_open=1
   luks_uuid=$(cryptsetup luksUUID "$luks")
+}
+
+# After a failed step: unmount and close the encrypted volume this run
+# opened, so the installer can be run again without a reboot.
+close_after_failure() {
+  ((${luks_open:-0})) || return 0
+  umount -R "$target" 2>/dev/null || true
+  umount /run/subarchy-top 2>/dev/null || true
+  cryptsetup close root 2>/dev/null ||
+    echo "subarchy-install: could not close the encrypted volume; before another try run: cryptsetup close root" >&2
+}
+
+# hardware_list packages|services: what subcult-hw picks for this machine,
+# one name per line. A failed detection stops the install: carrying on
+# would leave a system without firmware, microcode and GPU drivers.
+hardware_list() {
+  local out
+  out=$(subcult-hw "$1") || die "hardware detection failed (subcult-hw $1)"
+  [[ -z $out ]] || printf '%s\n' "$out"
 }
 
 make_filesystems() {
@@ -139,11 +172,12 @@ write_boot_config() {
     grep -v '^initramfs:' "$target/var/log/subarchy-hw-apply.log" || true
   fi
   printf "KEYMAP=%s\nXKBLAYOUT=%s\n" "${conf[KEYMAP]}" "${conf[XKB_LAYOUT]}" >"$target/etc/vconsole.conf"
+  [[ -z ${conf[XKB_VARIANT]} ]] || printf "XKBVARIANT=%s\n" "${conf[XKB_VARIANT]}" >>"$target/etc/vconsole.conf"
   cat >"$target/etc/mkinitcpio.conf.d/subarchy.conf" <<'EOF'
 # Subarchy (ADR 0008): systemd-based initramfs; sd-btrfs-overlayfs makes
 # read-only snapshots bootable (ADR 0011); plymouth draws the splash and the
 # LUKS prompt (ADR 0013).
-HOOKS=(base systemd plymouth autodetect microcode modconf kms keyboard sd-vconsole block sd-encrypt filesystems fsck sd-btrfs-overlayfs)
+HOOKS=(base systemd plymouth keyboard autodetect microcode modconf kms sd-vconsole block sd-encrypt filesystems fsck sd-btrfs-overlayfs)
 EOF
   # limine-mkinitcpio-hook builds one UKI per kernel and writes the Limine
   # entries; limine-snapper-sync adds the snapshot entries (ADR 0007, 0011).
@@ -207,7 +241,9 @@ pacstrap_packages() {
   # Microcode, firmware and GPU drivers for this machine (ADR 0005, 0006).
   local -a hw
   if command -v subcult-hw >/dev/null; then
-    mapfile -t hw < <(subcult-hw packages)
+    local hw_list
+    hw_list=$(hardware_list packages)
+    [[ -z $hw_list ]] || mapfile -t hw <<<"$hw_list"
   else
     echo "subarchy-install: subcult-hw not found; installing all firmware and microcode" >&2
     hw=(linux-firmware intel-ucode amd-ucode)
@@ -260,12 +296,13 @@ EOF
   # Services the detected hardware needs (ADR 0050): displaylink for a
   # DisplayLink adapter.
   if command -v subcult-hw >/dev/null; then
-    local svc
+    local svc svc_list
+    svc_list=$(hardware_list services)
     while read -r svc; do
       # A unit the package ships, or one a hardware fix wrote under /etc.
       [[ -n $svc && (-e $target/usr/lib/systemd/system/$svc.service || -e $target/etc/systemd/system/$svc.service) ]] || continue
       arch-chroot "$target" systemctl enable --quiet "$svc"
-    done < <(subcult-hw services)
+    done <<<"$svc_list"
   fi
   # DNS through resolved's stub (ADR 0020); .local through Avahi.
   ln -sf ../run/systemd/resolve/stub-resolv.conf "$target/etc/resolv.conf"
@@ -358,6 +395,7 @@ main() {
   ((yes)) || die "this wipes ${conf[DISK]}; pass --yes to continue"
 
   exec > >(tee -a "$log") 2>&1
+  trap 'rc=$?; ((rc == 0)) || close_after_failure' EXIT
   partition
   encrypt
   make_filesystems
@@ -370,4 +408,5 @@ main() {
   echo "subarchy-install: done"
 }
 
-main "$@"
+# Sourced by tools/test/installer-check-test.sh for its functions.
+[[ ${BASH_SOURCE[0]} != "$0" ]] || main "$@"

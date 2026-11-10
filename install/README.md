@@ -8,10 +8,13 @@ Omarchy counterpart: `/usr/share/omarchy/install/`, including
 
 ## `subarchy-setup`
 
-The guided installer on the live ISO (`cmd/subarchy-setup`). It lists the
-disks of at least 20 GiB, leaving out the install medium, then asks for the
-computer name, user name and password, disk passphrase, time zone and
-keyboard layout. Each answer is checked as it is entered. The user confirms
+The guided installer on the live ISO (`cmd/subarchy-setup`). It asks for the
+keyboard layout first and switches the console to it (`loadkeys`), so the
+password and passphrase are typed under the layout the installed system
+asks for them in. It then lists the disks of at least 20 GiB, leaving out
+the install medium, and asks for the computer name, user name and password,
+disk passphrase and time zone. The desktop layout and variant come from
+systemd's `kbd-model-map`. Each answer is checked as it is entered. The user confirms
 by typing the disk's name. It then writes the config and secret files (mode
 600) under `/run/subarchy-setup` and runs `subarchy-install`. Subarchy's own
 packages come from the repository on the image, `/opt/subarchy/repo`.

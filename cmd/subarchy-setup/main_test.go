@@ -35,10 +35,10 @@ func testEnv(t *testing.T) env {
 	}
 }
 
-// Answers: disk 3 (bad), 1, hostname default, bad user then pat, password
-// twice (first pair mismatched), passphrase, tz bad then Berlin, keymap.
-const goodInput = "3\n1\n\nroot\npat\nsecret-one\nsecret-two\nsecret-one\nsecret-one\n" +
-	"disk-pass-1\ndisk-pass-1\nMars/Base\nEurope/Berlin\nde-latin1\n"
+// Answers: keymap, disk 3 (bad), 1, hostname default, bad user then pat,
+// password twice (first pair mismatched), passphrase, tz bad then Berlin.
+const goodInput = "de-latin1\n3\n1\n\nroot\npat\nsecret-one\nsecret-two\nsecret-one\nsecret-one\n" +
+	"disk-pass-1\ndisk-pass-1\nMars/Base\nEurope/Berlin\n"
 
 func TestRunInstalls(t *testing.T) {
 	dir := filepath.Join(t.TempDir(), "conf")
@@ -116,6 +116,62 @@ func TestRunErrors(t *testing.T) {
 	out.Reset()
 	if code := run([]string{"--dir", t.TempDir()}, strings.NewReader(goodInput+"vda\n"), &out, testEnv(t), nil, failing); code != 1 {
 		t.Errorf("installer failure: exit %d", code)
+	}
+}
+
+// The installed system asks for the passphrase and the password under the
+// chosen layout, so both must be typed under it here too.
+func TestKeyboardIsLoadedBeforeAnySecretIsTyped(t *testing.T) {
+	var out bytes.Buffer
+	var loaded, shownAtLoad string
+	e := testEnv(t)
+	e.loadKeymap = func(keymap string) error {
+		loaded, shownAtLoad = keymap, out.String()
+		return nil
+	}
+	dir := filepath.Join(t.TempDir(), "conf")
+	if code := run([]string{"--dir", dir, "--dry-run"}, strings.NewReader(goodInput+"vda\n"), &out, e, nil, nil); code != 0 {
+		t.Fatalf("exit %d:\n%s", code, out.String())
+	}
+	if loaded != "de-latin1" {
+		t.Fatalf("loaded keymap %q, want de-latin1", loaded)
+	}
+	for _, later := range []string{"Install to disk number", "Password for", "Disk passphrase"} {
+		if strings.Contains(shownAtLoad, later) {
+			t.Errorf("%q was asked before the keyboard was loaded", later)
+		}
+	}
+	e.loadKeymap = func(string) error { return errors.New("no console") }
+	out.Reset()
+	if code := run([]string{"--dir", dir, "--dry-run"}, strings.NewReader(goodInput+"vda\n"), &out, e, nil, nil); code != 0 {
+		t.Fatalf("a console that cannot switch stopped the setup: exit %d", code)
+	}
+	if !strings.Contains(out.String(), "Could not switch this console") {
+		t.Error("no warning when the keymap could not be loaded")
+	}
+}
+
+func TestXKBFromSystemdsTable(t *testing.T) {
+	table := filepath.Join(t.TempDir(), "kbd-model-map")
+	os.WriteFile(table, []byte("# consolelayout\txlayout\txmodel\txvariant\txoptions\n"+
+		"sv-latin1\t\tse\tpc105\t\t-\t\tterminate:ctrl_alt_bksp\n"+
+		"la-latin1\t\tlatam\tpc105\t\t-\t\tterminate:ctrl_alt_bksp\n"+
+		"et\t\t\tee\tpc105\t\t-\t\tterminate:ctrl_alt_bksp\n"+
+		"sg-latin1\t\tch\tpc105\t\tde_nodeadkeys\tterminate:ctrl_alt_bksp\n"+
+		"dvorak\t\t\tus\tpc105\t\tdvorak\t\tterminate:ctrl_alt_bksp\n"+
+		"dvorak\t\t\tus\tpc105\t\tdvorak-alt-intl\tterminate:ctrl_alt_bksp\n"), 0o644)
+	for keymap, want := range map[string][2]string{
+		"sv-latin1": {"se", ""}, "la-latin1": {"latam", ""}, "et": {"ee", ""},
+		"sg-latin1": {"ch", "de_nodeadkeys"}, "dvorak": {"us", "dvorak"},
+		"de-latin1": {"de", ""}, // not in this table: the name's first part
+	} {
+		layout, variant := xkbFor(table, keymap)
+		if layout != want[0] || variant != want[1] {
+			t.Errorf("xkbFor(%q) = %q, %q; want %q, %q", keymap, layout, variant, want[0], want[1])
+		}
+	}
+	if layout, variant := xkbFor(filepath.Join(t.TempDir(), "missing"), "uk"); layout != "gb" || variant != "" {
+		t.Errorf("without the table: %q, %q", layout, variant)
 	}
 }
 

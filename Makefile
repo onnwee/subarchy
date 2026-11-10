@@ -63,6 +63,7 @@ smoke: build
 	tools/test/power-auto-test.sh
 	tools/test/system-session-test.sh $(BUILD)/subcult
 	tools/test/dell-power-test.sh
+	tools/test/installer-check-test.sh
 	tools/test/gpu-test.sh
 	tools/test/cursor-test.sh $(BUILD)/subcult-cursor
 	tools/test/fontconfig-test.sh
