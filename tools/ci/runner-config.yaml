@@ -12,6 +12,9 @@ cache:
   enabled: false
 container:
   privileged: true
-  options: --init --device=/dev/kvm --cpus=4 --memory=8g --memory-swap=8g --pids-limit=1024
+  # 4096 processes: pacstrap runs pacman as PID 1 of its own PID namespace,
+  # where the two gpg helpers of every signature check stay unreaped until
+  # pacman exits. The live image's 595 packages need about 1,250.
+  options: --init --device=/dev/kvm --cpus=4 --memory=8g --memory-swap=8g --pids-limit=4096
   valid_volumes: []
   docker_host: "-"

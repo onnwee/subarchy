@@ -105,6 +105,15 @@ ln -sfn ../lib/subarchy-install/subarchy-install "$profile/airootfs/usr/local/bi
 mkdir -p "$profile/airootfs/opt/subarchy/repo"
 cp -L "$repo"/*.pkg.tar.zst "$repo"/subarchy.db "$repo"/subarchy.files "$profile/airootfs/opt/subarchy/repo/"
 
+# mksquashfs sizes itself from the machine: a thread per CPU and a quarter of
+# the RAM. In a container limited below that (the CI runner: 4 of 24 CPUs,
+# 8 of 60 GiB) it is killed for memory, so it gets the container's limits.
+memory_limit=$(cat /sys/fs/cgroup/memory.max 2>/dev/null || echo max)
+if [[ $memory_limit =~ ^[0-9]+$ ]]; then
+  printf "airootfs_image_tool_options+=('-processors' '%s' '-mem' '%sM')\n" \
+    "$(nproc)" "$((memory_limit / 4 / 1048576))" >>"$profile/profiledef.sh"
+fi
+
 echo ">> running mkarchiso (work: $work, out: $out)"
 mkdir -p "$out"
 # A work directory left by a failed build makes mkarchiso skip the steps

@@ -3,7 +3,7 @@ title: "KVM CI runner"
 type: guide
 status: active
 created: 2026-11-08
-updated: 2026-11-09
+updated: 2026-11-10
 tags: [guide, ci, delivery]
 ---
 
@@ -16,9 +16,19 @@ It is registered only for `subculture-collective/subarchy`, with the label
 `tools/ci/compose.yaml` and `tools/ci/runner-config.yaml` are the deployed
 configuration. The daemon uses the pinned act_runner image, one CPU and
 1 GiB RAM. It admits one job at a time. Job containers are privileged, have
-`/dev/kvm`, and are limited to four CPUs, 8 GiB RAM without swap, and 1,024
+`/dev/kvm`, and are limited to four CPUs, 8 GiB RAM without swap, and 4,096
 processes. The Docker socket is available to the daemon; the runner does
 not mount it into jobs. Actions caching is disabled.
+
+The process limit was 1,024 until November 10, 2026, which the ISO build
+exceeded. `mkarchiso` installs the live image with `pacstrap`, and
+`pacstrap` runs pacman as PID 1 of a new PID namespace. Each signature
+check starts two `gpg` helpers that are reparented to pacman, which does
+not reap them, so they remain as zombies until pacman exits: 943 of them
+for 470 packages in a test container. The image's 595 packages need about
+1,250 processes. Under the old limit the last 112 packages failed with
+`GPGME error: Inappropriate ioctl for device` and `missing required
+signature`, which reads like a keyring fault and is not one.
 
 The label uses an Arch container. `.gitea/workflows/kvm.yml` checks at least
 60 GB free on its filesystem, then starts QEMU with `-enable-kvm` and
