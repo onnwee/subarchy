@@ -37,9 +37,18 @@ function timeoutMs(expireTimeout, urgency) {
   return Math.max(2000, Math.min(30000, t))
 }
 
-// The history with the record of id changed (a replaced notification).
+// The history with the record of id changed (a replaced notification). Ids
+// start again at 1 with every shell start while the saved history stays, so
+// older records can share one: the live notification's is the newest, the
+// first in the list.
 function updateRecord(history, id, fields) {
-  return (history || []).map(e => e.id === id ? Object.assign({}, e, fields) : e)
+  let done = false
+  return (history || []).map(e => {
+    if (done || e.id !== id)
+      return e
+    done = true
+    return Object.assign({}, e, fields)
+  })
 }
 
 // Do-not-disturb holds back popups, except critical ones.
@@ -47,9 +56,10 @@ function shouldPopup(n, dnd) {
   return !dnd || n.urgency === "critical"
 }
 
-// The history without the record of id.
-function removeRecord(history, id) {
-  return (history || []).filter(e => e.id !== id)
+// The history without the record of id. With its time, only that record:
+// one from an earlier session can have the same id.
+function removeRecord(history, id, time) {
+  return (history || []).filter(e => !(e.id === id && (time === undefined || e.time === time)))
 }
 
 function unread(history) {

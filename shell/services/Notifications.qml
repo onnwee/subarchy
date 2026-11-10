@@ -159,8 +159,8 @@ Singleton {
     save()
   }
 
-  function removeRecord(id) {
-    root.history = Model.removeRecord(root.history, id)
+  function removeRecord(id, time) {
+    root.history = Model.removeRecord(root.history, id, time)
     save()
   }
 

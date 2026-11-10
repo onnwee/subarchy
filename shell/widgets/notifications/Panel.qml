@@ -124,7 +124,7 @@ PanelBase {
           glyph: Glyphs.close
           color: Theme.muted
           tooltip: "Remove"
-          onClicked: Notifications.removeRecord(card.modelData.id)
+          onClicked: Notifications.removeRecord(card.modelData.id, card.modelData.time)
         }
       }
     }

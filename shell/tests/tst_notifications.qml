@@ -105,4 +105,20 @@ TestCase {
     compare(Model.restore("broken", 100), [])
     compare(Model.restore('{"not":"a list"}', 100), [])
   }
+
+  // Notification ids start again at 1 with every shell start, and the
+  // history file outlives the shell: yesterday's record and today's can
+  // share an id.
+  function test_recordsFromAnEarlierSessionShareIds() {
+    const history = [
+      { id: 1, time: 3000, summary: "Today's build", read: false },
+      { id: 2, time: 2000, summary: "Mail", read: true },
+      { id: 1, time: 1000, summary: "Yesterday's backup", read: true }
+    ]
+    const removed = Model.removeRecord(history, 1, 3000)
+    compare(removed.map(e => e.summary), ["Mail", "Yesterday's backup"], "Remove takes the one record shown")
+    const updated = Model.updateRecord(history, 1, { summary: "Today's build, done" })
+    compare(updated.map(e => e.summary), ["Today's build, done", "Mail", "Yesterday's backup"],
+      "a replaced notification rewrites its own record, the newest with that id")
+  }
 }
