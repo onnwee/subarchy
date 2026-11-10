@@ -42,6 +42,8 @@ type app struct {
 	elevate func(tool string, args ...string) error
 	// initramfs rebuilds the initramfs; tests replace it.
 	initramfs func() error
+	// euid is the effective user; tests replace it.
+	euid func() int
 }
 
 func (a *app) run(args []string) int {
@@ -137,9 +139,15 @@ func (a *app) systemApply(args []string) int {
 		fmt.Fprintf(a.stderr, "subcult theme system-apply: %v\n", err)
 		return 2
 	}
-	if *root == "/" && os.Geteuid() != 0 {
+	if *root == "/" && a.euid() != 0 {
 		fmt.Fprintln(a.stderr, "subcult theme system-apply: run as root (subcult theme apply-system does that through polkit)")
 		return 1
+	}
+	// The polkit action allows this program, not its arguments: as root,
+	// another root would let the caller choose the files root rewrites.
+	if *root != "/" && a.euid() == 0 {
+		fmt.Fprintln(a.stderr, "subcult theme system-apply: --root is for tests and is refused as root")
+		return 2
 	}
 	rep, err := systheme.Apply(*root, p)
 	for _, w := range rep.Written {
@@ -185,6 +193,7 @@ func main() {
 			cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
 			return cmd.Run()
 		},
+		euid: os.Geteuid,
 	}
 	os.Exit(a.run(os.Args[1:]))
 }

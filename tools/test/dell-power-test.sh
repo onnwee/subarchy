@@ -80,8 +80,12 @@ run dell charging set turbo 2>/dev/null && fail "an unknown mode was accepted"
 # anyway, so not under CI's root).
 if ((EUID != 0)); then
   chmod a-w "$dell/platform-profile/platform-profile-0/profile"
+  before=$(<"$work/ppd")
+  [[ $before != power-saver ]] || fail "the test needs a daemon profile other than quiet's"
   run dell set quiet 2>"$work/err" && fail "a read-only profile was written"
   grep -q "not writable" "$work/err" || fail "read-only message: $(cat "$work/err")"
+  # The daemon was switched first; a refused firmware write puts it back.
+  [[ $(<"$work/ppd") == "$before" ]] || fail "the daemon stayed on $(<"$work/ppd") after the firmware refused (was $before)"
   chmod u+w "$dell/platform-profile/platform-profile-0/profile"
 fi
 
