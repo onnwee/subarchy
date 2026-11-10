@@ -1,0 +1,108 @@
+#!/usr/bin/env python3
+"""The install test's check functions that depend on the machine it runs on."""
+
+import importlib.util
+import os
+from pathlib import Path
+import re
+import sys
+import threading
+import unittest
+
+ISO = Path(__file__).parents[1] / "iso"
+sys.path.insert(0, str(ISO))
+spec = importlib.util.spec_from_file_location("install_test", ISO / "install-test.py")
+install_test = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(install_test)
+
+def probe(vendor: str, installed: list[str]) -> str:
+    """What the guest prints: the installed hardware packages, then `subcult hw info`."""
+    return ("".join(p + "\n" for p in installed)
+            + f"CPU:       {vendor}\nVM:        QEMU\nHybrid:    false\nMatches:   \n")
+
+
+class HardwarePackages(unittest.TestCase):
+    def test_intel_guest_needs_intel_microcode_and_thermald(self):
+        self.assertTrue(install_test.hw_ok(probe("GenuineIntel", ["intel-ucode", "thermald"])))
+        self.assertFalse(install_test.hw_ok(probe("GenuineIntel", ["intel-ucode"])))
+        self.assertFalse(install_test.hw_ok(probe("GenuineIntel", ["amd-ucode"])))
+
+    def test_amd_guest_needs_amd_microcode_and_no_thermald(self):
+        self.assertTrue(install_test.hw_ok(probe("AuthenticAMD", ["amd-ucode"])))
+        self.assertFalse(install_test.hw_ok(probe("AuthenticAMD", ["intel-ucode", "thermald"])))
+        self.assertFalse(install_test.hw_ok(probe("AuthenticAMD", ["amd-ucode", "thermald"])))
+
+    def test_firmware_or_an_unknown_machine_fails(self):
+        self.assertFalse(install_test.hw_ok(probe("AuthenticAMD", ["amd-ucode", "linux-firmware"])))
+        self.assertFalse(install_test.hw_ok(probe("AuthenticAMD", ["amd-ucode"]).replace("QEMU", "none")))
+        self.assertFalse(install_test.hw_ok(probe("CentaurHauls", [])))
+
+
+class LoginShell:
+    """A stand-in for QEMU with zsh on its serial console.
+
+    Like the real one after a login, it loses the first `lose` bytes typed
+    at it. A line that ends inside a quote continues on the next line, and
+    Ctrl-C abandons it. A complete line that execs bash prints the prompt.
+    """
+
+    def __init__(self, lose: int):
+        self.lose = lose
+        read, self.out = os.pipe()
+        self.stdout = os.fdopen(read, "rb", buffering=0)
+        self.stdin = self
+        self.line, self.quoted = "", False
+        self.bash, self.cols = False, 80
+        self.lock = threading.Lock()
+
+    def poll(self):
+        return None
+
+    def flush(self):
+        pass
+
+    def write(self, data: bytes) -> None:
+        with self.lock:
+            for ch in data.decode():
+                if self.lose:
+                    self.lose -= 1
+                elif ch == "\x03":
+                    self.line, self.quoted = "", False
+                elif ch == "\n" and not self.quoted:
+                    if re.search(r"(^|; )stty cols 1000(;|$)", self.line):
+                        self.cols = 1000
+                    self.bash = self.bash or ("exec env" in self.line and "bash" in self.line)
+                    if self.bash:
+                        os.write(self.out, b"SUBARCHY-READY> ")
+                    self.line = ""
+                else:
+                    self.quoted ^= ch == "'"
+                    self.line += ch
+
+
+class ClaimPrompt(unittest.TestCase):
+    def claim(self, lose: int) -> LoginShell:
+        shell = LoginShell(lose)
+        self.addCleanup(shell.stdout.close)
+        self.addCleanup(os.close, shell.out)
+        install_test.Serial(shell, open(os.devnull, "wb")).claim_prompt(2, attempt=0.2)
+        return shell
+
+    def test_a_shell_that_takes_every_byte_gives_the_prompt(self):
+        self.claim(0)
+
+    def test_a_first_try_cut_inside_its_quotes_does_not_block_the_retries(self):
+        # Seen on the Secure Boot stage, 2026-11-10: zsh got the command from
+        # "ARCHY''-READY> ' bash" on, an odd number of quotes, and held every
+        # retry as a continuation line until the stage timed out.
+        self.claim(43)
+
+    def test_a_first_try_that_lost_its_first_letter_still_widens_the_terminal(self):
+        # Seen on the first boot, 2026-11-10: "tty cols 1000; exec ... bash"
+        # reached zsh. bash started, the terminal stayed 80 columns wide, and
+        # findmnt cut the mount options the checks read.
+        self.assertEqual(self.claim(1).cols, 1000)
+
+
+if __name__ == "__main__":
+    unittest.main()

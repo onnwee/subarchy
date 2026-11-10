@@ -34,7 +34,8 @@ The label uses an Arch container. `.gitea/workflows/kvm.yml` checks at least
 60 GB free on its filesystem, then starts QEMU with `-enable-kvm` and
 requires the monitor to report `kvm support: enabled`. This is a runner
 capability check. `.gitea/workflows/iso.yml` builds the live ISO and boots
-it on this runner (#60); the installed-system test is a separate job (#68).
+it on this runner (#60), then installs from it into a VM disk and checks
+the installed system (#68). One such run takes about 40 minutes.
 
 ## Operation and recovery
 

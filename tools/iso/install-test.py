@@ -261,7 +261,7 @@ def boot(disk: Path, vars_file: Path) -> bool:
             # hook must stay silent and the session start in its default.
             "gpu": serial.run("test -r /usr/share/uwsm/env-hyprland.d/50-subarchy-gpu && echo HOOK;"
                               " subcult-gpu-env | wc -l; subcult gpu mode"),
-            # Hardware detection (ADR 0005): an Intel host CPU, emulated devices.
+            # Hardware detection (ADR 0005): the host's CPU, emulated devices.
             "hw": serial.run("pacman -Qq | grep -E '^(linux-firmware.*|intel-ucode|amd-ucode|thermald)$'; subcult hw info"),
             "update_timer": serial.run(
                 "systemctl --user list-timers --all --no-legend | grep -c subcult-update-check;"
@@ -536,8 +536,7 @@ finally:
         "marker created after the snapshots": "MARKED" in r["marker"],
         "@factory snapshot": any(line.endswith(" path @factory") for line in r["subvols"].splitlines()),
         "system running or degraded": state in ("running", "degraded"),
-        "hardware packages: microcode, no firmware in a VM": "intel-ucode" in r["hw"].split()
-        and "thermald" in r["hw"].split() and "linux-firmware" not in r["hw"] and "VM:        QEMU" in r["hw"],
+        "hardware packages: microcode for the guest's CPU, no firmware in a VM": hw_ok(r["hw"]),
         "GPU hook installed, silent without hybrid graphics": r["gpu"].split()[:2] == ["HOOK", "0"]
         and "chosen:  intel" in r["gpu"],
         "ufw active, incoming denied": "Status: active" in r["ufw"] and "deny (incoming)" in r["ufw"],
@@ -791,6 +790,19 @@ def lock_ok(out: str) -> bool:
             and first.get("screensaver") is True and second.get("locked") is True
             and prompt.get("locked") is True and prompt.get("prompt") is True
             and prompt.get("playing") == 0 and tail[-2:] == ["inactive", "active"])
+
+
+def hw_ok(out: str) -> bool:
+    """The installed hardware packages, then `subcult hw info`.
+
+    With KVM the guest has the host's CPU, so the microcode follows the
+    machine the test runs on: Intel also gets thermald (ADR 0021), AMD does
+    not. A VM has no radios or audio DSP, so no firmware package.
+    """
+    vendor = re.search(r"(?m)^CPU:\s+(\S+)", out)
+    wanted = {"GenuineIntel": {"intel-ucode", "thermald"}, "AuthenticAMD": {"amd-ucode"}}.get(vendor.group(1) if vendor else "")
+    installed = {w for w in out.split() if w in ("intel-ucode", "amd-ucode", "thermald")}
+    return wanted is not None and installed == wanted and "linux-firmware" not in out and "VM:        QEMU" in out
 
 
 def theme_system_ok(out: str) -> bool:

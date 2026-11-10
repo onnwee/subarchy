@@ -36,6 +36,11 @@ CI builds and boots the image in `.gitea/workflows/iso.yml` on the
 pipeline. `tools/ci/build-iso.sh` builds the core package from the checkout,
 takes the pinned rebuilds from the signed stable registry and the install
 set from Subarchy's Arch snapshot, then runs `make iso` and the boot test.
+`tools/ci/install-test.sh` then installs from that image into a VM disk and
+runs every check of `tools/iso/install-test.py` (#68): the guided, offline
+install, so the result comes from the image's own setup command, installer
+and repository. A failed check fails the job; the serial logs and
+screendumps are kept in the `iso-logs` artifact either way.
 A run started by hand keeps the image as the `subarchy-iso` artifact for
 2 days. Other runs do not: the image is 4.6 GB and its upload held the
 runner's only job slot for 45 minutes.
