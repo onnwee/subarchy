@@ -11,19 +11,11 @@ set -euo pipefail
 
 root=$(git rev-parse --show-toplevel)
 registry=https://git.subcult.tv/api/packages/subculture-collective/arch/stable
-snapshot=$(cat "$root/default/pacman/snapshot")
-[[ $snapshot =~ ^[0-9]{4}/[0-9]{2}/[0-9]{2}$ ]] || { echo "build-iso: invalid snapshot date" >&2; exit 1; }
 # A VM without KVM would pass the boot test slowly or time out; say why.
 [[ -r /dev/kvm && -w /dev/kvm ]] || { echo "build-iso: /dev/kvm is not usable" >&2; exit 1; }
 
-# Pacman expands its own repository and architecture placeholders.
-# shellcheck disable=SC2016
-printf 'Server = https://archive.archlinux.org/repos/%s/$repo/os/$arch\n' "$snapshot" >/etc/pacman.d/mirrorlist
-# The archive stalls single connections for longer than pacman's ten-second
-# low-speed limit when hundreds of files are fetched; waiting gets them all.
-sed -i '/^\[options\]/a DisableDownloadTimeout' /etc/pacman.conf
 # The container may be newer than Subarchy's staged Arch snapshot.
-pacman -Syyuu --noconfirm
+"$root/tools/ci/pin-snapshot.sh"
 pacman -S --noconfirm --needed base-devel git go python sudo archiso qemu-system-x86 edk2-ovmf
 
 # makepkg refuses to run as root; build.sh uses sudo for pacman and mkarchiso.
