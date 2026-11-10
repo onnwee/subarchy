@@ -10,12 +10,15 @@ import (
 )
 
 // ServicesNeedingRestart lists the systemd services whose processes still
-// map files that the upgrade replaced or removed (ADR 0026 step 7): a
-// "(deleted)" file-backed mapping in /proc/<pid>/maps, with the unit read
-// from /proc/<pid>/cgroup. Memory-backed mappings that are always
-// "(deleted)" (memfd, shared memory, /tmp, /run, System V) do not count,
-// nor do scopes and slices (apps, sessions): those are the user's to
-// restart. User services are marked "(user)". Nothing is restarted here.
+// run code that the upgrade replaced or removed (ADR 0026 step 7): a
+// "(deleted)" executable file-backed mapping in /proc/<pid>/maps, with the
+// unit read from /proc/<pid>/cgroup. Only executable mappings count, which
+// is how programs and libraries are mapped: a service also maps data it
+// deletes or rewrites by itself (journald's rotated journals, caches, GPU
+// buffers), and that says nothing about an upgrade. Memory-backed mappings
+// that are always "(deleted)" (memfd, shared memory, /tmp, /run, System V)
+// do not count either, nor do scopes and slices (apps, sessions): those
+// are the user's to restart. User services are marked "(user)". Nothing is restarted here.
 // Run as root (the `privileged services` step): another user's maps are
 // not readable, and system services would otherwise never show.
 func ServicesNeedingRestart(proc string) ([]string, error) {
@@ -61,8 +64,8 @@ func isPID(name string) bool {
 	return true
 }
 
-// mapsReplacedFile reports whether a process maps a deleted file that
-// lives on disk. A process that went away reads as not.
+// mapsReplacedFile reports whether a process maps, as code, a deleted file
+// that lives on disk. A process that went away reads as not.
 func mapsReplacedFile(mapsPath string) bool {
 	f, err := os.Open(mapsPath)
 	if err != nil {
@@ -78,6 +81,9 @@ func mapsReplacedFile(mapsPath string) bool {
 		}
 		fields := strings.Fields(line)
 		if len(fields) < 7 {
+			continue
+		}
+		if !strings.Contains(fields[1], "x") {
 			continue
 		}
 		path := fields[5]

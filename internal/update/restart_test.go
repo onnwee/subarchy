@@ -36,6 +36,10 @@ const (
 	tmpGone    = "7f04 rw-s 00000000 00:01 6 /tmp/.X11-unix/x (deleted)"
 	sysvGone   = "7f05 rw-s 00000000 00:01 7 /SYSV00000000 (deleted)"
 	runUserOld = "7f06 rw-s 00000000 00:01 8 /run/user/1000/pulse/shm (deleted)"
+	// Data a service deleted or rewrote by itself; no upgrade was involved.
+	journalGone = "7f07 rw-s 00000000 00:1e 9 /var/log/journal/0ada/system@511e.journal (deleted)"
+	cacheGone   = "7f08 r--p 00000000 00:1e 10 /var/cache/fwupd/quirks.xmlb (deleted)"
+	gpuGone     = "7f09 rw-s 00000000 00:01 11 /drm mm object (deleted)"
 )
 
 func TestServicesNeedingRestart(t *testing.T) {
@@ -47,6 +51,8 @@ func TestServicesNeedingRestart(t *testing.T) {
 	fakeProc(t, proc, "104", "/user.slice/user-1000.slice/user@1000.service/app.slice/app-kitty-1.scope", libGone) // not a service
 	fakeProc(t, proc, "105", "/system.slice/dbus.service", memfdGone, shmGone, tmpGone, sysvGone, runUserOld)
 	fakeProc(t, proc, "106", "/system.slice/system-getty.slice/getty@tty1.service", libGone)
+	fakeProc(t, proc, "107", "/system.slice/systemd-journald.service", libOK, journalGone)
+	fakeProc(t, proc, "108", "/system.slice/fwupd.service", libOK, cacheGone, gpuGone)
 	fakeProc(t, proc, "self", "/system.slice/subcult.service", libGone) // not a pid
 	if err := os.WriteFile(filepath.Join(proc, "uptime"), []byte("1 1\n"), 0o644); err != nil {
 		t.Fatal(err)
