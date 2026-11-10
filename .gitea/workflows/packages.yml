@@ -70,5 +70,7 @@ jobs:
             mapfile -t packages < build/packages/package-names.txt
             pacman --config "/tmp/pacman-$channel.conf" -Syddw --noconfirm "${packages[@]}"
           done
-          pacman --config /tmp/pacman-stable.conf -S --noconfirm subarchy
+          # Arch's container image ships an /etc/os-release no package owns;
+          # an install made by the installer has none before subarchy lands.
+          pacman --config /tmp/pacman-stable.conf -S --noconfirm --overwrite /etc/os-release subarchy
           subcult --version
