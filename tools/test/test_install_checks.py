@@ -138,5 +138,36 @@ class LockCrash(unittest.TestCase):
         self.assertFalse(install_test.lock_crash_ok(crash(end="active\n")))
 
 
+class QuietestMinute(unittest.TestCase):
+    """The idle sample: other programs waking the shell only add to a minute."""
+
+    def samples(self, *minutes):
+        left = list(minutes)
+        self.taken = 0
+
+        def sample():
+            self.taken += 1
+            return left.pop(0)
+        return sample
+
+    def test_a_quiet_first_minute_is_the_only_one_taken(self):
+        self.assertEqual(install_test.quietest_minute(self.samples((1, 40), (0, 0))), (1, 40))
+        self.assertEqual(self.taken, 1)
+
+    def test_a_noisy_minute_is_sampled_again_and_the_quietest_judged(self):
+        self.assertEqual(install_test.quietest_minute(self.samples((900, 950), (2, 30))), (2, 30))
+        self.assertEqual(self.taken, 2)
+
+    def test_a_shell_that_wakes_every_minute_is_still_reported_over_budget(self):
+        main, total = install_test.quietest_minute(self.samples((900, 950), (800, 990), (850, 900)))
+        self.assertEqual((main, total), (800, 990))
+        self.assertEqual(self.taken, 3)
+        self.assertFalse(install_test.idle_ok(main))
+
+    def test_a_failed_reading_is_a_failure(self):
+        self.assertEqual(install_test.quietest_minute(self.samples(None)), (-1, -1))
+        self.assertFalse(install_test.idle_ok(-1))
+
+
 if __name__ == "__main__":
     unittest.main()
