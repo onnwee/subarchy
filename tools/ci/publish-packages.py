@@ -43,6 +43,13 @@ def published(channel):
         return {name.removesuffix("/desc") for name in database.getnames() if name.endswith("/desc")}
 
 
+def collisions(names):
+    """Pairs of package file names where one contains the other. The registry
+    finds a file by substring, so with both present it answers 404 for the
+    shorter name, and with only the longer one it serves that file instead."""
+    return [(a, b) for a in names for b in names if a != b and a in b]
+
+
 def publish(package, channel, token, listed):
     url = f"{REGISTRY}/{channel}"
     if entry(package) in listed:
@@ -68,6 +75,11 @@ def publish(package, channel, token, listed):
                     raise RuntimeError(f"upload returned HTTP {response.status}")
         except urllib.error.HTTPError as error:
             error.close()
+            if error.code == 413:
+                raise RuntimeError(
+                    f"{package.name} is over the 100 MB the public route accepts; "
+                    "upload it through the origin (docs/package-publishing.md)"
+                ) from None
             raise RuntimeError(f"upload returned HTTP {error.code} for {package.name}") from None
     print(f"published: {channel}/{package.name}")
 
@@ -94,6 +106,14 @@ if __name__ == "__main__":
             for channel in CHANNELS:
                 for name in sorted(published(channel)):
                     print(channel, name)
+        elif sys.argv[1:2] == ["--check-names"]:
+            # For the builder, before it builds: file names the registry
+            # could not serve side by side.
+            clashes = collisions(sys.argv[2:])
+            for short, long in clashes:
+                print(f"{short} is part of the name {long}; give one a different pkgrel", file=sys.stderr)
+            if clashes:
+                raise SystemExit("package file names collide in the registry (docs/package-publishing.md)")
         else:
             main()
     except (RuntimeError, urllib.error.URLError) as error:

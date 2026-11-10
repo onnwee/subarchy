@@ -15,7 +15,7 @@ sha256 in the PKGBUILD.
 | `yay` | 13.1.0-1 | `a856562d` | the AUR helper `subcult update` runs (`yay -Sua`); Go build from the GitHub tag |
 | `tzupdate` | 3.1.0-1 | `1b3c3bdf` | time zone from the network's location (ADR 0025 list); Rust build from the GitHub tag |
 | `ufw-docker` | 251123-1 | `76e18ac8` | Docker behind ufw (ADR 0025 list); a shell script from the GitHub tag, b2sum-pinned |
-| `nvidia-580xx-utils` | 580.196.07-1 | `0b45a070` | the 580xx driver branch for Maxwell to Pascal GPUs (ADR 0006): `nvidia-580xx-utils`, `nvidia-580xx-dkms` and `opencl-nvidia-580xx` from NVIDIA's `.run` installer, sha256-pinned, with the AUR's two kernel patches |
+| `nvidia-580xx-utils` | 580.196.07-2 (AUR: -1; see the PKGBUILD) | `0b45a070` | the 580xx driver branch for Maxwell to Pascal GPUs (ADR 0006): `nvidia-580xx-utils`, `nvidia-580xx-dkms` and `opencl-nvidia-580xx` from NVIDIA's `.run` installer, sha256-pinned, with the AUR's two kernel patches |
 | `lib32-nvidia-580xx-utils` | 580.196.07-1 | `489271ac` | the 32-bit libraries of the same branch (Steam, Wine): `lib32-nvidia-580xx-utils` and `lib32-opencl-nvidia-580xx` |
 
 The Limine tools build a native binary with GraalVM (downloaded by the
