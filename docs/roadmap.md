@@ -3,7 +3,7 @@ title: "Roadmap"
 type: plan
 status: draft
 created: 2026-11-06
-updated: 2026-11-08
+updated: 2026-11-10
 tags: [plan]
 aliases: []
 ---
@@ -48,7 +48,10 @@ Packages and installer for the foundation, boot and system layers: Arch with
 `linux-zen` and `linux-lts`, Limine, systemd UKIs, LUKS2 on btrfs, snapper,
 Plymouth, NetworkManager with the DNS trust policy, PipeWire, ufw.
 
-- [ ] ISO builds in CI ([[0049-installer|ADR 0049]]); builds and boots locally since 2026-11-07 (`make iso iso-test`), CI needs a privileged runner
+- [x] ISO builds in CI ([[0049-installer|ADR 0049]]): since 2026-11-10 the
+      `iso / build` job on the KVM runner builds the image, boots it, installs
+      from it into a VM disk and runs every install-test check (#236, #244,
+      #246; [[ci-runner|runner limits]])
 - [x] Installs in a VM to an encrypted, bootable system with snapshot entries
       (2026-11-07, `make install-test`; snapshot entry boots)
 - [ ] Set the CI memory and package budgets from this first build
