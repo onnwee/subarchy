@@ -8,7 +8,11 @@
 pkgbase=nvidia-580xx-utils
 pkgname=('nvidia-580xx-utils' 'opencl-nvidia-580xx' 'nvidia-580xx-dkms')
 pkgver=580.196.07
-pkgrel=1
+# Subarchy: 2, not the AUR's 1. Gitea's Arch registry finds a file by
+# substring, and "nvidia-580xx-utils-580.196.07-1-x86_64.pkg.tar.zst" is part
+# of the lib32 package's file name; with both at -1 the registry answers 404
+# for this one. Keep this pkgrel different from lib32-nvidia-580xx-utils'.
+pkgrel=2
 arch=('x86_64')
 url="http://www.nvidia.com/"
 license=('custom')

@@ -49,6 +49,37 @@ every publication on `main` failed its verification (found 2026-11-09).
 An upload error fails the job; rerunning after a partial upload skips the
 files that reached the registry. No existing package is deleted or replaced.
 
+## Two registry limits
+
+**File names must not contain one another.** Gitea's Arch registry finds a
+package file by substring. With only `lib32-nvidia-580xx-utils-580.196.07-1`
+present it served that file for `nvidia-580xx-utils-580.196.07-1`; with both
+present it answers 404 for the shorter name (observed 2026-11-09, after both
+were uploaded). The builder refuses such a pair before it builds
+(`publish-packages.py --check-names`). The fix is a different `pkgrel` on
+one of them: `nvidia-580xx-utils` carries `-2` against the lib32 package's
+`-1`. The unreachable `nvidia-580xx-utils` and `opencl-nvidia-580xx`
+`580.196.07-1` versions stay in the registry; the databases list `-2`.
+
+**The public route refuses uploads over 100 MB.** Cloudflare in front of
+`git.subcult.tv` answers HTTP 413, and `nvidia-580xx-utils` is about
+360 MB. The uploader stops with a message naming the file. Until CI has a
+route for such files, build that PKGBUILD in a clean Arch container
+(`packaging/aur/build.sh` does) and upload the file through an SSH forward
+to Gitea's origin on Almaz, so the token does not cross the network in
+clear text:
+
+```bash
+ip=$(ssh almaz "docker inspect gitea --format '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}'" | awk '{print $1}')
+ssh -f -N -L 127.0.0.1:43833:"$ip":3000 almaz
+# PUT the file to http://127.0.0.1:43833/api/packages/subculture-collective/arch/<channel>
+# with "Authorization: token …" and "Host: git.subcult.tv", once per channel.
+ssh -O cancel -L 127.0.0.1:43833:"$ip":3000 almaz
+```
+
+The next run on `main` then finds the version in the database, skips it and
+uploads the rest. Downloads are not limited.
+
 ## Signing and client verification
 
 The registry signs each uploaded package and its database using the

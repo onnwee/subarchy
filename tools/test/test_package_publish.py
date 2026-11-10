@@ -92,6 +92,24 @@ class PublishTests(unittest.TestCase):
                     self.assertNotIn("test-token", upload.full_url)
                     self.assertEqual(upload.get_header("Content-length"), "13")
 
+    def test_names_the_registry_cannot_tell_apart(self):
+        # The registry finds a file by substring: with both of these present
+        # it answers 404 for the shorter one (2026-11-09).
+        short = "nvidia-580xx-utils-580.196.07-1-x86_64.pkg.tar.zst"
+        long = "lib32-nvidia-580xx-utils-580.196.07-1-x86_64.pkg.tar.zst"
+        self.assertEqual(publisher.collisions([long, "yay-13.1.0-1-x86_64.pkg.tar.zst", short]), [(short, long)])
+        bumped = "nvidia-580xx-utils-580.196.07-2-x86_64.pkg.tar.zst"
+        self.assertEqual(publisher.collisions([long, bumped, "yay-13.1.0-1-x86_64.pkg.tar.zst"]), [])
+
+    def test_oversized_upload_says_what_to_do(self):
+        with tempfile.TemporaryDirectory() as temp:
+            package = Path(temp) / "big-1.0-1-x86_64.pkg.tar.zst"
+            package.write_bytes(b"x")
+            too_large = urllib.error.HTTPError("https://example.test", 413, "too large", {}, None)
+            with patch.object(publisher.urllib.request, "urlopen", side_effect=too_large):
+                with self.assertRaisesRegex(RuntimeError, "100 MB.*origin"):
+                    publisher.publish(package, "stable", "test-token", set())
+
 
 def database(*entries):
     """A pacman database as the registry serves it: one desc file per entry."""
