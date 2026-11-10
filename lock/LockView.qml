@@ -82,9 +82,18 @@ FocusScope {
     onWheel: view.wake()
   }
 
-  SystemClock {
-    id: clock
-    precision: SystemClock.Minutes
+  // A timer of its own, not SystemClock: that one re-arms every millisecond
+  // through the hour that repeats when daylight saving ends (#54 removed it
+  // from the shell for the same reason).
+  property date now: new Date()
+  Timer {
+    interval: Model.nextTickMs(Date.now())
+    running: true
+    repeat: true
+    onTriggered: {
+      view.now = new Date()
+      interval = Model.nextTickMs(view.now.getTime())
+    }
   }
 
   Column {
@@ -104,7 +113,7 @@ FocusScope {
 
     Text {
       anchors.horizontalCenter: parent.horizontalCenter
-      text: Model.clockText(clock.date)
+      text: Model.clockText(view.now)
       color: view.theme.text || "#F0ECE4"
       font.family: "monospace"
       font.pixelSize: 64
@@ -113,7 +122,7 @@ FocusScope {
 
     Text {
       anchors.horizontalCenter: parent.horizontalCenter
-      text: Qt.formatDate(clock.date, "dddd d MMMM")
+      text: Qt.formatDate(view.now, "dddd d MMMM")
       color: view.theme.subtext || "#9A92A8"
       font.family: "sans-serif"
       font.pixelSize: 18

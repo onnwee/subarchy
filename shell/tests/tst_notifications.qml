@@ -61,6 +61,9 @@ TestCase {
     compare(Model.plain("<a href=\"x\">link</a><img src='y'/>", 100), "link")
     compare(Model.plain("&amp;lt;", 100), "&lt;", "entities decode once")
     compare(Model.plain(null, 10), "")
+    compare(Model.plain("if a < b and c > d then x", 100), "if a < b and c > d then x", "a comparison is not a tag")
+    compare(Model.plain("1 <2 and 3> 2, <3 hearts", 100), "1 <2 and 3> 2, <3 hearts")
+    compare(Model.plain("done</b><!-- note --> <i class='x'>now</i>", 100), "done now")
     compare(Model.plain(12, 10), "12")
   }
 
