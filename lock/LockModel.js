@@ -69,6 +69,18 @@ function bullets(n) {
   return "\u25CF".repeat(Math.max(0, Math.min(n, 32)))
 }
 
+// Milliseconds until the clock's next tick: just after the next minute by
+// the given time, always between 50 and 60 050 whatever the clock did (a
+// jump back, the repeated hour when daylight saving ends, garbage). The
+// shell's ClockModel.js has the same rule.
+function nextTickMs(nowMs) {
+  const n = Number(nowMs)
+  if (!isFinite(n))
+    return 60050
+  const into = ((n % 60000) + 60000) % 60000
+  return Math.max(50, Math.min(60050, 60000 - into + 50))
+}
+
 function clockText(date) {
   const d = date instanceof Date ? date : new Date(date)
   return isNaN(d.getTime()) ? "" : ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2)

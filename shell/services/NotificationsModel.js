@@ -7,14 +7,16 @@ function push(history, entry, cap) {
 }
 
 // Text from any app or web page, as plain text: entities decoded once
-// (named and numeric), tags stripped, whitespace collapsed, cut to cap.
+// (named and numeric), tags and comments stripped, whitespace collapsed,
+// cut to cap. A tag starts with a letter or a slash right after "<", so
+// "a < b and c > d" keeps its middle.
 // Caps: summary 200, body 2000, app name 64.
 const NAMED = { amp: "&", lt: "<", gt: ">", quot: "\"", apos: "'", nbsp: " " }
 
 function plain(text, cap) {
   if (text === null || text === undefined)
     return ""
-  let s = String(text).replace(/<[^>]*>/g, " ")
+  let s = String(text).replace(/<!--[\s\S]*?-->|<\/?[a-zA-Z][^<>]*>/g, " ")
   s = s.replace(/&(#x[0-9a-fA-F]+|#[0-9]+|[a-zA-Z]+);/g, (m, e) => {
     if (e[0] === "#") {
       const code = e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10)

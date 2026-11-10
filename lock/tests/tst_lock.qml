@@ -68,6 +68,20 @@ TestCase {
     compare(Model.key(s, "text", "\u007f").state.password, "pw", "U+007F is not a character of a password")
   }
 
+  // The clock's timer: to just after the next minute, never shorter than
+  // 50 ms. A SystemClock re-armed every millisecond through the hour that
+  // repeats when daylight saving ends.
+  function test_nextTickIsBoundedWhateverTheClockDid() {
+    const minute = 1762754400000 // a whole minute
+    compare(Model.nextTickMs(minute), 60050)
+    compare(Model.nextTickMs(minute + 30000), 30050)
+    compare(Model.nextTickMs(minute - 10), 60, "10 ms before the minute, plus the slack")
+    verify(Model.nextTickMs(minute - 3600000 - 1) >= 50, "the clock went back an hour")
+    verify(Model.nextTickMs(-5) >= 50)
+    compare(Model.nextTickMs(NaN), 60050)
+    compare(Model.nextTickMs("x"), 60050)
+  }
+
   function test_controlCharactersIgnored() {
     const s = Model.key(Model.initial(), "text", "\u001b").state
     compare(s.password, "")
