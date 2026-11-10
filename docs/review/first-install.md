@@ -273,7 +273,7 @@ need their own key-custody and recovery checkpoint.
 | Wi-Fi | Connect/reconnect and usable network after reboot | Installed reconnect/SSH passed; owner reports Wi-Fi working November 9 |
 | SOF audio | Speakers/headphones and microphone | Owner reports audio working November 9; microphone/headphones not separately identified |
 | Bluetooth | Pair, use and reconnect a real peripheral | Owner reports Soma playback through Bluetooth headphones and reconnection after lid resume on November 9. Native pairing merged in #222; pairing interaction itself was not identified in this report. #217 |
-| Suspend/lid | Suspend/resume, lid, unlock and network recovery | Failed: lock appears briefly, then black display; owner reboots. #213 |
+| Suspend/lid | Suspend/resume, lid, unlock and network recovery | Passed November 9 after the #229 fixes: lid cycle on core 438 and standalone `systemctl suspend` on core 448, both with a visible lock and normal unlock (#213, closed). The earlier failure was a brief lock, then a black display and a reboot. Network recovery after resume was not separately checked |
 | Battery | Unplug/replug and automatic profile switching | Owner confirms Dell label changes on plug/unplug after updating. Custom charging controls disappeared because firmware values remained root-only after the boot service timed out. Permission repair restored Custom 50–85% without changing it; combined-widget source adds independent charge/profile display choices. #226 |
 | Splash | Graphical Plymouth and readable unlock prompt | Owner confirmation pending |
 | Secure Boot | Key custody/recovery, enrollment and enforced boot | Pending; not enabled during install |
@@ -454,5 +454,16 @@ showed three failed unlock attempts but did not accept input. Logs from the
 at 11:58:08. The lock remained alive until shutdown; its video decoder
 started on resume and Wayland warned about disabling an unfocused text-input
 surface. Neither message establishes the cause. #213 remains open.
+
+### Standalone suspend, November 9 evening
+
+The owner ran `systemctl suspend` from a terminal on core 448 and reports
+that it worked as expected. Read-only readback from Kvant, boot
+`b0b0f47cad0341fe9a6bcada4224895e`, kernel 7.2.14-zen1-1-zen: s2idle entry
+at 19:57:30 CST and exit at 19:57:37 with no lid event; the lock unit ended
+with `Result=success` and no restarts; no failed system or user units. The
+17:48 lid cycle on the same boot is in the same journal. With the lid result
+above this meets #213's acceptance, and the issue is closed. The crash
+restart policy of the lock stays in #230.
 
 Related: [[0049-installer|ADR 0049]] · [[0050-hardware-support|Hardware support]] · [[package-publishing|Package publishing]] · [[roadmap|Roadmap]] · [[review-index|Review index]]
