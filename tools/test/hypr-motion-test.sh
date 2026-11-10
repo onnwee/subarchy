@@ -37,6 +37,13 @@ print(#configs .. " " .. (gate and "gated" or "open") .. " " .. tostring(sub.mot
 LUA
 }
 
+# A desktop: no mains device, and a wireless mouse reporting its own
+# battery as discharging. That is not the machine running on battery.
+supply hidpp_battery_0 Battery status Discharging
+echo Device >"$ps/hidpp_battery_0/scope"
+[[ $(run) == "2 open true" ]] || fail "a peripheral's battery turned motion off: $(run)"
+rm -r "$ps/hidpp_battery_0"
+
 # No setting, mains online: auto is on.
 supply AC Mains online 1
 supply BAT0 Battery status Charging

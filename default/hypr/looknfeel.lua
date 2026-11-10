@@ -88,7 +88,9 @@ local function on_ac()
       if read_line(dir .. "/" .. name .. "/online") == "1" then
         online = true
       end
-    elseif kind == "Battery" and read_line(dir .. "/" .. name .. "/status") == "Discharging" then
+    elseif kind == "Battery" and read_line(dir .. "/" .. name .. "/status") == "Discharging"
+      -- A peripheral's battery (mouse, headset) has scope Device.
+      and read_line(dir .. "/" .. name .. "/scope") ~= "Device" then
       discharging = true
     end
   end
