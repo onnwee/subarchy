@@ -18,12 +18,13 @@ import (
 
 // fakeRunner answers queries; err is returned from Output when set.
 type fakeRunner struct {
-	tools  map[string]bool
-	out    string
-	err    error
-	series map[string][]string
-	fail   map[string]bool
-	ran    []string
+	tools   map[string]bool
+	out     string
+	err     error
+	series  map[string][]string
+	fail    map[string]bool
+	ran     []string
+	queried []string
 }
 
 func (f *fakeRunner) Run(_ context.Context, argv ...string) error {
@@ -36,6 +37,7 @@ func (f *fakeRunner) Run(_ context.Context, argv ...string) error {
 }
 func (f *fakeRunner) Output(_ context.Context, argv ...string) (string, error) {
 	key := strings.Join(argv, " ")
+	f.queried = append(f.queried, key)
 	if values := f.series[key]; f.err == nil && len(values) > 0 {
 		f.series[key] = values[1:]
 		return values[0], nil
@@ -81,6 +83,11 @@ func TestDryRunTouchesNothing(t *testing.T) {
 	}
 	if len(r.ran) != 0 {
 		t.Errorf("dry run ran %q", r.ran)
+	}
+	for _, query := range r.queried {
+		if strings.HasPrefix(query, "sudo ") {
+			t.Errorf("dry run invoked a privileged query that can prompt: %s", query)
+		}
 	}
 	for _, want := range []string{"would run: sudo /usr/bin/subcult-update privileged upgrade", "would run: bash -euo pipefail"} {
 		if !strings.Contains(out.String(), want) {
