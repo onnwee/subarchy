@@ -19,6 +19,9 @@ snapshot=$(cat "$root/default/pacman/snapshot")
 # Pacman expands its own repository and architecture placeholders.
 # shellcheck disable=SC2016
 printf 'Server = https://archive.archlinux.org/repos/%s/$repo/os/$arch\n' "$snapshot" >/etc/pacman.d/mirrorlist
+# The archive stalls single connections for longer than pacman's ten-second
+# low-speed limit when hundreds of files are fetched; waiting gets them all.
+sed -i '/^\[options\]/a DisableDownloadTimeout' /etc/pacman.conf
 # The container may be newer than Subarchy's staged Arch snapshot.
 pacman -Syyuu --noconfirm
 pacman -S --noconfirm --needed base-devel git go python sudo archiso qemu-system-x86 edk2-ovmf \

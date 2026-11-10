@@ -66,6 +66,7 @@ cat >"$root/build/offline-pacman.conf" <<EOF
 [options]
 Architecture = auto
 SigLevel = Required DatabaseOptional
+DisableDownloadTimeout
 DBPath = $offline_db
 CacheDir = $repo
 
