@@ -1,0 +1,131 @@
+name: Mirror CI
+run-name: Mirror CI ${{ github.sha }}
+
+# Pull request verification for the GitHub organization copy. Gitea stays
+# canonical: it reports this run's gate as "GitHub CI / Mirror CI gate" and
+# keeps main, package publishing and the KVM runner lanes (.gitea/workflows).
+'on':
+  push:
+    branches-ignore: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    if: github.repository == 'subculture-collective/subarchy'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version-file: go.mod
+          cache: true
+          cache-dependency-path: go.sum
+      - name: Install shellcheck
+        run: |
+          if ! command -v shellcheck >/dev/null; then
+            sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
+          fi
+      - name: make verify
+        run: make verify
+
+  package:
+    if: github.repository == 'subculture-collective/subarchy'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    container:
+      image: archlinux:latest
+      # Reap orphaned package-hook processes and leave room for build/render
+      # threads, as on the Gitea runner.
+      options: --init --pids-limit=1024
+    steps:
+      - name: Install build tools
+        run: pacman -Syu --noconfirm --needed base-devel go git nodejs pacman-contrib fakeroot hypridle librsvg xorg-xcursorgen hyprcursor python lua python-pyte python-pillow ffmpeg ttf-dejavu qt6-multimedia power-profiles-daemon python-gobject
+      - name: Check process budget
+        run: |
+          cat /sys/fs/cgroup/pids.current /sys/fs/cgroup/pids.max
+          ps -eLo comm= | sort | uniq -c | sort -nr | head -10
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Build and check the package as a normal user
+        run: |
+          useradd -m builder
+          git config --global --add safe.directory "$PWD"
+          chown -R builder: "$PWD"
+          su builder -c "git config --global --add safe.directory '$PWD' && make package"
+
+  shell:
+    if: github.repository == 'subculture-collective/subarchy'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    container:
+      image: archlinux:latest
+      options: --init --pids-limit=1024
+    steps:
+      - name: Install Quickshell, Qt and the headless test tools
+        run: |
+          pacman -Syu --noconfirm --needed git make nodejs python python-gobject ffmpeg quickshell qt6-multimedia qt6-declarative sway grim imagemagick libnotify ttf-dejavu ttf-iosevkaterm-nerd libqalculate fd unicode-emoji wtype librsvg
+          # Arch gives sway cap_sys_nice as a file capability, which a container
+          # may not grant; without it the binary cannot start at all.
+          setcap -r /usr/bin/sway
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Model tests, lint and widget index
+        run: |
+          git config --global --add safe.directory "$PWD"
+          make shell-test shell-lint shell-index-check
+          tools/test/dell-power-refresh.sh
+          tools/test/lock-focus-test.sh
+          python3 -m unittest discover -s tools/bluetooth -p 'test_*.py' -v
+          tools/test/bluetooth-panel-test.sh build/bluetooth-preview
+          tools/test/battery-panel-test.sh build/battery-preview
+          for scale in 1 1.6 2; do
+            QT_SCALE_FACTOR="$scale" tools/test/greeter-test.sh "build/greeter-preview/scale-$scale"
+          done
+      - name: Keep native greeter, battery and Bluetooth previews
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: shell-previews
+          path: |
+            build/greeter-preview/
+            build/battery-preview/
+            build/bluetooth-preview/
+          retention-days: 1
+          if-no-files-found: warn
+      - name: Shell in a headless sway
+        run: |
+          useradd -m runner
+          chown -R runner: "$PWD"
+          su runner -c "git config --global --add safe.directory '$PWD' && tools/test/shell-headless.sh shell"
+
+  mirror-gate:
+    name: Mirror CI gate
+    if: always() && github.repository == 'subculture-collective/subarchy'
+    needs: [verify, package, shell]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require every verification job
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          results = json.loads(os.environ["RESULTS"])
+          expected = {'verify', 'package', 'shell'}
+          assert set(results) == expected, results
+          for name, result in results.items():
+              assert result["result"] == "success", name + " did not pass"
+          PY

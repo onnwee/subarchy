@@ -1,9 +1,11 @@
 name: verify
 
+# Pull requests are verified by .github/workflows/mirror-ci.yml on the GitHub
+# organization copy (reported here as "GitHub CI / Mirror CI gate"); this
+# workflow keeps verifying main after merge.
 on:
   push:
     branches: [main]
-  pull_request:
 
 # Bound worker pools to the job quota rather than the host CPU count.
 env:
