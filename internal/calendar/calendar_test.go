@@ -305,6 +305,15 @@ func TestOnBattery(t *testing.T) {
 	if OnBattery(desktop) {
 		t.Error("no battery is AC")
 	}
+	// A wireless mouse reports its own battery; the desktop it is paired
+	// with has no mains device at all.
+	ps = t.TempDir()
+	put("hidpp_battery_0", "type", "Battery")
+	put("hidpp_battery_0", "scope", "Device")
+	put("hidpp_battery_0", "status", "Discharging")
+	if OnBattery(ps) {
+		t.Error("a peripheral's battery is not the machine's")
+	}
 }
 
 func TestDurationPropertyOrder(t *testing.T) {

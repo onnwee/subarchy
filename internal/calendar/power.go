@@ -21,7 +21,11 @@ func OnBattery(powerSupply string) bool {
 				mainsOnline = true
 			}
 		case "Battery":
-			battery = true
+			// A peripheral's battery (mouse, headset) has scope Device.
+			scope, _ := os.ReadFile(filepath.Join(dir, "scope"))
+			if strings.TrimSpace(string(scope)) != "Device" {
+				battery = true
+			}
 		}
 	}
 	return battery && !mainsOnline

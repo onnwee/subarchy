@@ -31,6 +31,26 @@ func fixNames(fixes []Fix) []string {
 	return out
 }
 
+func TestPeripheralBatteryDoesNotMakeALaptop(t *testing.T) {
+	root := fixtureRoot(t, map[string]string{
+		"proc/cpuinfo": "vendor_id\t: GenuineIntel\nmodel\t\t: 183\nflags\t\t: fpu\n",
+		"sys/class/power_supply/hidpp_battery_0/type":  "Battery\n",
+		"sys/class/power_supply/hidpp_battery_0/scope": "Device\n",
+	})
+	m, err := Detect(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if m.Facts.Battery {
+		t.Error("a wireless mouse's battery made the desktop a battery machine")
+	}
+	for _, name := range fixNames(Fixes(m)) {
+		if name == "intel-lpmd" {
+			t.Error("a desktop got the laptop power daemon")
+		}
+	}
+}
+
 func TestFixesPantherLakeLaptop(t *testing.T) {
 	root := fixtureRoot(t, map[string]string{
 		"proc/cpuinfo": "vendor_id\t: GenuineIntel\nmodel\t\t: 204\nflags\t\t: fpu\n",

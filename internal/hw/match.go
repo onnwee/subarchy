@@ -78,7 +78,11 @@ func readFacts(root string) Facts {
 	// device whose switch capabilities include SW_LID (bit 0).
 	for _, kind := range glob(root, "sys/class/power_supply/*/type") {
 		if b, err := os.ReadFile(kind); err == nil && strings.TrimSpace(string(b)) == "Battery" {
-			f.Battery = true
+			// A peripheral's battery (mouse, headset) has scope Device.
+			scope, _ := os.ReadFile(filepath.Join(filepath.Dir(kind), "scope"))
+			if strings.TrimSpace(string(scope)) != "Device" {
+				f.Battery = true
+			}
 		}
 	}
 	for _, hid := range glob(root, "sys/bus/acpi/devices/*/hid") {
