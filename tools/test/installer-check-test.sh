@@ -4,7 +4,7 @@
 # replaces the programs it asks.
 # The functions and variables below stand in for programs and state the
 # sourced installer reads.
-# shellcheck disable=SC2329,SC2034
+# shellcheck disable=SC2317,SC2329,SC2034
 set -euo pipefail
 
 root=$(git rev-parse --show-toplevel)
