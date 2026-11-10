@@ -2,14 +2,14 @@
 -- greeter once this compositor is up. It runs as the sddm user, so it reads
 -- only system files.
 
-local layout = "us"
+-- The layout and its variant, as the session reads them
+-- (default/hypr/input.lua): the password is typed under the same keys here.
+local layout, variant = "us", ""
 local file = io.open("/etc/vconsole.conf", "r")
 if file then
   for line in file:lines() do
-    local value = line:match("^%s*XKBLAYOUT%s*=%s*\"?([^\"%s]+)")
-    if value then
-      layout = value
-    end
+    layout = line:match("^%s*XKBLAYOUT%s*=%s*\"?([^\"%s]+)") or layout
+    variant = line:match("^%s*XKBVARIANT%s*=%s*\"?([^\"%s]+)") or variant
   end
   file:close()
 end
@@ -20,7 +20,7 @@ hl.env("HYPRCURSOR_THEME", "subcult-cursor")
 hl.env("HYPRCURSOR_SIZE", "24")
 
 hl.config({
-  input = { kb_layout = layout },
+  input = { kb_layout = layout, kb_variant = variant },
   misc = {
     disable_hyprland_logo = true,
     disable_splash_rendering = true,

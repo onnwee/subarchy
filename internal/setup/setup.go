@@ -178,6 +178,7 @@ type Answers struct {
 	Timezone     string
 	Keymap       string
 	XKBLayout    string
+	XKBVariant   string
 	Repo         string
 	CmdlineExtra string
 	PackageCache string
@@ -206,6 +207,9 @@ func (a Answers) WriteConfig(dir string) (string, error) {
 		"KEYMAP=" + a.Keymap,
 		"XKB_LAYOUT=" + a.XKBLayout,
 		"SUBARCHY_REPO=" + a.Repo,
+	}
+	if a.XKBVariant != "" {
+		lines = append(lines, "XKB_VARIANT="+a.XKBVariant)
 	}
 	if a.PackageCache != "" {
 		lines = append(lines, "PACKAGE_CACHE="+a.PackageCache)

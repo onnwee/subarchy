@@ -43,7 +43,10 @@ repo-add --quiet "$repo/subarchy.db.tar.gz" "$repo"/*.pkg.tar.zst >/dev/null
 # A package Subarchy builds itself that the install lists or the hardware
 # catalog name must be in the repository now; otherwise the installer fails
 # late, inside the VM, and the offline set cannot resolve it.
-mapfile -t install_set < <(sed 's/#.*//; /^[[:space:]]*$/d' "$root"/install/packages/*.txt; (cd "$root" && go run ./cmd/subcult-hw packages --all))
+# In a variable first: a failed `subcult-hw` inside a process substitution
+# would go unnoticed and leave the hardware packages out of the offline set.
+hw_all=$(cd "$root" && go run ./cmd/subcult-hw packages --all)
+mapfile -t install_set < <(sed 's/#.*//; /^[[:space:]]*$/d' "$root"/install/packages/*.txt; printf '%s\n' "$hw_all")
 missing=()
 for dir in "$root"/packaging/*/ "$root"/packaging/aur/*/; do
   [[ -f $dir/PKGBUILD ]] || continue
