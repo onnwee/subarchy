@@ -190,6 +190,12 @@ func (u *Updater) Run(ctx context.Context) (Report, error) {
 		}
 	}
 	if coreChanged {
+		// The monitor watcher is the package's other long-running program.
+		// It would run the replaced binary until the next login, and the
+		// services report would name it after every upgrade.
+		if err := u.R.Run(ctx, "systemctl", "--user", "try-restart", "subcult-display.service"); err != nil {
+			fmt.Fprintf(u.O.Stdout, "   monitor watcher restart: %v (continuing)\n", err)
+		}
 		say("restarting the desktop shell")
 		if err := u.R.Run(ctx, "systemctl", "--user", "try-restart", "subcult-shell.service"); err != nil {
 			fmt.Fprintf(u.O.Stdout, "   shell restart: %v (continuing)\n", err)

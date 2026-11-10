@@ -104,6 +104,7 @@ func TestRunOrder(t *testing.T) {
 }
 
 const shellRestart = "systemctl --user try-restart subcult-shell.service"
+const displayRestart = "systemctl --user try-restart subcult-display.service"
 
 const pauseReload = "hyprctl eval hl.config({ misc = { disable_autoreload = true } })"
 const resumeReload = "hyprctl eval hl.config({ misc = { disable_autoreload = false } })"
@@ -189,6 +190,11 @@ func TestRunRestartsShellWhenSubarchyChanged(t *testing.T) {
 	if i := slices.Index(f.ran, shellRestart); i != len(f.ran)-1 {
 		t.Errorf("the restart must come last, after migrations and cleanup: %q", f.ran)
 	}
+	// The monitor watcher is a long-running program from the same package;
+	// left alone it runs the old binary and the report names it every time.
+	if !slices.Contains(f.ran, displayRestart) {
+		t.Errorf("ran %q, want the monitor watcher restarted", f.ran)
+	}
 }
 
 func TestRunLeavesShellWhenSubarchyUnchanged(t *testing.T) {
@@ -201,7 +207,7 @@ func TestRunLeavesShellWhenSubarchyUnchanged(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if slices.Contains(f.ran, shellRestart) || rep.ShellRestarted {
+	if slices.Contains(f.ran, shellRestart) || slices.Contains(f.ran, displayRestart) || rep.ShellRestarted {
 		t.Errorf("the shell was restarted for an unchanged package: %q", f.ran)
 	}
 	if strings.Contains(rep.Summary(), "shell") {
