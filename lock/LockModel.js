@@ -4,23 +4,39 @@
 // handling and the messages are testable without a session.
 
 function initial() {
-  return { password: "", prompt: false, checking: false, attempts: 0, message: "" }
+  return { password: "", typedAhead: "", prompt: false, checking: false, attempts: 0, message: "" }
 }
 
 // Qt key codes the lock reacts to by name; anything else is text.
-const KEYS = { 16777220: "Return", 16777221: "Enter", 16777219: "Backspace", 16777216: "Escape" }
+const KEYS = { 16777220: "Return", 16777221: "Enter", 16777219: "Backspace", 16777216: "Escape", 16777223: "Delete" }
 
 function keyName(code) {
   return KEYS[code] || "text"
 }
 
+// One editing key applied to typed text. Delete arrives with U+007F as its
+// text, which is not a character of a password.
+function edit(typed, name, text) {
+  if (name === "Backspace")
+    return typed.slice(0, -1)
+  if (name === "Escape")
+    return ""
+  if (name === "text" && typeof text === "string" && text !== "" && text.charCodeAt(0) >= 32 && text !== "\u007f")
+    return typed + text
+  return typed
+}
+
 // A key: returns { state, submit }. Text opens the prompt and adds to the
 // password; Backspace removes one character; Escape clears; Return submits
-// a non-empty password. Nothing changes while a check runs.
+// a non-empty password. While a check runs the password being checked does
+// not change: what is typed is kept apart and becomes the next attempt if
+// the check fails (a failure takes PAM about two seconds to report).
 function key(state, name, text) {
   const s = Object.assign({}, state)
-  if (s.checking)
+  if (s.checking) {
+    s.typedAhead = edit(s.typedAhead || "", name, text)
     return { state: s, submit: false }
+  }
   s.prompt = true
   if (name === "Return" || name === "Enter") {
     if (s.password === "")
@@ -29,24 +45,20 @@ function key(state, name, text) {
     s.message = ""
     return { state: s, submit: true }
   }
-  if (name === "Backspace") {
-    s.password = s.password.slice(0, -1)
-  } else if (name === "Escape") {
-    s.password = ""
+  if (name === "Escape")
     s.message = ""
-  } else if (typeof text === "string" && text !== "" && text.charCodeAt(0) >= 32) {
-    s.password += text
-  }
+  s.password = edit(s.password, name, text)
   return { state: s, submit: false }
 }
 
-// A failed check: the password is dropped, the attempt counted, the message shown.
+// A failed check: the checked password is dropped, the attempt counted, the
+// message shown. What was typed during the check is the next attempt.
 function failed(state, message) {
-  return Object.assign({}, state, { password: "", checking: false, attempts: state.attempts + 1, message: message })
+  return Object.assign({}, state, { password: state.typedAhead || "", typedAhead: "", checking: false, attempts: state.attempts + 1, message: message })
 }
 
 function unlocked(state) {
-  return Object.assign({}, state, { password: "", checking: false, message: "" })
+  return Object.assign({}, state, { password: "", typedAhead: "", checking: false, message: "" })
 }
 
 function failureMessage(attempts) {
