@@ -28,7 +28,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from vmlib import ANSI, OVMF_CODE, OVMF_VARS, Serial, colours_in, distinct_colours, qemu_command, screendump
+from vmlib import ANSI, OVMF_CODE, OVMF_VARS, Serial, colours_in, distinct_colours, has_colour, qemu_command, screendump
 
 ROOT = Path(__file__).resolve().parents[2]
 VM = ROOT / "build" / "vm"
@@ -205,6 +205,66 @@ def install(iso: Path, disk: Path, vars_file: Path, timeout: float, guided_setup
         return False
     finally:
         stop(proc, log)
+
+
+MARKER = "FF00FF"
+
+
+def lock_crash(serial: Serial, qmp: Path, lock_status: str) -> dict:
+    """Kill the lock program while locked and record what the session shows.
+
+    `shown` maps each capture to whether the marker terminal is visible:
+    before the lock (it must be), while locked, right after the kill, once
+    the replacement runs, and after the unlock (visible again).
+    """
+    unit = "subcult-lock.service"
+    main_pid = f"systemctl --user show -p MainPID --value {unit}"
+    shown: dict[str, bool] = {}
+
+    def capture(name: str) -> None:
+        png = VM / f"lock-{name}.png"
+        screendump(qmp, png)
+        shown[name] = has_colour(png, MARKER)
+
+    serial.run(
+        f"hyprctl -i 0 dispatch 'hl.dsp.exec_cmd(\"kitty -o background=#{MARKER} -o background_opacity=1\")' >/dev/null;"
+        " for i in $(seq 20); do [ $(hyprctl -i 0 clients | grep -c '^Window ') -ge 1 ] && break; sleep 1; done; sleep 2",
+        timeout=60)
+    capture("before")
+    first = serial.run(f"systemctl --user start {unit}; sleep 4; {lock_status}; {main_pid}", timeout=60)
+    capture("locked")
+    serial.run(f"systemctl --user kill --signal=SIGKILL {unit}")
+    capture("killed")
+    second = serial.run(
+        f"for i in $(seq 20); do p=$({main_pid}); [ \"$p\" != 0 ] && {lock_status} >/dev/null 2>&1 && break; sleep 1; done;"
+        f" sleep 3; {lock_status}; {main_pid}; systemctl --user show -p NRestarts --value {unit}", timeout=90)
+    capture("replaced")
+    end = serial.run(
+        f"W=$(ls /run/user/$(id -u) | grep -m1 '^wayland-[0-9]'); WAYLAND_DISPLAY=$W wtype -s 200 -k Return; sleep 2;"
+        f" WAYLAND_DISPLAY=$W wtype -s 200 '{PASSWORD}' -k Return; sleep 5; systemctl --user is-active {unit}", timeout=60)
+    capture("unlocked")
+    serial.run("hyprctl -i 0 dispatch 'hl.dsp.window.close()' >/dev/null; sleep 1")
+    return {"first": first, "second": second, "end": end, "shown": shown}
+
+
+def lock_crash_ok(result: dict) -> bool:
+    """A different process holds a secure lock after the kill, the desktop
+    showed only before the lock and after the unlock, and the unit ended."""
+    try:
+        first_status, first_pid = result["first"].strip().splitlines()[-2:]
+        second_status, second_pid, restarts = result["second"].strip().splitlines()[-3:]
+        first, second = json.loads(first_status), json.loads(second_status)
+        restarted = int(restarts) >= 1
+    except ValueError:
+        return False
+    return (
+        first.get("locked") is True and first.get("secure") is True
+        and second.get("locked") is True and second.get("secure") is True
+        and first_pid.isdigit() and second_pid.isdigit() and second_pid not in ("0", first_pid)
+        and restarted
+        and result["shown"] == {"before": True, "locked": False, "killed": False, "replaced": False, "unlocked": True}
+        and result["end"].strip().splitlines()[-1:] == ["inactive"]
+    )
 
 
 def wait_for(serial: Serial, command: str, seconds: int = 60) -> str:
@@ -494,6 +554,13 @@ finally:
         time.sleep(3)
         screendump(qmp, VM / "session.png")
         results["session_colours"] = distinct_colours(VM / "session.png")
+        # The lock program dying (ADR 0070), apart from the shell dying
+        # earlier: the unit starts a replacement, which takes over the lock
+        # the compositor kept, and the password still unlocks. A terminal in
+        # a colour nothing else draws stands for the desktop: it must not
+        # show in any capture between the lock and the unlock. Last, because
+        # a refused replacement leaves the session locked for good.
+        results["lock_crash"] = lock_crash(serial, qmp, lock_status)
         serial.run(f"{sudo} rm -f /etc/sddm.conf.d/zz-install-test.conf")
         serial.send(f"{sudo} poweroff\n")
     except TimeoutError as e:
@@ -559,6 +626,7 @@ finally:
         "idle service runs generated config and DPMS on/off are idempotent":
             r["idle_service"].strip().splitlines()[0:2] == ["active", "1"] and "DPMS_IDEMPOTENT" in r["idle_service"],
         "lock locks, survives the shell dying, unlocks with the password": lock_ok(r["lock"]),
+        "lock comes back after its process is killed, keeps the desktop hidden, then unlocks": lock_crash_ok(r["lock_crash"]),
         "Hyprland session started": r["hyprland"].strip() != "",
         "session runs under uwsm": "wayland-wm@" in r["uwsm"],
         "Subarchy Hyprland defaults loaded (flat look)": "gap data: 0 0 0 0" in r["hypr_opts"]

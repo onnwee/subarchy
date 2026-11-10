@@ -38,6 +38,11 @@ hl.config({
     force_default_wallpaper = 0,
     animate_manual_resizes = false,
     animate_mouse_windowdragging = false,
+    -- A lock program that died leaves the session locked. This lets its
+    -- replacement (subcult-lock.service restarts on failure) take that
+    -- lock over; without it the compositor refuses every new lock and the
+    -- session can only be recovered from a text console (ADR 0070).
+    allow_session_lock_restore = true,
   },
 })
 

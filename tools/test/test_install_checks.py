@@ -104,5 +104,39 @@ class ClaimPrompt(unittest.TestCase):
         self.assertEqual(self.claim(1).cols, 1000)
 
 
+LOCKED = '{"locked":true,"secure":true,"prompt":false,"checking":false}'
+HIDDEN = {"before": True, "locked": False, "killed": False, "replaced": False, "unlocked": True}
+
+
+def crash(**changes) -> dict:
+    """A passing lock-crash record, with some of its parts replaced."""
+    return {"first": f"{LOCKED}\n1200\n", "second": f"{LOCKED}\n1311\n1\n", "end": "inactive\n", "shown": dict(HIDDEN)} | changes
+
+
+class LockCrash(unittest.TestCase):
+    def test_a_replacement_that_holds_the_lock_and_unlocks_passes(self):
+        self.assertTrue(install_test.lock_crash_ok(crash()))
+
+    def test_the_same_or_no_process_after_the_kill_fails(self):
+        self.assertFalse(install_test.lock_crash_ok(crash(second=f"{LOCKED}\n1200\n1\n")))
+        self.assertFalse(install_test.lock_crash_ok(crash(second=f"{LOCKED}\n0\n1\n")))
+        self.assertFalse(install_test.lock_crash_ok(crash(second=f"{LOCKED}\n1311\n0\n")))
+        self.assertFalse(install_test.lock_crash_ok(crash(second="No running instances\n0\n5\n")))
+
+    def test_a_replacement_the_compositor_did_not_accept_fails(self):
+        refused = LOCKED.replace('"secure":true', '"secure":false')
+        self.assertFalse(install_test.lock_crash_ok(crash(second=f"{refused}\n1311\n1\n")))
+
+    def test_the_desktop_showing_while_locked_fails(self):
+        for moment in ("locked", "killed", "replaced"):
+            with self.subTest(moment=moment):
+                self.assertFalse(install_test.lock_crash_ok(crash(shown=HIDDEN | {moment: True})))
+
+    def test_no_marker_before_the_lock_or_after_the_unlock_fails(self):
+        self.assertFalse(install_test.lock_crash_ok(crash(shown=HIDDEN | {"before": False})))
+        self.assertFalse(install_test.lock_crash_ok(crash(shown=HIDDEN | {"unlocked": False})))
+        self.assertFalse(install_test.lock_crash_ok(crash(end="active\n")))
+
+
 if __name__ == "__main__":
     unittest.main()

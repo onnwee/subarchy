@@ -12,7 +12,8 @@ Environment=QS_NO_RELOAD_POPUP=1
 Environment=QS_DISABLE_FILE_WATCHER=1
 Environment=QS_DISABLE_CRASH_HANDLER=1
 # The program exits on its own once unlocked. If it dies while locked the
-# compositor keeps the session locked with nothing drawn; it comes back and
-# takes the lock over.
+# compositor keeps the session locked and draws its own notice; the
+# replacement started here takes the lock over, which Hyprland allows
+# because the defaults set misc:allow_session_lock_restore (ADR 0070).
 Restart=on-failure
 RestartSec=1
