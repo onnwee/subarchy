@@ -12,10 +12,11 @@ import (
 	"io"
 	"math"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"git.subcult.tv/subculture-collective/subarchy/internal/atomicfile"
 )
 
 // ThemeName is the name both cursor formats install under.
@@ -209,14 +210,7 @@ func SaveSettings(path string, s Settings) error {
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
-	}
-	tmp := path + ".tmp"
-	if err := os.WriteFile(tmp, append(data, '\n'), 0o644); err != nil {
-		return err
-	}
-	return os.Rename(tmp, path)
+	return atomicfile.Write(path, append(data, '\n'), 0o644)
 }
 
 // EnvLua is ~/.config/subcult/cursor-env.lua: Hyprland reads it at login

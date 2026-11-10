@@ -14,6 +14,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"git.subcult.tv/subculture-collective/subarchy/internal/atomicfile"
 )
 
 // SecretType marks a copy that password managers want kept out of history.
@@ -147,11 +149,7 @@ func Save(dir string, s Store) error {
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return err
 	}
-	path := filepath.Join(dir, "history.json")
-	if err := os.WriteFile(path+".tmp", append(raw, '\n'), 0o600); err != nil {
-		return err
-	}
-	return os.Rename(path+".tmp", path)
+	return atomicfile.Write(filepath.Join(dir, "history.json"), append(raw, '\n'), 0o600)
 }
 
 // Add puts e first, dropping an older copy of the same content, and trims

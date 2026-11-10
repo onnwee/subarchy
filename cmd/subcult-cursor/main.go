@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"slices"
 
+	"git.subcult.tv/subculture-collective/subarchy/internal/atomicfile"
 	"git.subcult.tv/subculture-collective/subarchy/internal/cursor"
 	"git.subcult.tv/subculture-collective/subarchy/internal/dispatch"
 	"git.subcult.tv/subculture-collective/subarchy/internal/update"
@@ -153,10 +154,7 @@ func apply(ctx context.Context, e env, p cursor.Palette, src string, s cursor.Se
 		return err
 	}
 	envFile := filepath.Join(e.home, ".config", "subcult", "cursor-env.lua")
-	if err := os.WriteFile(envFile+".tmp", []byte(cursor.EnvLua(s.Size)), 0o644); err != nil {
-		return err
-	}
-	if err := os.Rename(envFile+".tmp", envFile); err != nil {
+	if err := atomicfile.Write(envFile, []byte(cursor.EnvLua(s.Size)), 0o644); err != nil {
 		return err
 	}
 	if os.Getenv("HYPRLAND_INSTANCE_SIGNATURE") != "" && e.runner.Has("hyprctl") {
