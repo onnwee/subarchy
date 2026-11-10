@@ -800,6 +800,19 @@ def boot_secureboot(disk: Path, vars_file: Path) -> bool:
         serial.send("sudo reboot\n")
         unlock_and_login(serial)
         again = serial.run(f"{sb_state}; systemctl is-system-running --wait", timeout=120)
+        # A theme change rewrites the colour lines of limine.conf. With the
+        # config's hash enrolled in the boot loader, the hash must follow,
+        # or the next boot stops at Limine. Only the accent changes here,
+        # so the splash and the initramfs stay as they are.
+        themed = serial.run(
+            "mkdir -p ~/.config/subcult/theme && printf '%s' '{\"schema\": 1, \"appearance\": \"dark\", \"colors\":"
+            " {\"base\": \"#100B19\", \"text\": \"#F0ECE4\", \"mauve\": \"#33aa77\"}}' > ~/.config/subcult/theme/palette.json;"
+            f" echo {PASSWORD} | sudo -S -p '' -v && subcult theme apply-system --elevate sudo; echo THEME_EXIT=$?",
+            timeout=600,
+        )
+        serial.send("sudo reboot\n")
+        unlock_and_login(serial)
+        themed_boot = serial.run(f"{sb_state}; systemctl is-system-running --wait", timeout=120)
         # TPM unlock (ADR 0010): bind the disk to PCR 7, then boot without
         # typing the passphrase.
         tpm = serial.run(
@@ -833,6 +846,8 @@ def boot_secureboot(disk: Path, vars_file: Path) -> bool:
         "subcult secureboot setup succeeded": "SETUP_EXIT=0" in setup,
         "boots with Secure Boot on": after.split()[:1] == ["1"] and after.split()[-1] in ("running", "degraded"),
         "still boots after limine.conf changed": again.split()[:1] == ["1"] and again.split()[-1] in ("running", "degraded"),
+        "still boots after the theme recoloured the boot menu": "THEME_EXIT=0" in themed and "wrote /boot/limine.conf" in themed
+        and themed_boot.split()[:1] == ["1"] and themed_boot.split()[-1] in ("running", "degraded"),
         "TPM unlock enabled": "TPM_EXIT=0" in tpm and "TPM unlock: on" in tpm,
         "boots without the passphrase (TPM)": b"assphrase for" not in tpm_boot
         and tpm_state.strip().splitlines()[-1:] in (["running"], ["degraded"]),
