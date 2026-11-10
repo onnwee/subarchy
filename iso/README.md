@@ -36,4 +36,6 @@ CI builds and boots the image in `.gitea/workflows/iso.yml` on the
 pipeline. `tools/ci/build-iso.sh` builds the core package from the checkout,
 takes the pinned rebuilds from the signed stable registry and the install
 set from Subarchy's Arch snapshot, then runs `make iso` and the boot test.
-The image is kept as the `subarchy-iso` artifact for 7 days.
+A run started by hand keeps the image as the `subarchy-iso` artifact for
+2 days. Other runs do not: the image is 4.6 GB and its upload held the
+runner's only job slot for 45 minutes.

@@ -52,9 +52,12 @@ jobs:
             build/iso-boot.log
           retention-days: 7
           if-no-files-found: warn
+      # Only when a run is started by hand: the image is 4.6 GB, and the
+      # upload took the runner 45 minutes in which no other job could start.
       - uses: actions/upload-artifact@v3
+        if: github.event_name == 'workflow_dispatch'
         with:
           name: subarchy-iso
           path: build/iso/*.iso
-          retention-days: 7
+          retention-days: 2
           if-no-files-found: error
