@@ -42,6 +42,15 @@ class PairAgent:
         self.closing = False
 
     def start(self):
+        # Subscribing only queues the match rule. The calls below wait for
+        # their replies on the same connection, so the bus has the rule
+        # before "ready"; subscribed last, a restart right after "ready"
+        # could be missed.
+        self.watch_id = self.connection.signal_subscribe(
+            "org.freedesktop.DBus", "org.freedesktop.DBus", "NameOwnerChanged",
+            "/org/freedesktop/DBus", "org.bluez", Gio.DBusSignalFlags.NONE,
+            self.owner_changed, None,
+        )
         self.owner = self.connection.call_sync(
             "org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus",
             "GetNameOwner", GLib.Variant("(s)", ("org.bluez",)), None,
@@ -55,11 +64,6 @@ class PairAgent:
             Gio.DBusCallFlags.NONE, 5000, None,
         )
         self.registered = True
-        self.watch_id = self.connection.signal_subscribe(
-            "org.freedesktop.DBus", "org.freedesktop.DBus", "NameOwnerChanged",
-            "/org/freedesktop/DBus", "org.bluez", Gio.DBusSignalFlags.NONE,
-            self.owner_changed, None,
-        )
         self.emit({"event": "ready"})
 
     def owner_changed(self, _connection, _sender, _path, _interface, _signal, parameters, _data):
