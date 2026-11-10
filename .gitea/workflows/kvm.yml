@@ -8,6 +8,12 @@ on:
 permissions:
   contents: read
 
+# A newer push to the same pull request supersedes the smoke run; main runs
+# are not cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   smoke:
     runs-on: subarchy-kvm
