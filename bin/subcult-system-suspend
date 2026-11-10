@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# subcult:summary=Suspend the machine; the session locks first
+# subcult:examples=subcult system suspend
+# subcult:silent=true
+# hypridle's before-sleep hook locks the session before the machine sleeps
+# (internal/idle).
+set -euo pipefail
+exec systemctl suspend

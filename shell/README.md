@@ -126,10 +126,10 @@ order, then apps and commands by frecency, then by how well they match. Apps
 start through `uwsm-app -- <id>.desktop`.
 
 - Commands run in a terminal that stays open until Enter; one marked
-  `silent` (`lock`) has no output and starts without a terminal. A query that
-  starts with a whole command passes the rest as its arguments
-  (`font set Iosevka`). Commands marked `dangerous` ask first: Enter runs,
-  Escape goes back.
+  `silent` (`lock`, `system suspend`) has no output and starts without a
+  terminal. A query that starts with a whole command passes the rest as its
+  arguments (`font set Iosevka`). Commands marked `dangerous` ask first:
+  Enter runs, Escape goes back.
 - Calculator: `=` asks `qalc` alone; root search shows its answer for
   anything that looks like math (a digit with an operator, or `5 km to mi`).
   Enter copies the answer. Exchange rates are never fetched.

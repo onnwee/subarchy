@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# subcult:summary=Turn the machine off
+# subcult:examples=subcult system shutdown
+# subcult:dangerous=true
+# subcult:silent=true
+# systemd stops the session's apps (SIGTERM) before it powers off.
+set -euo pipefail
+exec systemctl poweroff

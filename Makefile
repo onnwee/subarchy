@@ -61,6 +61,7 @@ build:
 smoke: build
 	tools/test/dispatcher-smoke.sh $(BUILD)/subcult
 	tools/test/power-auto-test.sh
+	tools/test/system-session-test.sh $(BUILD)/subcult
 	tools/test/dell-power-test.sh
 	tools/test/gpu-test.sh
 	tools/test/cursor-test.sh $(BUILD)/subcult-cursor

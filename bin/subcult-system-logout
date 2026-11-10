@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# subcult:summary=Log out of the session
+# subcult:examples=subcult system logout
+# subcult:dangerous=true
+# subcult:silent=true
+# Leaves the session cleanly through uwsm (ADR 0031).
+set -euo pipefail
+exec uwsm stop
