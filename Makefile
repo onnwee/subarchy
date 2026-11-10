@@ -76,9 +76,10 @@ shellcheck:
 docs-check:
 	python3 tools/obsidian/check-vault.py
 	python3 tools/test/test_package_publish.py
+	python3 tools/test/test_install_checks.py
 	python3 tools/test/palette-test.py
 	python3 tools/theme/gen-palette.py --check
-	python3 -m py_compile tools/inventory/collect.py tools/obsidian/check-vault.py tools/obsidian/install-plugins.py tools/iso/boot-test.py tools/iso/install-test.py tools/iso/vmlib.py tools/test/palette-test.py tools/theme/gen-palette.py
+	python3 -m py_compile tools/inventory/collect.py tools/obsidian/check-vault.py tools/obsidian/install-plugins.py tools/iso/boot-test.py tools/iso/install-test.py tools/iso/vmlib.py tools/test/palette-test.py tools/test/test_install_checks.py tools/theme/gen-palette.py
 
 # Checks the Hyprland Lua defaults where Hyprland is installed (not in CI).
 hypr-check:

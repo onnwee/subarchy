@@ -1,6 +1,7 @@
 name: iso
 
-# Builds the live ISO and boots it in QEMU (issue #60). On main, on demand,
+# Builds the live ISO, boots it in QEMU (issue #60), then installs from it
+# into a VM disk and checks the installed system (issue #68). On main, on demand,
 # and on pull requests that change the image or this pipeline: the runner
 # takes one job at a time, so other pull requests do not wait for an image.
 on:
@@ -11,6 +12,7 @@ on:
     paths:
       - .gitea/workflows/iso.yml
       - tools/ci/build-iso.sh
+      - tools/ci/install-test.sh
       - tools/iso/**
       - iso/**
 
@@ -41,6 +43,8 @@ jobs:
         run: |
           git config --global --add safe.directory "$PWD"
           tools/ci/build-iso.sh
+      - name: Install from the ISO and check the installed system
+        run: tools/ci/install-test.sh
       - name: Keep the build logs
         if: always()
         uses: actions/upload-artifact@v3
@@ -50,6 +54,8 @@ jobs:
             build/makepkg.log
             build/offline-download.log
             build/iso-boot.log
+            build/vm/*-serial.log
+            build/vm/*.png
           retention-days: 7
           if-no-files-found: warn
       # Only when a run is started by hand: the image is 4.6 GB, and the
