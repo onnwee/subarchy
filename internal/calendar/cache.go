@@ -5,8 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"time"
+
+	"git.subcult.tv/subculture-collective/subarchy/internal/atomicfile"
 )
 
 // SourceResult says how one source's last sync went.
@@ -56,12 +57,5 @@ func WriteCache(path string, c Cache) error {
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
-	}
-	tmp := path + ".tmp"
-	if err := os.WriteFile(tmp, append(raw, '\n'), 0o644); err != nil {
-		return err
-	}
-	return os.Rename(tmp, path)
+	return atomicfile.Write(path, append(raw, '\n'), 0o644)
 }

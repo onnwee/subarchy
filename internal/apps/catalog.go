@@ -24,6 +24,8 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
+
+	"git.subcult.tv/subculture-collective/subarchy/internal/atomicfile"
 )
 
 // Schema is the catalogue format version this package reads.
@@ -378,14 +380,7 @@ func SaveDefault(path, role, id string) error {
 	if err := toml.NewEncoder(&b).Encode(defaultsFile{Default: choices}); err != nil {
 		return fmt.Errorf("encode defaults: %w", err)
 	}
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return fmt.Errorf("defaults: %w", err)
-	}
-	tmp := path + ".tmp"
-	if err := os.WriteFile(tmp, []byte(b.String()), 0o644); err != nil {
-		return fmt.Errorf("defaults: %w", err)
-	}
-	if err := os.Rename(tmp, path); err != nil {
+	if err := atomicfile.Write(path, []byte(b.String()), 0o644); err != nil {
 		return fmt.Errorf("defaults: %w", err)
 	}
 	return nil
