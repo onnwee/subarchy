@@ -15,6 +15,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"git.subcult.tv/subculture-collective/subarchy/internal/cursor"
 	"git.subcult.tv/subculture-collective/subarchy/internal/dispatch"
@@ -134,12 +135,18 @@ func build(ctx context.Context, e env, p cursor.Palette, src, out string, s curs
 }
 
 func apply(ctx context.Context, e env, p cursor.Palette, src string, s cursor.Settings) error {
-	if err := cursor.Validate(s, p); err != nil {
-		// A theme without the chosen role falls back to the default role.
+	// Apply runs at login and must leave a cursor: a theme without the
+	// chosen role, or a saved size that is not offered (a hand-edited
+	// cursor.json), falls back to the default for that setting.
+	if _, ok := p[s.Role]; !ok {
 		s.Role = cursor.Default.Role
-		if err := cursor.Validate(s, p); err != nil {
-			return err
-		}
+	}
+	if !slices.Contains(cursor.Sizes, s.Size) {
+		fmt.Fprintf(e.stderr, "subcult cursor: warning: size %d is not one of %v; using %d\n", s.Size, cursor.Sizes, cursor.Default.Size)
+		s.Size = cursor.Default.Size
+	}
+	if err := cursor.Validate(s, p); err != nil {
+		return err
 	}
 	out := filepath.Join(e.home, ".local", "share", "icons", cursor.ThemeName)
 	if err := build(ctx, e, p, src, out, s); err != nil {
