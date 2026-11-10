@@ -375,4 +375,20 @@ TestCase {
     compare(Model.symbols("{broken"), [])
     compare(Model.symbols('{"symbols": 3}'), [])
   }
+
+  // Object.prototype has members named like these words.
+  function test_webTargetWithAWordObjectsAlsoHave() {
+    const ql = Model.quicklinks(systemLinks, "")
+    for (const word of ["constructor", "toString", "valueOf", "hasOwnProperty", "__proto__"]) {
+      compare(Model.webTarget(ql, word + " theory").url, "https://duckduckgo.com/?q=" + word + "%20theory", word)
+      compare(Model.webTarget(ql, word).url, "https://duckduckgo.com/?q=" + word, word + " alone")
+    }
+  }
+
+  // Holding Enter on a dangerous row must stop at the question: the second
+  // event of a held key is a repeat, and the warning has not been read.
+  function test_aHeldEnterDoesNotConfirmADangerousCommand() {
+    verify(Model.confirms(false), "a new press confirms")
+    verify(!Model.confirms(true), "a repeat of the press that asked does not")
+  }
 }

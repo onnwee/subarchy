@@ -37,4 +37,12 @@ TestCase {
     compare(Model.signalText(0.734), "73 %")
     compare(Model.signalText(60), "60 %")
   }
+
+  // Network names are free text, and Object.prototype has members too.
+  function test_sortNetworksNamedLikeObjectMembers() {
+    const odd = { name: "constructor", connected: true, known: true, signalStrength: 0.5 }
+    const cafe = { name: "Cafe", connected: false, known: false, signalStrength: 0.9 }
+    const other = { name: "toString", connected: false, known: false, signalStrength: 0.2 }
+    compare(Model.sortNetworks([cafe, odd, other]).map(n => n.name), ["constructor", "Cafe", "toString"])
+  }
 }

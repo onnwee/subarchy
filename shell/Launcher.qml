@@ -694,8 +694,10 @@ PanelWindow { // qmllint disable uncreatable-type
             }
             else if (event.key === Qt.Key_Escape)
               launcher.hide()
-            else if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && launcher.pending)
-              launcher.launch(launcher.pending, true)
+            else if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && launcher.pending) {
+              if (Model.confirms(event.isAutoRepeat))
+                launcher.launch(launcher.pending, true)
+            }
             else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter)
               launcher.launch(launcher.results[launcher.index], false)
             else if (event.key === Qt.Key_Down || event.key === Qt.Key_Tab)
