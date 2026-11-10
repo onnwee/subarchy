@@ -37,6 +37,20 @@ TestCase {
     compare(Model.next([], now), null)
   }
 
+  // An all-day event starts at midnight, before every meeting of its days.
+  function test_nextPrefersTodaysTimedEventOverAnAllDayOne() {
+    const withLunch = Model.events(JSON.stringify({ version: 1, events: [
+      { id: "c", title: "Trip", start: "2026-11-10T00:00:00", end: "2026-11-12T00:00:00", allDay: true },
+      { id: "l", title: "Lunch", start: "2026-11-10T13:00:00", end: "2026-11-10T14:00:00", allDay: false },
+      { id: "r", title: "Review", start: "2026-11-11T16:00:00", end: "2026-11-11T17:00:00", allDay: false }
+    ] }))
+    compare(Model.next(withLunch, new Date(2026, 10, 9, 12, 0)).title, "Trip", "the day before, the trip comes first")
+    compare(Model.next(withLunch, new Date(2026, 10, 10, 9, 0)).title, "Lunch", "a meeting today, during the trip")
+    compare(Model.next(withLunch, new Date(2026, 10, 10, 13, 30)).title, "Lunch", "running")
+    compare(Model.next(withLunch, new Date(2026, 10, 10, 15, 0)).title, "Trip", "nothing else today: tomorrow's meeting waits")
+    compare(Model.next(withLunch, new Date(2026, 10, 11, 8, 0)).title, "Review")
+  }
+
   function test_label() {
     compare(Model.label(Model.next(list, now), now), "Standup 14:00")
     compare(Model.label(list[1], new Date(2026, 10, 7, 14, 5)), "Standup now")

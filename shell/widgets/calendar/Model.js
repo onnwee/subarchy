@@ -51,9 +51,15 @@ function startOfDay(d) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate())
 }
 
-// The next event: the first timed one that has not ended, or an all-day one
-// today or later; null when there is none.
+// The next event: a timed one that is running or still to come today, else
+// the first timed one that has not ended or an all-day one today or later;
+// null when there is none. Today's meetings come before an all-day event
+// that covers today: it starts at midnight and would hide them all day.
 function next(list, now) {
+  for (const e of list) {
+    if (!e.allDay && e.end > now && (e.start <= now || sameDay(e.start, now)))
+      return e
+  }
   for (const e of list) {
     if (e.allDay) {
       if (startOfDay(e.end) > startOfDay(now) || sameDay(e.start, now) || (e.start <= now && e.end > now))
