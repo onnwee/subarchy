@@ -3,7 +3,7 @@ title: "Distribution CLI: the Bash command set"
 type: plan
 status: proposed
 created: 2026-11-08
-updated: 2026-11-08
+updated: 2026-11-09
 tags: [plan, cli]
 aliases: [CLI command set, E1]
 ---
@@ -83,10 +83,16 @@ apply tells each app itself, [[0037-theming|ADR 0037]]).
 |---|---|---|
 | `system lock` | Lock through the lock program (#46) | `system-lock` |
 | `system logout`, `system reboot`, `system shutdown` | After closing applications cleanly | `system` |
+| `system suspend` | Suspend; hypridle locks the session first | none |
 | `system snapshot [create\|list\|restore]` | snapper, with the `@factory` snapshot kept outside the rotation | `snapshot` |
 | `system factory-reset` | Back to the `@factory` snapshot ([[0056-quality-of-life|ADR 0056]]) | `system-factory-reset` |
 | `system kernel [list\|set]` | The kernel Limine boots by default | `kernel` |
 | `system hibernation [setup\|remove]` | Swap file and resume settings ([[0014-swap-hibernation|ADR 0014]]) | `hibernation-*` |
+
+Built (#235, 2026-11-09): `system suspend`, `logout`, `reboot` and `shutdown`,
+all `silent`, the last three `dangerous`. They rely on systemd and uwsm to
+stop the session's apps and do not close windows first. `subcult lock`
+(#46) keeps its name; `system lock` is not added.
 
 ### `subcult setup`
 

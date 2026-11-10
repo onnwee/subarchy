@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# subcult:summary=Restart the machine
+# subcult:examples=subcult system reboot
+# subcult:dangerous=true
+# subcult:silent=true
+# systemd stops the session's apps (SIGTERM) before it restarts.
+set -euo pipefail
+exec systemctl reboot
