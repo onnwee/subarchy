@@ -67,3 +67,5 @@ the installed disk, types the LUKS passphrase on the serial console, logs in
 and checks the result. Downloads are cached in `build/pkgcache`. With
 `--guided` it instead answers `subarchy-setup` on the serial console, which
 tests the setup command, installer and repository shipped on the image.
+CI runs that form with the guest's network off after every ISO build
+(`tools/ci/install-test.sh`).
