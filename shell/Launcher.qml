@@ -142,7 +142,7 @@ PanelWindow { // qmllint disable uncreatable-type
       out = out.concat([launcher.aliasRow(alias)])
     const call = Model.commandCall(launcher.commands, p.text)
     if (call && call.args.length > 0)
-      out = out.concat([{ kind: "command", id: call.command.id, name: call.command.name + " " + call.args.join(" "), genericName: "Run " + call.command.id + " with these arguments", icon: "utilities-terminal", args: call.args, dangerous: call.command.dangerous }])
+      out = out.concat([{ kind: "command", id: call.command.id, name: call.command.name + " " + call.args.join(" "), genericName: "Run " + call.command.id + " with these arguments", icon: "utilities-terminal", args: call.args, dangerous: call.command.dangerous, silent: call.command.silent }])
     const first = p.text.split(/\s+/)[0]
     const t = Model.webTarget(launcher.quicklinks, p.text)
     if (t && launcher.quicklinks.links[first] && t.key === first)
@@ -276,10 +276,7 @@ PanelWindow { // qmllint disable uncreatable-type
         launcher.pending = row
         return
       }
-      // In a terminal that stays open, so the output can be read.
-      const words = row.id.split(" ").slice(1).concat(row.args || [])
-      Quickshell.execDetached(["uwsm-app", "--", "xdg-terminal-exec", "sh", "-c",
-        'subcult "$@"; s=$?; printf "\\n[exit %d] Press Enter to close." "$s"; read -r _', "sh"].concat(words))
+      Quickshell.execDetached(Model.commandArgv(row))
       launcher.remember(row.id)
     } else {
       Quickshell.execDetached(["uwsm-app", "--", row.id + ".desktop"])
