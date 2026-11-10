@@ -4,13 +4,13 @@
 # does on a workstation, then boots it in QEMU.
 #
 # The core package is built here from the checkout. The pinned rebuilds are
-# not rebuilt: they come from the signed stable registry, which the packages
-# workflow fills. The install set comes from Subarchy's Arch snapshot, so
+# not rebuilt: pacman takes them from the signed stable registry, which the
+# packages workflow fills. The install set comes from Subarchy's Arch snapshot, so
 # the image installs what the stable channel serves (ADR 0026).
 set -euo pipefail
 
 root=$(git rev-parse --show-toplevel)
-registry=https://git.subcult.tv/api/packages/subculture-collective/arch/stable/x86_64
+registry=https://git.subcult.tv/api/packages/subculture-collective/arch/stable
 snapshot=$(cat "$root/default/pacman/snapshot")
 [[ $snapshot =~ ^[0-9]{4}/[0-9]{2}/[0-9]{2}$ ]] || { echo "build-iso: invalid snapshot date" >&2; exit 1; }
 # A VM without KVM would pass the boot test slowly or time out; say why.
@@ -37,19 +37,30 @@ runuser -u builder -- git config --global --add safe.directory "$root"
 # The same version the packages workflow publishes for this commit.
 sed -i "s/^pkgrel=.*/pkgrel=$(git rev-list --count HEAD)/" "$root/packaging/subarchy/PKGBUILD"
 
+# The pinned rebuilds, by package name through pacman with signatures
+# required. Not by file name: the registry answers a request for
+# nvidia-580xx-utils-... with the lib32 package (see publish-packages.py).
+keyring="$root/packaging/subarchy-keyring"
+install -Dm644 "$keyring/registry.key" /usr/share/pacman/keyrings/subarchy.gpg
+install -Dm644 "$keyring/subarchy-trusted" /usr/share/pacman/keyrings/subarchy-trusted
+install -Dm644 "$keyring/subarchy-revoked" /usr/share/pacman/keyrings/subarchy-revoked
+pacman-key --init
+pacman-key --populate archlinux subarchy
 repo="$root/build/repo"
-runuser -u builder -- mkdir -p "$repo"
+mkdir -p "$repo" /tmp/registry-db
+# Pacman expands its own architecture placeholder.
+# shellcheck disable=SC2016
+printf '[options]\nArchitecture = auto\nDBPath = /tmp/registry-db\nCacheDir = %s\n\n[subarchy]\nSigLevel = Required\nServer = %s/$arch\n' \
+  "$repo" "$registry" >/tmp/registry-pacman.conf
+names=()
 for dir in "$root"/packaging/*/ "$root"/packaging/aur/*/; do
   [[ -f $dir/PKGBUILD && $dir != "$root/packaging/subarchy/" ]] || continue
-  file_list=$(cd "$dir" && runuser -u builder -- env PKGDEST="$repo" makepkg --packagelist)
-  [[ -n $file_list ]] || { echo "build-iso: empty package list for $dir" >&2; exit 1; }
-  while IFS= read -r file; do
-    name=$(basename "$file")
-    echo ">> fetching $name"
-    runuser -u builder -- curl --fail --silent --show-error --location --output "$file" "$registry/$name" ||
-      { echo "build-iso: $name is not in the stable registry; the packages workflow publishes it on main" >&2; exit 1; }
-  done <<<"$file_list"
+  mapfile -t -O "${#names[@]}" names < <(cd "$dir" && runuser -u builder -- makepkg --printsrcinfo | awk '$1 == "pkgname" {print $3}')
 done
+pacman --config /tmp/registry-pacman.conf -Syddw --noconfirm "${names[@]}" ||
+  { echo "build-iso: a pinned package is not in the stable registry; the packages workflow publishes them on main" >&2; exit 1; }
+rm -f -- "$repo"/*.sig
+chown -R builder: "$repo"
 
 cd "$root"
 runuser -u builder -- make iso
