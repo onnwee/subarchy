@@ -57,6 +57,9 @@ type screens struct {
 	width func() int
 	// key waits for Return (true) or Escape (false).
 	key func() bool
+	// fit sets a console font that suits the screen's resolution; nil in
+	// tests.
+	fit func()
 }
 
 func (s *screens) pad() int {
@@ -95,6 +98,9 @@ func (s *screens) line(colour, text string) {
 
 // page clears the screen and draws the mark, a title and body lines.
 func (s *screens) page(title string, body ...string) {
+	if s.fit != nil {
+		s.fit()
+	}
 	fmt.Fprint(s.out, "\x1b[2J\x1b[H\n")
 	for _, l := range strings.Split(strings.TrimRight(logo, "\n"), "\n") {
 		s.line(colAcid, l)
@@ -309,6 +315,9 @@ func collectScreens(s *screens, e env, repo, cmdlineExtra string) (setup.Answers
 }
 
 func (s *screens) greeter() error {
+	if s.fit != nil {
+		s.fit()
+	}
 	fmt.Fprint(s.out, "\x1b[2J\x1b[H\x1b[?25l\n\n\n\n")
 	for _, l := range strings.Split(strings.TrimRight(logo, "\n"), "\n") {
 		s.line(colAcid, l)
@@ -549,22 +558,72 @@ func onConsole() bool {
 	return err == nil
 }
 
-// prepareConsole sets the palette and a readable font.
+// terminus is the Terminus console fonts by glyph width in pixels.
+var terminus = []struct {
+	width int
+	name  string
+}{{16, "ter-v32b"}, {14, "ter-v28b"}, {12, "ter-v24b"}, {11, "ter-v22b"}, {10, "ter-v20b"}, {8, "ter-v16b"}}
+
+// fontFor picks the largest Terminus font that still leaves 100 columns
+// on a screen that many pixels wide: 32 px tall on a 1920 or 4K panel,
+// 24 px at 1280.
+func fontFor(pixels int) (width int, name string) {
+	for _, f := range terminus {
+		if pixels/f.width >= 100 {
+			return f.width, f.name
+		}
+	}
+	last := terminus[len(terminus)-1]
+	return last.width, last.name
+}
+
+// fitFont sets the console font from the framebuffer's width. It runs
+// before every screen, not once: the graphics driver can take the
+// console over after the installer has started, which puts the kernel's
+// small font back.
+func fitFont() {
+	data, err := os.ReadFile("/sys/class/graphics/fb0/virtual_size")
+	if err != nil {
+		return
+	}
+	var pixels, height int
+	if _, err := fmt.Sscanf(strings.TrimSpace(string(data)), "%d,%d", &pixels, &height); err != nil || pixels == 0 {
+		return
+	}
+	cols, _, err := term.GetSize(int(os.Stdout.Fd()))
+	if err != nil || cols == 0 {
+		return
+	}
+	width, name := fontFor(pixels)
+	if pixels/cols == width {
+		return
+	}
+	args := []string{name}
+	if tty, err := os.Readlink("/proc/self/fd/0"); err == nil {
+		args = []string{"-C", tty, name}
+	}
+	exec.Command("setfont", args...).Run()
+}
+
+// prepareConsole sets the palette.
 func prepareConsole(out io.Writer) {
 	for i := 0; i < 16; i++ {
 		fmt.Fprintf(out, "\x1b]P%X%s", i, palette[i])
 	}
 	fmt.Fprint(out, "\x1b[37;40m\x1b[2J\x1b[H")
-	font := "ter-v16b"
-	if w, _, err := term.GetSize(int(os.Stdout.Fd())); err == nil && w >= 240 {
-		font = "ter-v32b" // a high-density screen under the kernel's small font
-	}
-	exec.Command("setfont", font).Run()
 }
 
 func realScreens() *screens {
 	fd := int(os.Stdin.Fd())
 	return &screens{
+		fit: func() {
+			fitFont()
+			// The palette goes with the font: a console the graphics
+			// driver has just taken over has the default colours again.
+			for i := 0; i < 16; i++ {
+				fmt.Fprintf(os.Stdout, "\x1b]P%X%s", i, palette[i])
+			}
+		},
 		out: os.Stdout,
 		gum: func(args ...string) (string, int) {
 			cmd := exec.Command("gum", args...)

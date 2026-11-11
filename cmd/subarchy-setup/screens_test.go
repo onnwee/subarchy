@@ -151,6 +151,15 @@ func TestScreensEscape(t *testing.T) {
 	}
 }
 
+func TestFontFor(t *testing.T) {
+	for pixels, want := range map[int]string{3840: "ter-v32b", 2880: "ter-v32b", 1920: "ter-v32b", 1600: "ter-v32b",
+		1366: "ter-v24b", 1280: "ter-v24b", 1024: "ter-v20b", 800: "ter-v16b", 640: "ter-v16b"} {
+		if _, got := fontFor(pixels); got != want {
+			t.Errorf("fontFor(%d) = %s, want %s", pixels, got, want)
+		}
+	}
+}
+
 func TestZones(t *testing.T) {
 	dir := t.TempDir()
 	for _, f := range []string{"UTC", "Europe/Berlin", "America/Argentina/Salta", "posix/Europe/Berlin", "Etc/GMT+1", "zone.tab", "CET"} {

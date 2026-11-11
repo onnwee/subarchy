@@ -127,6 +127,9 @@ func (s *screens) progress(logPath string) (stop func()) {
 	}
 	done, finished := make(chan struct{}), make(chan struct{})
 	started := time.Now()
+	if s.fit != nil {
+		s.fit()
+	}
 	fmt.Fprint(s.out, "\x1b[2J\x1b[?25l")
 	go func() {
 		defer close(finished)

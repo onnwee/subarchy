@@ -29,6 +29,11 @@ which is also where the percentage is read from. The finish screen offers
 "Reboot now", and a failure shows the end of the log with a menu. `--plain`
 gives the prompts below instead.
 
+The console font follows the screen: before every screen the installer
+reads the framebuffer's width (`/sys/class/graphics/fb0/virtual_size`) and
+sets the largest Terminus font that still leaves 100 columns, which is
+the 32-pixel one from 1600 pixels up.
+
 On a serial console or over SSH it asks plain line prompts. It asks for the
 keyboard layout first and switches the console to it (`loadkeys`), so the
 password and passphrase are typed under the layout the installed system
