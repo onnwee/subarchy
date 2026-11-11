@@ -21,6 +21,18 @@ def probe(vendor: str, installed: list[str]) -> str:
             + f"CPU:       {vendor}\nVM:        QEMU\nHybrid:    false\nMatches:   \n")
 
 
+class ThreadWakeups(unittest.TestCase):
+    def test_threads_that_come_or_go_do_not_count(self):
+        before = "100 50\n101 4000\n102 7\n"
+        after = "100 60\n102 9\n103 300\n"  # 101 exited, 103 started
+        self.assertEqual(install_test.thread_wakeups(before, after), 12)
+
+    def test_an_unreadable_sample_is_no_answer(self):
+        self.assertIsNone(install_test.thread_wakeups("", "100 60\n"))
+        self.assertIsNone(install_test.thread_wakeups("100 50\n", "100 \n"))
+        self.assertEqual(install_test.thread_wakeups("100 50\n101 \n", "100 51\n101 8\n"), 1)
+
+
 class HardwarePackages(unittest.TestCase):
     def test_intel_guest_needs_intel_microcode_and_thermald(self):
         self.assertTrue(install_test.hw_ok(probe("GenuineIntel", ["intel-ucode", "thermald"])))

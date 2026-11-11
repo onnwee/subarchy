@@ -81,6 +81,23 @@ def idle_ok(switches: int) -> bool:
     return budget_ok("shell_main_thread_wakeups_per_minute", switches, 3)
 
 
+def thread_wakeups(before: str, after: str) -> int | None:
+    """Wake-ups over all threads between two samples of `tid count` lines.
+
+    Only threads in both samples count. A thread that exited in between took
+    its count with it, and a plain difference of two sums came out as 60, 0
+    and -10 for the same build; a thread that started in between has no
+    earlier count. None when a sample has no usable line.
+    """
+    def read(text: str) -> dict[str, int]:
+        rows = (line.split() for line in text.splitlines())
+        return {r[0]: int(r[1]) for r in rows if len(r) == 2 and r[0].isdigit() and r[1].isdigit()}
+    first, second = read(before), read(after)
+    if not first or not second:
+        return None
+    return sum(second[tid] - count for tid, count in first.items() if tid in second)
+
+
 def quietest_minute(sample, attempts: int = 3) -> tuple[int, int]:
     """The quietest of up to `attempts` idle minutes, as (main thread, all threads).
 
@@ -498,17 +515,20 @@ finally:
         # Idle cost over a quiet minute: voluntary context switches of the
         # shell's main thread (budgeted) and of all its threads (reported).
         pid = serial.run("pgrep -u $(id -u) -f 'quickshell -n -p /usr/share/subcult/shell' | head -1").strip()
-        ctxt = ("awk '/^voluntary_ctxt_switches/ {print $2}' /proc/%s/status;"
-                " cat /proc/%s/task/*/status 2>/dev/null"
-                " | awk '/^voluntary_ctxt_switches/ {s += $2} END {print s + 0}'" % (pid, pid))
+        main = "awk '/^voluntary_ctxt_switches/ {print $2}' /proc/%s/status" % pid
+        threads = ("for t in /proc/%s/task/*; do echo \"${t##*/}"
+                   " $(awk '/^voluntary_ctxt_switches/ {print $2}' $t/status 2>/dev/null)\"; done" % pid)
 
         def idle_minute():
-            before = serial.run(ctxt).split() if pid.isdigit() else []
-            time.sleep(60)
-            after = serial.run(ctxt).split() if pid.isdigit() else []
-            if not (len(before) == 2 and len(after) == 2 and all(x.isdigit() for x in before + after)):
+            if not pid.isdigit():
                 return None
-            return int(after[0]) - int(before[0]), int(after[1]) - int(before[1])
+            before, before_all = serial.run(main).strip(), serial.run(threads)
+            time.sleep(60)
+            after, after_all = serial.run(main).strip(), serial.run(threads)
+            total = thread_wakeups(before_all, after_all)
+            if not (before.isdigit() and after.isdigit()) or total is None:
+                return None
+            return int(after) - int(before), total
         results["idle"], results["idle_all"] = quietest_minute(idle_minute)
         # Idle resident memory of the whole session (every process of the
         # user: compositor, shell, portals, agents) in KiB, taken after the
