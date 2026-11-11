@@ -158,7 +158,11 @@ FocusScope {
         anchors.horizontalCenter: parent.horizontalCenter
         visible: view.lockState.prompt && view.lockState.message !== ""
         text: view.lockState.message
-        color: view.theme.error || "#D52032"
+        width: Math.min(implicitWidth, view.width - 48)
+        horizontalAlignment: Text.AlignHCenter
+        wrapMode: Text.WordWrap
+        // While a check runs this is what PAM says ("Place your finger…").
+        color: view.lockState.checking ? (view.theme.muted || "#5E5570") : (view.theme.error || "#D52032")
         font.family: "sans-serif"
         font.pixelSize: 14
       }

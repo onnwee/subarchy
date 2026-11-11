@@ -984,6 +984,25 @@ if command -v wtype >/dev/null; then
   sleep 1
   lk=$(HOME=$home1 quickshell ipc -p "$root/lock" call subcult.lock status)
   [[ $lk == *'"locked":true'* && $lk == *'"prompt":true'* && $lk == *'"playing":0'* ]] || fail "input did not stop video and keep the lock: $lk"
+  # PAM reads the stack at each check, so one lock program sees three. A
+  # stack that waits: what it says is shown, and Escape gives the keys back.
+  lockst() { HOME=$home1 quickshell ipc -p "$root/lock" call subcult.lock status; }
+  echo 'Place your finger on the reader' >"$work/pam/waiting"
+  printf 'auth optional pam_echo.so file=%s\nauth required pam_exec.so /usr/bin/sleep 20\nauth required pam_deny.so\n' "$work/pam/waiting" >"$work/pam/subcult-test"
+  wtype -s 150 'secret' -k Return
+  for _ in $(seq 20); do lk=$(lockst); [[ $lk == *'finger on the reader'* ]] && break; sleep 0.25; done
+  [[ $lk == *'"checking":true'* && $lk == *'"message":"Place your finger on the reader"'* ]] || fail "the lock did not show what PAM said during a check: $lk"
+  wtype -s 150 -k Escape
+  sleep 1
+  lk=$(lockst)
+  [[ $lk == *'"locked":true'* && $lk == *'"checking":false'* && $lk == *'"attempts":0'* && $lk == *'"message":""'* ]] || fail "Escape did not cancel a waiting check: $lk"
+  # A stack that refuses with a reason, as faillock does.
+  echo 'The account is locked due to 3 failed logins.' >"$work/pam/locked"
+  printf 'auth optional pam_echo.so file=%s\nauth required pam_deny.so\n' "$work/pam/locked" >"$work/pam/subcult-test"
+  wtype -s 150 'secret' -k Return
+  for _ in $(seq 40); do lk=$(lockst); [[ $lk == *'"attempts":1'* ]] && break; sleep 0.25; done
+  [[ $lk == *'"locked":true'* && $lk == *'"message":"The account is locked due to 3 failed logins."'* ]] || fail "the lock did not show PAM's reason for a refusal: $lk"
+  printf 'auth required pam_permit.so\naccount required pam_permit.so\n' >"$work/pam/subcult-test"
   wtype -s 150 'secret' -k Return
   for _ in $(seq 30); do kill -0 "$lockpid" 2>/dev/null || break; sleep 0.5; done
   if kill -0 "$lockpid" 2>/dev/null; then

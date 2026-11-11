@@ -4,7 +4,7 @@
 // handling and the messages are testable without a session.
 
 function initial() {
-  return { password: "", typedAhead: "", prompt: false, checking: false, attempts: 0, message: "" }
+  return { password: "", typedAhead: "", prompt: false, checking: false, attempts: 0, message: "", pamText: "" }
 }
 
 // Qt key codes the lock reacts to by name; anything else is text.
@@ -26,7 +26,7 @@ function edit(typed, name, text) {
   return typed
 }
 
-// A key: returns { state, submit }. Text opens the prompt and adds to the
+// A key: returns { state, submit, cancel }. Text opens the prompt and adds to the
 // password; Backspace removes one character; Escape clears; Return submits
 // a non-empty password. While a check runs the password being checked does
 // not change: what is typed is kept apart and becomes the next attempt if
@@ -34,6 +34,10 @@ function edit(typed, name, text) {
 function key(state, name, text) {
   const s = Object.assign({}, state)
   if (s.checking) {
+    // Escape gives up on a check that waits (a fingerprint reader, a
+    // network login): the caller aborts it and the prompt is empty again.
+    if (name === "Escape")
+      return { state: Object.assign(s, { password: "", typedAhead: "", checking: false, message: "", pamText: "" }), submit: false, cancel: true }
     s.typedAhead = edit(s.typedAhead || "", name, text)
     return { state: s, submit: false }
   }
@@ -43,6 +47,7 @@ function key(state, name, text) {
       return { state: s, submit: false }
     s.checking = true
     s.message = ""
+    s.pamText = ""
     return { state: s, submit: true }
   }
   if (name === "Escape")
@@ -51,14 +56,28 @@ function key(state, name, text) {
   return { state: s, submit: false }
 }
 
+// Text PAM sent that is not a question (faillock's "The account is locked
+// due to 3 failed logins", "Place your finger on the reader"). Shown while
+// the check runs and, if it fails, instead of the general message. A module
+// may send several lines; they are joined. Nothing outside a check counts.
+function pamMessage(state, text) {
+  const line = String(text || "").replace(/[\u0000-\u001f\u007f]+/g, " ").trim()
+  if (!state.checking || line === "")
+    return state
+  const all = ((state.pamText ? state.pamText + " " : "") + line).slice(0, 300)
+  return Object.assign({}, state, { pamText: all, message: all })
+}
+
 // A failed check: the checked password is dropped, the attempt counted, the
-// message shown. What was typed during the check is the next attempt.
+// message shown; what PAM said itself wins over the message given here.
+// What was typed during the check is the next attempt.
 function failed(state, message) {
-  return Object.assign({}, state, { password: state.typedAhead || "", typedAhead: "", checking: false, attempts: state.attempts + 1, message: message })
+  return Object.assign({}, state, { password: state.typedAhead || "", typedAhead: "", checking: false, attempts: state.attempts + 1,
+    message: state.pamText || message, pamText: "" })
 }
 
 function unlocked(state) {
-  return Object.assign({}, state, { password: "", typedAhead: "", checking: false, message: "" })
+  return Object.assign({}, state, { password: "", typedAhead: "", checking: false, message: "", pamText: "" })
 }
 
 function failureMessage(attempts) {

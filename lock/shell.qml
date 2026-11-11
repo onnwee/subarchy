@@ -104,6 +104,8 @@ ShellRoot {
   function key(name, text) {
     const r = Model.key(root.lockState, name, text)
     root.lockState = r.state
+    if (r.cancel)
+      auth.abort()
     if (r.submit) {
       if (!auth.start()) {
         root.lockState = Model.failed(root.lockState, "The password check could not start.")
@@ -165,7 +167,14 @@ ShellRoot {
       if (responseRequired)
         auth.respond(root.lockState.password)
     }
+    onPamMessage: {
+      if (!responseRequired)
+        root.lockState = Model.pamMessage(root.lockState, message)
+    }
     onCompleted: (result) => {
+      // A check given up with Escape reports nothing.
+      if (!root.lockState.checking)
+        return
       if (result === PamResult.Success) {
         root.lockState = Model.unlocked(root.lockState)
         lock.locked = false
@@ -176,6 +185,8 @@ ShellRoot {
       }
     }
     onError: (error) => {
+      if (!root.lockState.checking)
+        return
       root.lockState = Model.failed(root.lockState, "The password check failed (" + error + "). Try again.")
     }
   }

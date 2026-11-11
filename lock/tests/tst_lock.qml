@@ -101,6 +101,39 @@ TestCase {
     compare(u.message, "")
   }
 
+  // faillock says the account is locked in two lines; the lock shows them
+  // instead of "That did not work".
+  function test_pamMessagesAreShown() {
+    let s = Model.key(type(Model.initial(), "pw"), "Return", "\r").state
+    s = Model.pamMessage(s, "The account is locked due to 3 failed logins.")
+    compare(s.message, "The account is locked due to 3 failed logins.", "shown while the check runs")
+    s = Model.pamMessage(s, "(10 minutes left to unlock)\n")
+    s = Model.pamMessage(s, "  ")
+    s = Model.failed(s, Model.failureMessage(1))
+    compare(s.message, "The account is locked due to 3 failed logins. (10 minutes left to unlock)")
+    s = Model.key(type(s, "pw"), "Return", "\r").state
+    compare(s.message, "", "a new check starts without the old text")
+    compare(Model.failed(s, "plain").message, "plain", "no PAM text, the general message")
+    const idle = Model.pamMessage(Model.initial(), "late")
+    compare(idle.message, "", "text outside a check is ignored")
+  }
+
+  // A PAM stack that waits (fingerprint, network) must not hold the keys.
+  function test_escapeCancelsACheck() {
+    let s = Model.key(type(Model.initial(), "pw"), "Return", "\r").state
+    s = Model.pamMessage(type(s, "ahead"), "Place your finger on the reader")
+    const r = Model.key(s, "Escape", "")
+    verify(r.cancel)
+    verify(!r.submit)
+    verify(!r.state.checking)
+    compare(r.state.password, "")
+    compare(r.state.typedAhead, "")
+    compare(r.state.message, "")
+    compare(r.state.attempts, 0, "giving up is not a failed attempt")
+    verify(!Model.key(Model.initial(), "Escape", "").cancel, "Escape outside a check cancels nothing")
+    compare(Model.key(type(r.state, "pw"), "Return", "\r").submit, true, "the next password is checked")
+  }
+
   function test_keyNames() {
     compare(Model.keyName(16777220), "Return")
     compare(Model.keyName(16777219), "Backspace")
