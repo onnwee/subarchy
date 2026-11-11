@@ -1,7 +1,8 @@
 
   SUBCULT // Subarchy install medium
 
-  This is a live system for installing Subarchy. To install, run:
+  This is a live system for installing Subarchy. The installer starts by
+  itself on the first console. To start it again, run:
 
       subarchy-setup
 

@@ -17,7 +17,8 @@ theming items on the [roadmap](docs/roadmap.md) are still open.
 - **Live ISO** built with archiso: UEFI only, systemd-boot, `linux-zen`.
 - **Guided installer** (`subarchy-setup`): asks for keyboard layout, disk,
   computer name, user, password, disk passphrase and time zone, checks each
-  answer and asks you to type the disk's name before it wipes it. It can
+  answer, shows what is on each disk (and can open it read-only) and asks
+  before it wipes one. It can
   install with no network from the package repository on the image.
 - **Installed system**: GPT with a FAT32 ESP and a LUKS2 root, btrfs
   subvolumes with zstd compression, one unified kernel image per kernel,

@@ -104,6 +104,52 @@ type Disk struct {
 	Size  int64
 	Model string
 	Tran  string
+	Parts []Part
+}
+
+// Part is a partition already on a disk, shown so the user can tell the
+// disks apart before one is erased.
+type Part struct {
+	Path   string
+	Size   int64
+	FSType string
+	Label  string
+}
+
+// Browsable reports whether the partition can be mounted read-only as it
+// is: it has a filesystem, and is not swap, an encrypted container or
+// part of a RAID or LVM set.
+func (p Part) Browsable() bool {
+	switch p.FSType {
+	case "", "swap", "crypto_LUKS", "BitLocker", "LVM2_member", "linux_raid_member", "zfs_member":
+		return false
+	}
+	return true
+}
+
+// String renders the partition for the picker.
+func (p Part) String() string {
+	what := p.FSType
+	switch what {
+	case "":
+		what = "no filesystem"
+	case "crypto_LUKS":
+		what = "encrypted (LUKS)"
+	case "BitLocker":
+		what = "encrypted (BitLocker)"
+	}
+	if p.Label != "" {
+		what += ` "` + p.Label + `"`
+	}
+	return fmt.Sprintf("%s  %s  %s", p.Path, humanSmall(p.Size), what)
+}
+
+// humanSmall is HumanSize with MB for partitions under a gigabyte.
+func humanSmall(b int64) string {
+	if b < 1e9 {
+		return fmt.Sprintf("%.0f MB", float64(b)/1e6)
+	}
+	return HumanSize(b)
 }
 
 // String renders the disk for the picker.
@@ -129,17 +175,24 @@ func HumanSize(b int64) string {
 
 type lsblkOutput struct {
 	Blockdevices []struct {
-		Name  string  `json:"name"`
-		Path  string  `json:"path"`
-		Size  int64   `json:"size"`
-		Type  string  `json:"type"`
-		Model *string `json:"model"`
-		Tran  *string `json:"tran"`
-		RO    bool    `json:"ro"`
+		Name     string  `json:"name"`
+		Path     string  `json:"path"`
+		Size     int64   `json:"size"`
+		Type     string  `json:"type"`
+		Model    *string `json:"model"`
+		Tran     *string `json:"tran"`
+		RO       bool    `json:"ro"`
+		Children []struct {
+			Path   string  `json:"path"`
+			Size   int64   `json:"size"`
+			Type   string  `json:"type"`
+			FSType *string `json:"fstype"`
+			Label  *string `json:"label"`
+		} `json:"children"`
 	} `json:"blockdevices"`
 }
 
-// Disks parses `lsblk -J -d -b -o NAME,PATH,SIZE,TYPE,MODEL,TRAN,RO` and
+// Disks parses `lsblk -J -b -o NAME,PATH,SIZE,TYPE,MODEL,TRAN,RO,FSTYPE,LABEL` and
 // returns whole, writable disks of at least MinDiskBytes, leaving out
 // zram, loop and optical devices and the install medium.
 func Disks(lsblkJSON []byte, installMedium string) ([]Disk, error) {
@@ -161,6 +214,19 @@ func Disks(lsblkJSON []byte, installMedium string) ([]Disk, error) {
 		}
 		if d.Tran != nil {
 			disk.Tran = *d.Tran
+		}
+		for _, c := range d.Children {
+			if c.Type != "part" {
+				continue
+			}
+			part := Part{Path: c.Path, Size: c.Size}
+			if c.FSType != nil {
+				part.FSType = *c.FSType
+			}
+			if c.Label != nil {
+				part.Label = strings.TrimSpace(*c.Label)
+			}
+			disk.Parts = append(disk.Parts, part)
 		}
 		disks = append(disks, disk)
 	}

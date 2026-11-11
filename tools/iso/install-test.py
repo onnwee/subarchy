@@ -161,7 +161,7 @@ def guided(serial: Serial, timeout: float) -> str:
     serial.buf = b""
     serial.send(
         "subarchy-setup --cmdline-extra 'console=tty0 console=ttyS0,115200'"
-        " --package-cache /run/pkgcache; echo EXIT=$?\n"
+        " --package-cache /run/pkgcache --batch; echo EXIT=$?\n"
     )
     answers = [
         (rb"Keyboard layout \[us\]: ", ""),
@@ -170,10 +170,11 @@ def guided(serial: Serial, timeout: float) -> str:
         (rb"Your user name: ", USER),
         (rb"Password for \w+: ", PASSWORD),
         (rb"Password for \w+ again: ", PASSWORD),
+        (rb"disk passphrase too\? \(Y/n\): ", "n"),
         (rb"Disk passphrase: ", PASSPHRASE),
         (rb"Disk passphrase again: ", PASSPHRASE),
         (rb"Time zone \[UTC\]: ", "America/Chicago"),
-        (rb"Type vda to erase it", "vda"),
+        (rb"Erase /dev/vda and install\? \(y/N\): ", "y"),
     ]
     for prompt, answer in answers:
         serial.expect(re.compile(prompt), 60)
@@ -226,6 +227,8 @@ def install(iso: Path, disk: Path, vars_file: Path, timeout: float, guided_setup
                 timeout=timeout,
             )
         ok = "subarchy-install: done" in out and "EXIT=0" in out
+        if guided_setup:
+            ok = ok and "Installed Subarchy in " in out
         if offline:
             # With no network the installer must say so and still finish from
             # the image's repository (ADR 0049).

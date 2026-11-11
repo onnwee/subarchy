@@ -14,7 +14,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
-	"syscall"
+	"time"
 
 	"golang.org/x/term"
 
@@ -81,6 +81,29 @@ func (p *prompter) askSecret(what string, min int) (string, error) {
 	}
 }
 
+// yesNo asks a yes/no question; an empty answer is the default.
+func (p *prompter) yesNo(question string, def bool) (bool, error) {
+	hint := "y/N"
+	if def {
+		hint = "Y/n"
+	}
+	for {
+		s, err := p.line(question+"? ("+hint+")", "")
+		if err != nil {
+			return false, err
+		}
+		switch strings.ToLower(s) {
+		case "":
+			return def, nil
+		case "y", "yes":
+			return true, nil
+		case "n", "no":
+			return false, nil
+		}
+		fmt.Fprintln(p.out, "  answer y or n")
+	}
+}
+
 type env struct {
 	lsblk        func() ([]byte, error)
 	installMedia func() string
@@ -91,6 +114,13 @@ type env struct {
 	kbdModelMap string
 	// loadKeymap makes the console use a keymap now (loadkeys).
 	loadKeymap func(keymap string) error
+	// browse shows a disk's filesystems read-only until the user leaves.
+	browse func(d setup.Disk) error
+	// logTail returns the last lines of the install log.
+	logTail func(n int) []string
+	// action runs one of "reboot", "poweroff", "log" (view the install
+	// log) or "shell".
+	action func(what string) error
 }
 
 // collect asks every question and returns the answers.
@@ -122,22 +152,43 @@ func collect(p *prompter, e env, repo, cmdlineExtra string) (setup.Answers, erro
 			fmt.Fprintf(p.out, "Could not switch this console to %s (%v); it still types as before.\n", a.Keymap, err)
 		}
 	}
-	fmt.Fprintln(p.out, "\nDisks (the chosen one is erased; the others are not touched):")
-	for i, d := range disks {
-		fmt.Fprintf(p.out, "  %d) %s\n", i+1, d)
-	}
-	pick, err := p.ask("Install to disk number", "", func(s string) error {
-		n, err := strconv.Atoi(s)
-		if err != nil || n < 1 || n > len(disks) {
-			return fmt.Errorf("enter a number from 1 to %d", len(disks))
+	for a.Disk == "" {
+		fmt.Fprintln(p.out, "\nDisks (the chosen one is erased; the others are not touched):")
+		for i, d := range disks {
+			fmt.Fprintf(p.out, "  %d) %s\n", i+1, d)
+			if len(d.Parts) == 0 {
+				fmt.Fprintln(p.out, "       empty: no partitions")
+			}
+			for _, part := range d.Parts {
+				fmt.Fprintf(p.out, "       %s\n", part)
+			}
 		}
-		return nil
-	})
-	if err != nil {
-		return a, err
+		question := "Install to disk number"
+		if e.browse != nil {
+			question += " (or \"look 1\" to browse that disk read-only)"
+		}
+		var look bool
+		var n int
+		_, err := p.ask(question, "", func(s string) error {
+			num, isLook := strings.CutPrefix(s, "look")
+			n, err = strconv.Atoi(strings.TrimSpace(num))
+			if err != nil || n < 1 || n > len(disks) || (isLook && e.browse == nil) {
+				return fmt.Errorf("enter a number from 1 to %d", len(disks))
+			}
+			look = isLook
+			return nil
+		})
+		if err != nil {
+			return a, err
+		}
+		if !look {
+			a.Disk = disks[n-1].Path
+			break
+		}
+		if err := e.browse(disks[n-1]); err != nil {
+			fmt.Fprintf(p.out, "  %v\n", err)
+		}
 	}
-	n, _ := strconv.Atoi(pick)
-	a.Disk = disks[n-1].Path
 
 	if a.Hostname, err = p.ask("Computer name", "subarchy", setup.ValidHostname); err != nil {
 		return a, err
@@ -149,7 +200,13 @@ func collect(p *prompter, e env, repo, cmdlineExtra string) (setup.Answers, erro
 		return a, err
 	}
 	fmt.Fprintln(p.out, "The disk passphrase unlocks the disk at every boot. Losing it loses the data.")
-	if a.Passphrase, err = p.askSecret("Disk passphrase", 8); err != nil {
+	same, err := p.yesNo("Use your password as the disk passphrase too", true)
+	if err != nil {
+		return a, err
+	}
+	if same {
+		a.Passphrase = a.Password
+	} else if a.Passphrase, err = p.askSecret("Disk passphrase", 8); err != nil {
 		return a, err
 	}
 	if a.Timezone, err = p.ask("Time zone", "UTC", func(s string) error { return setup.ValidTimezone(e.zoneinfo, s) }); err != nil {
@@ -188,16 +245,72 @@ func xkbLayout(keymap string) string {
 	return layout
 }
 
-// confirm shows the summary and asks the user to type the disk's name.
+// confirm shows the summary and asks whether to erase the disk. No is
+// the default, so Enter alone changes nothing.
 func confirm(p *prompter, a setup.Answers) (bool, error) {
-	name := strings.TrimPrefix(a.Disk, "/dev/")
 	fmt.Fprintf(p.out, "\nInstalling Subarchy:\n  disk      %s (ALL DATA ON IT WILL BE ERASED)\n  computer  %s\n  user      %s\n  time zone %s\n  keyboard  %s\n\n",
 		a.Disk, a.Hostname, a.Username, a.Timezone, a.Keymap)
-	s, err := p.line(fmt.Sprintf("Type %s to erase it and install, anything else to stop", name), "")
-	if err != nil {
-		return false, err
+	return p.yesNo(fmt.Sprintf("Erase %s and install", a.Disk), false)
+}
+
+// elapsed renders a duration as "3m 12s".
+func elapsed(d time.Duration) string {
+	s := int(d.Round(time.Second).Seconds())
+	if s < 60 {
+		return fmt.Sprintf("%ds", s)
 	}
-	return s == name, nil
+	return fmt.Sprintf("%dm %ds", s/60, s%60)
+}
+
+// finished is the last screen of a good install: how long it took, and
+// an offer to reboot.
+func finished(p *prompter, e env, took time.Duration) {
+	fmt.Fprintf(p.out, "\nInstalled Subarchy in %s.\nYou can remove the install medium once the computer restarts.\n\n", elapsed(took))
+	if e.action == nil {
+		return
+	}
+	if yes, err := p.yesNo("Reboot now", true); err == nil && yes {
+		if err := e.action("reboot"); err != nil {
+			fmt.Fprintf(p.out, "  %v\n", err)
+		}
+	}
+}
+
+// failed is the last screen of a failed install: what the log ended
+// with, and what to do next. It returns when the user picks the shell.
+func failed(p *prompter, e env, cause error) {
+	fmt.Fprintf(p.out, "\nSubarchy installation stopped: %v\n", cause)
+	if e.logTail != nil {
+		if lines := e.logTail(12); len(lines) > 0 {
+			fmt.Fprintln(p.out, "Last log lines:")
+			for _, l := range lines {
+				fmt.Fprintf(p.out, "  %s\n", l)
+			}
+		}
+	}
+	fmt.Fprintln(p.out, "Nothing is left mounted; run subarchy-setup to try again.")
+	if e.action == nil {
+		return
+	}
+	choices := []string{"log", "shell", "reboot", "poweroff"}
+	for {
+		fmt.Fprintln(p.out, "\n  1) View the full log\n  2) Open a shell\n  3) Reboot\n  4) Power off")
+		s, err := p.line("What would you like to do", "2")
+		if err != nil {
+			return
+		}
+		n, err := strconv.Atoi(s)
+		if err != nil || n < 1 || n > len(choices) {
+			fmt.Fprintln(p.out, "  enter a number from 1 to 4")
+			continue
+		}
+		if choices[n-1] == "shell" {
+			return
+		}
+		if err := e.action(choices[n-1]); err != nil {
+			fmt.Fprintf(p.out, "  %v\n", err)
+		}
+	}
 }
 
 func run(args []string, stdin io.Reader, stdout io.Writer, e env, secret func() (string, error), exec func(conf string) error) int {
@@ -208,6 +321,7 @@ func run(args []string, stdin io.Reader, stdout io.Writer, e env, secret func() 
 	dir := fs.String("dir", "/run/subarchy-setup", "where the config and secret files are written")
 	dryRun := fs.Bool("dry-run", false, "write the config and stop")
 	cache := fs.String("package-cache", "", "pacman cache directory to reuse (tests)")
+	batch := fs.Bool("batch", false, "do not offer to browse disks, reboot or the failure menu (tests)")
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
@@ -220,6 +334,9 @@ func run(args []string, stdin io.Reader, stdout io.Writer, e env, secret func() 
 			}
 			return strings.TrimRight(s, "\r\n"), nil
 		}
+	}
+	if *batch {
+		e.browse, e.action = nil, nil
 	}
 	fmt.Fprintln(stdout, "SUBCULT // Subarchy setup")
 	a, err := collect(p, e, *repo, *cmdlineExtra)
@@ -242,10 +359,12 @@ func run(args []string, stdin io.Reader, stdout io.Writer, e env, secret func() 
 		fmt.Fprintf(stdout, "Config written to %s.\n", conf)
 		return 0
 	}
+	started := time.Now()
 	if err := exec(conf); err != nil {
-		fmt.Fprintf(stdout, "subarchy-setup: %v\n", err)
+		failed(p, e, err)
 		return 1
 	}
+	finished(p, e, time.Since(started))
 	return 0
 }
 
@@ -264,7 +383,7 @@ func main() {
 	}
 	e := env{
 		lsblk: func() ([]byte, error) {
-			return exec.Command("lsblk", "-J", "-d", "-b", "-o", "NAME,PATH,SIZE,TYPE,MODEL,TRAN,RO").Output()
+			return exec.Command("lsblk", "-J", "-b", "-o", "NAME,PATH,SIZE,TYPE,MODEL,TRAN,RO,FSTYPE,LABEL").Output()
 		},
 		installMedia: installMedium,
 		zoneinfo:     "/usr/share/zoneinfo",
@@ -273,13 +392,16 @@ func main() {
 		loadKeymap: func(keymap string) error {
 			return exec.Command("loadkeys", keymap).Run()
 		},
+		browse:  browse,
+		logTail: logTail,
+		action:  action,
 	}
+	// The installer runs as a child so its result can be shown: the time
+	// it took and a reboot offer, or the failure menu.
 	installer := func(conf string) error {
-		path, err := exec.LookPath("subarchy-install")
-		if err != nil {
-			return err
-		}
-		return syscall.Exec(path, []string{"subarchy-install", "--config", conf, "--yes"}, os.Environ())
+		cmd := exec.Command("subarchy-install", "--config", conf, "--yes")
+		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+		return cmd.Run()
 	}
 	os.Exit(run(os.Args[1:], os.Stdin, os.Stdout, e, secret, installer))
 }
@@ -296,4 +418,80 @@ func installMedium() string {
 		return "/dev/" + strings.TrimSpace(string(parent))
 	}
 	return dev
+}
+
+const installLog = "/var/log/subarchy-install.log"
+
+// interactive runs a program on this terminal.
+func interactive(name string, args ...string) error {
+	cmd := exec.Command(name, args...)
+	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+	return cmd.Run()
+}
+
+func action(what string) error {
+	switch what {
+	case "reboot":
+		return exec.Command("systemctl", "reboot").Run()
+	case "poweroff":
+		return exec.Command("systemctl", "poweroff").Run()
+	case "log":
+		return interactive("less", "+G", installLog)
+	}
+	return fmt.Errorf("unknown action %q", what)
+}
+
+func logTail(n int) []string {
+	data, err := os.ReadFile(installLog)
+	if err != nil {
+		return nil
+	}
+	lines := strings.Split(strings.TrimRight(string(data), "\n"), "\n")
+	if len(lines) > n {
+		lines = lines[len(lines)-n:]
+	}
+	return lines
+}
+
+// browse mounts each plain filesystem on the disk read-only under
+// /run/subarchy-look, opens a file manager there and unmounts again when
+// it exits. noload and norecovery keep a journal from being replayed, so
+// nothing on the disk changes.
+func browse(d setup.Disk) error {
+	const root = "/run/subarchy-look"
+	var mounted []string
+	defer func() {
+		for _, dir := range mounted {
+			exec.Command("umount", dir).Run()
+			os.Remove(dir)
+		}
+		os.Remove(root)
+	}()
+	for _, part := range d.Parts {
+		if !part.Browsable() {
+			continue
+		}
+		dir := root + "/" + strings.TrimPrefix(part.Path, "/dev/")
+		if err := os.MkdirAll(dir, 0o700); err != nil {
+			return err
+		}
+		opts := "ro"
+		switch part.FSType {
+		case "ext3", "ext4":
+			opts = "ro,noload"
+		case "xfs":
+			opts = "ro,norecovery"
+		case "btrfs":
+			opts = "ro,rescue=nologreplay"
+		}
+		if exec.Command("mount", "-o", opts, part.Path, dir).Run() != nil {
+			os.Remove(dir)
+			continue
+		}
+		mounted = append(mounted, dir)
+	}
+	if len(mounted) == 0 {
+		return fmt.Errorf("nothing on %s can be opened (empty, encrypted or an unknown format)", d.Path)
+	}
+	return interactive("mc", root)
 }

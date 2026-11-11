@@ -89,5 +89,11 @@ Decision map item R2. Accepted 2026-11-06.
   unreachable (or `OFFLINE=1`), the repository alone serves the install.
   `make install-test-offline` runs the guided install in a VM with no
   network device.
+- 2026-11-11: first step towards Omarchy's installer flow (issue #124). The
+  installer starts by itself on the first console, shows the partitions on
+  each disk and can open one read-only, uses the password as the disk
+  passphrase unless asked otherwise, confirms with yes/no, and ends with
+  the install time and a reboot offer or, on failure, a menu. Still plain
+  line prompts, so the serial console keeps working.
 
 Related: [[decision-map|Decision map]] · [[0050-hardware-support|ADR 0050]]

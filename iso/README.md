@@ -12,7 +12,8 @@ built with archiso.
   `/etc/os-release`;
 - log root in on the serial console too, so the boot test can drive it.
 
-The installer is not on the image yet.
+The installer, `subarchy-setup`, starts by itself on the first console
+(`airootfs/root/.zlogin`).
 
 ## Build and test
 

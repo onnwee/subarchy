@@ -8,8 +8,8 @@
 # subvolumes @ @home @log @pkg, linux-zen and linux-lts as unified kernel
 # images built by mkinitcpio's systemd hooks (ADR 0004, 0008), Limine
 # (ADR 0007) with snapshot entries, snapper for @ (ADR 0011), zram swap (ADR 0014) and
-# NetworkManager (ADR 0016). The TUI that asks the questions comes later and
-# writes this config file.
+# NetworkManager (ADR 0016). subarchy-setup asks the questions and writes
+# this config file.
 #
 # Config: KEY=value lines, '#' comments. Keys:
 #   DISK                  whole disk to wipe, e.g. /dev/vda (required)

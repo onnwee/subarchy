@@ -8,15 +8,25 @@ Omarchy counterpart: `/usr/share/omarchy/install/`, including
 
 ## `subarchy-setup`
 
-The guided installer on the live ISO (`cmd/subarchy-setup`). It asks for the
+The guided installer on the live ISO (`cmd/subarchy-setup`). It starts by
+itself on the first console; on a serial console or over SSH, run
+`subarchy-setup`. It asks for the
 keyboard layout first and switches the console to it (`loadkeys`), so the
 password and passphrase are typed under the layout the installed system
-asks for them in. It then lists the disks of at least 20 GiB, leaving out
-the install medium, and asks for the computer name, user name and password,
-disk passphrase and time zone. The desktop layout and variant come from
+asks for them in. It then lists the disks of at least 20 GiB with the
+partitions already on each, leaving out the install medium. Answering
+`look 1` mounts that disk's plain filesystems read-only under
+`/run/subarchy-look` and opens `mc` there; encrypted partitions are named
+but not opened. It then asks for the computer name, user name and password
+and time zone. The disk passphrase is the user's password unless the user
+asks for a separate one. The desktop layout and variant come from
 systemd's `kbd-model-map`. Each answer is checked as it is entered. The user confirms
-by typing the disk's name. It then writes the config and secret files (mode
-600) under `/run/subarchy-setup` and runs `subarchy-install`. Subarchy's own
+with a yes/no question whose default is no. It then writes the config and
+secret files (mode 600) under `/run/subarchy-setup` and runs
+`subarchy-install`. When that finishes it says how long the install took
+and offers to reboot; when it fails it shows the end of the log and a menu
+(view the log, shell, reboot, power off). `--batch` leaves out the browse,
+the reboot offer and the menu, for the VM test. Subarchy's own
 packages come from the repository on the image, `/opt/subarchy/repo`.
 
 ## `subarchy-install`
