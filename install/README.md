@@ -55,13 +55,12 @@ the Arch mirrors come first and the image's copies serve as a cache. If the
 install from the mirrors fails (an old image cannot verify packages signed
 with newer keys), it is tried once more from the image alone.
 
-The two Limine tools are AUR packages, and Pult is vendored from its
-release PKGBUILD (`packaging/pult`), rebuilt locally into `build/repo` by
-
 The two Limine tools are AUR packages, and the prebuilt Neovim is Subarchy's
 own package (`packaging/subarchy-nvim`), rebuilt locally into `build/repo` by
 `packaging/aur/build.sh` (needs docker) until the Subarchy repository
 exists.
+Pult is vendored from its release PKGBUILD (`packaging/pult`) and builds
+the same way.
 
 ## Testing
 
