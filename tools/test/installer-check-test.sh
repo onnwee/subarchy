@@ -55,6 +55,31 @@ out=$( (SUBARCHY_LOCALE_GEN=$gen check_locale de_DE.utf8) 2>&1) && fail "de_DE.u
 (SUBARCHY_LOCALE_GEN=$gen check_locale "") 2>/dev/null && fail "an empty locale was accepted"
 rm -f -- "$gen"
 
+# An install from the mirrors that fails (an old image, a package signed with
+# a key newer than its keyring) is tried again from the image's repository
+# alone; a repository that is not on the image has no second try.
+step() { :; }
+mirrors_reachable() { return 0; }
+subcult-hw() { echo amd-ucode; }
+calls=$(mktemp)
+pacstrap() { # records whether this call had the mirrors; fails while it has
+  if grep -q '^\[core\]' "$2"; then echo mirrors >>"$calls"; return 1; fi
+  echo image >>"$calls"
+}
+conf[SUBARCHY_REPO]=file:///run/archiso/bootmnt/subarchy/repo
+(pacstrap_packages) >/dev/null 2>&1 || fail "the install did not fall back to the image's repository"
+[[ $(tr '\n' ' ' <"$calls") == "mirrors image " ]] || fail "pacstrap calls: $(tr '\n' ' ' <"$calls")"
+: >"$calls"
+conf[SUBARCHY_REPO]=https://packages.example/subarchy
+(pacstrap_packages) >/dev/null 2>&1 && fail "a failed install without the image's repository was reported as done"
+[[ $(tr '\n' ' ' <"$calls") == "mirrors " ]] || fail "pacstrap calls without the image's repository: $(tr '\n' ' ' <"$calls")"
+: >"$calls"
+mirrors_reachable() { return 1; }
+conf[SUBARCHY_REPO]=file:///run/archiso/bootmnt/subarchy/repo
+(pacstrap_packages) >/dev/null 2>&1 || fail "an offline install failed"
+[[ $(tr '\n' ' ' <"$calls") == "image " ]] || fail "an offline install asked the mirrors: $(tr '\n' ' ' <"$calls")"
+rm -f -- "$calls"
+
 # All keyboard drivers go into the initramfs: the hook before autodetect,
 # which would keep only those of the keyboards present during the install.
 hooks=$(grep -o '^HOOKS=([^)]*)' "$root/install/subarchy-install")

@@ -51,7 +51,9 @@ edge` follows the mirrors directly (ADR 0026).
 
 With no network the install runs from the repository on the image alone,
 which carries the whole install set (`make iso` downloads it); with network
-the Arch mirrors come first and the image's copies serve as a cache.
+the Arch mirrors come first and the image's copies serve as a cache. If the
+install from the mirrors fails (an old image cannot verify packages signed
+with newer keys), it is tried once more from the image alone.
 
 The two Limine tools are AUR packages, and Pult is vendored from its
 release PKGBUILD (`packaging/pult`), rebuilt locally into `build/repo` by
