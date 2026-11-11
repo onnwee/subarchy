@@ -15,12 +15,19 @@ itself on the first console; on a serial console or over SSH, run
 On a virtual console it is full-screen (`screens.go`; the flow follows
 Omarchy's installer): a greeter, then one cleared screen per question
 under the SUBCULT mark, with `gum` drawing the lists and inputs. The
+language screen sets the installed system's locale (the installer stays
+in English) and preselects that language's usual keyboard. The
 keyboard comes from a labelled list, the time zone from a searchable
 list, and the disk from a list that shows what is on each one. After
 choosing a disk the user can install there, browse it read-only first, or
 pick another. A summary table asks "Does this look right?" before the
 disk step, and Escape goes back a step on every screen. The erase
-question's default is no. `--plain` gives the prompts below instead.
+question's default is no. While `subarchy-install` runs, the screen shows
+a bar with a percentage, the current phase, the time so far and a rotating
+tip (`progress.go`); the raw output goes to `/var/log/subarchy-install.log`,
+which is also where the percentage is read from. The finish screen offers
+"Reboot now", and a failure shows the end of the log with a menu. `--plain`
+gives the prompts below instead.
 
 On a serial console or over SSH it asks plain line prompts. It asks for the
 keyboard layout first and switches the console to it (`loadkeys`), so the

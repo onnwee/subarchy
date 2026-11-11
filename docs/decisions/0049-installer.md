@@ -100,6 +100,9 @@ Decision map item R2. Accepted 2026-11-06.
   with the SUBCULT palette and a Terminus console font. Serial consoles
   keep the line prompts. The VM install test now installs through the
   screens: keys go in through QMP and the console text is read from
-  `/dev/vcs`.
+  `/dev/vcs`. While the install runs, a bar with a percentage, the phase
+  and a rotating tip replace the raw output, which stays in the log. A
+  language screen sets the installed system's locale; the installer's own
+  text stays English.
 
 Related: [[decision-map|Decision map]] · [[0050-hardware-support|ADR 0050]]

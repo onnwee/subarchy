@@ -79,8 +79,18 @@ func logoWidth() int {
 
 func (s *screens) padding() string { return fmt.Sprintf("0 0 0 %d", s.pad()) }
 
+// sgr is the escape sequence for a palette colour as text colour: 30-37
+// for the first eight, 90-97 for the bright eight.
+func sgr(colour string) string {
+	n := int(colour[0] - '0')
+	if len(colour) > 1 || n > 7 {
+		return fmt.Sprintf("\x1b[9%dm", n-8)
+	}
+	return fmt.Sprintf("\x1b[3%dm", n)
+}
+
 func (s *screens) line(colour, text string) {
-	fmt.Fprintf(s.out, "%*s\x1b[3%sm%s\x1b[0m\n", s.pad(), "", colour, text)
+	fmt.Fprintf(s.out, "%*s%s%s\x1b[0m\n", s.pad(), "", sgr(colour), text)
 }
 
 // page clears the screen and draws the mark, a title and body lines.
@@ -184,6 +194,61 @@ var keyboards = [][2]string{
 	{"Ukrainian", "ua"},
 }
 
+// languages are the system languages offered: name, locale, and the
+// keyboard most people with that language use, which becomes the
+// keyboard screen's preselection. Only languages the installed fonts
+// cover are listed.
+var languages = [][3]string{
+	{"English (US)", "en_US.UTF-8", "us"}, {"English (UK)", "en_GB.UTF-8", "uk"},
+	{"Bulgarian", "bg_BG.UTF-8", "bg-cp1251"}, {"Catalan", "ca_ES.UTF-8", "es"}, {"Croatian", "hr_HR.UTF-8", "croat"},
+	{"Czech", "cs_CZ.UTF-8", "cz"}, {"Danish", "da_DK.UTF-8", "dk-latin1"}, {"Dutch", "nl_NL.UTF-8", "nl"},
+	{"Estonian", "et_EE.UTF-8", "et"}, {"Finnish", "fi_FI.UTF-8", "fi"}, {"French", "fr_FR.UTF-8", "fr-latin1"},
+	{"French (Canada)", "fr_CA.UTF-8", "cf"}, {"German", "de_DE.UTF-8", "de-latin1"},
+	{"German (Switzerland)", "de_CH.UTF-8", "de_CH-latin1"}, {"Greek", "el_GR.UTF-8", "gr"},
+	{"Hungarian", "hu_HU.UTF-8", "hu"}, {"Icelandic", "is_IS.UTF-8", "is-latin1"}, {"Italian", "it_IT.UTF-8", "it"},
+	{"Latvian", "lv_LV.UTF-8", "lv"}, {"Lithuanian", "lt_LT.UTF-8", "lt"}, {"Norwegian", "nb_NO.UTF-8", "no-latin1"},
+	{"Polish", "pl_PL.UTF-8", "pl"}, {"Portuguese", "pt_PT.UTF-8", "pt-latin1"},
+	{"Portuguese (Brazil)", "pt_BR.UTF-8", "br-abnt2"}, {"Romanian", "ro_RO.UTF-8", "ro"},
+	{"Russian", "ru_RU.UTF-8", "ru"}, {"Slovak", "sk_SK.UTF-8", "sk-qwertz"}, {"Slovenian", "sl_SI.UTF-8", "slovene"},
+	{"Spanish", "es_ES.UTF-8", "es"}, {"Spanish (Latin America)", "es_MX.UTF-8", "la-latin1"},
+	{"Swedish", "sv_SE.UTF-8", "sv-latin1"}, {"Turkish", "tr_TR.UTF-8", "trq"}, {"Ukrainian", "uk_UA.UTF-8", "ua"},
+}
+
+// language picks the installed system's language. The installer itself
+// stays in English.
+func (s *screens) language(a *setup.Answers, e env) error {
+	s.page("Let's set up your machine.", "This sets the language of the installed system; the installer stays in English.",
+		"Escape goes back a step on every screen.")
+	var labels []string
+	selected := ""
+	byLabel := map[string][3]string{}
+	for _, l := range languages {
+		if !setup.HasLocale(e.localeGen, l[1]) {
+			continue
+		}
+		labels = append(labels, l[0])
+		byLabel[l[0]] = l
+		if l[1] == a.Locale {
+			selected = l[0]
+		}
+	}
+	if len(labels) < 2 {
+		return nil // nothing to choose from: English it is
+	}
+	label, err := s.choose("Language", labels, selected)
+	if err != nil {
+		return err
+	}
+	if l := byLabel[label]; l[1] != a.Locale {
+		// A new language moves the keyboard preselection to its usual layout.
+		a.Locale = l[1]
+		if setup.ValidKeymap(e.keymaps, l[2]) == nil {
+			a.Keymap = l[2]
+		}
+	}
+	return nil
+}
+
 // zones lists the time zones under dir ("Europe/Berlin"), sorted.
 func zones(dir string) []string {
 	var out []string
@@ -208,7 +273,7 @@ func zones(dir string) []string {
 // answers once the user has confirmed erasing the disk. errBack from the
 // first step means the user left the installer.
 func collectScreens(s *screens, e env, repo, cmdlineExtra string) (setup.Answers, error) {
-	a := setup.Answers{Repo: repo, CmdlineExtra: cmdlineExtra, Hostname: "subarchy", Timezone: "UTC", Keymap: "us"}
+	a := setup.Answers{Repo: repo, CmdlineExtra: cmdlineExtra, Hostname: "subarchy", Timezone: "UTC", Keymap: "us", Locale: "en_US.UTF-8"}
 	raw, err := e.lsblk()
 	if err != nil {
 		return a, fmt.Errorf("list disks: %w", err)
@@ -223,6 +288,7 @@ func collectScreens(s *screens, e env, repo, cmdlineExtra string) (setup.Answers
 	separate := false
 	steps := []func() error{
 		func() error { return s.greeter() },
+		func() error { return s.language(&a, e) },
 		func() error { return s.keyboard(&a, e) },
 		func() error { return s.account(&a, e, &separate) },
 		func() error { return s.summary(a, separate) },
@@ -260,7 +326,7 @@ func (s *screens) greeter() error {
 }
 
 func (s *screens) keyboard(a *setup.Answers, e env) error {
-	s.page("Let's set up your machine.", "Escape goes back a step on every screen.")
+	s.page("Let's set up your machine.")
 	var labels []string
 	selected := ""
 	byLabel := map[string]string{}
@@ -375,7 +441,7 @@ func (s *screens) summary(a setup.Answers, separate bool) error {
 		passphrase = strings.Repeat("*", len(a.Passphrase))
 	}
 	for _, row := range [][2]string{
-		{"Keyboard", a.Keymap}, {"Time zone", a.Timezone}, {"User name", a.Username},
+		{"Language", a.Locale}, {"Keyboard", a.Keymap}, {"Time zone", a.Timezone}, {"User name", a.Username},
 		{"Password", strings.Repeat("*", len(a.Password))}, {"Computer name", a.Hostname}, {"Disk passphrase", passphrase},
 	} {
 		fmt.Fprintf(s.out, "%*s\x1b[3%sm%-17s\x1b[3%sm%s\x1b[0m\n", s.pad(), "", colViolet, row[0], colPaper, row[1])

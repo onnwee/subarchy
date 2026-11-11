@@ -234,6 +234,28 @@ func Disks(lsblkJSON []byte, installMedium string) ([]Disk, error) {
 	return disks, nil
 }
 
+func (a Answers) localeOrDefault() string {
+	if a.Locale == "" {
+		return "en_US.UTF-8"
+	}
+	return a.Locale
+}
+
+// HasLocale reports whether locale.gen lists the locale ("de_DE.UTF-8"),
+// commented out or not, which is what subarchy-install requires.
+func HasLocale(localeGen, locale string) bool {
+	data, err := os.ReadFile(localeGen)
+	if err != nil {
+		return false
+	}
+	for _, line := range strings.Split(string(data), "\n") {
+		if strings.HasPrefix(strings.TrimPrefix(line, "#"), locale+" ") {
+			return true
+		}
+	}
+	return false
+}
+
 // Answers is everything the guided installer collects.
 type Answers struct {
 	Disk         string
@@ -242,6 +264,7 @@ type Answers struct {
 	Password     string
 	Passphrase   string
 	Timezone     string
+	Locale       string
 	Keymap       string
 	XKBLayout    string
 	XKBVariant   string
@@ -270,6 +293,7 @@ func (a Answers) WriteConfig(dir string) (string, error) {
 		"USER_PASSWORD_FILE=" + filepath.Join(dir, "user-password"),
 		"LUKS_PASSPHRASE_FILE=" + filepath.Join(dir, "luks-passphrase"),
 		"TIMEZONE=" + a.Timezone,
+		"LOCALE=" + a.localeOrDefault(),
 		"KEYMAP=" + a.Keymap,
 		"XKB_LAYOUT=" + a.XKBLayout,
 		"SUBARCHY_REPO=" + a.Repo,

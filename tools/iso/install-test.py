@@ -188,6 +188,7 @@ def guided(serial: Serial, qmp: Path, timeout: float) -> str:
     )
     steps = [
         ("Press Return to start the install", ["ret"]),
+        ("Language", ["ret"]),  # English (US) is first
         ("Keyboard layout", ["ret"]),  # English (US) is selected
         ("Time zone", "chicago"),
         ("America/Chicago", ["ret"]),
@@ -206,22 +207,29 @@ def guided(serial: Serial, qmp: Path, timeout: float) -> str:
     for shown, keys in steps:
         wait_console(serial, 2, shown, 60)
         time.sleep(0.5)
+        if shown in ("Press Return to start the install", "Install disk"):
+            screendump(qmp, VM / f"installer-{'greeter' if shown.startswith('Press') else 'disk'}.png")
         if isinstance(keys, str):
             type_text(qmp, keys)
         else:
             send_keys(qmp, *keys)
-    screendump(qmp, VM / "installer.png")
+    # The install view replaces the raw output: a bar, a percentage and
+    # the package count.
     deadline = time.monotonic() + timeout
-    screen = ""
+    screen, view = "", False
     while time.monotonic() < deadline:
         screen = console_text(serial, 2)
         if "Installed Subarchy in" in screen or "installation stopped" in screen:
             break
-        time.sleep(5)
+        if not view and re.search(r"Installing packages \(\d+ of \d+\)", screen) and "%" in screen and "Tip: " in screen:
+            view = True
+            screendump(qmp, VM / "installer.png")
+        time.sleep(3)
+    print(f"install-test: {'ok  ' if view else 'FAIL'} install view shows a percentage, the package count and a tip")
     screendump(qmp, VM / "installer-end.png")
-    done = "Installed Subarchy in" in screen
-    if done:
-        type_text(qmp, "n\n")  # no reboot: the test powers the VM off
+    done = "Installed Subarchy in" in screen and view
+    if "Installed Subarchy in" in screen:
+        send_keys(qmp, "n")  # no reboot: the test powers the VM off
     log = serial.run("cat /var/log/subarchy-install.log", timeout=60)
     return log + "\n" + screen + ("\nEXIT=0" if done else "\nEXIT=1")
 

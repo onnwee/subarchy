@@ -10,7 +10,11 @@ built with archiso.
 - use `linux-zen` (the LTS kernel is not on the image yet);
 - add the `subarchy` package from a local repository, which sets
   `/etc/os-release`;
-- log root in on the serial console too, so the boot test can drive it.
+- log root in on the serial console too, so the boot test can drive it;
+- boot quietly: the menu shows for 2 seconds (the speech and memory-test
+  entries are still there) and the kernel prints only errors, so the first
+  thing on screen is the installer. systemd's status lines go to the
+  serial console, which the boot test reads.
 
 The installer, `subarchy-setup`, starts by itself on the first console
 (`airootfs/root/.zlogin`).

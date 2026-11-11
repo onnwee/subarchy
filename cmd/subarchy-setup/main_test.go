@@ -30,7 +30,10 @@ func testEnv(t *testing.T) env {
 			t.Fatal(err)
 		}
 	}
+	gen := filepath.Join(t.TempDir(), "locale.gen")
+	os.WriteFile(gen, []byte("#de_DE.UTF-8 UTF-8\nen_US.UTF-8 UTF-8\n#en_GB.UTF-8 UTF-8\n"), 0o644)
 	return env{
+		localeGen:    gen,
 		lsblk:        func() ([]byte, error) { return []byte(lsblkJSON), nil },
 		installMedia: func() string { return "/dev/sr0" },
 		zoneinfo:     zi,
@@ -49,7 +52,7 @@ func TestRunInstalls(t *testing.T) {
 	var out bytes.Buffer
 	var ran string
 	code := run([]string{"--dir", dir, "--cmdline-extra", "console=ttyS0"}, strings.NewReader(goodInput+"y\n"), &out,
-		testEnv(t), nil, func(conf string) error { ran = conf; return nil })
+		testEnv(t), nil, func(conf string, _ bool) error { ran = conf; return nil })
 	if code != 0 {
 		t.Fatalf("exit %d:\n%s", code, out.String())
 	}
@@ -82,7 +85,7 @@ func TestRunStopsWithoutConfirmation(t *testing.T) {
 	var out bytes.Buffer
 	ran := false
 	code := run([]string{"--dir", t.TempDir()}, strings.NewReader(goodInput+"\n"), &out, testEnv(t), nil,
-		func(string) error { ran = true; return nil })
+		func(string, bool) error { ran = true; return nil })
 	if code != 1 || ran || !strings.Contains(out.String(), "nothing was changed") {
 		t.Errorf("exit %d, ran %v:\n%s", code, ran, out.String())
 	}
@@ -91,7 +94,7 @@ func TestRunStopsWithoutConfirmation(t *testing.T) {
 func TestRunDryRun(t *testing.T) {
 	var out bytes.Buffer
 	code := run([]string{"--dir", t.TempDir(), "--dry-run"}, strings.NewReader(goodInput+"y\n"), &out, testEnv(t), nil,
-		func(string) error { t.Error("installer ran in dry run"); return nil })
+		func(string, bool) error { t.Error("installer ran in dry run"); return nil })
 	if code != 0 || !strings.Contains(out.String(), "Config written to") {
 		t.Errorf("exit %d:\n%s", code, out.String())
 	}
@@ -116,7 +119,7 @@ func TestRunErrors(t *testing.T) {
 	if code := run([]string{"--bogus"}, strings.NewReader(""), &out, testEnv(t), nil, nil); code != 2 {
 		t.Errorf("bad flag: exit %d", code)
 	}
-	failing := func(string) error { return errors.New("installer failed") }
+	failing := func(string, bool) error { return errors.New("installer failed") }
 	out.Reset()
 	if code := run([]string{"--dir", t.TempDir()}, strings.NewReader(goodInput+"y\n"), &out, testEnv(t), nil, failing); code != 1 {
 		t.Errorf("installer failure: exit %d", code)
@@ -239,14 +242,14 @@ func TestFinishAndFailureScreens(t *testing.T) {
 	e.logTail = func(int) []string { return []string{"error: target not found: nope"} }
 	var out bytes.Buffer
 	// Enter at the reboot offer reboots.
-	code := run([]string{"--dir", t.TempDir()}, strings.NewReader(goodInput+"y\n\n"), &out, e, nil, func(string) error { return nil })
+	code := run([]string{"--dir", t.TempDir()}, strings.NewReader(goodInput+"y\n\n"), &out, e, nil, func(string, bool) error { return nil })
 	if code != 0 || len(did) != 1 || did[0] != "reboot" || !strings.Contains(out.String(), "Installed Subarchy in 0s.") {
 		t.Errorf("finish: exit %d, did %v:\n%s", code, did, out.String())
 	}
 	// A failure shows the log's end and a menu: view the log, then the shell.
 	did, out = nil, bytes.Buffer{}
 	code = run([]string{"--dir", t.TempDir()}, strings.NewReader(goodInput+"y\n1\n\n"), &out, e, nil,
-		func(string) error { return errors.New("exit status 1") })
+		func(string, bool) error { return errors.New("exit status 1") })
 	if code != 1 || len(did) != 1 || did[0] != "log" {
 		t.Errorf("failure: exit %d, did %v:\n%s", code, did, out.String())
 	}
