@@ -2,9 +2,9 @@
 -- Opaque windows, no gaps, rounding, blur, shadows, dimming or animations,
 -- solid 1 px borders. Colours come from theme.lua.
 --
--- The shell re-runs this file through `hyprctl eval` when the motion setting
--- or the power source changes, so everything here must be safe to apply
--- again: defaults, then the theme, then the motion gate.
+-- The shell does not re-run this file: when motion turns off it sends the
+-- gate at the bottom on its own, and when motion turns on it reloads the
+-- configuration, so a user's own gaps, borders and layout are never reset.
 
 local system = os.getenv("SUBCULT_PATH") or "/usr/share/subcult"
 

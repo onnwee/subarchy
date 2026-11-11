@@ -22,8 +22,11 @@ TestCase {
     verify(!Model.enabled("auto", true))
   }
 
-  function test_evalLua() {
-    compare(Model.evalLua("/usr/share/subcult"), "dofile([==[/usr/share/subcult/default/hypr/looknfeel.lua]==])")
-    verify(Model.evalLua("/x]==]y").indexOf("]==]y") < 0, "a closing bracket in the path cannot end the string early")
+  function test_command() {
+    const off = Model.command(false)
+    compare(off.slice(0, 2), ["hyprctl", "eval"])
+    verify(off[2].indexOf("animations = { enabled = false }") >= 0)
+    verify(off[2].indexOf("general") < 0 && off[2].indexOf("dofile") < 0, "turning motion off leaves gaps, borders and layout alone")
+    compare(Model.command(true), ["hyprctl", "reload"])
   }
 }

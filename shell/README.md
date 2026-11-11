@@ -102,9 +102,10 @@ One setting, `~/.config/subcult/motion.json` with `{"mode": "auto"}`, `"on"`
 or `"off"`, decides whether the interface moves (the Motion group in the
 settings panel). `auto` is on while on AC and off on battery. The shell's
 `Motion` singleton (`Motion.enabled`, `Motion.duration`, 0 when off) follows
-the file and UPower; on a change it re-runs `default/hypr/looknfeel.lua`
-through `hyprctl eval`, which keeps Hyprland's animations, blur and shadows
-off whatever the theme asked for. The lock screen reads the same file.
+the file and UPower. When motion turns off it sends `hyprctl eval` with
+only the gate (animations, blur and shadows off), so settings from the
+user's own Hyprland config stay; when motion turns on it runs
+`hyprctl reload`. The lock screen reads the same file.
 
 ## Calendar
 

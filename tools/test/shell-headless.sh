@@ -699,11 +699,13 @@ printf '{"mode": "off"}\n' >"$home1/.config/subcult/motion.json"
 sleep 2
 st=$(status "$home1")
 [[ $(json 'd.get("motion")') == False && $(json 'd.get("motionMode")') == off ]] || fail "motion off did not apply live: $st"
-grep -q 'eval dofile(\[==\[.*/default/hypr/looknfeel.lua\]==\])' "$home1/hyprctl-log" 2>/dev/null || fail "the motion change did not reach the compositor: $(cat "$home1/hyprctl-log" 2>/dev/null)"
+grep -q '^eval hl.config({ animations = { enabled = false }' "$home1/hyprctl-log" 2>/dev/null || fail "motion off did not reach the compositor: $(cat "$home1/hyprctl-log" 2>/dev/null)"
+grep -q 'looknfeel' "$home1/hyprctl-log" && fail "motion off re-ran the look defaults: $(cat "$home1/hyprctl-log")"
 printf '{"mode": "on"}\n' >"$home1/.config/subcult/motion.json"
 sleep 2
 st=$(status "$home1")
 [[ $(json 'd.get("motion")') == True ]] || fail "motion on did not apply live: $st"
+grep -qx 'reload' "$home1/hyprctl-log" || fail "motion on did not reload the compositor: $(cat "$home1/hyprctl-log")"
 rm "$home1/.config/subcult/motion.json"
 # Thermal alerts: a hot trip crossed (from the stub `subcult thermal watch`)
 # is one notification; the same trip again, and down and up within the
