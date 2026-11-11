@@ -6,6 +6,7 @@ package calendar
 import (
 	"bufio"
 	"fmt"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -252,7 +253,7 @@ func parseDuration(s string) (time.Duration, bool) {
 
 // Occurrences expands the events into the window: single events as they
 // are, recurring ones by their RRULE (daily, weekly with BYDAY, monthly by
-// day of month or by BYDAY with an ordinal such as 2TU or -1FR, yearly;
+// day of month or by BYDAY, BYMONTHDAY, BYMONTH and BYSETPOS, yearly;
 // INTERVAL, COUNT, UNTIL, EXDATE). A series steps through the calendar of
 // the zone its DTSTART was written in. Overridden occurrences
 // (RECURRENCE-ID) replace the generated one.
@@ -387,7 +388,7 @@ func expand(e vevent, w Window) []time.Time {
 				break
 			}
 			done := false
-			for _, t := range monthDays(e.start, first, rule["BYDAY"]) {
+			for _, t := range monthDays(e.start, first, rule) {
 				if !t.Before(e.start) && !emit(t) {
 					done = true
 					break
@@ -425,19 +426,20 @@ func monthStart(start time.Time, n int) time.Time {
 }
 
 // monthDays lists a monthly rule's days in the month beginning at first,
-// in order: the weekdays BYDAY names (2TU the second Tuesday, -1FR the
-// last Friday, TU every Tuesday), or start's day of the month. A day the
-// month lacks, such as the 31st in a 30-day month, gives nothing: the rule
-// skips that month (RFC 5545).
-func monthDays(start, first time.Time, byday string) []time.Time {
+// in order. BYMONTH limits the months. BYDAY names weekdays (2TU the second
+// Tuesday, -1FR the last Friday, TU every Tuesday) and BYMONTHDAY days of
+// the month (-1 the last); with both, a day must satisfy both. With
+// neither, the day is start's. BYSETPOS then keeps the listed positions of
+// that set (1 the first, -1 the last). A day the month lacks, such as the
+// 31st in a 30-day month, gives nothing: the rule skips that month
+// (RFC 5545).
+func monthDays(start, first time.Time, rule map[string]string) []time.Time {
+	if months := intList(rule["BYMONTH"]); len(months) > 0 && !slices.Contains(months, int(first.Month())) {
+		return nil
+	}
 	last := first.AddDate(0, 1, -1).Day()
 	on := func(d int) time.Time { return first.AddDate(0, 0, d-1) }
-	if byday == "" {
-		if start.Day() > last {
-			return nil
-		}
-		return []time.Time{on(start.Day())}
-	}
+	byday, monthdays := rule["BYDAY"], intList(rule["BYMONTHDAY"])
 	picked := map[int]bool{}
 	for _, entry := range strings.Split(byday, ",") {
 		code := strings.TrimLeft(entry, "+-0123456789")
@@ -463,11 +465,67 @@ func monthDays(start, first time.Time, byday string) []time.Time {
 			picked[matches[len(matches)+ordinal]] = true
 		}
 	}
-	var days []time.Time
-	for d := 1; d <= last; d++ {
-		if picked[d] {
-			days = append(days, on(d))
+	onMonthday := map[int]bool{}
+	for _, n := range monthdays {
+		if n < 0 {
+			n = last + 1 + n
+		}
+		if n >= 1 && n <= last {
+			onMonthday[n] = true
 		}
 	}
+	var set []int
+	for d := 1; d <= last; d++ {
+		switch {
+		case byday != "" && len(monthdays) > 0:
+			if picked[d] && onMonthday[d] {
+				set = append(set, d)
+			}
+		case byday != "":
+			if picked[d] {
+				set = append(set, d)
+			}
+		case len(monthdays) > 0:
+			if onMonthday[d] {
+				set = append(set, d)
+			}
+		case d == start.Day():
+			set = append(set, d)
+		}
+	}
+	if positions := intList(rule["BYSETPOS"]); len(positions) > 0 {
+		keep := map[int]bool{}
+		for _, pos := range positions {
+			switch {
+			case pos > 0 && pos <= len(set):
+				keep[set[pos-1]] = true
+			case pos < 0 && -pos <= len(set):
+				keep[set[len(set)+pos]] = true
+			}
+		}
+		kept := set[:0]
+		for _, d := range set {
+			if keep[d] {
+				kept = append(kept, d)
+			}
+		}
+		set = kept
+	}
+	days := make([]time.Time, len(set))
+	for i, d := range set {
+		days[i] = on(d)
+	}
 	return days
+}
+
+// intList reads a comma-separated list of integers, skipping what is not
+// one.
+func intList(s string) []int {
+	var out []int
+	for _, f := range strings.Split(s, ",") {
+		if n, err := strconv.Atoi(strings.TrimSpace(f)); err == nil {
+			out = append(out, n)
+		}
+	}
+	return out
 }

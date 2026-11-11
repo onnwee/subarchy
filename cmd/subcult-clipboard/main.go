@@ -276,7 +276,10 @@ func (a *app) clear() int {
 func realOutput(argv []string, stdin []byte) ([]byte, error) {
 	cmd := exec.Command(argv[0], argv[1:]...)
 	if stdin != nil {
-		cmd.Stdin = bytes.NewReader(stdin)
+		// wl-copy leaves a child behind to serve the selection until the
+		// next copy. A pipe that child inherited would keep this call
+		// waiting as long, so its output goes to a file instead.
+		return nil, runDetachedOutput(cmd, stdin)
 	}
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
@@ -285,6 +288,27 @@ func realOutput(argv []string, stdin []byte) ([]byte, error) {
 		return out, errors.New(strings.TrimSpace(stderr.String()))
 	}
 	return out, err
+}
+
+// runDetachedOutput feeds stdin to the command and waits for it alone, not
+// for children that outlive it. Its stdout is dropped; what it wrote to
+// stderr becomes the error.
+func runDetachedOutput(cmd *exec.Cmd, stdin []byte) error {
+	errFile, err := os.CreateTemp("", "subcult-clipboard-*.err")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(errFile.Name())
+	defer errFile.Close()
+	cmd.Stdin = bytes.NewReader(stdin)
+	cmd.Stderr = errFile
+	runErr := cmd.Run()
+	if runErr != nil {
+		if msg, _ := os.ReadFile(errFile.Name()); len(bytes.TrimSpace(msg)) > 0 {
+			return errors.New(strings.TrimSpace(string(msg)))
+		}
+	}
+	return runErr
 }
 
 func realDetach(argv []string) error {

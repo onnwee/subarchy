@@ -219,3 +219,64 @@ func TestCatalogCoversSelect(t *testing.T) {
 		t.Errorf("catalog too short: %d", len(Catalog()))
 	}
 }
+
+// A USB Wi-Fi adapter has no device class of its own; its interfaces and
+// the chip maker's vendor ID identify it.
+func TestSelectUSBWifi(t *testing.T) {
+	iface := func(root, dev string, classes ...string) {
+		for i, c := range classes {
+			dir := filepath.Join(root, "sys/bus/usb/devices", fmt.Sprintf("%s:1.%d", dev, i))
+			if err := os.MkdirAll(dir, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(dir, "bInterfaceClass"), []byte(c+"\n"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	// MediaTek MT7921AU dongle: Bluetooth and a vendor-specific interface.
+	root := fixture{cpu: "AuthenticAMD", usb: [][3]uint32{{0x0e8d, 0x7961, 0xef}}}.write(t)
+	iface(root, "3-1", "e0", "e0", "ff")
+	m, err := Detect(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sel := Select(m); !slices.Contains(sel.Packages, "linux-firmware-mediatek") {
+		t.Errorf("an MT7921AU dongle needs linux-firmware-mediatek: %v", sel.Packages)
+	}
+	// Realtek RTL8812AU: device class 0, one vendor-specific interface.
+	root = fixture{cpu: "AuthenticAMD", usb: [][3]uint32{{0x0bda, 0x8812, 0x00}}}.write(t)
+	iface(root, "3-1", "ff")
+	m, _ = Detect(root)
+	if sel := Select(m); !slices.Contains(sel.Packages, "linux-firmware-realtek") {
+		t.Errorf("an RTL8812AU dongle needs linux-firmware-realtek: %v", sel.Packages)
+	}
+	// A vendor-specific interface from an unlisted vendor (a fingerprint
+	// reader, a keyboard) is not a radio and must not pull all firmware.
+	root = fixture{cpu: "AuthenticAMD", usb: [][3]uint32{{0x27c6, 0x63ac, 0xef}}}.write(t)
+	iface(root, "3-1", "ff")
+	m, _ = Detect(root)
+	if sel := Select(m); slices.ContainsFunc(sel.Packages, func(p string) bool { return strings.HasPrefix(p, "linux-firmware") }) {
+		t.Errorf("an unlisted USB vendor needs no firmware: %v", sel.Packages)
+	}
+	// A Realtek card reader (mass storage) is not a radio either.
+	root = fixture{cpu: "AuthenticAMD", usb: [][3]uint32{{0x0bda, 0x0129, 0x00}}}.write(t)
+	iface(root, "3-1", "08")
+	m, _ = Detect(root)
+	if sel := Select(m); slices.Contains(sel.Packages, "linux-firmware-realtek") {
+		t.Errorf("a card reader needs no radio firmware: %v", sel.Packages)
+	}
+}
+
+// The linux-firmware meta-package does not depend on Marvell's firmware,
+// so the full-firmware fallback must keep it.
+func TestFullFirmwareKeepsMarvell(t *testing.T) {
+	m := Machine{Devices: []Device{
+		{Bus: "pci", Vendor: 0x11ab, Device: 0x2b38, Class: 0x028000}, // Marvell Wi-Fi
+		{Bus: "pci", Vendor: 0x1ae9, Device: 0x0310, Class: 0x028000}, // a vendor not in the table
+	}}
+	sel := Select(m)
+	if !slices.Contains(sel.Packages, "linux-firmware") || !slices.Contains(sel.Packages, "linux-firmware-marvell") {
+		t.Errorf("packages = %v", sel.Packages)
+	}
+}

@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -21,14 +22,22 @@ type Device struct {
 	Bus    string // "pci" or "usb"
 	Vendor uint16
 	Device uint16
-	Class  uint32 // PCI: 0xCCSSPP; USB: device class in the low byte
+	Class  uint32  // PCI: 0xCCSSPP; USB: device class in the low byte
+	Ifaces []uint8 // USB: the class of each interface
 }
 
 // Kind classifies a device for package selection.
 func (d Device) Kind() string {
 	if d.Bus == "usb" {
-		if d.Class == 0xe0 || btUSBVendors[d.Vendor] {
+		if d.Class == 0xe0 || btUSBVendors[d.Vendor] || slices.Contains(d.Ifaces, 0xe0) {
 			return "bluetooth"
+		}
+		// A USB Wi-Fi adapter shows a vendor-specific interface and no
+		// standard class, so the chip maker's vendor ID decides. A phone
+		// or card reader from the same maker also matches; the cost is one
+		// firmware package the machine did not need.
+		if _, known := radioFirmware[d.Vendor]; known && slices.Contains(d.Ifaces, 0xff) {
+			return "wireless"
 		}
 		return ""
 	}
@@ -208,8 +217,10 @@ func Select(m Machine) Selection {
 		notes = append(notes, "DisplayLink adapter: evdi (DKMS) and the DisplayLink manager; displaylink.service is enabled")
 	}
 	if fullFirmware {
+		// linux-firmware depends on most of the split packages; Marvell's
+		// is only an optional dependency (20261019-1), so it stays.
 		for p := range set {
-			if strings.HasPrefix(p, "linux-firmware-") {
+			if strings.HasPrefix(p, "linux-firmware-") && p != "linux-firmware-marvell" {
 				delete(set, p)
 			}
 		}
@@ -271,7 +282,15 @@ func Detect(root string) (Machine, error) {
 			continue
 		}
 		class, _ := readHex(filepath.Join(dir, "bDeviceClass"))
-		m.Devices = append(m.Devices, Device{Bus: "usb", Vendor: uint16(v), Device: uint16(id), Class: uint32(class)})
+		d := Device{Bus: "usb", Vendor: uint16(v), Device: uint16(id), Class: uint32(class)}
+		// Interfaces are siblings named <device>:<config>.<interface>.
+		ifaces, _ := filepath.Glob(dir + ":*/bInterfaceClass")
+		for _, f := range ifaces {
+			if c, err := readHex(f); err == nil {
+				d.Ifaces = append(d.Ifaces, uint8(c))
+			}
+		}
+		m.Devices = append(m.Devices, d)
 	}
 	if vendor, err := os.ReadFile(filepath.Join(root, "sys/class/dmi/id/sys_vendor")); err == nil {
 		product, _ := os.ReadFile(filepath.Join(root, "sys/class/dmi/id/product_name"))

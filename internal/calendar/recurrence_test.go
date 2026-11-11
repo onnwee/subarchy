@@ -101,3 +101,41 @@ func TestMonthlyByWeekdayAndShortMonths(t *testing.T) {
 		t.Errorf("February 29: got %v, want %v", got, want)
 	}
 }
+
+func TestMonthlyBySetPosMonthDayAndMonth(t *testing.T) {
+	series := func(dtstart, rrule string) string {
+		return "BEGIN:VEVENT\nUID:x\nSUMMARY:x\nDTSTART:" + dtstart + "\nRRULE:" + rrule + "\nEND:VEVENT\n"
+	}
+	tests := []struct {
+		name, ics string
+		from, to  time.Time
+		want      []string
+	}{
+		{"last weekday of the month", series("20260130T090000", "FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=-1"),
+			day(2026, 2, 1), day(2026, 6, 1),
+			[]string{"2026-02-27 09:00", "2026-03-31 09:00", "2026-04-30 09:00", "2026-05-29 09:00"}},
+		{"first weekday of the month", series("20260102T090000", "FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=1"),
+			day(2026, 2, 1), day(2026, 4, 1),
+			[]string{"2026-02-02 09:00", "2026-03-02 09:00"}},
+		{"the 1st and the 15th", series("20260101T120000", "FREQ=MONTHLY;BYMONTHDAY=1,15"),
+			day(2026, 3, 1), day(2026, 4, 2),
+			[]string{"2026-03-01 12:00", "2026-03-15 12:00", "2026-04-01 12:00"}},
+		{"the last day of the month", series("20260131T120000", "FREQ=MONTHLY;BYMONTHDAY=-1"),
+			day(2026, 2, 1), day(2026, 5, 1),
+			[]string{"2026-02-28 12:00", "2026-03-31 12:00", "2026-04-30 12:00"}},
+		{"Friday the 13th", series("20260213T120000", "FREQ=MONTHLY;BYDAY=FR;BYMONTHDAY=13"),
+			day(2026, 1, 1), day(2027, 1, 1),
+			[]string{"2026-02-13 12:00", "2026-03-13 12:00", "2026-11-13 12:00"}},
+		{"only in March and September", series("20260310T120000", "FREQ=MONTHLY;BYMONTH=3,9"),
+			day(2026, 1, 1), day(2027, 4, 1),
+			[]string{"2026-03-10 12:00", "2026-09-10 12:00", "2027-03-10 12:00"}},
+		{"COUNT counts the kept days only", series("20260130T090000", "FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=-1;COUNT=2"),
+			day(2026, 1, 1), day(2026, 6, 1),
+			[]string{"2026-01-30 09:00", "2026-02-27 09:00"}},
+	}
+	for _, tc := range tests {
+		if got := starts(occurrencesIn(t, tc.ics, tc.from, tc.to)); !equal(got, tc.want) {
+			t.Errorf("%s: got %v, want %v", tc.name, got, tc.want)
+		}
+	}
+}

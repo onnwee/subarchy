@@ -41,7 +41,7 @@ func TestWMClassMatchesOmarchyEntry(t *testing.T) {
 	if got := WMClass("https://discord.com/channels/@me"); got != "chrome-discord.com__channels_@me-Default" {
 		t.Errorf("WMClass = %q", got)
 	}
-	if got := WMClass("https://maps.google.com"); got != "chrome-maps.google.com_-Default" {
+	if got := WMClass("https://maps.google.com"); got != "chrome-maps.google.com__-Default" {
 		t.Errorf("WMClass = %q", got)
 	}
 }
@@ -54,7 +54,7 @@ func TestWebappPlan(t *testing.T) {
 	if steps[0].Path != "/apps/google-maps.desktop" {
 		t.Errorf("path = %q", steps[0].Path)
 	}
-	for _, want := range []string{"Name=Google Maps\n", "Exec=chromium --app=https://maps.google.com\n", "Icon=web-browser\n", "StartupWMClass=chrome-maps.google.com_-Default\n", "Type=Application\n"} {
+	for _, want := range []string{"Name=Google Maps\n", "Exec=chromium --app=https://maps.google.com\n", "Icon=web-browser\n", "StartupWMClass=chrome-maps.google.com__-Default\n", "Type=Application\n"} {
 		if !strings.Contains(steps[0].Content, want) {
 			t.Errorf("entry lacks %q:\n%s", want, steps[0].Content)
 		}

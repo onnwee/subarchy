@@ -179,3 +179,19 @@ func TestWatch(t *testing.T) {
 		t.Errorf("execve %q", ran)
 	}
 }
+
+// wl-copy forks a child that serves the selection and keeps the streams it
+// inherited; the copy must return when wl-copy itself does.
+func TestCopyDoesNotWaitForAChildLeftBehind(t *testing.T) {
+	start := time.Now()
+	if _, err := realOutput([]string{"sh", "-c", "cat >/dev/null; sleep 5 &"}, []byte("x")); err != nil {
+		t.Fatal(err)
+	}
+	if took := time.Since(start); took > 3*time.Second {
+		t.Errorf("waited %v for the child left behind", took)
+	}
+	_, err := realOutput([]string{"sh", "-c", "cat >/dev/null; echo no display >&2; exit 1"}, []byte("x"))
+	if err == nil || err.Error() != "no display" {
+		t.Errorf("a failure reports stderr, got %v", err)
+	}
+}

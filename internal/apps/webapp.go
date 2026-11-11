@@ -12,7 +12,8 @@ import (
 
 // Web apps (ADR 0042, app list): a site opened in a Chromium app window
 // from its own desktop entry in the user's applications folder. Chromium
-// names such a window chrome-<host>_<path>-Default, which the entry's
+// names such a window chrome-<host>_<path>-Default with each slash of the
+// path as an underscore (a bare host has the path "/"), which the entry's
 // StartupWMClass repeats so the window finds its entry. Nothing is fetched
 // at install time: the icon is the one given, else a generic one.
 
@@ -54,7 +55,11 @@ func WMClass(u string) string {
 	if err != nil {
 		return ""
 	}
-	path := strings.ReplaceAll(p.Path, "/", "_")
+	path := p.Path
+	if path == "" {
+		path = "/" // Chromium reads https://host as https://host/
+	}
+	path = strings.ReplaceAll(path, "/", "_")
 	return "chrome-" + p.Host + "_" + path + "-Default"
 }
 
