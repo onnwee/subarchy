@@ -55,7 +55,7 @@ Keys reach the shell as Hyprland global shortcuts with the appid `subcult`:
 `default/hypr/bindings.lua` binds them with `hl.dsp.global("subcult:<name>")`
 and Quickshell `GlobalShortcut` objects receive them, so a key press starts
 no process. The names are `launcher-toggle`, `alias.<name>`, `altswitch-next`,
-`altswitch-prev`, `altswitch-commit`, `brightness-up` and `brightness-down`; `hyprctl dispatch
+`altswitch-prev`, `altswitch-commit`, `brightness-up`, `brightness-down` and `capslock`; `hyprctl dispatch
 'hl.dsp.global("subcult:altswitch-next")'` sends one by hand.
 
 IPC: `quickshell ipc -p /usr/share/subcult/shell show` lists the targets

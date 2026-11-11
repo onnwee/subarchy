@@ -26,4 +26,11 @@ TestCase {
     verify(Model.volumeChanged({ volume: 0.5, muted: false }, { volume: 0.5, muted: true }))
     verify(!Model.volumeChanged({ volume: 0.5, muted: false }, { volume: 0.5, muted: false }))
   }
+
+  function test_capsLabel() {
+    compare(Model.capsLabel("0\n1\n"), "Caps Lock on", "any lit LED")
+    compare(Model.capsLabel("0\n0\n"), "Caps Lock off")
+    compare(Model.capsLabel(""), "Caps Lock", "no LED, state unknown")
+    compare(Model.capsLabel("garbage\n"), "Caps Lock")
+  }
 }

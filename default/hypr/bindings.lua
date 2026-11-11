@@ -52,6 +52,11 @@ sub.bind("XF86AudioMicMute", "Mute microphone", "wpctl set-mute @DEFAULT_AUDIO_S
 sub.bind("XF86MonBrightnessUp", "Brightness up", shell_key("brightness-up"), { locked = true, repeating = true })
 sub.bind("XF86MonBrightnessDown", "Brightness down", shell_key("brightness-down"), { locked = true, repeating = true })
 
+-- Caps Lock shows its new state in the OSD. The key stays with the apps;
+-- the shell reads the keyboard LED after the release.
+sub.bind("Caps_Lock", "Caps Lock indicator", shell_key("capslock"),
+  { release = true, transparent = true, ignore_mods = true, non_consuming = true, locked = true })
+
 -- The launcher (ADR 0057).
 sub.bind("SUPER + SPACE", "Launcher", shell_key("launcher-toggle"))
 sub.bind("SUPER + CTRL + V", "Clipboard history", shell_key("clipboard"))

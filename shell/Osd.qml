@@ -113,6 +113,33 @@ PanelWindow { // qmllint disable uncreatable-type
     onPressed: osd.stepBrightness("5%-")
   }
 
+  // Caps Lock arrives when the key is let go (default/hypr/bindings.lua).
+  // The keyboard's LED says which way it went, a moment after the key.
+  GlobalShortcut {
+    appid: "subcult"
+    name: "capslock"
+    description: "Caps Lock indicator"
+    onPressed: capsDelay.restart()
+    onReleased: capsDelay.restart()
+  }
+
+  Timer {
+    id: capsDelay
+    interval: 80
+    onTriggered: capsLeds.running = true
+  }
+
+  Process {
+    id: capsLeds
+    command: ["sh", "-c", "cat /sys/class/leds/*::capslock/brightness 2>/dev/null; true"]
+    stdout: StdioCollector {
+      onStreamFinished: {
+        osd.label = Model.capsLabel(text)
+        osd.show("capslock")
+      }
+    }
+  }
+
   Process {
     id: brightnessSet
     onExited: osd.show("brightness")
@@ -165,6 +192,8 @@ PanelWindow { // qmllint disable uncreatable-type
     target: "subcult.osd"
     // Not "show": the quickshell CLI reads that word as its own `ipc show`.
     function flash(kind: string): void {
+      if (kind === "capslock")
+        osd.label = Model.capsLabel("")
       osd.show(kind)
     }
   }
@@ -190,7 +219,7 @@ PanelWindow { // qmllint disable uncreatable-type
       }
 
       Text {
-        visible: osd.kind === "workspace"
+        visible: osd.kind === "workspace" || osd.kind === "capslock"
         anchors.verticalCenter: parent.verticalCenter
         text: osd.label
         textFormat: Text.PlainText
