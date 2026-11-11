@@ -45,6 +45,16 @@ luks_open=1
 close_after_failure
 ((closed == 1)) || fail "the encrypted volume was left open after a failure"
 
+# A locale must be spelled as locale.gen lists it.
+gen=$(mktemp)
+printf '%s\n' "# comment" "#de_DE.UTF-8 UTF-8  " "#de_DE ISO-8859-1  " "en_US.UTF-8 UTF-8  " >"$gen"
+(SUBARCHY_LOCALE_GEN=$gen check_locale de_DE.UTF-8) 2>/dev/null || fail "a listed locale was refused"
+(SUBARCHY_LOCALE_GEN=$gen check_locale en_US.UTF-8) 2>/dev/null || fail "an enabled locale was refused"
+out=$( (SUBARCHY_LOCALE_GEN=$gen check_locale de_DE.utf8) 2>&1) && fail "de_DE.utf8 was accepted"
+[[ $out == *"not in locale.gen"* ]] || fail "locale message: $out"
+(SUBARCHY_LOCALE_GEN=$gen check_locale "") 2>/dev/null && fail "an empty locale was accepted"
+rm -f -- "$gen"
+
 # All keyboard drivers go into the initramfs: the hook before autodetect,
 # which would keep only those of the keyboards present during the install.
 hooks=$(grep -o '^HOOKS=([^)]*)' "$root/install/subarchy-install")

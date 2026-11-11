@@ -62,5 +62,7 @@ sub.bind("ALT + SHIFT + TAB", "Previous window", shell_key("altswitch-prev"))
 -- Hyprland skips a plain release bind once another key (Tab) was released
 -- during the hold; this one is transparent, ignores modifiers and leaves the
 -- key to apps. Without an open switcher, commit does nothing.
-sub.bind("ALT + ALT_L", "Switch to the chosen window", shell_key("altswitch-commit"),
-  { release = true, transparent = true, ignore_mods = true, non_consuming = true })
+for _, alt in ipairs({ "ALT_L", "ALT_R" }) do
+  sub.bind("ALT + " .. alt, "Switch to the chosen window", shell_key("altswitch-commit"),
+    { release = true, transparent = true, ignore_mods = true, non_consuming = true })
+end

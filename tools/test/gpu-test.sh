@@ -61,6 +61,24 @@ machine one-screen hybrid battery ac eDP-1 HDMI-A-1
 machine desktop hybrid desktop - DP-1 DP-2
 [[ $(genv desktop nvidia) == *"SUBCULT_GPU_MODE=nvidia"* ]] || fail "desktop with two monitors should allow nvidia"
 
+# A desktop with its monitor on the NVIDIA card: the integrated GPU has no
+# connected output, so Intel mode would give no picture.
+machine tower hybrid desktop -
+rm "$work/tower/dev/dri/subcult-igpu" "$work/tower/dev/dri/subcult-dgpu"
+touch "$work/tower/dev/dri/card0" "$work/tower/dev/dri/card1"
+ln -s card0 "$work/tower/dev/dri/subcult-igpu"
+ln -s card1 "$work/tower/dev/dri/subcult-dgpu"
+mkdir -p "$work/tower/sys/class/drm/card1-DP-1" "$work/tower/sys/class/drm/card0-HDMI-A-1"
+echo connected >"$work/tower/sys/class/drm/card1-DP-1/status"
+echo disconnected >"$work/tower/sys/class/drm/card0-HDMI-A-1/status"
+out=$(genv tower)
+[[ $out == *"SUBCULT_GPU_MODE=nvidia"* && $out == *"AQ_DRM_DEVICES=$work/tower/dev/dri/subcult-dgpu:"* ]] ||
+  fail "monitor on the NVIDIA card must start in NVIDIA mode: $out"
+grep -q "on the NVIDIA card" "$work/tower/stderr" || fail "no message for the NVIDIA-wired desktop"
+# The same cards with the monitor moved to the integrated GPU stay in Intel mode.
+echo connected >"$work/tower/sys/class/drm/card0-HDMI-A-1/status"
+[[ $(genv tower) == *"SUBCULT_GPU_MODE=intel"* ]] || fail "a monitor on the integrated GPU keeps Intel mode"
+
 out=$(__EGL_VENDOR_LIBRARY_FILENAMES=x VK_DRIVER_FILES=y "$root/bin/subcult-gpu-run" env)
 [[ $out == *"__NV_PRIME_RENDER_OFFLOAD=1"* && $out != *"VK_DRIVER_FILES="* && $out != *"__EGL_VENDOR_LIBRARY_FILENAMES="* ]] ||
   fail "gpu run environment"

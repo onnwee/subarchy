@@ -10,6 +10,9 @@
 # NVIDIA mode: only when the user chose it (`subcult gpu mode nvidia`) and
 # the machine is on AC with two or more external monitors; otherwise the
 # session falls back to Intel mode. Machines without both GPUs print nothing.
+# A machine whose monitors are all wired to the NVIDIA card (a desktop with
+# an unused integrated GPU) starts in NVIDIA mode whatever was chosen: the
+# integrated GPU has no output to draw on.
 set -euo pipefail
 
 sysfs=${SUBCULT_SYSFS:-/sys}
@@ -45,8 +48,24 @@ external_monitors() {
   echo "$n"
 }
 
+# connected_on DEVICE: connected outputs of the card a /dev/dri link names.
+connected_on() {
+  local card c n=0
+  card=$(readlink -f -- "$1")
+  card=${card##*/}
+  if [[ $card == card[0-9]* ]]; then
+    for c in "$sysfs"/class/drm/"$card"-*; do
+      [[ -r $c/status && $(<"$c/status") == connected ]] && n=$((n + 1))
+    done
+  fi
+  echo "$n"
+}
+
 mode=intel
-if [[ -r $state && $(<"$state") == nvidia ]]; then
+if (($(connected_on "$igpu") == 0 && $(connected_on "$dgpu") > 0)); then
+  mode=nvidia
+  echo "subcult-gpu-env: every connected monitor is on the NVIDIA card; starting in NVIDIA mode" >&2
+elif [[ -r $state && $(<"$state") == nvidia ]]; then
   if on_ac && (($(external_monitors) >= 2)); then
     mode=nvidia
   else
