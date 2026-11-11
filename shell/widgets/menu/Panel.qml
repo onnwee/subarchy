@@ -74,8 +74,11 @@ PanelBase {
         f.setText(w.text)
     }
     undoFile.setText(JSON.stringify({ time: new Date().toISOString(), values: p.undo }) + "\n")
-    runner.queue = p.commands
-    runner.next()
+    // A command may still be running from the last Apply or Undo: these
+    // wait behind it.
+    runner.queue = runner.queue.concat(p.commands)
+    if (!runner.running)
+      runner.next()
     panel.pending = {}
     panel.errors = {}
     panel.status = "Applied " + Object.keys(p.undo).length + " change" + (Object.keys(p.undo).length === 1 ? "" : "s")

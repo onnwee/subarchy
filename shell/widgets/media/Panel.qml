@@ -3,6 +3,7 @@ import QtQuick
 import Quickshell.Services.Mpris
 import qs.Commons
 import qs.Ui
+import qs.services
 import "Model.js" as Model
 import "../../Commons/Glyphs.js" as Glyphs
 
@@ -11,9 +12,8 @@ import "../../Commons/Glyphs.js" as Glyphs
 PanelBase {
   id: panel
 
-  property string chosenId: ""
   readonly property var players: Mpris.players ? Mpris.players.values : [] // qmllint disable missing-property
-  readonly property var active: Model.pick(players.map(p => ({ id: p.dbusName, playing: p.isPlaying, identity: p.identity, p: p })), chosenId)
+  readonly property var active: Model.pick(players.map(p => ({ id: p.dbusName, playing: p.isPlaying, identity: p.identity, p: p })), MediaChoice.chosenId)
 
   implicitWidth: 360
   implicitHeight: column.implicitHeight
@@ -45,7 +45,7 @@ PanelBase {
 
         MouseArea {
           anchors.fill: parent
-          onClicked: panel.chosenId = row.modelData.dbusName
+          onClicked: MediaChoice.chosenId = row.modelData.dbusName
         }
 
         Image {

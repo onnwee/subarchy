@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell.Services.Mpris
 import qs.Commons
 import qs.Ui
+import qs.services
 import "Model.js" as Model
 import "../../Commons/Glyphs.js" as Glyphs
 
@@ -12,9 +13,8 @@ import "../../Commons/Glyphs.js" as Glyphs
 BarWidget {
   id: root
 
-  property string chosenId: ""
   readonly property var players: Mpris.players ? Mpris.players.values : [] // qmllint disable missing-property
-  readonly property var player: Model.pick(players.map(p => ({ id: p.dbusName, playing: p.isPlaying, identity: p.identity, p: p })), chosenId)
+  readonly property var player: Model.pick(players.map(p => ({ id: p.dbusName, playing: p.isPlaying, identity: p.identity, p: p })), MediaChoice.chosenId)
   readonly property var active: player ? player.p : null
 
   hidden: active === null

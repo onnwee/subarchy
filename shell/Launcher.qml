@@ -256,8 +256,14 @@ PanelWindow { // qmllint disable uncreatable-type
       if (launcher.asking)
         return
       launcher.asking = { row: row, answer: "" }
-      askRun.command = ["subcult", "app", "ask", "--", row.text]
-      askRun.running = true
+      // A question dismissed with Escape may still be running: it is
+      // stopped, and this one starts when it has exited.
+      if (askRun.running) {
+        askRun.stale = true
+        askRun.running = false
+      } else {
+        askRun.start()
+      }
       return
     } else if (row.kind === "clip") {
       clipAction.command = ["subcult", "clipboard", "copy", row.clipId]
@@ -440,8 +446,25 @@ PanelWindow { // qmllint disable uncreatable-type
 
   Process {
     id: askRun
+    // The question this run was started for, and whether it was stopped
+    // for a newer one: an answer is filed only under its own question.
+    property string question: ""
+    property bool stale: false
+    function start() {
+      askRun.question = launcher.asking.row.text
+      askRun.stale = false
+      askRun.command = ["subcult", "app", "ask", "--", askRun.question]
+      askRun.running = true
+    }
     stdout: StdioCollector {
-      onStreamFinished: if (launcher.asking) launcher.asking = { row: launcher.asking.row, answer: text.trim() === "" ? "(no answer)" : text.trim() }
+      onStreamFinished: {
+        if (!askRun.stale && launcher.asking && launcher.asking.answer === "" && launcher.asking.row.text === askRun.question)
+          launcher.asking = { row: launcher.asking.row, answer: text.trim() === "" ? "(no answer)" : text.trim() }
+      }
+    }
+    onExited: {
+      if (launcher.asking && launcher.asking.answer === "" && (askRun.stale || launcher.asking.row.text !== askRun.question))
+        askRun.start()
     }
   }
 
