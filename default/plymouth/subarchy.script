@@ -41,7 +41,7 @@ fun progress_callback(duration, progress) {
 Plymouth.SetBootProgressFunction(progress_callback);
 
 # The passphrase prompt: a field under the track with a lock on its left;
-# one bullet per character typed.
+# one bullet per character typed, up to as many as fit inside the field.
 fun dialog_setup() {
   local.entry;
   local.lock;
@@ -57,6 +57,8 @@ fun dialog_setup() {
   global.dialog.entry = entry;
   global.dialog.lock = lock;
   global.dialog.bullet_image = Image("bullet.png");
+  global.dialog.capacity = Math.Int((entry.image.GetWidth() - 28 + 6)
+    / (global.dialog.bullet_image.GetWidth() + 6));
   dialog_opacity(1);
 }
 
@@ -77,6 +79,8 @@ fun display_password_callback(prompt, bullets) {
     dialog_setup();
   else
     dialog_opacity(1);
+  if (bullets > dialog.capacity)
+    bullets = dialog.capacity;
   for (index = 0; dialog.bullet[index] || index < bullets; index++) {
     if (!dialog.bullet[index]) {
       dialog.bullet[index].sprite = Sprite(dialog.bullet_image);
