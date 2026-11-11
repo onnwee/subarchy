@@ -35,6 +35,7 @@ gpart
 gpm
 gptfdisk
 grml-zsh-config
+gum
 hdparm
 hyperv
 intel-ucode

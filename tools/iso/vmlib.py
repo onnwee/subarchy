@@ -45,6 +45,53 @@ def screendump(qmp_socket: Path, out: Path, timeout: float = 10) -> None:
                     raise RuntimeError(f"QMP {cmd['execute']}: {reply['error']}")
 
 
+_QCODES = {"-": "minus", "/": "slash", " ": "spc", ".": "dot", ",": "comma", "=": "equal", "\n": "ret"}
+
+
+def send_keys(qmp_socket: Path, *keys: str, timeout: float = 10) -> None:
+    """Press keys on the guest's keyboard through QMP. A key is a QEMU key
+    name ("ret", "esc", "down") or a combination joined by "+"."""
+    import json
+    import socket
+
+    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
+        s.settimeout(timeout)
+        s.connect(str(qmp_socket))
+        f = s.makefile("rw")
+        f.readline()  # greeting
+        cmds = [{"execute": "qmp_capabilities"}]
+        for key in keys:
+            codes = [{"type": "qcode", "data": k} for k in key.split("+")]
+            cmds.append({"execute": "send-key", "arguments": {"keys": codes, "hold-time": 40}})
+        for cmd in cmds:
+            f.write(json.dumps(cmd) + "\n")
+            f.flush()
+            while True:
+                reply = json.loads(f.readline())
+                if "return" in reply:
+                    break
+                if "error" in reply:
+                    raise RuntimeError(f"QMP {cmd['execute']}: {reply['error']}")
+            time.sleep(0.08)  # one key at a time: QEMU drops keys sent while one is held
+
+
+def type_text(qmp_socket: Path, text: str) -> None:
+    """Type text on the guest's keyboard (US layout)."""
+    keys = []
+    for ch in text:
+        if ch in _QCODES:
+            keys.append(_QCODES[ch])
+        elif ch == "_":
+            keys.append("shift+minus")
+        elif ch.isupper():
+            keys.append("shift+" + ch.lower())
+        elif ch.isalnum():
+            keys.append(ch)
+        else:
+            raise ValueError(f"no key for {ch!r}")
+    send_keys(qmp_socket, *keys)
+
+
 def distinct_colours(png: Path) -> int:
     """Number of distinct colours in an image (ImageMagick); 1 means blank."""
     out = subprocess.run(["magick", "identify", "-format", "%k", str(png)], capture_output=True, text=True, check=True)

@@ -10,7 +10,19 @@ Omarchy counterpart: `/usr/share/omarchy/install/`, including
 
 The guided installer on the live ISO (`cmd/subarchy-setup`). It starts by
 itself on the first console; on a serial console or over SSH, run
-`subarchy-setup`. It asks for the
+`subarchy-setup`.
+
+On a virtual console it is full-screen (`screens.go`; the flow follows
+Omarchy's installer): a greeter, then one cleared screen per question
+under the SUBCULT mark, with `gum` drawing the lists and inputs. The
+keyboard comes from a labelled list, the time zone from a searchable
+list, and the disk from a list that shows what is on each one. After
+choosing a disk the user can install there, browse it read-only first, or
+pick another. A summary table asks "Does this look right?" before the
+disk step, and Escape goes back a step on every screen. The erase
+question's default is no. `--plain` gives the prompts below instead.
+
+On a serial console or over SSH it asks plain line prompts. It asks for the
 keyboard layout first and switches the console to it (`loadkeys`), so the
 password and passphrase are typed under the layout the installed system
 asks for them in. It then lists the disks of at least 20 GiB with the
@@ -79,7 +91,7 @@ in QEMU with an empty disk. It shares this checkout over 9p and runs the
 installer from it, so installer changes need no ISO rebuild. It then boots
 the installed disk, types the LUKS passphrase on the serial console, logs in
 and checks the result. Downloads are cached in `build/pkgcache`. With
-`--guided` it instead answers `subarchy-setup` on the serial console, which
+`--guided` it instead answers `subarchy-setup`'s full screens on a virtual console (keys through QMP, text read back from `/dev/vcs`), which
 tests the setup command, installer and repository shipped on the image.
 CI runs that form with the guest's network off after every ISO build
 (`tools/ci/install-test.sh`).

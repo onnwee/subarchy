@@ -28,7 +28,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from vmlib import ANSI, OVMF_CODE, OVMF_VARS, Serial, colours_in, distinct_colours, has_colour, qemu_command, screendump
+from vmlib import ANSI, OVMF_CODE, OVMF_VARS, Serial, colours_in, distinct_colours, has_colour, qemu_command, screendump, send_keys, type_text
 
 ROOT = Path(__file__).resolve().parents[2]
 VM = ROOT / "build" / "vm"
@@ -156,31 +156,74 @@ def stop(proc: subprocess.Popen, log) -> None:
     log.close()
 
 
-def guided(serial: Serial, timeout: float) -> str:
-    """Answer subarchy-setup's questions on the serial console."""
-    serial.buf = b""
-    serial.send(
-        "subarchy-setup --cmdline-extra 'console=tty0 console=ttyS0,115200'"
-        " --package-cache /run/pkgcache --batch; echo EXIT=$?\n"
+def console_text(serial: Serial, vt: int) -> str:
+    """The text on a virtual console, with runs of spaces squeezed."""
+    return serial.run(f"tr -s ' ' </dev/vcs{vt}; echo")
+
+
+def wait_console(serial: Serial, vt: int, text: str, timeout: float) -> str:
+    deadline = time.monotonic() + timeout
+    while True:
+        shown = console_text(serial, vt)
+        if text in shown:
+            return shown
+        if time.monotonic() > deadline:
+            raise TimeoutError(f"waiting for {text!r} on tty{vt}; it shows: {shown[-600:]!r}")
+        time.sleep(1)
+
+
+def guided(serial: Serial, qmp: Path, timeout: float) -> str:
+    """Install through subarchy-setup's full screens, as a user would: keys
+    go to the virtual console through QMP, and what it shows is read back
+    from /dev/vcs over the serial shell."""
+    # The image starts the installer by itself on the first console.
+    autostart = "Press Return to start the install" in wait_console(serial, 1, "Press Return", 60)
+    print(f"install-test: {'ok  ' if autostart else 'FAIL'} the installer starts by itself on the first console")
+    # The test's own run is on tty2, because it needs options the
+    # autostarted one does not have (a serial console on the installed
+    # system, the shared package cache).
+    serial.run(
+        "TERM=linux openvt -c 2 -s -f -- subarchy-setup"
+        " --cmdline-extra 'console=tty0 console=ttyS0,115200' --package-cache /run/pkgcache"
     )
-    answers = [
-        (rb"Keyboard layout \[us\]: ", ""),
-        (rb"disk number: ", "1"),
-        (rb"Computer name \[subarchy\]: ", "subarchy-vm"),
-        (rb"Your user name: ", USER),
-        (rb"Password for \w+: ", PASSWORD),
-        (rb"Password for \w+ again: ", PASSWORD),
-        (rb"disk passphrase too\? \(Y/n\): ", "n"),
-        (rb"Disk passphrase: ", PASSPHRASE),
-        (rb"Disk passphrase again: ", PASSPHRASE),
-        (rb"Time zone \[UTC\]: ", "America/Chicago"),
-        (rb"Erase /dev/vda and install\? \(y/N\): ", "y"),
+    steps = [
+        ("Press Return to start the install", ["ret"]),
+        ("Keyboard layout", ["ret"]),  # English (US) is selected
+        ("Time zone", "chicago"),
+        ("America/Chicago", ["ret"]),
+        ("User name>", USER + "\n"),
+        ("Password>", PASSWORD + "\n"),
+        ("Confirm>", PASSWORD + "\n"),
+        ("Computer name>", "-vm\n"),  # after the default, "subarchy"
+        ("unlock the disk too", ["n"]),
+        ("Disk passphrase>", PASSPHRASE + "\n"),
+        ("Confirm>", PASSPHRASE + "\n"),
+        ("Does this look right", ["ret"]),
+        ("Install disk", ["ret"]),
+        ("Install here", ["ret"]),
+        ("Erase /dev/vda and install Subarchy?", ["y"]),
     ]
-    for prompt, answer in answers:
-        serial.expect(re.compile(prompt), 60)
-        serial.send(answer + "\n")
-    out = serial.expect(re.compile(rb"EXIT=\d+"), timeout)
-    return ANSI.sub("", out.decode(errors="replace"))
+    for shown, keys in steps:
+        wait_console(serial, 2, shown, 60)
+        time.sleep(0.5)
+        if isinstance(keys, str):
+            type_text(qmp, keys)
+        else:
+            send_keys(qmp, *keys)
+    screendump(qmp, VM / "installer.png")
+    deadline = time.monotonic() + timeout
+    screen = ""
+    while time.monotonic() < deadline:
+        screen = console_text(serial, 2)
+        if "Installed Subarchy in" in screen or "installation stopped" in screen:
+            break
+        time.sleep(5)
+    screendump(qmp, VM / "installer-end.png")
+    done = "Installed Subarchy in" in screen
+    if done:
+        type_text(qmp, "n\n")  # no reboot: the test powers the VM off
+    log = serial.run("cat /var/log/subarchy-install.log", timeout=60)
+    return log + "\n" + screen + ("\nEXIT=0" if done else "\nEXIT=1")
 
 
 def install(iso: Path, disk: Path, vars_file: Path, timeout: float, guided_setup: bool = False, offline: bool = False) -> bool:
@@ -195,8 +238,10 @@ def install(iso: Path, disk: Path, vars_file: Path, timeout: float, guided_setup
     # the same name would fail pacman's checksum check.
     for pkg in (ROOT / "build" / "repo").glob("*.pkg.tar.zst"):
         (CACHE / pkg.name).unlink(missing_ok=True)
+    qmp = socket_path("install-qmp.sock")
     cmd = qemu_command(
         vars_file,
+        "-qmp", f"unix:{qmp},server=on,wait=off",
         "-cdrom", str(iso), "-boot", "d",
         "-drive", f"file={disk},if=virtio,format=qcow2,discard=unmap",
         "-virtfs", f"local,path={ROOT},mount_tag=src,security_model=none,readonly=on",
@@ -220,7 +265,7 @@ def install(iso: Path, disk: Path, vars_file: Path, timeout: float, guided_setup
         serial.run("timeout 90 systemctl is-system-running --wait >/dev/null; pacman-key --init >/dev/null 2>&1; true", timeout=180)
         if guided_setup:
             # The image's own subarchy-setup, installer and repository.
-            out = guided(serial, timeout)
+            out = guided(serial, qmp, timeout)
         else:
             out = serial.run(
                 "/run/src/install/subarchy-install --config /run/src/build/vm/install.conf --yes; echo EXIT=$?",

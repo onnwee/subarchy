@@ -121,6 +121,9 @@ type env struct {
 	// action runs one of "reboot", "poweroff", "log" (view the install
 	// log) or "shell".
 	action func(what string) error
+	// screens is the full-screen interface, on a virtual console with
+	// gum; nil means the plain prompts.
+	screens *screens
 }
 
 // collect asks every question and returns the answers.
@@ -321,7 +324,8 @@ func run(args []string, stdin io.Reader, stdout io.Writer, e env, secret func() 
 	dir := fs.String("dir", "/run/subarchy-setup", "where the config and secret files are written")
 	dryRun := fs.Bool("dry-run", false, "write the config and stop")
 	cache := fs.String("package-cache", "", "pacman cache directory to reuse (tests)")
-	batch := fs.Bool("batch", false, "do not offer to browse disks, reboot or the failure menu (tests)")
+	batch := fs.Bool("batch", false, "plain prompts; do not offer to browse disks, reboot or the failure menu (tests)")
+	plain := fs.Bool("plain", false, "plain prompts instead of full screens")
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
@@ -335,19 +339,36 @@ func run(args []string, stdin io.Reader, stdout io.Writer, e env, secret func() 
 			return strings.TrimRight(s, "\r\n"), nil
 		}
 	}
+	if *plain {
+		e.screens = nil
+	}
 	if *batch {
-		e.browse, e.action = nil, nil
+		e.browse, e.action, e.screens = nil, nil, nil
 	}
-	fmt.Fprintln(stdout, "SUBCULT // Subarchy setup")
-	a, err := collect(p, e, *repo, *cmdlineExtra)
-	if err != nil {
-		fmt.Fprintf(stdout, "subarchy-setup: %v\n", err)
-		return 1
-	}
-	ok, err := confirm(p, a)
-	if err != nil || !ok {
-		fmt.Fprintln(stdout, "Stopped; nothing was changed.")
-		return 1
+	var a setup.Answers
+	var err error
+	if e.screens != nil {
+		a, err = collectScreens(e.screens, e, *repo, *cmdlineExtra)
+		fmt.Fprint(stdout, "\x1b[2J\x1b[H")
+		if errors.Is(err, errBack) {
+			fmt.Fprintln(stdout, "Stopped; nothing was changed. Run subarchy-setup to start again.")
+			return 1
+		}
+		if err != nil {
+			fmt.Fprintf(stdout, "subarchy-setup: %v\n", err)
+			return 1
+		}
+	} else {
+		fmt.Fprintln(stdout, "SUBCULT // Subarchy setup")
+		if a, err = collect(p, e, *repo, *cmdlineExtra); err != nil {
+			fmt.Fprintf(stdout, "subarchy-setup: %v\n", err)
+			return 1
+		}
+		ok, err := confirm(p, a)
+		if err != nil || !ok {
+			fmt.Fprintln(stdout, "Stopped; nothing was changed.")
+			return 1
+		}
 	}
 	a.PackageCache = *cache
 	conf, err := a.WriteConfig(*dir)
@@ -395,6 +416,10 @@ func main() {
 		browse:  browse,
 		logTail: logTail,
 		action:  action,
+	}
+	if onConsole() {
+		prepareConsole(os.Stdout)
+		e.screens = realScreens()
 	}
 	// The installer runs as a child so its result can be shown: the time
 	// it took and a reboot offer, or the failure menu.

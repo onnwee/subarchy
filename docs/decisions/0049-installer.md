@@ -95,5 +95,11 @@ Decision map item R2. Accepted 2026-11-06.
   passphrase unless asked otherwise, confirms with yes/no, and ends with
   the install time and a reboot offer or, on failure, a menu. Still plain
   line prompts, so the serial console keeps working.
+- 2026-11-11, later: on a virtual console the questions are full screens
+  drawn with `gum` (greeter, pick lists, summary table, Escape to go back),
+  with the SUBCULT palette and a Terminus console font. Serial consoles
+  keep the line prompts. The VM install test now installs through the
+  screens: keys go in through QMP and the console text is read from
+  `/dev/vcs`.
 
 Related: [[decision-map|Decision map]] · [[0050-hardware-support|ADR 0050]]
