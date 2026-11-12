@@ -225,7 +225,15 @@ func TestScreensInstallEnd(t *testing.T) {
 			if !quiet {
 				t.Error("installer output not silenced under the install view")
 			}
-			os.WriteFile(e.installLog, []byte("old run\n>> finishing\n>> partitioning /dev/vda\n"), 0o644)
+			// Appended, as subarchy-install does (tee -a). Rewriting the file
+			// truncates it first, and a frame drawn at that moment takes the
+			// log for a fresh one and reads the old run's lines.
+			f, err := os.OpenFile(e.installLog, os.O_APPEND|os.O_WRONLY, 0o644)
+			if err != nil {
+				t.Fatal(err)
+			}
+			f.WriteString(">> partitioning /dev/vda\n")
+			f.Close()
 			if fail {
 				return errors.New("exit status 1")
 			}

@@ -420,6 +420,8 @@ def boot(disk: Path, vars_file: Path) -> bool:
             "ufw": serial.run(f"{sudo} ufw status verbose"),
             "lsm": serial.run("cat /sys/kernel/security/lsm; echo; cat /sys/module/apparmor/parameters/enabled"),
             "sysctl": serial.run("sysctl -n kernel.kptr_restrict kernel.dmesg_restrict net.ipv4.tcp_syncookies"),
+            "power_key": serial.run("busctl get-property org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager HandlePowerKey;"
+                                    " busctl get-property org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager HandlePowerKeyLongPress"),
             "dns": serial.run("resolvectl status | grep -i -m1 dnsovertls; resolvectl query archlinux.org", timeout=60),
             "services": serial.run("systemctl is-active avahi-daemon power-profiles-daemon; systemctl is-enabled bluetooth"),
             # Exercise the CLI even without a battery: the auto-profile
@@ -737,6 +739,8 @@ finally:
         "ufw active, incoming denied": "Status: active" in r["ufw"] and "deny (incoming)" in r["ufw"],
         "AppArmor enabled": "apparmor" in r["lsm"] and r["lsm"].strip().endswith("Y"),
         "sysctl hardening": r["sysctl"].split() == ["2", "1", "1"],
+        "power button: a short press is left to the session, a long press powers off": r["power_key"].split()
+        == ["s", '"ignore"', "s", '"poweroff"'],
         "DNS over TLS resolves": "+DNSOverTLS" in r["dns"] and "archlinux.org:" in r["dns"],
         "avahi, power-profiles, bluetooth": r["services"].split() == ["active", "active", "enabled"],
         # Graphical splash is not checked: with console=ttyS0 (needed to

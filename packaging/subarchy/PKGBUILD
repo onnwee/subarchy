@@ -103,6 +103,7 @@ package() {
   install -Dm644 "$sys/resolved-dns.conf" "$pkgdir/usr/lib/systemd/resolved.conf.d/50-subarchy.conf"
   install -Dm644 "$sys/networkmanager-dns.conf" "$pkgdir/usr/lib/NetworkManager/conf.d/50-subarchy-dns.conf"
   install -Dm644 "$sys/coredump.conf" "$pkgdir/usr/lib/systemd/coredump.conf.d/50-subarchy.conf"
+  install -Dm644 "$sys/logind-power-key.conf" "$pkgdir/usr/lib/systemd/logind.conf.d/50-subarchy-power-key.conf"
   # Daily update check (ADR 0026) and power profile by power source (ADR 0021).
   # subcult theme apply-system becomes root through polkit (ADR 0037, 0062).
   install -Dm644 "$root/default/polkit/tv.subcult.theme.policy" "$pkgdir/usr/share/polkit-1/actions/tv.subcult.theme.policy"

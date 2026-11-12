@@ -34,6 +34,11 @@ sub.bind("switch:off:Lid Switch", nil, "subcult display lid open", { locked = tr
 sub.bind("SUPER + mouse:272", "Move window", hl.dsp.window.drag(), { mouse = true })
 sub.bind("SUPER + mouse:273", "Resize window", hl.dsp.window.resize(), { mouse = true })
 
+-- The power button locks. logind is told to leave a short press alone
+-- (default/system/logind-power-key.conf); without the `locked` flag the
+-- key does nothing at the lock screen, and holding it still powers off.
+sub.bind("XF86PowerOff", "Lock", "subcult lock")
+
 -- Leave the session cleanly through uwsm (ADR 0031).
 sub.bind("SUPER + SHIFT + ESCAPE", "Log out", "uwsm stop")
 
