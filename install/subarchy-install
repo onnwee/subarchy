@@ -335,9 +335,14 @@ EOF
   printf '%s:%s\n' "$user" "$(<"${conf[USER_PASSWORD_FILE]}")" | arch-chroot "$target" chpasswd
   arch-chroot "$target" passwd --lock root >/dev/null
   install -m 0440 /dev/stdin "$target/etc/sudoers.d/10-wheel" <<<'%wheel ALL=(ALL:ALL) ALL'
-  # zsh's first-run wizard would greet the user otherwise.
-  touch "$target/home/$user/.zshrc"
-  arch-chroot "$target" chown "$user:$user" "/home/$user/.zshrc"
+  # The interactive shell setup (ADR 0041): the user's files source
+  # Subarchy's and hold the user's own lines after that. (An empty
+  # ~/.zshrc would also do to keep zsh's first-run wizard away.)
+  printf '%s\n' '# Subarchy shell setup (ADR 0041). Your own lines go below.' \
+    'source /usr/share/subcult/default/shell/zshrc' >"$target/home/$user/.zshrc"
+  printf '\n%s\n%s\n' '# Subarchy shell setup (ADR 0041).' \
+    '[[ -r /usr/share/subcult/default/shell/bashrc ]] && source /usr/share/subcult/default/shell/bashrc' >>"$target/home/$user/.bashrc"
+  arch-chroot "$target" chown "$user:$user" "/home/$user/.zshrc" "/home/$user/.bashrc"
   # A new user starts current: migrations shipped so far are already done.
   arch-chroot "$target" runuser -u "$user" -- subcult-update migrate --mark-all
   # The default theme, through Pult (ADR 0037): the user's own copy of

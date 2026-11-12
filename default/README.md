@@ -16,6 +16,7 @@ this directory to `/usr/share/subcult/default/`. Omarchy counterpart:
 | `chromium/extensions/` | Chromium external extension files (→ `/usr/share/chromium/extensions/`): Vencord Web for the Discord web app (ADR 0042) |
 
 | `shell/workspaces.json` | Workspace names: `{"workspaces": [{"id": 3, "name": "Workbench", "short": "WRK"}]}`; the user's `~/.config/subcult/shell/workspaces.json` replaces entries by id. The bar shows the token (or the number), the OSD shows the name on a switch |
+| `shell/zshrc`, `shell/bashrc`, `shell/aliases.sh`, `shell/functions.sh`, `shell/starship.toml` | The interactive shell setup (ADR 0041), sourced by the user's `~/.zshrc` and `~/.bashrc`: aliases and functions for both shells, starship with this prompt until the user has `~/.config/starship.toml`, atuin on Ctrl-R, zoxide behind `cd`, fzf keys, mise |
 | `launcher/snippets.json` | The launcher's default snippets; the user's `~/.config/subcult/launcher/snippets.json` adds to them (ADR 0057) |
 | `launcher/quicklinks.json` | The launcher's web search engines and quicklinks; the user's `~/.config/subcult/launcher/quicklinks.json` adds or replaces them by keyword (ADR 0057) |
 | `launcher/favorites.json` | The launcher's home-screen favorites, by desktop entry id; the user's `~/.config/subcult/launcher/favorites.json` replaces the list (ADR 0057) |
