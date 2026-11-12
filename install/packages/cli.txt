@@ -1,0 +1,55 @@
+# Command-line and terminal apps (app list, "Command-line and terminal
+# apps"; ADR 0041, 0043, 0044). Installed with base.txt and desktop.txt.
+# All from Arch's repositories: system packages, so every user and
+# Subarchy's own scripts can rely on them. Per-user mise versions still
+# work (ADR 0028).
+
+# Basics
+curl
+wget
+rsync
+unzip
+7zip
+less
+man-pages
+openssh
+
+# Modern shell tools
+bat
+eza
+ripgrep
+fzf
+zoxide
+jq
+go-yq
+tealdeer
+
+# Prompt and history (ADR 0041)
+starship
+atuin
+
+# Terminal apps
+btop
+yazi
+lazygit
+lazydocker
+tmux
+fastfetch
+
+# Git and forges
+github-cli
+gitea-cli
+git-delta
+
+# Media
+yt-dlp
+ffmpeg
+imagemagick
+
+# Disk usage
+dust
+duf
+
+# Coding agents with a terminal interface (app list, "AI and development")
+openai-codex
+opencode

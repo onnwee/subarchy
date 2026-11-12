@@ -420,6 +420,12 @@ def boot(disk: Path, vars_file: Path) -> bool:
             "ufw": serial.run(f"{sudo} ufw status verbose"),
             "lsm": serial.run("cat /sys/kernel/security/lsm; echo; cat /sys/module/apparmor/parameters/enabled"),
             "sysctl": serial.run("sysctl -n kernel.kptr_restrict kernel.dmesg_restrict net.ipv4.tcp_syncookies"),
+            # One command from each group of install/packages/cli.txt.
+            "cli_tools": serial.run(
+                "for c in curl rsync 7z bat eza rg fzf zoxide jq yq tldr starship atuin btop yazi lazygit lazydocker tmux"
+                " fastfetch gh gt delta yt-dlp ffmpeg magick dust duf codex opencode; do"
+                " command -v $c >/dev/null || echo missing:$c; done; echo CLI_DONE"
+            ),
             "power_key": serial.run("busctl get-property org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager HandlePowerKey;"
                                     " busctl get-property org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager HandlePowerKeyLongPress"),
             "dns": serial.run("resolvectl status | grep -i -m1 dnsovertls; resolvectl query archlinux.org", timeout=60),
@@ -739,6 +745,7 @@ finally:
         "ufw active, incoming denied": "Status: active" in r["ufw"] and "deny (incoming)" in r["ufw"],
         "AppArmor enabled": "apparmor" in r["lsm"] and r["lsm"].strip().endswith("Y"),
         "sysctl hardening": r["sysctl"].split() == ["2", "1", "1"],
+        "command-line and terminal apps installed": "CLI_DONE" in r["cli_tools"] and "missing:" not in r["cli_tools"],
         "power button: a short press is left to the session, a long press powers off": r["power_key"].split()
         == ["s", '"ignore"', "s", '"poweroff"'],
         "DNS over TLS resolves": "+DNSOverTLS" in r["dns"] and "archlinux.org:" in r["dns"],

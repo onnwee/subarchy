@@ -76,6 +76,7 @@ What it builds:
 | Snapshots | snapper config `root` for `@`, 5 numbered, no timeline; `limine-snapper-sync` adds a boot entry per snapshot | 0011 |
 | System | zram swap, NetworkManager, timesyncd, user in `wheel` with zsh, root locked | 0014, 0016 |
 | Services | ufw (incoming denied), AppArmor, systemd-resolved with Quad9 DoT, Avahi, power-profiles-daemon, thermald on Intel, BlueZ, Plymouth | 0013, 0018-0021, 0063 |
+| Command-line tools | `packages/cli.txt`: the app list's command-line and terminal apps (shell tools, starship, atuin, btop, yazi, lazygit, tmux, forge clients, media tools, Codex and OpenCode) | 0041, 0044 |
 | Desktop | `packages/desktop.txt`: SDDM, Hyprland under uwsm, portals, PipeWire, kitty, fonts; the user's `~/.config/hypr/hyprland.lua` | 0017, 0029-0033, 0040 |
 | Factory reset | read-only `@factory` snapshot of the fresh `@` | 0049, 0056 |
 
