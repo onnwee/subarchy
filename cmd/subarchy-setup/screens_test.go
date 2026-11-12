@@ -62,15 +62,16 @@ func TestScreensInstall(t *testing.T) {
 		"root", "pat",   // user name: refused, then accepted
 		"secret-one", "secret-two", // password pair that differs
 		"secret-one", "secret-one",
-		"",     // computer name: the default
-		"",     // one password (confirm prints nothing; exit 0)
-		"<no>", // summary: no, change it -> back to the account
-		"Europe/Berlin", "", "secret-one", "secret-one", "box", "<no>", "disk-pass-1", "disk-pass-1",
-		"",                          // summary: yes
+		"box",                                // computer name
+		"<no>", "disk-pass-1", "disk-pass-1", // a separate disk passphrase
 		"<row:/dev/vda>",            // disk
 		"Browse it read-only first", // look
-		"Install here", "<no>",      // erase? no -> back to the disk list
-		"<row:/dev/vda>", "Install here", "", // erase? yes
+		"Install here",
+		"<no>",                           // summary: no, change it -> back to the disk
+		"<row:/dev/vda>", "Install here", // the disk again
+		"",     // summary: yes
+		"<no>", // erase? no -> back to the summary
+		"", "", // summary: yes; erase: yes
 	)
 	// Rows carry the partition summary; pick them by prefix.
 	real := s.gum
@@ -110,7 +111,7 @@ func TestScreensInstall(t *testing.T) {
 		t.Errorf("loaded %q, browsed %v", loaded, looked)
 	}
 	for _, want := range []string{"is a system account", "The two entries differ", `/dev/vda2  25 GB  ntfs "Windows"`,
-		"Everything on /dev/vda will be erased.", "same as the password", "Does this look right", "Escape goes back"} {
+		"Everything on /dev/vda will be erased.", "Install disk", "/dev/vda (erased)", "Does this look right", "Escape goes back"} {
 		if !strings.Contains(out.String()+callText(g), want) {
 			t.Errorf("screens lack %q", want)
 		}
@@ -197,7 +198,7 @@ func TestProgressOf(t *testing.T) {
 // With screens, the install shows the progress view and ends on the
 // finish screen (reboot) or the failure menu.
 func TestScreensInstallEnd(t *testing.T) {
-	answers := []string{"English (US)", "English (US)", "UTC", "pat", "secret-one", "secret-one", "", "", "", "<row:/dev/vda>", "Install here", ""}
+	answers := []string{"English (US)", "English (US)", "UTC", "pat", "secret-one", "secret-one", "", "", "<row:/dev/vda>", "Install here", "", ""}
 	setupRun := func(extra []string, fail bool) (int, []string, string) {
 		e := testEnv(t)
 		e.installLog = filepath.Join(t.TempDir(), "install.log")

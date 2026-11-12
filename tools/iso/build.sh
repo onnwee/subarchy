@@ -29,6 +29,10 @@ mkdir -p "$repo"
 mkbuild=$(mktemp -d)
 cleanup() { rm -r -- "$mkbuild"; }
 trap cleanup EXIT
+# An earlier build left in a reused build directory must not win: pkgrel is
+# the commit count, which can go down (a branch squashed into main), and
+# pacman would then put the older, higher-numbered package on the image.
+rm -f -- "$repo"/subarchy-[0-9]*.pkg.tar.zst
 nodeps=()
 pacman -T go >/dev/null 2>&1 || nodeps=(--nodeps)
 (

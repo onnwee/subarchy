@@ -20,9 +20,9 @@ in English) and preselects that language's usual keyboard. The
 keyboard comes from a labelled list, the time zone from a searchable
 list, and the disk from a list that shows what is on each one. After
 choosing a disk the user can install there, browse it read-only first, or
-pick another. A summary table asks "Does this look right?" before the
-disk step, and Escape goes back a step on every screen. The erase
-question's default is no. While `subarchy-install` runs, the screen shows
+pick another. A summary table of every answer, the disk included, then
+asks "Does this look right?", and the erase question comes last; its
+default is no. Escape goes back a step on every screen. While `subarchy-install` runs, the screen shows
 a bar with a percentage, the current phase, the time so far and a rotating
 tip (`progress.go`); the raw output goes to `/var/log/subarchy-install.log`,
 which is also where the percentage is read from. The finish screen offers

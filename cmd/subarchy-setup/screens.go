@@ -297,8 +297,9 @@ func collectScreens(s *screens, e env, repo, cmdlineExtra string) (setup.Answers
 		func() error { return s.language(&a, e) },
 		func() error { return s.keyboard(&a, e) },
 		func() error { return s.account(&a, e, &separate) },
-		func() error { return s.summary(a, separate) },
 		func() error { return s.disk(&a, e, disks) },
+		func() error { return s.summary(a, separate) },
+		func() error { return s.erase(a) },
 	}
 	for i := 0; i < len(steps); {
 		err := steps[i]()
@@ -452,6 +453,7 @@ func (s *screens) summary(a setup.Answers, separate bool) error {
 	for _, row := range [][2]string{
 		{"Language", a.Locale}, {"Keyboard", a.Keymap}, {"Time zone", a.Timezone}, {"User name", a.Username},
 		{"Password", strings.Repeat("*", len(a.Password))}, {"Computer name", a.Hostname}, {"Disk passphrase", passphrase},
+		{"Install disk", a.Disk + " (erased)"},
 	} {
 		fmt.Fprintf(s.out, "%*s\x1b[3%sm%-17s\x1b[3%sm%s\x1b[0m\n", s.pad(), "", colViolet, row[0], colPaper, row[1])
 	}
@@ -463,8 +465,8 @@ func (s *screens) summary(a setup.Answers, separate bool) error {
 	return nil
 }
 
-// disk picks the target, shows what is on it, offers the read-only
-// browse, and asks before erasing.
+// disk picks the target, shows what is on it and offers the read-only
+// browse. The summary and the erase question come after it.
 func (s *screens) disk(a *setup.Answers, e env, disks []setup.Disk) error {
 	for {
 		s.page("Where should Subarchy go?", "The disk you choose is erased. The others are not touched.")
@@ -481,7 +483,7 @@ func (s *screens) disk(a *setup.Answers, e env, disks []setup.Disk) error {
 		}
 		d := byRow[row]
 		const install, look, other = "Install here", "Browse it read-only first", "Choose a different disk"
-		for chosen := false; !chosen; {
+		for {
 			var body []string
 			if len(d.Parts) == 0 {
 				body = append(body, "It has no partitions.")
@@ -504,15 +506,21 @@ func (s *screens) disk(a *setup.Answers, e env, disks []setup.Disk) error {
 				}
 				continue
 			}
-			s.page("Everything on "+d.Path+" will be erased.", "There is no way to get it back.")
-			yes, err := s.confirm("Erase "+d.Path+" and install Subarchy?", "Yes, erase and install", "No, go back", false)
-			if err == nil && yes {
-				a.Disk = d.Path
-				return nil
-			}
-			chosen = true
+			a.Disk = d.Path
+			return nil
 		}
 	}
+}
+
+// erase is the last question, after the summary: the only one whose
+// default is no.
+func (s *screens) erase(a setup.Answers) error {
+	s.page("Everything on "+a.Disk+" will be erased.", "There is no way to get it back.")
+	yes, err := s.confirm("Erase "+a.Disk+" and install Subarchy?", "Yes, erase and install", "No, go back", false)
+	if err != nil || !yes {
+		return errBack
+	}
+	return nil
 }
 
 // contents is the one-line summary of a disk's partitions for the list.

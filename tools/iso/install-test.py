@@ -179,6 +179,11 @@ def guided(serial: Serial, qmp: Path, timeout: float) -> str:
     # The image starts the installer by itself on the first console.
     autostart = "Press Return to start the install" in wait_console(serial, 1, "Press Return", 60)
     print(f"install-test: {'ok  ' if autostart else 'FAIL'} the installer starts by itself on the first console")
+    # It sizes the console font from the screen: 1280 pixels wide gets the
+    # 12-pixel Terminus, 106 columns, not the kernel's 8-pixel font (160).
+    size = serial.run("stty -F /dev/tty1 size; cat /sys/class/graphics/fb0/virtual_size").split()
+    font = len(size) == 3 and size[2].startswith("1280,") and size[1] == "106"
+    print(f"install-test: {'ok  ' if font else 'FAIL'} installer font fits the screen ({' '.join(size)})")
     # The test's own run is on tty2, because it needs options the
     # autostarted one does not have (a serial console on the installed
     # system, the shared package cache).
@@ -199,9 +204,9 @@ def guided(serial: Serial, qmp: Path, timeout: float) -> str:
         ("unlock the disk too", ["n"]),
         ("Disk passphrase>", PASSPHRASE + "\n"),
         ("Confirm>", PASSPHRASE + "\n"),
-        ("Does this look right", ["ret"]),
         ("Install disk", ["ret"]),
         ("Install here", ["ret"]),
+        ("Does this look right", ["ret"]),
         ("Erase /dev/vda and install Subarchy?", ["y"]),
     ]
     for shown, keys in steps:
@@ -227,7 +232,7 @@ def guided(serial: Serial, qmp: Path, timeout: float) -> str:
         time.sleep(3)
     print(f"install-test: {'ok  ' if view else 'FAIL'} install view shows a percentage, the package count and a tip")
     screendump(qmp, VM / "installer-end.png")
-    done = "Installed Subarchy in" in screen and view
+    done = "Installed Subarchy in" in screen and view and autostart and font
     if "Installed Subarchy in" in screen:
         send_keys(qmp, "n")  # no reboot: the test powers the VM off
     log = serial.run("cat /var/log/subarchy-install.log", timeout=60)
