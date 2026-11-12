@@ -133,22 +133,78 @@ FocusScope {
       height: 72
       anchors.horizontalCenter: parent.horizontalCenter
 
+      // The field looks like the disk unlock prompt at boot
+      // (default/plymouth): a surface-coloured box with a violet edge, a
+      // lock on its left, and one round bullet per character from the left.
       Rectangle {
         id: field
         visible: view.lockState.prompt
         width: parent.width
-        height: 40
+        height: 36
         color: view.theme.surface || "#1F1830"
         border.width: 1
-        border.color: view.lockState.checking ? (view.theme.muted || "#5E5570")
-          : view.activeFocus ? (view.theme.accent || "#8B5CF6") : (view.theme.border || "#8F4BC8")
+        border.color: view.lockState.checking ? (view.theme.muted || "#5E5570") : (view.theme.border || "#8B5CF6")
+
+        Row {
+          visible: !view.lockState.checking
+          anchors.left: parent.left
+          anchors.leftMargin: 14
+          anchors.verticalCenter: parent.verticalCenter
+          spacing: 6
+          Repeater {
+            model: Model.bulletCount(view.lockState.password.length)
+            Rectangle {
+              width: 12
+              height: 12
+              radius: 6
+              color: view.theme.accent || "#00FF88"
+            }
+          }
+        }
 
         Text {
-          anchors.centerIn: parent
-          text: view.lockState.checking ? "Checking…" : view.lockState.password.length > 0 ? Model.bullets(view.lockState.password.length) : "Password"
+          visible: view.lockState.checking
+          anchors.left: parent.left
+          anchors.leftMargin: 14
+          anchors.verticalCenter: parent.verticalCenter
+          text: "Checking…"
+          color: view.theme.muted || "#5E5570"
+          font.family: "sans-serif"
+          font.pixelSize: 14
+        }
+      }
+
+      // The lock: a shackle behind a body with a keyhole.
+      Item {
+        visible: view.lockState.prompt
+        width: 20
+        height: 26
+        anchors.right: field.left
+        anchors.rightMargin: 14
+        anchors.verticalCenter: field.verticalCenter
+        Rectangle {
+          x: 4
+          y: 1
+          width: 12
+          height: 18
+          radius: 6
+          color: "transparent"
+          border.width: 2
+          border.color: view.theme.text || "#F0ECE4"
+        }
+        Rectangle {
+          x: 2
+          y: 11
+          width: 16
+          height: 13
           color: view.theme.text || "#F0ECE4"
-          font.family: "monospace"
-          font.pixelSize: 18
+        }
+        Rectangle {
+          x: 9
+          y: 15
+          width: 2
+          height: 5
+          color: view.theme.base || "#100B19"
         }
       }
 

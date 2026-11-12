@@ -84,8 +84,11 @@ function failureMessage(attempts) {
   return attempts === 1 ? "That did not work. Try again." : "That did not work (" + attempts + " attempts). Try again."
 }
 
-function bullets(n) {
-  return "\u25CF".repeat(Math.max(0, Math.min(n, 32)))
+// How many bullets the field shows for a password that long: one per
+// character, up to the 16 that fit inside it (12 px bullets, 6 px apart,
+// 14 px in from each side of 320), as on the disk unlock prompt.
+function bulletCount(n) {
+  return Math.max(0, Math.min(n, 16))
 }
 
 // Milliseconds until the clock's next tick: just after the next minute by

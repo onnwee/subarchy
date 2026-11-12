@@ -142,8 +142,10 @@ TestCase {
   }
 
   function test_text() {
-    compare(Model.bullets(3), "\u25CF\u25CF\u25CF")
-    compare(Model.bullets(0), "")
+    compare(Model.bulletCount(3), 3)
+    compare(Model.bulletCount(0), 0)
+    compare(Model.bulletCount(40), 16)
+    compare(Model.bulletCount(-1), 0)
     compare(Model.clockText(new Date(2026, 10, 8, 7, 5)), "07:05")
     compare(Model.clockText("nope"), "")
   }
