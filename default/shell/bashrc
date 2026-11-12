@@ -25,6 +25,9 @@ source "$_subcult_shell/functions.sh"
 # shellcheck source=/dev/null
 source "$_subcult_shell/aliases.sh"
 
+# shellcheck source=/dev/null
+source "$_subcult_shell/completions/subcult.bash"
+
 # Tools, each only when installed. Only fzf's key bindings: its completion
 # file rewraps many commands' completions at every start.
 command -v mise >/dev/null && eval "$(mise activate bash)"

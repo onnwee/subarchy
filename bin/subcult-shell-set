@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# subcult:summary=Make zsh or bash your login shell
+# subcult:examples=subcult shell set zsh
+#
+# ADR 0041. zsh is the login shell on a new install; bash stays set up the
+# same way (aliases, starship, zoxide), so switching loses nothing. The
+# desktop session does not depend on the login shell.
+set -euo pipefail
+
+die() { echo "subcult shell set: $*" >&2; exit 1; }
+
+case ${1:-} in
+zsh | bash) shell=/usr/bin/$1 ;;
+*) die "usage: subcult shell set zsh|bash" ;;
+esac
+[[ -x $shell ]] || die "$shell is not installed"
+user=$(id -un)
+current=$(getent passwd "$user" | cut -d: -f7)
+if [[ $current == "$shell" ]]; then
+  echo "$1 is already your login shell."
+  exit 0
+fi
+
+# The shell's own file sources Subarchy's setup; make sure it is there.
+rc=$HOME/.${1}rc
+line="source /usr/share/subcult/default/shell/${1}rc"
+if ! grep -qsF "/usr/share/subcult/default/shell/${1}rc" "$rc"; then
+  printf '%s\n%s\n' '# Subarchy shell setup (ADR 0041). Your own lines go below.' "$line" >>"$rc"
+fi
+
+# chsh asks for your password. SUBCULT_TEST_CHSH: a stand-in for the test.
+"${SUBCULT_TEST_CHSH:-chsh}" -s "$shell"
+echo "Your login shell is now $1. It takes effect at your next login."

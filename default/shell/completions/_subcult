@@ -1,0 +1,24 @@
+#compdef subcult sub
+# zsh completion for Subarchy's command line (ADR 0041, ADR 0046). The
+# words come from the dispatcher's own inventory (`subcult commands`), so
+# they include the actions compiled commands declare (`subcult app
+# install`) as well as the subcult-<group>-<action> programs.
+local -a routes next
+local prefix=subcult route rest
+local -i i
+# One inventory per shell session: reading it starts every compiled command.
+(( ${+_subcult_routes} )) || typeset -ga _subcult_routes=(${(f)"$(command subcult commands 2>/dev/null | awk -F'  +' 'NF > 1 { print $2 }')"})
+for (( i = 2; i < CURRENT; i++ )); do
+  prefix+=" ${words[i]}"
+done
+for route in $_subcult_routes; do
+  [[ $route == "${prefix} "* ]] || continue
+  rest=${route#"${prefix} "}
+  next+=(${rest%% *})
+done
+(( CURRENT == 2 )) && next+=(commands help)
+if (( $#next )); then
+  compadd -- ${(u)next}
+else
+  _files
+fi

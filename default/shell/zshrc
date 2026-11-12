@@ -22,6 +22,7 @@ bindkey '^[[1;5C' forward-word
 bindkey '^[[1;5D' backward-word
 
 # Completion with a menu, matching without regard to case.
+fpath=("$_subcult_shell/completions" $fpath) # the subcult command's own
 autoload -Uz compinit
 compinit -d "${XDG_CACHE_HOME:-$HOME/.cache}/zcompdump"
 zstyle ':completion:*' menu select

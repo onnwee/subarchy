@@ -61,6 +61,55 @@ functions() { # shell, rc file
   [[ ! -e $home/repo--topic ]] || fail "$shell: gd left the worktree folder"
 }
 
+# The subcult command completes its groups and actions from the programs
+# on PATH, and `subcult shell set` changes the login shell through chsh.
+completion() {
+  local bin=$work/bin out
+  mkdir -p "$bin"
+  # A stand-in dispatcher printing an inventory in the real one's layout:
+  # a script command per program, and a compiled command with two actions
+  # that have no program of their own.
+  cat >"$bin/subcult" <<'STUB'
+#!/bin/sh
+[ "$1" = commands ] || exit 0
+printf '  %-30s  %-20s  %s\n' "subcult app install" "<id>..." "Install apps" "subcult app list" "[--json]" "List apps" \
+  "subcult system reboot" "" "Restart" "subcult system shutdown" "" "Turn off" "subcult theme reload" "" "Reload"
+STUB
+  chmod +x "$bin/subcult"
+  # shellcheck disable=SC2016  # runs in the shell under test
+  out=$(env -i HOME="$work/bash" PATH="$bin:$PATH" TERM=xterm-256color bash -ic '
+    COMP_WORDS=(subcult ""); COMP_CWORD=1; _subcult; echo "first=${COMPREPLY[*]}"
+    COMP_WORDS=(subcult system ""); COMP_CWORD=2; _subcult; echo "second=${COMPREPLY[*]}"
+    COMP_WORDS=(subcult system re); COMP_CWORD=2; _subcult; echo "third=${COMPREPLY[*]}"
+    COMP_WORDS=(subcult app ""); COMP_CWORD=2; _subcult; echo "compiled=${COMPREPLY[*]}"' 2>/dev/null)
+  [[ $out == *"first=app commands help system theme"* ]] || fail "bash completion, first word: $out"
+  [[ $out == *"second=reboot shutdown"* && $out == *"third=reboot"* ]] || fail "bash completion, actions: $out"
+  [[ $out == *"compiled=install list"* ]] || fail "bash completion misses a compiled command's actions: $out"
+  if command -v zsh >/dev/null; then
+    # shellcheck disable=SC2016
+    out=$(cd "$work/zsh" && env -i HOME="$work/zsh" PATH="$bin:$PATH" TERM=xterm-256color ZDOTDIR="$work/zsh" \
+      zsh -ic 'echo "zsh=${_comps[subcult]} ${_comps[sub]}"' 2>/dev/null)
+    [[ $out == *"zsh=_subcult _subcult"* ]] || fail "zsh does not complete subcult with _subcult: $out"
+  fi
+  # The real dispatcher's listing has the layout the completions read.
+  if [[ -x $root/build/subcult ]]; then
+    out=$(PATH="$root/build:$root/bin:$PATH" "$root/build/subcult" commands | awk -F'  +' 'NF > 1 { print $2 }')
+    [[ $out == *"subcult system reboot"* ]] || fail "the dispatcher's listing no longer parses into routes: ${out:0:200}"
+  fi
+}
+
+shell_set() { # the shell to switch to: one that is not the login shell now
+  local to=$1 home=$work/set out
+  mkdir -p "$home"
+  printf '#!/bin/sh\necho "chsh $*" >>"%s/chsh.log"\n' "$home" >"$home/chsh" && chmod +x "$home/chsh"
+  out=$(HOME="$home" SUBCULT_TEST_CHSH="$home/chsh" "$root/bin/subcult-shell-set" "$to" 2>&1) || fail "subcult shell set $to: $out"
+  [[ $(cat "$home/chsh.log") == "chsh -s /usr/bin/$to" ]] || fail "chsh was not asked for $to: $(cat "$home/chsh.log" 2>&1)"
+  grep -q "source /usr/share/subcult/default/shell/${to}rc" "$home/.${to}rc" || fail "the user's ${to}rc does not source the setup"
+  HOME="$home" SUBCULT_TEST_CHSH="$home/chsh" "$root/bin/subcult-shell-set" "$to" >/dev/null
+  [[ $(grep -c "default/shell/${to}rc" "$home/.${to}rc") == 1 ]] || fail "the source line was added twice"
+  if HOME="$home" SUBCULT_TEST_CHSH="$home/chsh" "$root/bin/subcult-shell-set" fish >/dev/null 2>&1; then fail "fish was accepted"; fi
+}
+
 ran=0
 if command -v zsh >/dev/null; then check zsh zshrc; functions zsh zshrc; ran=$((ran + 1)); fi
 check bash bashrc; functions bash bashrc; ran=$((ran + 1))
@@ -69,4 +118,8 @@ if command -v starship >/dev/null; then
     fail "starship rejects the default prompt: $(cat "$work/starship.err")"
   if grep -qi 'warn\|error' "$work/starship.err"; then fail "starship warns about the default prompt: $(cat "$work/starship.err")"; fi
 fi
+completion
+other=bash
+[[ $(getent passwd "$(id -un)" | cut -d: -f7) == */bash ]] && other=zsh
+if [[ -x /usr/bin/$other ]]; then shell_set "$other"; fi
 echo "shell-rc-test: ok ($ran shells)"
