@@ -414,6 +414,12 @@ def boot(disk: Path, vars_file: Path) -> bool:
             "snapper": serial.run(f"{sudo} snapper -c root list-configs"),
             "nm": serial.run("systemctl is-enabled NetworkManager"),
             "shell": serial.run("getent passwd " + USER),
+            # The user's interactive zsh, as a terminal would start it.
+            "shell_setup": serial.run(
+                "TERM=xterm-256color zsh -ic"
+                " 'alias ls; alias cd; type n | head -1; echo starship=$STARSHIP_CONFIG; echo atuin=${+functions[_atuin_search]}"
+                " zoxide=${+functions[__zoxide_z]} prompt=${+functions[_starship]}; echo SETUP_DONE' 2>&1"
+            ),
             "uki": serial.run(f"{sudo} ls /boot/EFI/Linux"),
             "subvols": serial.run(f"{sudo} btrfs subvolume list /"),
             # System services and hardening (ADR 0013, 0018-0021, 0063).
@@ -720,6 +726,10 @@ finally:
         "snapper root config": "root" in r["snapper"],
         "NetworkManager enabled": r["nm"].strip().endswith("enabled"),
         "login shell is zsh": r["shell"].strip().endswith("/usr/bin/zsh"),
+        "interactive zsh has the aliases, starship, atuin and zoxide": "SETUP_DONE" in r["shell_setup"]
+        and "eza -lh" in r["shell_setup"] and "cd=zd" in r["shell_setup"].replace("'", "") and "n is a" in r["shell_setup"]
+        and "starship=/usr/share/subcult/default/shell/starship.toml" in r["shell_setup"]
+        and "atuin=1 zoxide=1 prompt=1" in r["shell_setup"],
         "both UKIs present": "subarchy_linux-zen.efi" in r["uki"] and "subarchy_linux-lts.efi" in r["uki"],
         "snapshot boot entry": "rootflags=subvol=/@/.snapshots/" in r["snapshot"],
         "no self-referencing EFI entry": "/EFI/BOOT/BOOTX64.EFI" not in r["snapshot"],

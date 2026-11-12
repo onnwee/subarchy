@@ -1,0 +1,55 @@
+# Subarchy's zsh setup (ADR 0041). The user's ~/.zshrc sources this file
+# and holds the user's own lines after it. Nothing here is needed to log
+# in: the session's environment comes from uwsm and environment.d.
+[[ -o interactive ]] || return 0
+
+# This file's folder, so a test can run a copy from the source tree.
+_subcult_shell=${${(%):-%x}:A:h}
+
+# History: kept, shared between terminals, without repeats.
+HISTFILE=${HISTFILE:-$HOME/.zsh_history}
+HISTSIZE=50000
+SAVEHIST=50000
+setopt append_history inc_append_history share_history hist_ignore_dups hist_ignore_space
+setopt auto_cd interactive_comments
+
+# Keys: Emacs-style editing, and the keys a keyboard has.
+bindkey -e
+bindkey '^[[H' beginning-of-line
+bindkey '^[[F' end-of-line
+bindkey '^[[3~' delete-char
+bindkey '^[[1;5C' forward-word
+bindkey '^[[1;5D' backward-word
+
+# Completion with a menu, matching without regard to case.
+autoload -Uz compinit
+compinit -d "${XDG_CACHE_HOME:-$HOME/.cache}/zcompdump"
+zstyle ':completion:*' menu select
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
+
+export EDITOR=${EDITOR:-nvim}
+export SUDO_EDITOR=${SUDO_EDITOR:-$EDITOR}
+if command -v bat >/dev/null; then
+  export BAT_THEME=${BAT_THEME:-ansi}
+  export MANROFFOPT=-c
+  export MANPAGER="sh -c 'col -bx | bat -l man -p'"
+fi
+
+source "$_subcult_shell/functions.sh"
+source "$_subcult_shell/aliases.sh"
+
+# Tools, each only when installed. fzf comes before atuin so that Ctrl-R
+# is atuin's; fzf keeps Ctrl-T and Alt-C.
+command -v mise >/dev/null && eval "$(mise activate zsh)"
+[[ -r /usr/share/fzf/key-bindings.zsh ]] && source /usr/share/fzf/key-bindings.zsh
+command -v zoxide >/dev/null && eval "$(zoxide init zsh)"
+# The up arrow stays the shell's own history; atuin sync stays off unless
+# the user logs in to a server.
+command -v atuin >/dev/null && eval "$(atuin init zsh --disable-up-arrow)"
+if command -v starship >/dev/null && [[ ${TERM:-} != dumb ]]; then
+  if [[ -z ${STARSHIP_CONFIG:-} && ! -e ${XDG_CONFIG_HOME:-$HOME/.config}/starship.toml ]]; then
+    export STARSHIP_CONFIG=$_subcult_shell/starship.toml
+  fi
+  eval "$(starship init zsh)"
+fi
+unset _subcult_shell
