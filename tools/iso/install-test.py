@@ -426,6 +426,21 @@ def boot(disk: Path, vars_file: Path) -> bool:
             "ufw": serial.run(f"{sudo} ufw status verbose"),
             "lsm": serial.run("cat /sys/kernel/security/lsm; echo; cat /sys/module/apparmor/parameters/enabled"),
             "sysctl": serial.run("sysctl -n kernel.kptr_restrict kernel.dmesg_restrict net.ipv4.tcp_syncookies"),
+            # Docker (ADR 0055): on demand, not for the user without sudo,
+            # and its published ports behind ufw.
+            "docker": serial.run(
+                "systemctl is-enabled docker.socket; systemctl is-enabled docker.service; systemctl is-active docker.service;"
+                f" id -nG | tr ' ' '\\n' | grep -cx docker; docker info >/dev/null 2>&1 && echo USER_CAN || echo USER_CANNOT;"
+                f" {sudo} docker info --format '{{{{.ServerVersion}}}}' >/dev/null 2>&1 && echo SUDO_CAN || echo SUDO_CANNOT;"
+                f" systemctl is-active docker.service; {sudo} grep -c 'BEGIN UFW AND DOCKER' /etc/ufw/after.rules;"
+                " docker compose version >/dev/null 2>&1 && echo COMPOSE; docker buildx version >/dev/null 2>&1 && echo BUILDX",
+                timeout=120,
+            ),
+            # Tailscale (ADR 0058): the daemon runs, nobody is signed in.
+            "tailscale": serial.run(
+                "systemctl is-enabled tailscaled; systemctl is-active tailscaled;"
+                " tailscale status 2>&1 | grep -ci 'logged out'; tailscale version | head -1"
+            ),
             # One command from each group of install/packages/cli.txt.
             "cli_tools": serial.run(
                 "for c in curl rsync 7z bat eza rg fzf zoxide jq yq tldr starship atuin btop yazi lazygit lazydocker tmux"
@@ -757,6 +772,9 @@ finally:
         "ufw active, incoming denied": "Status: active" in r["ufw"] and "deny (incoming)" in r["ufw"],
         "AppArmor enabled": "apparmor" in r["lsm"] and r["lsm"].strip().endswith("Y"),
         "sysctl hardening": r["sysctl"].split() == ["2", "1", "1"],
+        "docker starts on demand, needs sudo, and is behind ufw": r["docker"].split()
+        == ["enabled", "disabled", "inactive", "0", "USER_CANNOT", "SUDO_CAN", "active", "1", "COMPOSE", "BUILDX"],
+        "tailscale is installed and running, signed out": r["tailscale"].split()[:3] == ["enabled", "active", "1"],
         "command-line and terminal apps installed": "CLI_DONE" in r["cli_tools"] and "missing:" not in r["cli_tools"],
         "power button: a short press is left to the session, a long press powers off": r["power_key"].split()
         == ["s", '"ignore"', "s", '"poweroff"'],

@@ -304,7 +304,8 @@ EOF
   # the keyring before the keyring package's install script could.
   arch-chroot "$target" pacman-key --populate subarchy >/dev/null
   arch-chroot "$target" systemctl enable --quiet NetworkManager systemd-timesyncd sddm \
-    systemd-resolved ufw apparmor avahi-daemon bluetooth power-profiles-daemon subcult-power-auto
+    systemd-resolved ufw apparmor avahi-daemon bluetooth power-profiles-daemon subcult-power-auto \
+    docker.socket subcult-ufw-docker tailscaled
   # New installs follow the stable channel (ADR 0026): Arch packages from the
   # Arch Linux Archive at the snapshot date the package ships.
   arch-chroot "$target" subcult-channel set stable --quiet

@@ -1,0 +1,17 @@
+[Unit]
+Description=Put Docker's published ports behind ufw (ADR 0019, ADR 0055)
+Documentation=https://github.com/chaifeng/ufw-docker
+# ufw-docker adds its rules to /etc/ufw/after.rules once. It needs ufw
+# running, so the installer cannot do it in the chroot; this runs at boot
+# until the rules are there.
+After=ufw.service
+Requires=ufw.service
+ConditionPathExists=/usr/bin/ufw-docker
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/sh -c 'grep -q "BEGIN UFW AND DOCKER" /etc/ufw/after.rules || { ufw-docker install && ufw reload; }'
+
+[Install]
+WantedBy=multi-user.target

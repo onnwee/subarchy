@@ -50,6 +50,17 @@ imagemagick
 dust
 duf
 
+# Containers (ADR 0055): the daemon starts on demand (docker.socket), the
+# user is not in the docker group, ufw-docker keeps published ports behind
+# the firewall. ufw-docker comes from Subarchy's repository.
+docker
+docker-compose
+docker-buildx
+ufw-docker
+
+# Networking (ADR 0058): tailscaled runs; the user signs in when they want it.
+tailscale
+
 # Coding agents with a terminal interface (app list, "AI and development")
 openai-codex
 opencode

@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# subcult:summary=Let your user run docker without sudo (equal to passwordless root)
+# subcult:requires-sudo=true
+# subcult:dangerous=true
+# subcult:examples=sudo subcult docker sudoless
+#
+# ADR 0055. Subarchy does not put the user in the docker group: anything
+# running as a member can start a container with the host's disk mounted
+# and so act as root, with no password asked. `docker` runs under sudo
+# instead. This command grants the membership for those who want the
+# convenience and accept that.
+set -euo pipefail
+
+die() { echo "subcult docker sudoless: $*" >&2; exit 1; }
+
+[[ $EUID -eq 0 ]] || die "run it with sudo"
+user=${SUDO_USER:-}
+[[ -n $user && $user != root ]] || die "run it with sudo from your own account"
+getent group docker >/dev/null || die "there is no docker group; is docker installed?"
+if id -nG "$user" | tr ' ' '\n' | grep -qx docker; then
+  echo "$user is already in the docker group."
+  exit 0
+fi
+cat <<WARN
+Adding $user to the docker group lets every program you run act as root
+without asking for a password: a container can mount this machine's disk.
+Leave it as it is to keep typing sudo docker.
+WARN
+if [[ ${1:-} != --yes ]]; then
+  read -r -p "Type yes to add $user to the docker group: " answer
+  [[ $answer == yes ]] || die "nothing changed"
+fi
+usermod -aG docker "$user"
+echo "Done. Log out and back in for it to take effect. To undo: sudo gpasswd -d $user docker"

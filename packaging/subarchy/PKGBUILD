@@ -122,6 +122,7 @@ package() {
   ln -s ../subcult-calendar-sync.timer "$pkgdir/usr/lib/systemd/user/timers.target.wants/subcult-calendar-sync.timer"
   install -Dm644 "$sys/power-profile.rules" "$pkgdir/usr/lib/udev/rules.d/90-subarchy-power.rules"
   install -Dm644 "$sys/subcult-power-auto.service" "$pkgdir/usr/lib/systemd/system/subcult-power-auto.service"
+  install -Dm644 "$sys/subcult-ufw-docker.service" "$pkgdir/usr/lib/systemd/system/subcult-ufw-docker.service"
   # Dell firmware power and charging profiles (ADR 0021): the files wheel
   # writes from the bar; the widget itself is enabled by `subcult hw`.
   install -Dm644 "$sys/dell-power.rules" "$pkgdir/usr/lib/udev/rules.d/90-subarchy-dell-power.rules"
