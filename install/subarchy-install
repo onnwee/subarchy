@@ -249,7 +249,7 @@ pacstrap_packages() {
   mirrors_reachable || { online=0; echo "no mirror reachable: installing from the image's repository alone"; }
   pacman_conf "$online" >"$conf_file"
   local -a pkgs
-  mapfile -t pkgs < <(sed 's/#.*//; /^[[:space:]]*$/d' "$here/packages/base.txt" "$here/packages/desktop.txt")
+  mapfile -t pkgs < <(sed 's/#.*//; /^[[:space:]]*$/d' "$here/packages/base.txt" "$here/packages/desktop.txt" "$here/packages/cli.txt")
   # Microcode, firmware and GPU drivers for this machine (ADR 0005, 0006).
   local -a hw
   if command -v subcult-hw >/dev/null; then

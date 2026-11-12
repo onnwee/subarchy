@@ -153,7 +153,7 @@ still work ([[0028-developer-toolchains|ADR 0028]]).
 | Basics (included without asking) | `curl`, `wget`, `rsync`, `unzip`, `7zip`, `less`, `man-db`, `man-pages`, `wl-clipboard`, `git`, `openssh` |
 | Modern shell tools | `bat`, `eza`, `fd`, `ripgrep`, `fzf`, `zoxide`, `jq`, `go-yq`, `tealdeer` (tldr) |
 | Terminal apps | `lazygit`, `tmux`, `fastfetch`, `lazydocker` |
-| Git and forges | `github-cli`, `tea`, `git-delta` |
+| Git and forges | `github-cli`, `gitea-cli` (the `tea` command), `git-delta` |
 | Media | `yt-dlp`, `ffmpeg`, `imagemagick` |
 | Disk usage | `dust`, `duf` |
 | Containers | `docker`, `docker-compose`, `docker-buildx` ([[0055-containers\|ADR 0055]]) |
