@@ -285,6 +285,14 @@ def install(iso: Path, disk: Path, vars_file: Path, timeout: float, guided_setup
         # settles (its network-online units wait their full timeouts), and
         # the installer does not need it to.
         serial.run("timeout 90 systemctl is-system-running --wait >/dev/null; pacman-key --init >/dev/null 2>&1; true", timeout=180)
+        # A boot entry as an earlier install would have left it: named Limine,
+        # for a partition the installer is about to wipe. The installer must
+        # remove it and keep its own.
+        stale = serial.run(
+            "sgdisk --zap-all /dev/vda >/dev/null 2>&1; sgdisk -n1:0:+64M -t1:ef00 /dev/vda >/dev/null && partprobe /dev/vda; sleep 1;"
+            " efibootmgr --quiet -c -d /dev/vda -p 1 -L Limine -l '\\EFI\\limine\\limine_x64.efi' && echo STALE_MADE;"
+            " efibootmgr -v | grep -ci '^Boot[0-9A-F]*\\*\\? *limine'", timeout=60)
+        print(f"install-test: {'ok  ' if 'STALE_MADE' in stale else 'FAIL'} a leftover Limine boot entry was planted before the install")
         if guided_setup:
             # The image's own subarchy-setup, installer and repository.
             out = guided(serial, qmp, timeout)
@@ -459,6 +467,13 @@ def boot(disk: Path, vars_file: Path) -> bool:
             "ufw": serial.run(f"{sudo} ufw status verbose"),
             "lsm": serial.run("cat /sys/kernel/security/lsm; echo; cat /sys/module/apparmor/parameters/enabled"),
             "sysctl": serial.run("sysctl -n kernel.kptr_restrict kernel.dmesg_restrict net.ipv4.tcp_syncookies"),
+            # Firmware boot entries named Limine or Subarchy: how many, and
+            # how many name a partition that does not exist.
+            "boot_entries": serial.run(
+                "n=0; d=0; for g in $(efibootmgr -v | grep -iE '^Boot[0-9A-F]{4}\\*? +(limine|subarchy)' | grep -oiE 'GPT,[0-9a-f-]+' | cut -d, -f2);"
+                " do n=$((n+1)); lsblk -rno PARTUUID | grep -qix \"$g\" || d=$((d+1)); done; echo \"entries=$n dangling=$d\";"
+                f" {sudo} grep -c 'removed the boot entry' /var/log/subarchy-install.log"
+            ),
             # Docker (ADR 0055): on demand, not for the user without sudo,
             # and its published ports behind ufw.
             "docker": serial.run(
@@ -808,6 +823,8 @@ finally:
         "ufw active, incoming denied": "Status: active" in r["ufw"] and "deny (incoming)" in r["ufw"],
         "AppArmor enabled": "apparmor" in r["lsm"] and r["lsm"].strip().endswith("Y"),
         "sysctl hardening": r["sysctl"].split() == ["2", "1", "1"],
+        "the installer removed an earlier install's boot entry and kept its own": r["boot_entries"].split()
+        == ["entries=1", "dangling=0", "1"],
         "docker starts on demand, needs sudo, and is behind ufw": r["docker"].split()
         == ["enabled", "disabled", "inactive", "0", "USER_CANNOT", "SUDO_CAN", "active", "1", "COMPOSE", "BUILDX"],
         "tailscale is installed and running, signed out": r["tailscale"].split()[:3] == ["enabled", "active", "1"],

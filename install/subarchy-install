@@ -380,8 +380,41 @@ install_limine() {
   grep -q '^/+Subarchy' "$target/boot/limine.conf" || die "no Subarchy entry in limine.conf"
 }
 
+# stale_boot_entries: the numbers of firmware boot entries that an earlier
+# Limine or Subarchy install left behind. Each install makes a new EFI
+# partition with a new identifier and registers a new entry for it; the
+# entry of the install before points at a partition that no longer exists,
+# and the firmware's boot menu collects one per reinstall.
+#
+# Only entries named Limine or Subarchy, and only when no partition on any
+# attached disk has the identifier they name: another system's entry, the
+# firmware's own, and this install's are left alone.
+stale_boot_entries() {
+  local present line num label guid
+  present=$(lsblk -rno PARTUUID | tr '[:upper:]' '[:lower:]')
+  while IFS= read -r line; do
+    [[ $line =~ ^Boot([0-9A-Fa-f]{4})\*?[[:space:]]+(.*)HD\([0-9]+,GPT,([0-9A-Fa-f-]+), ]] || continue
+    num=${BASH_REMATCH[1]} label=${BASH_REMATCH[2]} guid=${BASH_REMATCH[3],,}
+    [[ ${label,,} =~ ^(limine|subarchy) ]] || continue
+    grep -qxF "$guid" <<<"$present" || echo "$num"
+  done < <(efibootmgr -v 2>/dev/null)
+}
+
+# A failure here never fails the install: the entries are clutter, not harm.
+prune_boot_entries() {
+  [[ -d /sys/firmware/efi/efivars ]] && command -v efibootmgr >/dev/null || return 0
+  local num
+  for num in $(stale_boot_entries); do
+    if efibootmgr --quiet --bootnum "$num" --delete-bootnum 2>/dev/null; then
+      echo "removed the boot entry Boot$num of an earlier install"
+    fi
+  done
+  return 0
+}
+
 finish() {
   step "finishing"
+  prune_boot_entries
   cp "$log" "$target/var/log/subarchy-install.log" 2>/dev/null || true
   sync
   umount -R "$target"

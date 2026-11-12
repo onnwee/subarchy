@@ -85,4 +85,23 @@ rm -f -- "$calls"
 hooks=$(grep -o '^HOOKS=([^)]*)' "$root/install/subarchy-install")
 [[ $hooks == *" keyboard autodetect "* ]] || fail "keyboard must come before autodetect: $hooks"
 
+# Boot entries left by earlier installs: only Limine's or Subarchy's whose
+# partition is gone are removed. This install's entry, another system's,
+# the firmware's own and a foreign entry with a missing partition stay.
+lsblk() { printf '%s\n' "AAAAAAAA-1111-4111-8111-111111111111" "bbbbbbbb-2222-4222-8222-222222222222" ""; }
+efibootmgr() {
+  if [[ $1 == -v ]]; then
+    printf '%s\n' "BootCurrent: 0007" "BootOrder: 0003,0001,0002,0004,0005,0006,0007" \
+      "Boot0001* Limine	HD(1,GPT,aaaaaaaa-1111-4111-8111-111111111111,0x800,0x800000)/File(\\EFI\\limine\\limine_x64.efi)" \
+      "Boot0002* Limine	HD(1,GPT,cccccccc-3333-4333-8333-333333333333,0x800,0x800000)/File(\\EFI\\limine\\limine_x64.efi)" \
+      "Boot0003  Subarchy	HD(1,GPT,DDDDDDDD-4444-4444-8444-444444444444,0x800,0x800000)/File(\\EFI\\BOOT\\BOOTX64.EFI)" \
+      "Boot0004* Windows Boot Manager	HD(1,GPT,eeeeeeee-5555-4555-8555-555555555555,0x800,0x32000)/File(\\EFI\\Microsoft\\Boot\\bootmgfw.efi)" \
+      "Boot0005* ubuntu	HD(1,GPT,bbbbbbbb-2222-4222-8222-222222222222,0x800,0x100000)/File(\\EFI\\ubuntu\\shimx64.efi)" \
+      "Boot0006* UEFI: PXE IPv4	PciRoot(0x0)/Pci(0x1f,0x6)/MAC(001122334455,0)/IPv4(0.0.0.0)" \
+      "Boot0007* UEFI: USB DISK 3.0	PciRoot(0x0)/Pci(0x14,0x0)/USB(2,0)/HD(2,GPT,ffffffff-6666-4666-8666-666666666666,0x8d0000,0x87000)"
+  else
+    deleted+=("$*")
+  fi
+}
+[[ $(stale_boot_entries | tr '\n' ' ') == "0002 0003 " ]] || fail "stale boot entries: $(stale_boot_entries | tr '\n' ' ')"
 echo "installer-check-test: ok"
