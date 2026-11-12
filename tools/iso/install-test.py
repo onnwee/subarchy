@@ -417,7 +417,7 @@ def boot(disk: Path, vars_file: Path) -> bool:
             # The user's interactive zsh, as a terminal would start it.
             "shell_setup": serial.run(
                 "TERM=xterm-256color zsh -ic"
-                " 'alias ls; alias cd; type n | head -1; echo starship=$STARSHIP_CONFIG; echo atuin=${+functions[_atuin_search]}"
+                " 'alias ls; alias cd; type n | head -1; echo starship=$STARSHIP_CONFIG; [[ -e ~/.config/starship.toml ]] && echo own-prompt; echo atuin=${+functions[_atuin_search]}"
                 " zoxide=${+functions[__zoxide_z]} prompt=${+functions[_starship]}; echo SETUP_DONE' 2>&1"
             ),
             "uki": serial.run(f"{sudo} ls /boot/EFI/Linux"),
@@ -429,8 +429,8 @@ def boot(disk: Path, vars_file: Path) -> bool:
             # One command from each group of install/packages/cli.txt.
             "cli_tools": serial.run(
                 "for c in curl rsync 7z bat eza rg fzf zoxide jq yq tldr starship atuin btop yazi lazygit lazydocker tmux"
-                " fastfetch gh gt delta yt-dlp ffmpeg magick dust duf codex opencode; do"
-                " command -v $c >/dev/null || echo missing:$c; done; echo CLI_DONE"
+                " fastfetch gh gt tea delta yt-dlp ffmpeg magick dust duf codex opencode; do"
+                " command -v $c >/dev/null || echo missing:$c; done; tea --version >/dev/null 2>&1 || echo missing:tea-runs; echo CLI_DONE"
             ),
             "power_key": serial.run("busctl get-property org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager HandlePowerKey;"
                                     " busctl get-property org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager HandlePowerKeyLongPress"),
@@ -728,7 +728,9 @@ finally:
         "login shell is zsh": r["shell"].strip().endswith("/usr/bin/zsh"),
         "interactive zsh has the aliases, starship, atuin and zoxide": "SETUP_DONE" in r["shell_setup"]
         and "eza -lh" in r["shell_setup"] and "cd=zd" in r["shell_setup"].replace("'", "") and "n is a" in r["shell_setup"]
-        and "starship=/usr/share/subcult/default/shell/starship.toml" in r["shell_setup"]
+        # Subarchy's prompt, unless the user already has one (Pult writes
+        # ~/.config/starship.toml with the theme).
+        and ("starship=/usr/share/subcult/default/shell/starship.toml" in r["shell_setup"] or "own-prompt" in r["shell_setup"])
         and "atuin=1 zoxide=1 prompt=1" in r["shell_setup"],
         "both UKIs present": "subarchy_linux-zen.efi" in r["uki"] and "subarchy_linux-lts.efi" in r["uki"],
         "snapshot boot entry": "rootflags=subvol=/@/.snapshots/" in r["snapshot"],

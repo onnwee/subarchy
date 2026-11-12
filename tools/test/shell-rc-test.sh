@@ -33,9 +33,37 @@ check() { # shell, rc file
   fi
 }
 
+# The functions do what they say in both shells: a worktree made and
+# removed, an archive made and unpacked, usage and refusals.
+functions() { # shell, rc file
+  local shell=$1 rc=$2 home=$work/$1 out
+  mkdir -p "$home/repo" "$home/pack/dir"
+  echo hello >"$home/pack/dir/file"
+  git -C "$home/repo" init -q -b main
+  git -C "$home/repo" -c user.name=t -c user.email=t@example.invalid commit -q --allow-empty -m first
+  # shellcheck disable=SC2016  # the commands run in the shell under test
+  out=$(cd "$home" && env -i HOME="$home" PATH="$PATH" TERM=xterm-256color ZDOTDIR="$home" TMUX= "$shell" -ic '
+    ga; echo "ga-usage=$?"
+    tdl c; echo "tdl-outside=$?"
+    tsl 2; echo "tsl-usage=$?"
+    fip onlyhost; echo "fip-usage=$?"
+    cd pack && compress dir && rm -r dir && decompress dir.tar.gz && cat dir/file && cd ..
+    cd repo && ga topic && echo "in=$(basename "$PWD") branch=$(git branch --show-current)"
+    gd <<<n; echo "gd-no=$? still=$(basename "$PWD")"
+    gd <<<y >/dev/null; echo "gd-yes=$? back=$(basename "$PWD") left=$(git branch --list topic | wc -l)"
+    gd </dev/null; echo "gd-not-worktree=$?"
+    alias gst lzd eff 2>/dev/null | wc -l
+  ' 2>/dev/null) || fail "$shell: the function checks exited with an error: $out"
+  for want in "ga-usage=1" "tdl-outside=1" "tsl-usage=1" "fip-usage=1" "hello" "in=repo--topic branch=topic" \
+    "gd-no=1 still=repo--topic" "gd-yes=0 back=repo left=0" "gd-not-worktree=1"; do
+    [[ $out == *"$want"* ]] || fail "$shell: expected '$want' in: $out"
+  done
+  [[ ! -e $home/repo--topic ]] || fail "$shell: gd left the worktree folder"
+}
+
 ran=0
-if command -v zsh >/dev/null; then check zsh zshrc; ran=$((ran + 1)); fi
-check bash bashrc; ran=$((ran + 1))
+if command -v zsh >/dev/null; then check zsh zshrc; functions zsh zshrc; ran=$((ran + 1)); fi
+check bash bashrc; functions bash bashrc; ran=$((ran + 1))
 if command -v starship >/dev/null; then
   STARSHIP_CONFIG=$root/default/shell/starship.toml starship print-config >/dev/null 2>"$work/starship.err" ||
     fail "starship rejects the default prompt: $(cat "$work/starship.err")"

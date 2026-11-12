@@ -63,6 +63,11 @@ package() {
     install -Dm755 "$f" "$pkgdir/usr/bin/$(basename "$f")"
   done
   ln -s subcult "$pkgdir/usr/bin/sub"
+  # The Gitea client under its long-standing name: Arch's gitea-cli installs
+  # the command as gt, and notes, scripts and agents call tea. A link, not a
+  # shell alias, so it works outside an interactive shell too. gitea-cli
+  # comes from install/packages/cli.txt.
+  ln -s gt "$pkgdir/usr/bin/tea"
 
   for f in "$root"/bin/subcult-*; do
     [[ -e $f ]] || continue
