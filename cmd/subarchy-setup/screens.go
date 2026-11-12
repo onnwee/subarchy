@@ -16,18 +16,27 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
 	"unicode"
 
+	"golang.org/x/sys/unix"
 	"golang.org/x/term"
 
 	"git.subcult.tv/subculture-collective/subarchy/internal/setup"
 )
 
-//go:embed logo.txt
+// logo is the SUBCULT mark as ANSI art, in the installer's palette: the
+// letters in acid, their highlights in paper.
+//
+//go:embed logo.ans
 var logo string
+
+var ansi = regexp.MustCompile("\x1b\\[[0-9;]*m")
+
+func logoLines() []string { return strings.Split(strings.TrimRight(logo, "\n"), "\n") }
 
 // errBack is a step's way of saying "go to the previous step".
 var errBack = errors.New("back")
@@ -55,8 +64,14 @@ type screens struct {
 	out   io.Writer
 	gum   gumFn
 	width func() int
+	// height is the screen's height in rows; nil counts as unknown.
+	height func() int
 	// key waits for Return (true) or Escape (false).
 	key func() bool
+	// poll starts reading single key presses without waiting: next
+	// returns 0 when none is pending, and restore puts the terminal back.
+	// nil means no keys are read during the install.
+	poll func() (next func() byte, restore func())
 	// fit sets a console font that suits the screen's resolution; nil in
 	// tests.
 	fit func()
@@ -72,13 +87,37 @@ func (s *screens) pad() int {
 
 func logoWidth() int {
 	w := 0
-	for _, line := range strings.Split(logo, "\n") {
-		if n := len([]rune(strings.TrimRight(line, " "))); n > w {
+	for _, line := range logoLines() {
+		if n := len([]rune(ansi.ReplaceAllString(line, ""))); n > w {
 			w = n
 		}
 	}
 	return w
 }
+
+// drawLogo prints the mark at the column's left edge.
+func (s *screens) drawLogo() {
+	for _, l := range logoLines() {
+		fmt.Fprintf(s.out, "%*s%s\x1b[0m\x1b[K\n", s.pad(), "", l)
+	}
+}
+
+// top is how many blank lines go above a block that many lines tall to
+// put it in the middle of the screen.
+func (s *screens) top(block int) int {
+	rows := 0
+	if s.height != nil {
+		rows = s.height()
+	}
+	if t := (rows - block) / 2; t > 1 {
+		return t
+	}
+	return 1
+}
+
+// questionBlock is the height a question screen is centred as: the mark,
+// a title with a few lines of text, and a list.
+const questionBlock = 30
 
 func (s *screens) padding() string { return fmt.Sprintf("0 0 0 %d", s.pad()) }
 
@@ -101,10 +140,8 @@ func (s *screens) page(title string, body ...string) {
 	if s.fit != nil {
 		s.fit()
 	}
-	fmt.Fprint(s.out, "\x1b[2J\x1b[H\n")
-	for _, l := range strings.Split(strings.TrimRight(logo, "\n"), "\n") {
-		s.line(colAcid, l)
-	}
+	fmt.Fprint(s.out, "\x1b[2J\x1b[H"+strings.Repeat("\n", s.top(questionBlock)))
+	s.drawLogo()
 	fmt.Fprintln(s.out)
 	if title != "" {
 		s.line(colPaper, title)
@@ -319,10 +356,8 @@ func (s *screens) greeter() error {
 	if s.fit != nil {
 		s.fit()
 	}
-	fmt.Fprint(s.out, "\x1b[2J\x1b[H\x1b[?25l\n\n\n\n")
-	for _, l := range strings.Split(strings.TrimRight(logo, "\n"), "\n") {
-		s.line(colAcid, l)
-	}
+	fmt.Fprint(s.out, "\x1b[2J\x1b[H\x1b[?25l"+strings.Repeat("\n", s.top(len(logoLines())+4)))
+	s.drawLogo()
 	fmt.Fprintln(s.out)
 	s.line(colPaper, "A SUBCULT system, built on Arch.")
 	fmt.Fprintln(s.out)
@@ -566,11 +601,13 @@ func onConsole() bool {
 	return err == nil
 }
 
-// terminus is the Terminus console fonts by glyph width in pixels.
+// terminus is the Terminus console fonts by glyph width in pixels. The
+// "i" set (code page 437) is the one with the half blocks and the dark
+// shade the mark is drawn with; the wider "v" set shows them as "#".
 var terminus = []struct {
 	width int
 	name  string
-}{{16, "ter-v32b"}, {14, "ter-v28b"}, {12, "ter-v24b"}, {11, "ter-v22b"}, {10, "ter-v20b"}, {8, "ter-v16b"}}
+}{{16, "ter-i32b"}, {14, "ter-i28b"}, {12, "ter-i24b"}, {11, "ter-i22b"}, {10, "ter-i20b"}, {8, "ter-i16b"}}
 
 // fontFor picks the largest Terminus font that still leaves 100 columns
 // on a screen that many pixels wide: 32 px tall on a 1920 or 4K panel,
@@ -648,6 +685,13 @@ func realScreens() *screens {
 			}
 			return strings.TrimRight(string(out), "\r\n"), code
 		},
+		height: func() int {
+			if _, h, err := term.GetSize(int(os.Stdout.Fd())); err == nil {
+				return h
+			}
+			return 0
+		},
+		poll: pollKeys,
 		width: func() int {
 			if w, _, err := term.GetSize(int(os.Stdout.Fd())); err == nil {
 				return w
@@ -676,4 +720,31 @@ func realScreens() *screens {
 			}
 		},
 	}
+}
+
+// pollKeys puts the terminal in a mode where a read returns at once, with
+// a key if one was pressed, so the install view can watch for a key
+// between frames without a reader left blocked on the terminal afterwards.
+func pollKeys() (next func() byte, restore func()) {
+	fd := int(os.Stdin.Fd())
+	state, err := term.MakeRaw(fd)
+	if err != nil {
+		return func() byte { return 0 }, func() {}
+	}
+	if t, err := unix.IoctlGetTermios(fd, unix.TCGETS); err == nil {
+		t.Cc[unix.VMIN], t.Cc[unix.VTIME] = 0, 0
+		// Output processing back on: the frames use plain newlines.
+		t.Oflag |= unix.OPOST | unix.ONLCR
+		unix.IoctlSetTermios(fd, unix.TCSETS, t)
+	}
+	buf := make([]byte, 16)
+	return func() byte {
+			n, _ := unix.Read(fd, buf)
+			if n < 1 {
+				return 0
+			}
+			return buf[n-1]
+		}, func() {
+			term.Restore(fd, state)
+		}
 }

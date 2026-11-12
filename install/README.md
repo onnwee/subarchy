@@ -23,8 +23,10 @@ choosing a disk the user can install there, browse it read-only first, or
 pick another. A summary table of every answer, the disk included, then
 asks "Does this look right?", and the erase question comes last; its
 default is no. Escape goes back a step on every screen. While `subarchy-install` runs, the screen shows
-a bar with a percentage, the current phase, the time so far and a rotating
-tip (`progress.go`); the raw output goes to `/var/log/subarchy-install.log`,
+the mark in the middle of the screen, "Installing Subarchy" with the time
+so far at the right, a bar with a percentage, the current phase and a
+rotating tip (`progress.go`). L switches a window with the end of the
+install log on and off; the raw output goes to `/var/log/subarchy-install.log`,
 which is also where the percentage is read from. The finish screen offers
 "Reboot now", and a failure shows the end of the log with a menu. `--plain`
 gives the prompts below instead.
@@ -32,7 +34,9 @@ gives the prompts below instead.
 The console font follows the screen: before every screen the installer
 reads the framebuffer's width (`/sys/class/graphics/fb0/virtual_size`) and
 sets the largest Terminus font that still leaves 100 columns, which is
-the 32-pixel one from 1600 pixels up.
+the 32-pixel one from 1600 pixels up. It uses the code page 437 set
+(`ter-i32b`): that one has the half blocks and shades the mark is drawn
+with.
 
 On a serial console or over SSH it asks plain line prompts. It asks for the
 keyboard layout first and switches the console to it (`loadkeys`), so the

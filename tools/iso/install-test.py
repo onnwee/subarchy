@@ -221,7 +221,7 @@ def guided(serial: Serial, qmp: Path, timeout: float) -> str:
     # The install view replaces the raw output: a bar, a percentage and
     # the package count.
     deadline = time.monotonic() + timeout
-    screen, view = "", False
+    screen, view, log_window = "", False, False
     while time.monotonic() < deadline:
         screen = console_text(serial, 2)
         if "Installed Subarchy in" in screen or "installation stopped" in screen:
@@ -229,10 +229,19 @@ def guided(serial: Serial, qmp: Path, timeout: float) -> str:
         if not view and re.search(r"Installing packages \(\d+ of \d+\)", screen) and "%" in screen and "Tip: " in screen:
             view = True
             screendump(qmp, VM / "installer.png")
+            # L switches the log window on.
+            send_keys(qmp, "l")
+            try:
+                wait_console(serial, 2, "Press L to hide the log", 20)
+                log_window = True
+                screendump(qmp, VM / "installer-log.png")
+            except TimeoutError:
+                pass
         time.sleep(3)
     print(f"install-test: {'ok  ' if view else 'FAIL'} install view shows a percentage, the package count and a tip")
+    print(f"install-test: {'ok  ' if log_window else 'FAIL'} L shows the log window in the install view")
     screendump(qmp, VM / "installer-end.png")
-    done = "Installed Subarchy in" in screen and view and autostart and font
+    done = "Installed Subarchy in" in screen and view and log_window and autostart and font
     if "Installed Subarchy in" in screen:
         send_keys(qmp, "n")  # no reboot: the test powers the VM off
     log = serial.run("cat /var/log/subarchy-install.log", timeout=60)
