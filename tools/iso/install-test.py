@@ -356,6 +356,39 @@ def lock_crash(serial: Serial, qmp: Path, lock_status: str) -> dict:
     return {"first": first, "second": second, "end": end, "shown": shown}
 
 
+def lock_shutdown(serial: Serial, qmp: Path, proc: subprocess.Popen, lock_status: str, poweroff: str) -> dict:
+    """Shut the machine down while the session is locked and watch the
+    display until it is off: the desktop behind the lock must never show.
+
+    A marker terminal is on screen behind the lock. Frames are captured as
+    fast as QMP gives them from the poweroff until QEMU exits; any that
+    shows the marker colour is kept as lock-shutdown-<n>.png.
+    """
+    serial.run(
+        f"hyprctl -i 0 dispatch 'hl.dsp.exec_cmd(\"kitty -o background=#{MARKER} -o background_opacity=1\")' >/dev/null;"
+        " for i in $(seq 20); do [ $(hyprctl -i 0 clients | grep -c '^Window ') -ge 1 ] && break; sleep 1; done; sleep 2",
+        timeout=60)
+    locked = serial.run(f"systemctl --user start subcult-lock.service; sleep 4; {lock_status}", timeout=60)
+    png = VM / "lock-shutdown-locked.png"
+    screendump(qmp, png)
+    hidden_before = not has_colour(png, MARKER)
+    serial.send(poweroff + "\n")
+    frames, exposed = 0, []
+    deadline = time.monotonic() + 120
+    while proc.poll() is None and time.monotonic() < deadline:
+        frame = VM / "lock-shutdown-frame.png"
+        try:
+            screendump(qmp, frame, timeout=5)
+        except Exception:
+            break  # QEMU is going away
+        frames += 1
+        if has_colour(frame, MARKER):
+            keep = VM / f"lock-shutdown-{len(exposed)}.png"
+            shutil.copy(frame, keep)
+            exposed.append(frames)
+    return {"locked": locked, "hidden_before": hidden_before, "frames": frames, "exposed": exposed}
+
+
 def lock_crash_ok(result: dict) -> bool:
     """A different process holds a secure lock after the kill, the desktop
     showed only before the lock and after the unlock, and the unit ended."""
@@ -719,7 +752,10 @@ finally:
         # a refused replacement leaves the session locked for good.
         results["lock_crash"] = lock_crash(serial, qmp, lock_status)
         serial.run(f"{sudo} rm -f /etc/sddm.conf.d/zz-install-test.conf")
-        serial.send(f"{sudo} poweroff\n")
+        # Last, because it ends the boot: shut down with the session locked.
+        results["lock_shutdown"] = lock_shutdown(serial, qmp, proc, lock_status, f"{sudo} poweroff")
+        print(f"install-test: locked shutdown: {results['lock_shutdown']['frames']} frames captured,"
+              f" desktop visible in frames {results['lock_shutdown']['exposed'] or 'none'}")
     except TimeoutError as e:
         proc.kill()
         print(f"install-test: FAIL during boot, timed out {e}", file=sys.stderr)
@@ -796,6 +832,8 @@ finally:
             r["idle_service"].strip().splitlines()[0:2] == ["active", "1"] and "DPMS_IDEMPOTENT" in r["idle_service"],
         "lock locks, survives the shell dying, unlocks with the password": lock_ok(r["lock"]),
         "lock comes back after its process is killed, keeps the desktop hidden, then unlocks": lock_crash_ok(r["lock_crash"]),
+        "a locked session stays hidden while the machine shuts down": r["lock_shutdown"]["hidden_before"]
+        and r["lock_shutdown"]["frames"] >= 5 and not r["lock_shutdown"]["exposed"],
         "Hyprland session started": r["hyprland"].strip() != "",
         "session runs under uwsm": "wayland-wm@" in r["uwsm"],
         "Subarchy Hyprland defaults loaded (flat look)": "gap data: 0 0 0 0" in r["hypr_opts"]
