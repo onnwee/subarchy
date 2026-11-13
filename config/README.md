@@ -1,3 +1,3 @@
 # config
 
-User configuration templates that the installer copies into `~/.config` (Hyprland, terminals, the shell's `shell.json`, menus, hooks). Omarchy counterpart: `/usr/share/omarchy/config/`.
+Unused; kept to mirror Omarchy's tree (`/usr/share/omarchy/config/`). The user's Hyprland config comes from [default/hypr/user-hyprland.lua](../default/hypr/user-hyprland.lua).

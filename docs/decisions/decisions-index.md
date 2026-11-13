@@ -92,6 +92,7 @@ order.
 | [[0065-privacy-telemetry\|0065]] | Privacy and telemetry |
 | [[0066-versioning\|0066]] | Versioning |
 | [[0067-user-manual\|0067]] | User manual |
+| [[0068-shell-plugin-api-v0\|0068]] | Shell plugin API v0 |
 | [[0069-update-authentication\|0069]] | Authenticate system updates |
 | [[0070-lock-crash-recovery\|0070]] | Lock crash recovery |
 

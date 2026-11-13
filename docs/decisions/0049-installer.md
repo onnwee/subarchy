@@ -149,5 +149,8 @@ Decision map item R2. Accepted 2026-11-06.
   page refuses the 64-digit key that iwd will not join with, iwd's escaped
   saved passphrase is unescaped, and the connection file's name never
   starts with a dot.
+- 2026-11-13: issue #77 above (the offline cache) is Gitea #77, now
+  GitHub #53; it was written before GitHub became the source
+  ([[vault-conventions#Links]]).
 
 Related: [[decision-map|Decision map]] · [[0050-hardware-support|ADR 0050]]

@@ -105,5 +105,8 @@ the permanent toggle.
   packages still asks. The VM test runs the update after `sudo -k` with no
   input. The other rules (time zone, the "skip sudo for X minutes" menu) are
   still to do.
+- 2026-11-13: superseded for updates by
+  [[0069-update-authentication|ADR 0069]]; the package no longer ships
+  `50-subarchy-update`.
 
 Related: [[decision-map|Decision map]] · [[0023-authentication|ADR 0023]] · [[0063-security-hardening|ADR 0063]]

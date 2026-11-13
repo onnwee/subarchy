@@ -52,6 +52,6 @@ when replacing the daemon. Remove the repository runner registration only
 when retiring it, and do not stop the shared `gitea-act-runner` service.
 
 Privileged jobs require trusted repository writers. This runner is not
-registered for other repositories or for the public GitHub mirror.
+registered for other repositories or for the GitHub repository.
 
 Related: [[0051-hosting-ci|Source hosting and CI]] · [[roadmap|Roadmap]]

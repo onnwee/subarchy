@@ -72,5 +72,9 @@ public.
 
   `displaylink` and the NVIDIA 580xx packages carry their vendors' own
   licences (`custom`); their redistribution terms also need checking.
+- 2026-11-13: the GitHub repository is public. The third-party checks
+  (SUBCULT marks and artwork under the rice's `ASSETS_LICENSE.md`, origin
+  headers on borrowed files) are not recorded as done; this is the
+  owner's call.
 
 Related: [[decision-map|Decision map]] · [[0052-name-identity|ADR 0052]]

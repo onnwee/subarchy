@@ -4,7 +4,7 @@ type: review
 status: draft
 review: pending
 created: 2026-11-07
-updated: 2026-11-09
+updated: 2026-11-13
 tags: [review, installer]
 aliases: [First install, Install runbook]
 ---
@@ -22,7 +22,7 @@ below. Subarchy is running for owner testing.
 close/open cycle with a visible lock, working password input and no Hyprland
 warning flash. The tested repair explicitly sets DPMS `action`, restores
 lock-view focus on click/activation/Tab, and waits for the Wayland lock
-notification before sleep. [PR #229](https://git.subcult.tv/subculture-collective/subarchy/pulls/229)
+notification before sleep. Gitea PR #229
 merged as `aa5080e`. The owner upgraded core425 to434 at 14:17 CST;
 eleven checked installed battery/lock/helper files match the qualified
 package. The coordinator retired only the byte-checked temporary overrides.
@@ -35,13 +35,13 @@ missing Lua file during replacement, then clears it with its final reload.
 General sudo still asks for authentication, but the packaged update-specific
 NOPASSWD rules explain why updates do not.
 [[0069-update-authentication|ADR 0069]] records the owner's request to authenticate updates. Source fix
-[PR #232](https://git.subcult.tv/subculture-collective/subarchy/pulls/232)
+Gitea PR #232
 adds initial authorization, a bounded-lifetime noninteractive keepalive and
 watcher pause/restore around the update. These changes are not in core434;
 an older updater installing them can still show the warning once. The native
 watcher-setting probe passed and left the original setting unchanged.
 
-Issue [#75](https://git.subcult.tv/subculture-collective/subarchy/issues/75)
+Gitea issue #75, now [GitHub #51](https://github.com/subculture-collective/subarchy/issues/51),
 stays open until the owner records the remaining hardware results below.
 Installation, local checks, hosted CI, package publication and physical
 acceptance are separate claims.
@@ -198,7 +198,7 @@ were removed after the final checks. The dedicated SSH key remains private.
 
 ## Install findings and repairs
 
-[Issue #210](https://git.subcult.tv/subculture-collective/subarchy/issues/210):
+Gitea issue #210 ([GitHub #99](https://github.com/subculture-collective/subarchy/issues/99)):
 the image's installer completed the base system and factory snapshot, then
 exited 5 at its final LUKS close. Live-service mount namespaces retained
 `/mnt/run` and later serial-getty credential submounts. Only those
@@ -213,7 +213,7 @@ retained mount and passes with isolation using a private tmpfs tree. Local
 `make verify` passed. The ISO recorded above predates this fix; a rebuilt
 fixed ISO has not been qualified.
 
-[Issue #211](https://git.subcult.tv/subculture-collective/subarchy/issues/211):
+Gitea issue #211 ([GitHub #100](https://github.com/subculture-collective/subarchy/issues/100)):
 `powerprofilesctl` could not import `gi.repository`, so automatic power
 selection failed on the real battery-equipped laptop. The no-battery VM
 path had bypassed that import. Installing `python-gobject 3.58.1-1` and its
@@ -306,26 +306,26 @@ interface improvements. They do not count as completed physical retests.
 
 ### Overnight source qualification
 
-PRs #219–#223 merged after exact-head CI on November 9:
+Gitea PRs #219–#223 merged after exact-head CI on November 9:
 
-- [#219](https://git.subcult.tv/subculture-collective/subarchy/pulls/219)
+- Gitea #219
   refreshes the Dell label when the power-profile daemon changes. Its
   isolated QML check fails on the baseline and passes with the fix.
-- [#220](https://git.subcult.tv/subculture-collective/subarchy/pulls/220)
+- Gitea #220
   implements the requested docked-lid behavior and Omarchy-style scale
   shortcuts: `Super + /` increases scale and `Super + Alt + /` decreases it,
   following the [Omarchy monitor guide](https://learn.omacom.io/books/2/pages/86).
-  [#223](https://git.subcult.tv/subculture-collective/subarchy/pulls/223)
+  Gitea #223
   fixes two review findings: colliding concurrent profile writes and scale
   rounding beyond 4. The same regressions fail before the fixes and pass
   afterward, including 32 writers and the 2160×1350 scale case.
-- [#221](https://git.subcult.tv/subculture-collective/subarchy/pulls/221)
+- Gitea #221
   improves the greeter form, focus, small-screen scrolling and authentication
   states. A PNG rendered from the unchanged brand master includes the mark
   Qt's SVG renderer omitted. Greeter and lock share the packaged artwork;
   native Qt checks pass at scales 1, 1.6 and 2. Owner appearance acceptance
-  remains on #216.
-- [#222](https://git.subcult.tv/subculture-collective/subarchy/pulls/222)
+  remains on Gitea #216 (GitHub #104).
+- Gitea #222
   provides native device search, pairing prompts and cancellation. Thirteen
   Gio tests use a private D-Bus daemon; the native panel fixture checks
   search ownership, PIN clearing and graceful helper shutdown. The staged

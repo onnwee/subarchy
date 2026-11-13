@@ -1,10 +1,10 @@
 ---
 title: "Plugin and add-on triage"
 type: review
-status: draft
-review: pending
+status: superseded
+review: done
 created: 2026-11-06
-updated: 2026-11-07
+updated: 2026-11-13
 tags: [review, plugins]
 aliases: [Triage]
 ---

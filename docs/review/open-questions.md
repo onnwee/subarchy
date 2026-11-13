@@ -1,10 +1,10 @@
 ---
 title: "Open questions"
 type: review
-status: draft
-review: pending
+status: active
+review: done
 created: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-13
 tags: [review]
 ---
 
@@ -66,7 +66,8 @@ Answer inline and move answered items to the bottom with the date.
   `subcult` ([[0052-name-identity|ADR 0052]]).
 - **4. Licence**: GPL-3.0-or-later ([[0053-licence|ADR 0053]]).
 - **7. Canonical repository**: `git.subcult.tv` with a GitHub mirror
-  ([[0051-hosting-ci|ADR 0051]]).
+  ([[0051-hosting-ci|ADR 0051]]). Reversed on 2026-11-10: GitHub is the
+  source and Gitea the mirror (ADR 0051, progress).
 - **9 and 10. Fork questions**: no longer apply; Subarchy is built from
   scratch ([[0001-fork-strategy|ADR 0001]]).
 - **11. Targets**: x86_64 only ([[0003-cpu-architectures|ADR 0003]]),

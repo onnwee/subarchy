@@ -16,8 +16,10 @@ dependencies follow the staged Arch snapshot in `default/pacman/snapshot`;
 source checksums remain enforced. The build has no publishing
 credential. Artifacts expire after three days.
 
-PRs build packages and stop there. Only a push to `main` enables the
-separate publishing job, which uploads artifacts from that same run to
+Pull requests are on GitHub, where `.github/workflows/mirror-ci.yml`
+builds and checks only the core package. The keyring, pinned and AUR
+rebuilds run here on Gitea `main` ([[0051-hosting-ci|ADR 0051]]). Only a
+push to `main` enables the separate publishing job, which uploads artifacts from that same run to
 both `stable` and `edge`:
 
 ```text

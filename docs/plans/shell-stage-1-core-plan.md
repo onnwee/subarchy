@@ -3,7 +3,7 @@ title: "Shell stage 1, plan 1: look, fonts and core bar"
 type: plan
 status: accepted
 created: 2026-11-07
-updated: 2026-11-07
+updated: 2026-11-13
 tags: [plan, shell, theme, fonts]
 aliases: [Shell core plan]
 ---
@@ -674,10 +674,12 @@ checks the result on `sputnik` (scale 1.6, real tray apps, real battery).
 
 ## Outcome (2026-11-07)
 
-Executed in one session, one PR per phase, each reviewed by a fresh
-reviewer before merge: #21 and #23 (look layer and its fixes), #22
-(`subcult font`), #24 (shell core), #25 (widgets and services), and the
-Phase E PR (VM checks and these docs). Deviations from this plan, each
+Executed in one session, one PR per phase, reviewed by a fresh reviewer
+except as noted below: Gitea #21 and #23 (look layer and its fixes), Gitea
+#22 (`subcult font`), Gitea #24 (shell core), Gitea #25 (widgets and
+services), and the Phase E PR (VM checks and these docs). Gitea #21 merged
+before its review finished, and Gitea #23, its fix-up, had no fresh review
+(issue #4, M9). Deviations from this plan, each
 recorded as a ruling during the run:
 
 - The cursor builder is Go (`cmd/subcult-cursor`), not a bash script.

@@ -1,17 +1,21 @@
 ---
 title: "Distribution CLI: the Bash command set"
 type: plan
-status: proposed
+status: accepted
 created: 2026-11-08
-updated: 2026-11-12
+updated: 2026-11-13
 tags: [plan, cli]
 aliases: [CLI command set, E1]
 ---
 
 # Distribution CLI: the Bash command set
 
-Issue #48 (Epic E). [[0046-distribution-cli|ADR 0046]] puts stateful logic in
-Go and thin glue in Bash under one dispatcher, `subcult <group> <action>`.
+Implemented under Epic E (GitHub #10), 2026-11-13. The command lists below are as
+of 2026-11-08.
+
+GitHub #24 (E1), under Epic E #10. [[0046-distribution-cli|ADR 0046]]
+puts stateful logic in Go and thin glue in Bash under one dispatcher,
+`subcult <group> <action>`.
 The Go side exists: `app`, `update`, `calendar`, `hw`, `thermal`, `agent`,
 `font`, `cursor`, `display`, `clipboard`, and `subarchy-setup`; the Bash side
 has `gpu`, `power auto`, `secureboot` and `disk tpm`. This note proposes the

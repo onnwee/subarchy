@@ -487,7 +487,7 @@
       "key": "gh-mirror",
       "epic": "infra",
       "title": "Mirror the repository read-only to GitHub",
-      "summary": "ADR 0051 wants a read-only GitHub mirror of `git.subcult.tv/subculture-collective/subarchy` for visibility, with GitHub Actions disabled. The repository and CI exist; the mirror does not.",
+      "summary": "ADR 0051 wants a read-only GitHub mirror of `git.subcult.tv/subculture-collective/subarchy` for visibility, with GitHub Actions disabled. Done (GitHub #86); since 2026-11-10 the direction is reversed: GitHub is the source and Kvant fast-forwards main to Gitea (ADR 0051, progress).",
       "acceptance": [
         "A Gitea push mirror keeps a GitHub repository under the publisher's account current on every push to main.",
         "GitHub Actions is disabled on the mirror; its description points back to Gitea for issues and PRs.",

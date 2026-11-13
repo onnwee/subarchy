@@ -3,7 +3,7 @@ title: "Vault conventions"
 type: guide
 status: active
 created: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-13
 tags: [guide, obsidian]
 aliases: [Obsidian setup, Frontmatter guide]
 ---
@@ -34,6 +34,12 @@ ordinary Markdown links.
 - End each note with a `Related:` line naming the notes it builds on. Those
   links feed backlinks and the graph.
 - Obsidian rewrites links on rename (`alwaysUpdateLinks`).
+- Issue and PR numbers: GitHub has been the source since 2026-11-10
+  ([[0051-hosting-ci|ADR 0051]]). A bare `#N` written before that date is a
+  Gitea number; from now on write those as `Gitea #N`, and a bare `#N` means
+  GitHub. The two series overlap, so check the date. Each migrated GitHub
+  issue's first line names its Gitea number. Gitea issue and PR pages are
+  gone, so do not link to them.
 
 The Git forge does not render wikilinks; they show as raw double-bracket text there. Read
 the notes in Obsidian, or follow the root `README.md` on the forge.

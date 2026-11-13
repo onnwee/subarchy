@@ -86,5 +86,8 @@ Hyprland. Artwork and text are replaced (R4).
   `theme.conf` gains `accent` (the palette's green) for the bullets.
   `tools/test/greeter-test.sh` covers these and keeps previews at
   1280x800, 2560x1440 and 320x480.
+- 2026-11-13: issue numbers here written before 2026-11-10 are Gitea
+  numbers ([[vault-conventions#Links]]): #73 is Gitea #73 (GitHub #49) and
+  #103 is Gitea #103 (GitHub #79). #104 is GitHub #104.
 
 Related: [[decision-map|Decision map]] · [[0031-session-manager|ADR 0031]] · [[0013-boot-splash|ADR 0013]]

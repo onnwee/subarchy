@@ -10,7 +10,7 @@ contract: [ADR 0068](../docs/decisions/0068-shell-plugin-api-v0.md).
 | Path | Holds |
 |---|---|
 | `shell.qml` | Root: one bar and one background per output, notifications, OSD, polkit dialog, Alt-Tab, launcher, the `subcult.shell` IPC handler |
-| `Commons/` | `Theme`, `Power`, `Config`, `Style`, `Clock`, `WidgetIndex` singletons; `WatchedFile`; pure models (`*Model.js`) and `Glyphs.js` |
+| `Commons/` | `Theme`, `Power`, `Config`, `Style`, `Clock`, `WidgetIndex`, `KeepAwake`, `Panels`, `Workspaces` and `Motion` singletons; the `WatchedFile` and `OverlayScreen` components; pure models (`*Model.js`); `Glyphs.js` and `HyprDispatch.js` |
 | `Ui/` | `BarWidget`, `PanelBase` and `WidgetTimer` (the widget contract), `IconButton`, `Tooltip` |
 | `PanelOverlay.qml` | The click-out panel host: one widget's `Panel.qml` at a time, under the widget on its bar's output; a click outside or Escape closes it |
 | `widgets/<name>/` | One widget: `manifest.json`, `Widget.qml`, optional `Model.js`, `Panel.qml`, `tests/` |

@@ -7,6 +7,7 @@
 - every note has frontmatter with title, type, status and tags, using the
   allowed values
 - relative Markdown links in README files resolve
+- docs/decisions/decisions-index.md lists every numbered ADR
 
 Exits 1 when any check fails. Standard library only.
 """
@@ -104,6 +105,12 @@ def main() -> int:
                 errors.append(f"{readme.relative_to(ROOT)}: link to {target} does not resolve")
     for readme in DOCS.rglob("README.md"):
         errors.append(f"{readme.relative_to(ROOT)}: name index notes after their folder, not README")
+
+    decisions = DOCS / "decisions"
+    index = (decisions / "decisions-index.md").read_text()
+    for adr in sorted(decisions.glob("[0-9][0-9][0-9][0-9]-*.md")):
+        if f"[[{adr.stem}" not in index:
+            errors.append(f"decisions-index.md does not list {adr.stem}")
 
     notes = sum(1 for p in files if p.suffix == ".md")
     for e in errors:

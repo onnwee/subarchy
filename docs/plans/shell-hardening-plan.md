@@ -1,14 +1,16 @@
 ---
 title: "Shell hardening plan"
 type: plan
-status: proposed
+status: accepted
 created: 2026-11-07
-updated: 2026-11-07
+updated: 2026-11-13
 tags: [plan, shell]
 aliases: [Shell hardening]
 ---
 
 # Shell hardening — implementation plan
+
+Done; qualified by the VM install test on 2026-11-08 (Epic A, A1-A14).
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -60,7 +62,8 @@ daemon (not needed; see the owner thread of 2026-11-07).
   VM test (`make install-test`) passes at the end.
 - Commits as `SUBCULT Agent <info@subcult.tv>`, unsigned, with the
   Co-Authored-By line. One PR per task, tracked as Epic A of the
-  [roadmap issue #29](https://git.subcult.tv/subculture-collective/subarchy/issues/29);
+  roadmap issue Gitea #29 (now
+  [GitHub #5](https://github.com/subculture-collective/subarchy/issues/5));
   the fresh review covers all of them in the final qualification issue.
   (Revised 2026-11-07; first written as one PR for the whole plan.)
 

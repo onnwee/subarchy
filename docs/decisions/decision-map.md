@@ -3,7 +3,7 @@ title: "Decision map"
 type: index
 status: active
 created: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-13
 tags: [index, decision]
 aliases: [Decision order, Build decisions]
 ---
@@ -124,7 +124,7 @@ NVMe.
 | R3 | Hardware support policy | Per-vendor fix scripts | [[0050-hardware-support\|ADR 0050]]: port all Omarchy x86 fixes |
 | R4 | Name, `os-release` and brand | Omarchy | [[0052-name-identity\|ADR 0052]]: Subarchy; screens SUBCULT; command `subcult`, alias `sub` |
 | R5 | Licence | MIT | [[0053-licence\|ADR 0053]]: GPL-3.0-or-later |
-| R6 | Source hosting and CI | GitHub | [[0051-hosting-ci\|ADR 0051]]: Gitea primary, GitHub mirror |
+| R6 | Source hosting and CI | GitHub | [[0051-hosting-ci\|ADR 0051]]: Gitea primary, GitHub mirror (reversed 2026-11-10, see ADR 0051 progress) |
 | R7 | Versioning | Semantic versions (4.5.0) | [[0066-versioning\|ADR 0066]]: semver from 0.0.0 |
 | R8 | User manual | Online manual and agent skill | [[0067-user-manual\|ADR 0067]]: repository source, offline on device, agent skill |
 
