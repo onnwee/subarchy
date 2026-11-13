@@ -1,0 +1,15 @@
+# Weekly: try yesterday's Arch snapshot for the stable channel (ADR 0026).
+# A user unit on Kvant; see docs/package-publishing.md. The script runs from
+# its own clone of main, refreshed first, so a change to it on main takes
+# effect on the next run.
+[Unit]
+Description=Advance Subarchy's stable Arch snapshot after an install test
+After=network-online.target docker.service
+
+[Service]
+Type=oneshot
+Environment=WORK=%h/.cache/subarchy-snapshot
+ExecStartPre=/usr/bin/bash -c 'mkdir -p "$WORK" && if [ -d "$WORK/runner/.git" ]; then git -C "$WORK/runner" fetch -q origin && git -C "$WORK/runner" checkout -q --detach origin/main; else git clone -q https://github.com/subculture-collective/subarchy.git "$WORK/runner"; fi'
+ExecStart=/usr/bin/bash -c 'exec "$WORK/runner/tools/ci/advance-snapshot.sh"'
+TimeoutStartSec=4h
+Nice=10

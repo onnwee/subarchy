@@ -3,7 +3,7 @@ title: "Package publishing"
 type: guide
 status: active
 created: 2026-11-08
-updated: 2026-11-09
+updated: 2026-11-12
 tags: [guide, ci, packages]
 ---
 
@@ -106,6 +106,40 @@ are left intact; those must include that file and require signatures.
 
 The ISO's local unsigned bootstrap repository is separate. CI registry
 verification does not qualify a physical installation or an offline ISO.
+
+## Advancing the stable snapshot
+
+The stable channel takes Arch packages from one day of the Arch Linux
+Archive, the date in `default/pacman/snapshot` ([[0026-update-model|ADR 0026]]).
+Every Monday around 06:00 UTC, the user timer `subarchy-snapshot.timer` on
+Kvant runs `tools/ci/advance-snapshot.sh`. The script tries yesterday's
+date: in a privileged Arch container with KVM, capped at four CPUs and 8 GB
+inside `batch.slice`, it builds the ISO against that day and runs the
+guided offline VM install test. This is the same pair of scripts the iso
+workflow runs.
+
+- If it passes, the script pushes `chore/snapshot-YYYY-MM-DD` to GitHub and
+  opens a pull request. That pull request merges itself once the required
+  checks pass. The next main build then publishes packages built against
+  the new day.
+- If it fails, the script opens an issue titled "Stable snapshot … failed
+  the install test" with the end of the log, or comments on the open one,
+  and stable stays where it was. The full log is
+  `~/.cache/subarchy-snapshot/last-run.log` on Kvant.
+
+The units live in `tools/ci/systemd/`. The service refreshes its own clone
+of main before each run, so changes to the script take effect on the next
+run. To install or remove them:
+
+```bash
+cp tools/ci/systemd/subarchy-snapshot.{service,timer} ~/.config/systemd/user/
+systemctl --user daemon-reload && systemctl --user enable --now subarchy-snapshot.timer
+# remove: systemctl --user disable --now subarchy-snapshot.timer, then delete both files
+```
+
+To try a given day without pushing anything, run
+`SUBARCHY_SNAPSHOT_DATE=2026/11/11 SUBARCHY_SNAPSHOT_DRY=1 tools/ci/advance-snapshot.sh`.
+The edge channel needs none of this: it follows Arch's mirrors directly.
 
 ## Credential custody and rotation
 
