@@ -83,8 +83,7 @@ PanelWindow { // qmllint disable uncreatable-type
     id: place
   }
 
-  // After a wrong password PAM asks again; the field was disabled while it
-  // checked, so give it the focus back.
+  // PAM asks again after a wrong password: give the field the focus back.
   Connections {
     target: dialog.flow // qmllint disable unresolved-type
     function onIsResponseRequiredChanged() {

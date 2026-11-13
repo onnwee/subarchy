@@ -52,7 +52,9 @@ PanelWindow { // qmllint disable uncreatable-type
     if (sw.index < 0) {
       place.open()
       Hyprland.refreshToplevels()
-      sw.order = Model.order(Hyprland.toplevels.values.map(t => t.address), sw.history)
+      // Hyprland's focus history orders the windows the shell has not seen
+      // focused, such as everything open before it started.
+      sw.order = Model.order(Model.byFocus(Hyprland.toplevels.values), sw.history)
       sw.index = Model.start(sw.order, n)
     } else {
       sw.index = Model.next(sw.order, sw.index, n)

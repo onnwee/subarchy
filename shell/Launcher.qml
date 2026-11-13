@@ -85,7 +85,7 @@ PanelWindow { // qmllint disable uncreatable-type
   readonly property var results: launcher.open ? launcher.rows(launcher.query) : []
   readonly property var selected: launcher.results[launcher.index] || null
   readonly property bool previewing: launcher.selected !== null && ["file", "symbol", "ask", "clip"].indexOf(launcher.selected.kind) >= 0
-  readonly property bool home: launcher.query.trim() === ""
+  readonly property bool home: launcher.query.trim() === "" && !launcher.argFor
   readonly property int columns: 4
 
   visible: open
@@ -768,7 +768,7 @@ PanelWindow { // qmllint disable uncreatable-type
           x: Style.spacing
           y: Style.spacing
           width: parent.width - 2 * Style.spacing
-          text: launcher.pending ? "“subcult " + launcher.pending.name + "” is marked dangerous. Enter runs it; Escape goes back." : ""
+          text: launcher.pending ? "“" + (launcher.pending.kind === "command" ? "subcult " : "") + launcher.pending.name + "” is marked dangerous. Enter runs it; Escape goes back." : ""
           textFormat: Text.PlainText
           wrapMode: Text.Wrap
           color: Theme.warning

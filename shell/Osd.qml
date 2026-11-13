@@ -26,6 +26,8 @@ PanelWindow { // qmllint disable uncreatable-type
   property string backlight: ""
 
   readonly property var sink: Pipewire.defaultAudioSink
+  // A new sink's first reading is not a change of volume.
+  onSinkChanged: osd.lastVolume = null
 
   visible: kind !== ""
   screen: place.screen
@@ -91,11 +93,12 @@ PanelWindow { // qmllint disable uncreatable-type
   }
 
   // One write at a time: a press (or key repeat) while one runs is dropped.
+  // Without a backlight it does nothing: brightnessctl with no -d would
+  // change the first LED instead, such as Caps Lock's.
   function stepBrightness(change) {
-    if (brightnessSet.running)
+    if (brightnessSet.running || osd.backlight === "")
       return
-    const device = osd.backlight === "" ? [] : ["-d", osd.backlight.split("/").pop()]
-    brightnessSet.command = ["brightnessctl", "-q"].concat(device, ["set", change])
+    brightnessSet.command = ["brightnessctl", "-q", "-d", osd.backlight.split("/").pop(), "set", change]
     brightnessSet.running = true
   }
 

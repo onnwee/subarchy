@@ -42,6 +42,7 @@ PanelBase {
     Text {
       width: parent.width
       text: panel.name !== "" ? panel.name : (Weather.location ? Weather.location.lat + ", " + Weather.location.lon : "No location yet")
+      textFormat: Text.PlainText
       elide: Text.ElideRight
       color: Theme.text
       font.family: Style.uiFontFamily

@@ -34,4 +34,31 @@ TestCase {
     compare(Model.start(["a"], 1), 0)
     compare(Model.start(["a", "b"], -1), 1, "Alt-Shift-Tab starts on the oldest")
   }
+
+  function test_focusRank() {
+    verify(Model.focusRank({ focusHistoryID: 0 }) < Model.focusRank({ focusHistoryID: 1 }), "the focused window first")
+    verify(Model.focusRank({ focusHistoryID: 3 }) < Model.focusRank(undefined), "no IPC object: last")
+    verify(Model.focusRank({ focusHistoryID: 3 }) < Model.focusRank({ focusHistoryID: -1 }), "-1: last")
+    verify(Model.focusRank({ focusHistoryID: 3 }) < Model.focusRank({}), "missing: last")
+  }
+
+  function test_byFocus() {
+    const tops = [
+      { address: "a", lastIpcObject: { focusHistoryID: 1 } },
+      { address: "none" },
+      { address: "b", lastIpcObject: { focusHistoryID: 0 } },
+      { address: "c", lastIpcObject: { focusHistoryID: 2 } }
+    ]
+    compare(Model.byFocus(tops), ["b", "a", "c", "none"], "focused first, no IPC object last")
+    compare(tops[0].address, "a", "the input is not reordered")
+    compare(Model.byFocus([]), [])
+  }
+
+  // After a shell start the history is empty; Hyprland's focus history
+  // orders the clients, so Alt-Tab picks the window used before.
+  function test_startsOnPreviousWithEmptyHistory() {
+    const tops = [{ address: "a", lastIpcObject: { focusHistoryID: 1 } }, { address: "b", lastIpcObject: { focusHistoryID: 0 } }]
+    const order = Model.order(Model.byFocus(tops), [])
+    compare(order[Model.start(order, 1)], "a")
+  }
 }

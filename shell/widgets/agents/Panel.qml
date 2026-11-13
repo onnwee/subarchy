@@ -13,7 +13,6 @@ PanelBase {
   id: panel
 
   property var report: null
-  readonly property var agents: Model.shown(report, settings.agents)
   readonly property var all: report ? report.agents : []
 
   implicitWidth: 320

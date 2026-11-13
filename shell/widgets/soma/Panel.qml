@@ -40,6 +40,7 @@ PanelBase {
         Text {
           width: parent.width
           text: Soma.channel ? Soma.channel.title : "SomaFM"
+          textFormat: Text.PlainText
           elide: Text.ElideRight
           color: Theme.text
           font.family: Style.uiFontFamily
@@ -115,6 +116,7 @@ PanelBase {
           Text {
             width: parent.width
             text: row.modelData.title
+            textFormat: Text.PlainText
             elide: Text.ElideRight
             color: Theme.text
             font.family: Style.uiFontFamily

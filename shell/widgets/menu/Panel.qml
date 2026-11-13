@@ -33,6 +33,10 @@ PanelBase {
   readonly property var undoRecord: Model.parseJSON(undoFile.text)
   readonly property bool canUndo: Object.keys(undoRecord.values || {}).length > 0
   property string status: ""
+  // Apply and Undo emptied the pending values: the rows clear their fields.
+  signal cleared()
+  // The row with this id puts the keyboard in its field (IPC focusField, for tests).
+  signal focusRequested(string id)
 
   implicitWidth: 460
   implicitHeight: column.implicitHeight
@@ -81,6 +85,7 @@ PanelBase {
       runner.next()
     panel.pending = {}
     panel.errors = {}
+    panel.cleared()
     panel.status = "Applied " + Object.keys(p.undo).length + " change" + (Object.keys(p.undo).length === 1 ? "" : "s")
   }
 
@@ -159,6 +164,12 @@ PanelBase {
     function set(id: string, text: string): bool { return panel.set(id, text) }
     function apply(): void { panel.apply() }
     function undo(): void { panel.undo() }
+    function focusField(id: string): bool {
+      if (!panel.items.some(s => s.id === id))
+        return false
+      panel.focusRequested(id)
+      return true
+    }
     function state(): string {
       return JSON.stringify({ current: panel.current, pending: panel.pending, errors: panel.errors, preview: panel.previewLines, canUndo: panel.canUndo, status: panel.status })
     }
@@ -202,6 +213,19 @@ PanelBase {
             width: group.width
             height: 30
 
+            // Apply and Undo clear what was typed; typing an invalid value
+            // also empties pending, so pendingChanged cannot be the cue.
+            Connections {
+              target: panel
+              function onCleared() {
+                field.text = ""
+              }
+              function onFocusRequested(id: string) {
+                if (id === row.modelData.id)
+                  field.forceActiveFocus()
+              }
+            }
+
             Text {
               id: label
               anchors.left: parent.left
@@ -244,10 +268,10 @@ PanelBase {
                   color: Theme.muted
                   font: field.font
                 }
-                // A choice cycles with a click on the empty field.
+                // A choice cycles on every click and takes no typed input.
                 MouseArea {
                   anchors.fill: parent
-                  enabled: row.modelData.kind === "choice" && field.text === ""
+                  enabled: row.modelData.kind === "choice"
                   onClicked: {
                     const cs = row.modelData.choices || []
                     const now = String(row.changed ? panel.pending[row.modelData.id] : panel.current[row.modelData.id])

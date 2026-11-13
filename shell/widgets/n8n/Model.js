@@ -17,7 +17,7 @@ function serverUrl(settings) {
 // Exit codes of the fetch snippet.
 const EXIT_NO_KEY = 3
 const EXIT_UNREACHABLE = 4
-const EXIT_REFUSED = 5 // an HTTP error: the key was not accepted
+const EXIT_REFUSED = 5 // an HTTP error: wrong key or wrong URL
 
 function fetchCommand(server) {
   const script = [
@@ -82,7 +82,7 @@ function errorText(code) {
   if (code === EXIT_UNREACHABLE)
     return "The server did not answer"
   if (code === EXIT_REFUSED)
-    return "The server refused the key"
+    return "The server answered with an error (check the key and the URL)"
   return code === 0 ? "" : "The check failed (" + code + ")"
 }
 

@@ -678,6 +678,16 @@ st=$(status "$home1")
 [[ $(json 'd.get("panel")') == subcult.menu ]] || fail "the settings panel did not open: $st"
 for _ in $(seq 10); do [[ $(sfield current) == *"'font.ui': 'Inter'"* ]] && break; sleep 0.5; done
 [[ $(sfield current) == *"'font.ui': 'Inter'"* && $(sfield current) == *"'idle.lock': 7"* ]] || fail "settings current values: $(settings state)"
+# Typed key by key, a field keeps its text while the value is not valid yet:
+# a widget id is valid only once complete.
+if command -v wtype >/dev/null; then
+  [[ $(settings focusField bar.minimal) == true ]] || fail "the settings panel has no bar.minimal field"
+  sleep 0.5
+  # -s: let the virtual keyboard's keymap settle, or the first key is lost.
+  wtype -s 500 -d 20 'subcult.workspaces'
+  for _ in $(seq 10); do [[ $(sfield pending) == *"'bar.minimal': ['subcult.workspaces']"* ]] && break; sleep 0.3; done
+  [[ $(sfield pending) == *"'bar.minimal': ['subcult.workspaces']"* ]] || fail "a widget id typed key by key did not reach pending: $(settings state)"
+fi
 settings set bar.minimal "subcult.workspaces" >/dev/null
 settings set cursor.size 32 >/dev/null
 settings set idle.lock 5 >/dev/null

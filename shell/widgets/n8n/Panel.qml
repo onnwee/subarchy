@@ -15,6 +15,8 @@ PanelBase {
   property var report: null
   property int error: 0
   property bool checking: false
+  // The server changed while a check was running: its result is stale.
+  property bool recheck: false
 
   implicitWidth: 340
   implicitHeight: column.implicitHeight
@@ -28,15 +30,35 @@ PanelBase {
   }
 
   Component.onCompleted: check()
+  // A server typed in the field is checked at once, as the bar widget does;
+  // a check still running for the old server is redone when it ends.
+  onServerChanged: {
+    panel.report = null
+    panel.error = 0
+    if (query.running)
+      panel.recheck = true
+    else
+      panel.check()
+  }
 
   Process {
     id: query
     stdout: StdioCollector {
-      onStreamFinished: panel.report = Model.parse(text)
+      onStreamFinished: {
+        if (!panel.recheck)
+          panel.report = Model.parse(text)
+      }
     }
     onExited: (code) => {
-      panel.error = code
       panel.checking = false
+      if (panel.recheck) {
+        panel.recheck = false
+        panel.report = null
+        panel.error = 0
+        panel.check()
+        return
+      }
+      panel.error = code
     }
   }
 
@@ -86,7 +108,7 @@ PanelBase {
     Text {
       visible: panel.server === "" || panel.error === 3 || panel.error === 5
       width: parent.width
-      text: (panel.server === "" ? "Set the server above. " : panel.error === 5 ? "The server refused the key. " : "") + "The API key lives in the keyring: run\n" + Model.storeHint()
+      text: (panel.server === "" ? "Set the server above. " : panel.error === 5 ? "The server answered with an error (check the key and the URL). " : "") + "The API key lives in the keyring: run\n" + Model.storeHint()
       textFormat: Text.PlainText
       wrapMode: Text.Wrap
       color: Theme.subtext

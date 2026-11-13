@@ -8,10 +8,10 @@ import "NotificationsModel.js" as Model
 
 // The notification daemon (org.freedesktop.Notifications). Live
 // notifications pop up; plain records go to a history of 100, saved to
-// ~/.local/state/subcult/notifications.json. Do-not-disturb holds back
-// popups except critical ones. Text is stored and shown as capped plain
-// text only (no markup, no images): bodies and summaries come from any app
-// or web page.
+// $XDG_STATE_HOME/subcult/notifications.json (default ~/.local/state).
+// Do-not-disturb holds back popups except critical ones. Text is stored
+// and shown as capped plain text only (no markup, no images): bodies and
+// summaries come from any app or web page.
 //
 // Each popup has an entry here that owns its timer: the app's timeout
 // (within 2..30 s, 5 s by default, critical ones stay), paused while the
@@ -24,7 +24,7 @@ Singleton {
   readonly property int summaryCap: 200
   readonly property int bodyCap: 2000
   readonly property int appNameCap: 64
-  readonly property string historyPath: Quickshell.env("HOME") + "/.local/state/subcult/notifications.json"
+  readonly property string historyPath: (Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/subcult/notifications.json"
 
   property bool dnd: false
   property var history: []

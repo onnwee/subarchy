@@ -11,7 +11,7 @@ contract: [ADR 0068](../docs/decisions/0068-shell-plugin-api-v0.md).
 |---|---|
 | `shell.qml` | Root: one bar and one background per output, notifications, OSD, polkit dialog, Alt-Tab, launcher, the `subcult.shell` IPC handler |
 | `Commons/` | `Theme`, `Power`, `Config`, `Style`, `Clock`, `WidgetIndex` singletons; `WatchedFile`; pure models (`*Model.js`) and `Glyphs.js` |
-| `Ui/` | `BarWidget`, `PanelBase` and `WidgetTimer` (the widget contract), `IconButton`, `Tooltip`, `Popup` |
+| `Ui/` | `BarWidget`, `PanelBase` and `WidgetTimer` (the widget contract), `IconButton`, `Tooltip` |
 | `PanelOverlay.qml` | The click-out panel host: one widget's `Panel.qml` at a time, under the widget on its bar's output; a click outside or Escape closes it |
 | `widgets/<name>/` | One widget: `manifest.json`, `Widget.qml`, optional `Model.js`, `Panel.qml`, `tests/` |
 | `widgets/auto-wallpaper/` | Off by default: rotates the wallpaper on the manifest's schedule (30 min on AC, 60 on battery, paused on battery unless `onBattery` is set); add `subcult.auto-wallpaper` to the bar layout to turn it on |
@@ -56,7 +56,7 @@ off with `systemctl --user mask subcult-shell`, not `disable`.
 Keys reach the shell as Hyprland global shortcuts with the appid `subcult`:
 `default/hypr/bindings.lua` binds them with `hl.dsp.global("subcult:<name>")`
 and Quickshell `GlobalShortcut` objects receive them, so a key press starts
-no process. The names are `launcher-toggle`, `alias.<name>`, `altswitch-next`,
+no process. The names are `launcher-toggle`, `clipboard`, `alias.<name>`, `altswitch-next`,
 `altswitch-prev`, `altswitch-commit`, `brightness-up`, `brightness-down` and `capslock`; `hyprctl dispatch
 'hl.dsp.global("subcult:altswitch-next")'` sends one by hand.
 
