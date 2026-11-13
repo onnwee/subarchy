@@ -33,6 +33,12 @@ from vmlib import ANSI, OVMF_CODE, OVMF_VARS, Serial, colours_in, distinct_colou
 
 ROOT = Path(__file__).resolve().parents[2]
 VM = ROOT / "build" / "vm"
+CACHE = ROOT / "build" / "pkgcache"
+IDLE_BUDGET = ROOT / "tools" / "iso" / "idle-budget.json"
+USER = "tester"
+PASSWORD = "subarchy-test"
+PASSPHRASE = "subarchy-disk-test"
+WRONG_PASSPHRASE = "not-the-disk-passphrase"
 _SOCKETS: Path | None = None
 
 
@@ -44,30 +50,30 @@ def socket_path(name: str) -> Path:
         _SOCKETS = Path(tempfile.mkdtemp(prefix="subarchy-vm-", dir=os.environ.get("XDG_RUNTIME_DIR")))
         atexit.register(shutil.rmtree, _SOCKETS, True)
     return _SOCKETS / name
-CACHE = ROOT / "build" / "pkgcache"
-IDLE_BUDGET = ROOT / "tools" / "iso" / "idle-budget.json"
 
 
 def budget_ok(key: str, value: int, slack: int = 0) -> bool:
     """A measurement against its budget in tools/iso/idle-budget.json (ADR 0054).
 
-    The first run records its measurement as the budget (null in the file),
-    written to build/vm/budgets.json to copy over; later runs fail above the
-    larger of budget × 1.2 and budget + slack.
+    A key that is null in the budget file passes (the first run; the value
+    is in build/vm/budgets.json, see record_budgets); otherwise the check
+    fails above the larger of budget × 1.2 and budget + slack.
     """
-    import json
     if value < 0:
         return False
-    data = json.loads(IDLE_BUDGET.read_text())
-    budget = data.get(key)
+    budget = json.loads(IDLE_BUDGET.read_text()).get(key)
     if budget is None:
         print(f"install-test: no budget for {key} yet; measured {value}, record it in {IDLE_BUDGET}")
-        recorded = VM / "budgets.json"
-        seen = json.loads(recorded.read_text()) if recorded.exists() else {}
-        seen[key] = value
-        recorded.write_text(json.dumps(seen) + "\n")
         return True
     return value <= max(budget * 1.2, budget + slack)
+
+
+def record_budgets(measured: dict[str, int]) -> None:
+    """Write this run's budgeted measurements to build/vm/budgets.json,
+    budgeted or not, so a budget can be set or raised from the file.
+    A failed measurement (negative) is left out."""
+    kept = {key: value for key, value in measured.items() if value >= 0}
+    (VM / "budgets.json").write_text(json.dumps(kept) + "\n")
 
 
 def idle_ok(switches: int) -> bool:
@@ -119,14 +125,12 @@ def quietest_minute(sample, attempts: int = 3) -> tuple[int, int]:
         if idle_ok(best[0]):
             break
     return best
-USER = "tester"
-PASSWORD = "subarchy-test"
-PASSPHRASE = "subarchy-disk-test"
-WRONG_PASSPHRASE = "not-the-disk-passphrase"
 
 
 def write_config() -> None:
     VM.mkdir(parents=True, exist_ok=True)
+    # This run's measurements only (record_budgets).
+    (VM / "budgets.json").unlink(missing_ok=True)
     (VM / "user-password").write_text(PASSWORD + "\n")
     (VM / "luks-passphrase").write_text(PASSPHRASE + "\n")
     (VM / "install.conf").write_text(
@@ -514,7 +518,7 @@ def app_colours(serial: Serial, qmp: Path) -> dict:
 
     def show(name: str, command: str, colour: str, unthemed: tuple) -> None:
         windows[name] = serial.run(
-            "hyprctl -i 0 dispatch 'hl.dsp.focus({ workspace = \"9\" })' >/dev/null;"
+            f"hyprctl -i 0 dispatch {shlex.quote(workspace_dispatch(9))} >/dev/null;"
             f" hyprctl -i 0 dispatch 'hl.dsp.exec_cmd(\"{command}\")' >/dev/null;"
             " for i in $(seq 30); do [ \"$(hyprctl -i 0 activeworkspace | grep -o 'windows: [0-9]*')\" != 'windows: 0' ] && break; sleep 1; done;"
             " sleep 3; hyprctl -i 0 dispatch 'hl.dsp.window.fullscreen({ mode = \"fullscreen\" })' >/dev/null; sleep 2;"
@@ -523,7 +527,7 @@ def app_colours(serial: Serial, qmp: Path) -> dict:
         screendump(qmp, png)
         themed[name] = has_colour(png, colour) and not any(has_colour(png, c) for c in unthemed)
         serial.run("hyprctl -i 0 dispatch 'hl.dsp.window.close()' >/dev/null; sleep 2;"
-                   " hyprctl -i 0 dispatch 'hl.dsp.focus({ workspace = \"1\" })' >/dev/null")
+                   f" hyprctl -i 0 dispatch {shlex.quote(workspace_dispatch(1))} >/dev/null")
 
     show("gtk", f"python3 {gtk}", BASE, UNTHEMED["gtk"])
     if kde:
@@ -607,6 +611,37 @@ def widget_hidden(status: str, widget: str) -> bool:
         return any(widget in ids for ids in loaded.values()) and not any(widget in ids for ids in shown.values())
     except (IndexError, ValueError, KeyError, TypeError, AttributeError):
         return False
+
+
+def full_bar_ok(status: str, layout: Path = ROOT / "default" / "shell" / "bar.json") -> bool:
+    """Some output's bar loaded every widget of the shipped full layout.
+
+    The machine layer may add widgets but not remove them, so the loaded
+    ids are a superset of the default layout's left, center and right.
+    """
+    try:
+        sections = json.loads(layout.read_text())["layout"]
+        want = {i for s in ("left", "center", "right") for i in sections[s]}
+        loaded = json.loads(status.strip().splitlines()[-1])["loaded"]
+        return bool(want) and any(want <= set(ids) for ids in loaded.values())
+    except (IndexError, ValueError, KeyError, TypeError, AttributeError):
+        return False
+
+
+def bar_layers_ok(output: str) -> bool:
+    """One bar layer per monitor: the layer count, then the monitor count."""
+    fields = output.split()
+    return len(fields) == 2 and all(f.isdigit() for f in fields) and fields[0] == fields[1] != "0"
+
+
+def workspace_dispatch(workspace: int) -> str:
+    """The Lua expression the bar's workspace click sends, built from
+    shell/Commons/HyprDispatch.js so the test follows the shell."""
+    js = (ROOT / "shell" / "Commons" / "HyprDispatch.js").read_text()
+    m = re.search(r"function workspace\(id\) \{\s*return '([^']*)' \+ Number\(id\) \+ '([^']*)'", js)
+    if m is None:
+        raise ValueError("HyprDispatch.js workspace() changed shape; update workspace_dispatch")
+    return m.group(1) + str(int(workspace)) + m.group(2)
 
 
 def wait_for(serial: Serial, command: str, seconds: int = 60) -> str:
@@ -893,7 +928,8 @@ def boot(disk: Path, vars_file: Path) -> bool:
         # The serial login has no WAYLAND_DISPLAY; the shell runs on the session's.
         shell_ipc = "quickshell ipc --any-display -p /usr/share/subcult/shell call subcult.shell status"
         results["shell_status"] = serial.run(shell_ipc)
-        results["layers"] = serial.run("hyprctl -i 0 layers | grep -c 'namespace: subcult-bar'")
+        results["layers"] = serial.run(
+            "hyprctl -i 0 layers | grep -c 'namespace: subcult-bar'; hyprctl -i 0 monitors | grep -c '^Monitor '")
         # Exercise the generated commands twice from each state. Merely
         # accepting dispatch is insufficient: an unknown Lua field toggles.
         dpms_probe = r"""
@@ -991,11 +1027,11 @@ finally:
         # Qt/KDE and GTK apps in Pult's colours (issue #77).
         results["app_colours"] = app_colours(serial, qmp)
         # The shell's Hyprland dispatches on a Lua config: the workspace click
-        # expression (as shell/Commons/HyprDispatch.js writes it).
+        # expression, taken from shell/Commons/HyprDispatch.js.
         results["dispatch"] = serial.run(
-            "hyprctl -i 0 dispatch 'hl.dsp.focus({ workspace = \"3\" })' >/dev/null; sleep 1;"
+            f"hyprctl -i 0 dispatch {shlex.quote(workspace_dispatch(3))} >/dev/null; sleep 1;"
             " hyprctl -i 0 activeworkspace -j | grep -o '\"id\": [0-9]*' | head -1;"
-            " hyprctl -i 0 dispatch 'hl.dsp.focus({ workspace = \"1\" })' >/dev/null; sleep 1")
+            f" hyprctl -i 0 dispatch {shlex.quote(workspace_dispatch(1))} >/dev/null; sleep 1")
         # Alt-Tab between two terminals. First through the global shortcuts
         # real keys take, next then commit at once as a quick tap sends them:
         # from the second (focused) terminal it must land on exactly the first
@@ -1085,6 +1121,7 @@ finally:
         stop(proc, log)
 
     r = results
+    record_budgets({"shell_main_thread_wakeups_per_minute": r["idle"], "session_rss_kb": r["mem"], "packages": r["packages"]})
     state = r["state"].strip().splitlines()[-1] if r["state"].strip() else ""
     checks = {
         "os-release ID=subarchy": "ID=subarchy" in r["osr"],
@@ -1189,8 +1226,8 @@ finally:
         "shell log has no QML errors": r["shell_errors"].strip() == "",
         "shell log read covers all five shell starts": r["shell_starts"].strip().isdigit()
         and int(r["shell_starts"].strip()) >= 5,
-        "one bar layer per monitor": r["layers"].strip() == "1",
-        "full bar with widgets": '"subcult.clock"' in r["shell_status"] and '"subcult.menu"' in r["shell_status"],
+        "one bar layer per monitor": bar_layers_ok(r["layers"]),
+        "full bar with every widget of the default layout": full_bar_ok(r["shell_status"]),
         "HT3 widget loaded and hidden without headphones": widget_hidden(r["shell_status"], "subcult.ht3"),
         "bar colours (base, line, text)": {"100B19", "1F1830", "F0ECE4"} <= r["bar_colours"],
         "font roles": r["fonts"].split("\n")[:3] == ["JetBrainsMono Nerd Font", "JetBrainsMono Nerd Font Propo", "Libertinus Mono"],

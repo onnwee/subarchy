@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 """The install test's check functions that depend on the machine it runs on."""
 
+import contextlib
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
 import re
+import shutil
 import sys
+import tempfile
 import threading
 import unittest
 
@@ -339,6 +343,71 @@ class WidgetHidden(unittest.TestCase):
         self.assertFalse(install_test.widget_hidden("", "subcult.ht3"))
         self.assertFalse(install_test.widget_hidden("not json", "subcult.ht3"))
         self.assertFalse(install_test.widget_hidden('{"loaded": []}', "subcult.ht3"))
+
+
+class FullBar(unittest.TestCase):
+    layout = install_test.ROOT / "default" / "shell" / "bar.json"
+
+    def full(self) -> list[str]:
+        sections = json.loads(self.layout.read_text())["layout"]
+        return sections["left"] + sections["center"] + sections["right"]
+
+    def status(self, **loaded) -> str:
+        return "noise\n" + json.dumps({"loaded": loaded})
+
+    def test_every_default_widget_on_one_bar(self):
+        self.assertTrue(install_test.full_bar_ok(self.status(**{"Virtual-1": self.full()})))
+        # A machine layer may add widgets; a second output may be minimal.
+        extra = self.full() + ["subcult.power-profile"]
+        self.assertTrue(install_test.full_bar_ok(self.status(**{"Virtual-1": extra, "Virtual-2": ["subcult.workspaces"]})))
+
+    def test_a_missing_widget_or_unreadable_status_fails(self):
+        self.assertFalse(install_test.full_bar_ok(self.status(**{"Virtual-1": self.full()[1:]})))
+        self.assertFalse(install_test.full_bar_ok(self.status(**{"Virtual-1": ["subcult.menu", "subcult.clock"]})))
+        self.assertFalse(install_test.full_bar_ok(self.status()))
+        self.assertFalse(install_test.full_bar_ok(""))
+        self.assertFalse(install_test.full_bar_ok("not json"))
+
+
+class BarLayers(unittest.TestCase):
+    def test_one_layer_per_monitor(self):
+        self.assertTrue(install_test.bar_layers_ok("1\n1\n"))
+        self.assertTrue(install_test.bar_layers_ok("2\n2"))
+
+    def test_mismatch_none_or_unreadable_fails(self):
+        self.assertFalse(install_test.bar_layers_ok("1\n2\n"))
+        self.assertFalse(install_test.bar_layers_ok("0\n0\n"))
+        self.assertFalse(install_test.bar_layers_ok("1\n"))
+        self.assertFalse(install_test.bar_layers_ok("x\n1\n"))
+
+
+class WorkspaceDispatch(unittest.TestCase):
+    def test_built_from_the_shell_module(self):
+        self.assertEqual(install_test.workspace_dispatch(3), 'hl.dsp.focus({ workspace = "3" })')
+
+
+class Budgets(unittest.TestCase):
+    def setUp(self):
+        self.dir = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.dir)
+        self.vm, self.budget = install_test.VM, install_test.IDLE_BUDGET
+        install_test.VM, install_test.IDLE_BUDGET = self.dir, self.dir / "idle-budget.json"
+        self.addCleanup(setattr, install_test, "VM", self.vm)
+        self.addCleanup(setattr, install_test, "IDLE_BUDGET", self.budget)
+        install_test.IDLE_BUDGET.write_text('{"packages": 100, "session_rss_kb": null}\n')
+
+    def test_over_budget_fails_and_an_unbudgeted_key_passes(self):
+        self.assertTrue(install_test.budget_ok("packages", 120, 5))
+        self.assertFalse(install_test.budget_ok("packages", 121, 5))
+        self.assertTrue(install_test.budget_ok("packages", 108, 8))
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertTrue(install_test.budget_ok("session_rss_kb", 4000))
+        self.assertFalse(install_test.budget_ok("packages", -1))
+
+    def test_every_measurement_is_recorded_budgeted_or_not(self):
+        (self.dir / "budgets.json").write_text('{"stale": 1}\n')
+        install_test.record_budgets({"packages": 121, "session_rss_kb": 4000, "shell_main_thread_wakeups_per_minute": -1})
+        self.assertEqual(json.loads((self.dir / "budgets.json").read_text()), {"packages": 121, "session_rss_kb": 4000})
 
 
 if __name__ == "__main__":
