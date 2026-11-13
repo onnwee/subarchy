@@ -140,6 +140,11 @@ func (p Part) Closed() string {
 
 // String renders the partition for the picker.
 func (p Part) String() string {
+	return fmt.Sprintf("%s  %s  %s", p.Path, humanSmall(p.Size), p.Kind())
+}
+
+// Kind is what the partition holds and its label: `vfat "EFI"`.
+func (p Part) Kind() string {
 	what := p.FSType
 	switch what {
 	case "":
@@ -152,7 +157,7 @@ func (p Part) String() string {
 	if p.Label != "" {
 		what += ` "` + p.Label + `"`
 	}
-	return fmt.Sprintf("%s  %s  %s", p.Path, humanSmall(p.Size), what)
+	return what
 }
 
 // humanSmall is HumanSize with MB for partitions under a gigabyte.

@@ -78,13 +78,25 @@ func TestScreensInstall(t *testing.T) {
 		"<no>", // erase? no -> back to the summary
 		"", "", // summary: yes; erase: yes
 	)
-	// Rows carry the partition summary; pick them by prefix.
+	// Rows carry the partition summary; pick them by prefix. Each question
+	// is noted with the heading on the screen when it was asked.
 	real := s.gum
+	headings := map[string]string{}
 	s.gum = func(args ...string) (string, int) {
+		for _, q := range []string{"Time zone", "Computer name> ", "User name> ", "Password> "} {
+			if strings.Contains(strings.Join(args, "\x00"), "\x00"+q) {
+				text := out.String()
+				if i := strings.LastIndex(text, "Let's set up your "); i >= 0 {
+					headings[q] = text[i : i+strings.Index(text[i:], ".")+1]
+				} else {
+					headings[q] = ""
+				}
+			}
+		}
 		out, code := real(args...)
 		if p, ok := strings.CutPrefix(out, "<row:"); ok {
-			for _, a := range args {
-				if strings.HasPrefix(a, strings.TrimSuffix(p, ">")) {
+			for i, a := range args {
+				if strings.HasPrefix(a, strings.TrimSuffix(p, ">")) && (i == 0 || args[i-1] != "--selected") {
 					return a, code
 				}
 			}
@@ -126,12 +138,43 @@ func TestScreensInstall(t *testing.T) {
 	if !strings.Contains(callText(g), "--header Keyboard layout --padding 0 0 0 26 --cursor.foreground 2 --header.foreground 5 --selected.foreground 2 --selected German") {
 		t.Error("choosing German did not preselect the German keyboard")
 	}
-	if !strings.Contains(callText(g), "[vfat EFI, ntfs Windows]") || !strings.Contains(callText(g), "[empty]") {
+	if !strings.Contains(callText(g), `[vfat "EFI", ntfs "Windows"]`) || !strings.Contains(callText(g), "[empty]") {
 		t.Errorf("disk rows lack the partition summary: %s", callText(g))
+	}
+	// Back from the summary, the disk list opens on the disk chosen, its
+	// commas escaped for gum.
+	if !strings.Contains(callText(g), `--selected /dev/vda  26 GB  unknown model  [vfat "EFI"\, ntfs "Windows"]`) {
+		t.Errorf("disk list did not reopen on the chosen disk: %s", callText(g))
+	}
+	// The secrets are not shown, nor their lengths.
+	if strings.Contains(out.String(), "****") || !strings.Contains(ansi.ReplaceAllString(out.String(), ""), "Disk passphrase  set (hidden)") {
+		t.Error("summary shows the password's length")
+	}
+	// The time zone and computer name are machine questions; the user
+	// name and password are the account's.
+	for q, want := range map[string]string{"Time zone": "machine", "Computer name> ": "machine", "User name> ": "account", "Password> ": "account"} {
+		if headings[q] != "Let's set up your "+want+"." {
+			t.Errorf("%q asked under %q", q, headings[q])
+		}
+	}
+	// confirm's questions and buttons start at the page's left edge.
+	if !strings.Contains(callText(g), "--prompt.margin 0 --selected.margin 0 2 0 0 --unselected.margin 0 2 0 0") {
+		t.Error("confirm keeps gum's left margins")
 	}
 	// The erase question defaults to no.
 	if !strings.Contains(callText(g), "Erase /dev/vda and install Subarchy? --affirmative Yes, erase and install --negative No, go back --default=false") {
 		t.Error("erase confirm is not default-no")
+	}
+}
+
+// gum drops a backslash in front of any character in --selected, so a
+// backslash in a row is doubled as well as a comma escaped.
+func TestChooseSelectedEscapes(t *testing.T) {
+	s, g, _ := testScreens(t, "")
+	row := `/dev/vda  1 TB  Model\x20One  [vfat, ext4]`
+	s.choose("Install disk", []string{row}, row)
+	if want := `--selected /dev/vda  1 TB  Model\\x20One  [vfat\, ext4]`; !strings.Contains(callText(g), want) {
+		t.Errorf("gum call lacks %q: %s", want, callText(g))
 	}
 }
 
@@ -197,6 +240,16 @@ func TestZones(t *testing.T) {
 	if got := strings.Join(zones(dir), " "); got != "America/Argentina/Salta Europe/Berlin UTC" {
 		t.Errorf("zones = %q", got)
 	}
+	// With tzdata's tables, the old alias names are left out.
+	for _, f := range []string{"America/Chicago", "Europe/Oslo", "US/Central", "Canada/Eastern", "Chile/EasterIsland"} {
+		os.MkdirAll(filepath.Dir(filepath.Join(dir, f)), 0o755)
+		os.WriteFile(filepath.Join(dir, f), nil, 0o644)
+	}
+	os.WriteFile(filepath.Join(dir, "zone.tab"), []byte("# comment\nNO\t+5955+01045\tEurope/Oslo\nUS\t+415100-0873900\tAmerica/Chicago\tCentral (most areas)\n"), 0o644)
+	os.WriteFile(filepath.Join(dir, "zone1970.tab"), []byte("DE,DK,NO\t+5230+01322\tEurope/Berlin\nXX\t+0000+00000\tNowhere/Gone\n"), 0o644)
+	if got := strings.Join(zones(dir), " "); got != "America/Chicago Europe/Berlin Europe/Oslo UTC" {
+		t.Errorf("zones from the tables = %q", got)
+	}
 }
 
 func TestProgressOf(t *testing.T) {
@@ -208,14 +261,47 @@ func TestProgressOf(t *testing.T) {
 		{"", 0, "Starting"},
 		{">> partitioning /dev/vda\n>> encrypting /dev/vda2 (LUKS2)\n", 15, "Encrypting the disk"},
 		{">> installing packages\nresolving...\n", 50, "Installing packages"},
-		{">> installing packages\nPackages (4) a-1  b-2\n\ninstalling a...\ninstalling b...\n", 375, "Installing packages (2 of 4)"},
+		// Before the first package unpacks, what pacman is doing, not "0 of 4".
+		{">> installing packages\nPackages (4) a-1  b-2\n", 50, "Getting the packages ready"},
+		// pacman's download lines start with a space.
+		{">> installing packages\nPackages (4) a-1  b-2\n:: Retrieving packages...\n a-1 downloading...\n b-2 downloading...\n", 60, "Downloading packages"},
+		{">> installing packages\nPackages (4) a-1  b-2\n:: Retrieving packages...\nchecking keyring...\nchecking package integrity...\n", 75, "Checking the packages"},
+		{">> installing packages\nPackages (4) a-1  b-2\n\ninstalling a...\ninstalling b...\n", 275, "Installing packages (2 of 4)"},
+		// pacstrap's second try counts afresh.
+		{">> installing packages\nPackages (4) a\ninstalling a...\ninstalling b...\nPackages (4) a\nchecking keyring...\n", 72, "Checking the package keys"},
+		// The hooks after the last package keep the bar moving.
+		{">> installing packages\nPackages (2) a b\ninstalling a...\ninstalling b...\n:: Running post-transaction hooks...\n", 450, "Setting up packages"},
+		{">> installing packages\nPackages (2) a b\ninstalling a...\ninstalling b...\n:: Running post-transaction hooks...\n" +
+			"( 1/10) Creating system user accounts...\n(10/10) Signing EFI binaries...\n", 860, "Setting up packages (10 of 10)"},
+		{">> installing packages\nPackages (2) a b\ninstalling a...\ninstalling b...\n:: Running post-transaction hooks...\n" +
+			"(1/2) Install DKMS modules\n==> dkms install nvidia -k lts\n==> dkms install nvidia -k zen\n", 511, "Setting up packages (1 of 2)"},
+		// With dkms in the package list, its hook takes most of the bar's
+		// share for the hooks, and the quick hooks after it the rest.
+		{">> installing packages\nPackages (3) dkms-3.2-1  nvidia-open-dkms-580-1  b\ninstalling a...\n:: Running post-transaction hooks...\n" +
+			"(1/3) Install DKMS modules\n==> dkms install nvidia -k lts\n==> dkms install nvidia -k zen\n", 561, "Setting up packages (1 of 3)"},
+		{">> installing packages\nPackages (3) dkms-3.2-1  nvidia-open-dkms-580-1  b\ninstalling a...\n:: Running post-transaction hooks...\n" +
+			"(1/3) Install DKMS modules\n==> dkms install nvidia -k lts\n(2/3) Updating fontconfig cache...\n", 861, "Setting up packages (2 of 3)"},
 		{">> installing packages\nPackages (2) a b\ninstalling a...\ninstalling b...\n>> configuring the system\n" +
-			strings.Repeat("x\n", 180), 830, "Configuring the system"},
+			strings.Repeat("x\n", 180), 918, "Configuring the system"},
 		{">> configuring the system\n" + strings.Repeat("x\n", 5000) + ">> finishing\n", 990, "Finishing"},
 	} {
-		if at, label := progressOf(c.log); at != c.at || label != c.label {
+		if at, _, label := progressOf(c.log); at != c.at || label != c.label {
 			t.Errorf("progressOf(%.40q) = %d, %q; want %d, %q", c.log, at, label, c.at, c.label)
 		}
+	}
+	// A hook that prints nothing: the bar creeps towards the end of its
+	// share, and never reaches it.
+	log := ">> installing packages\nPackages (2) dkms-3.2-1  b\ninstalling a...\n:: Running post-transaction hooks...\n(1/2) Install DKMS modules\n"
+	at, until, _ := progressOf(log)
+	if until <= at {
+		t.Fatalf("progressOf: at %d, until %d", at, until)
+	}
+	if creep(at, until, 0) != at || creep(at, until, creepTime) != at+(until-at)/2 || creep(at, until, time.Hour) >= until {
+		t.Errorf("creep(%d, %d): %d, %d, %d", at, until, creep(at, until, 0), creep(at, until, creepTime), creep(at, until, time.Hour))
+	}
+	// Unpacking moves per package; it does not creep.
+	if at, until, _ := progressOf(">> installing packages\nPackages (2) a b\ninstalling a...\n"); until != at {
+		t.Errorf("unpacking at %d creeps to %d", at, until)
 	}
 	if bar(500, 10) != "█████░░░░░" {
 		t.Errorf("bar = %q", bar(500, 10))
@@ -230,10 +316,19 @@ func TestScreensInstallEnd(t *testing.T) {
 		e := testEnv(t)
 		e.installLog = filepath.Join(t.TempDir(), "install.log")
 		os.WriteFile(e.installLog, []byte("old run\n>> finishing\n"), 0o644)
-		e.logTail = func(int) []string { return []string{"error: target not found: nope"} }
+		e.logTail = func(int) []string {
+			return []string{"error: target not found: nope", "\x1b[1;33mWARNING\x1b[0m: colour"}
+		}
 		var did []string
-		e.action = func(what string) error { did = append(did, what); return nil }
 		s, g, out := testScreens(t, append(append([]string{}, answers...), extra...)...)
+		e.action = func(what string) error {
+			// Rebooting and powering off hand over a console in its own colours.
+			if what != "log" && !strings.HasSuffix(out.String(), "\x1b[0m\x1b]R\x1b[2J\x1b[H") {
+				t.Errorf("%s with the installer's palette still loaded", what)
+			}
+			did = append(did, what)
+			return nil
+		}
 		real := g.run
 		s.gum = func(args ...string) (string, int) {
 			o, code := real(args...)
@@ -281,10 +376,13 @@ func TestScreensInstallEnd(t *testing.T) {
 	if strings.Contains(out, "Finishing") {
 		t.Error("progress read an earlier run's log")
 	}
-	code, did, out = setupRun([]string{"View the full log", "Open a shell"}, true)
-	if code != 1 || len(did) != 1 || did[0] != "log" || !strings.Contains(out, "installation stopped: exit status 1") ||
-		!strings.Contains(out, "target not found: nope") {
+	code, did, out = setupRun([]string{"View the full log", "Power off", "Open a shell"}, true)
+	if code != 1 || len(did) != 2 || did[0] != "log" || did[1] != "poweroff" || !strings.Contains(out, "installation stopped: exit status 1") ||
+		!strings.Contains(out, "target not found: nope") || !strings.Contains(out, "WARNING: colour") || strings.Contains(out, "[1;33m") {
 		t.Errorf("failure: exit %d, did %v:\n%s", code, did, out)
+	}
+	if !strings.HasSuffix(out, "\x1b]R\x1b[2J\x1b[H") {
+		t.Error("the shell gets the installer's palette")
 	}
 }
 
@@ -329,7 +427,8 @@ func TestInstallViewLayout(t *testing.T) {
 		t.Errorf("mark not centred: top %d", blank)
 	}
 	out.Reset()
-	s.drawProgress(420, "x", time.Second, "A tip.", []string{"line one", "bad\x1b[2Jline"}, true)
+	long := "Boot0004* UEFI SSD " + strings.Repeat("HD(1,GPT,7d992193)/", 10) + `\EFI\Boot\BootX64.efi`
+	s.drawProgress(420, "x", time.Second, "A tip.", []string{"line one", "bad\x1b[2Jline", "\x1b[1;33mWARNING:\x1b[0m order \x1b]0;title\x07changed", long}, true)
 	lines = plain()
 	find(lines, "Press L to hide the log")
 	find(lines, "line one")
@@ -338,8 +437,16 @@ func TestInstallViewLayout(t *testing.T) {
 	}
 	find(lines, "┌─ install log ─")
 	find(lines, "└─")
-	if strings.Contains(out.String(), "bad\x1b[2J") {
+	if strings.Contains(out.String(), "bad\x1b[2J") || strings.Contains(out.String(), "[2J") || strings.Contains(out.String(), "[1;33m") {
 		t.Error("control bytes from the log reached the screen")
+	}
+	find(lines, "│ badline ")
+	find(lines, "│ WARNING: order changed ")
+	// A line too long for the box is cut with an ellipsis, and the box's
+	// right edge stays in line.
+	cut, first := find(lines, "Boot0004*"), find(lines, "line one")
+	if !strings.HasSuffix(cut, "… │") || len([]rune(cut)) != len([]rune(first)) {
+		t.Errorf("long log line = %q", cut)
 	}
 	if got := tail("a\n\n  \nb\rc\r\nd\n", 2); len(got) != 2 || got[0] != "c\r" && got[0] != "c" || got[1] != "d" {
 		t.Errorf("tail = %q", got)
@@ -361,6 +468,12 @@ func TestInstallViewLayout(t *testing.T) {
 	}
 	if centre("ab", 6) != "  ab" || centre("abcdef", 4) != "abcdef" {
 		t.Error("centre")
+	}
+	// Every tip fits the column, so it is centred under the bar.
+	for _, tip := range tips {
+		if n := len([]rune("Tip: " + tip)); n > logoWidth() || strings.Contains(tip, "`") {
+			t.Errorf("tip %q: %d columns (the column is %d), or Markdown", tip, n, logoWidth())
+		}
 	}
 }
 

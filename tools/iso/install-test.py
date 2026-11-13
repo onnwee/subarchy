@@ -161,6 +161,23 @@ def console_text(serial: Serial, vt: int) -> str:
     return serial.run(f"tr -s ' ' </dev/vcs{vt}; echo")
 
 
+def console_rows(serial: Serial, vt: int) -> list[str]:
+    """The virtual console's rows as they are, leading spaces kept.
+
+    /dev/vcs holds one byte a cell, and the logo's glyph bytes can pair up
+    as UTF-8, so fold has to count bytes.
+    """
+    return serial.run(f"LC_ALL=C fold -w \"$(stty -F /dev/tty{vt} size | cut -d' ' -f2)\" /dev/vcs{vt}; echo").splitlines()
+
+
+def column_of(rows: list[str], text: str) -> int:
+    """The column a row containing text starts its text at, or -1."""
+    for row in rows:
+        if text in row:
+            return len(row) - len(row.lstrip(" "))
+    return -1
+
+
 def wait_console(serial: Serial, vt: int, text: str, timeout: float) -> str:
     deadline = time.monotonic() + timeout
     while True:
@@ -195,7 +212,9 @@ def guided(serial: Serial, qmp: Path, timeout: float) -> str:
         ("Press Return to start the install", ["ret"]),
         ("Language", ["ret"]),  # English (US) is first
         ("Keyboard layout", ["ret"]),  # English (US) is selected
-        ("Time zone", "chicago"),
+        # Three letters put America/Chicago first: typed text matches
+        # canonical zone names as a substring, not fuzzily.
+        ("Time zone", "chi"),
         ("America/Chicago", ["ret"]),
         ("User name>", USER + "\n"),
         ("Password>", PASSWORD + "\n"),
@@ -209,9 +228,20 @@ def guided(serial: Serial, qmp: Path, timeout: float) -> str:
         ("Does this look right", ["ret"]),
         ("Erase /dev/vda and install Subarchy?", ["y"]),
     ]
+    headings = True
     for shown, keys in steps:
-        wait_console(serial, 2, shown, 60)
+        screen = wait_console(serial, 2, shown, 60)
         time.sleep(0.5)
+        # The time zone and the computer name are machine questions.
+        if shown in ("Time zone", "Computer name>") and "Let's set up your machine." not in screen:
+            headings = False
+        if shown == "Does this look right":
+            # The question starts in the summary's column, not one right of it.
+            rows = console_rows(serial, 2)
+            left, question = column_of(rows, "Here is what you chose."), column_of(rows, "Does this look right?")
+            aligned = left >= 0 and left == question
+            print(f"install-test: {'ok  ' if aligned else 'FAIL'} the summary's question lines up with its heading ({left}, {question})")
+            headings = headings and aligned
         if shown in ("Press Return to start the install", "Install disk"):
             screendump(qmp, VM / f"installer-{'greeter' if shown.startswith('Press') else 'disk'}.png")
         if isinstance(keys, str):
@@ -220,12 +250,17 @@ def guided(serial: Serial, qmp: Path, timeout: float) -> str:
             send_keys(qmp, *keys)
     # The install view replaces the raw output: a bar, a percentage and
     # the package count.
+    print(f"install-test: {'ok  ' if headings else 'FAIL'} time zone and computer name are under the machine heading")
     deadline = time.monotonic() + timeout
-    screen, view, log_window = "", False, False
+    screen, view, log_window, hooks, zero = "", False, False, False, False
     while time.monotonic() < deadline:
         screen = console_text(serial, 2)
         if "Installed Subarchy in" in screen or "installation stopped" in screen:
             break
+        # After the last package, pacman's hooks are counted, not "N of N";
+        # before the first, pacman's step is named, not "0 of N".
+        hooks = hooks or bool(re.search(r"Setting up packages \(\d+ of \d+\)", screen))
+        zero = zero or bool(re.search(r"Installing packages \(0 of \d+\)", screen))
         if not view and re.search(r"Installing packages \(\d+ of \d+\)", screen) and "%" in screen and "Tip: " in screen:
             view = True
             screendump(qmp, VM / "installer.png")
@@ -240,8 +275,11 @@ def guided(serial: Serial, qmp: Path, timeout: float) -> str:
         time.sleep(3)
     print(f"install-test: {'ok  ' if view else 'FAIL'} install view shows a percentage, the package count and a tip")
     print(f"install-test: {'ok  ' if log_window else 'FAIL'} L shows the log window in the install view")
+    print(f"install-test: {'ok  ' if hooks and not zero else 'FAIL'} install view counts pacman's hooks and never shows 0 packages")
     screendump(qmp, VM / "installer-end.png")
-    done = "Installed Subarchy in" in screen and view and log_window and autostart and font
+    zone = "TIMEZONE=America/Chicago" in serial.run("cat /run/subarchy-setup/install.conf")
+    print(f"install-test: {'ok  ' if zone else 'FAIL'} typing chi picked America/Chicago")
+    done = "Installed Subarchy in" in screen and view and log_window and autostart and font and headings and hooks and not zero and zone
     if "Installed Subarchy in" in screen:
         send_keys(qmp, "n")  # no reboot: the test powers the VM off
     log = serial.run("cat /var/log/subarchy-install.log", timeout=60)

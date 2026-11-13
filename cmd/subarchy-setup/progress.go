@@ -18,11 +18,61 @@ import (
 var (
 	packagesTotal = regexp.MustCompile(`(?m)^Packages \((\d+)\)`)
 	installingPkg = regexp.MustCompile(`(?m)^installing [^ ]+\.\.\.`)
+	// pacman prints " linux-zen-7.2.14... downloading..." with a space in front.
+	downloading = regexp.MustCompile(`(?m)^ ?[^ ]+ downloading\.\.\.`)
+	// pacman's hooks run after the last package unpacks, numbered
+	// "( 3/29) Updating linux initcpios...". DKMS modules and the kernel
+	// images are built here, which can take minutes.
+	hooksStart = regexp.MustCompile(`(?m)^:: Running post-transaction hooks`)
+	hookStep   = regexp.MustCompile(`(?m)^\( *(\d+)/(\d+)\) (.*)$`)
 )
 
+// slowHooks are the pacman hooks that build things: the DKMS modules
+// and the boot images. Each takes slowShare times a quick hook's share
+// of the bar, when the package that ships it is in the package list.
+var slowHooks = []struct {
+	pkg  *regexp.Regexp
+	desc string
+}{
+	{regexp.MustCompile(`\sdkms-\d`), "Install DKMS modules"},
+	{regexp.MustCompile(`\smkinitcpio-\d`), "Updating linux initcpios"},
+}
+
+const slowShare = 20
+
+// creepTime is how long a hook can print nothing before the bar has
+// crept half way to the next hook's share; it never gets there.
+const creepTime = time.Minute
+
+// The ">> installing packages" phase in per mille of the whole bar:
+// pacman's checks up to unpackAt, unpacking up to hooksAt, and its hooks
+// up to the next phase.
+const (
+	unpackAt = 100
+	hooksAt  = 450
+)
+
+// pacmanSteps are what pacman prints between the package list and the
+// first unpacked package, in order, with the bar's position and what the
+// screen says meanwhile. Checking the packages can take half a minute
+// from a USB stick.
+var pacmanSteps = []struct {
+	line  string
+	at    int
+	label string
+}{
+	{":: Retrieving packages...", 50, "Downloading packages"},
+	{"checking keyring...", 72, "Checking the package keys"},
+	{"checking package integrity...", 75, "Checking the packages"},
+	{"loading package files...", 85, "Reading the packages"},
+	{"checking for file conflicts...", 90, "Checking for file conflicts"},
+	{"checking available disk space...", 95, "Checking the free space"},
+	{":: Processing package changes...", unpackAt, "Installing packages"},
+}
+
 // configureLines is about how many lines the configure phase logs
-// (hooks, the two kernel images); it only paces the bar.
-const configureLines = 360
+// (mostly Pult's theme files); it only paces the bar.
+const configureLines = 600
 
 // phases are subarchy-install's ">> " lines, in order, with the bar's
 // position when each starts (per mille) and what the screen calls it.
@@ -36,22 +86,23 @@ var phases = []struct {
 	{">> creating btrfs subvolumes", 35, "Creating the filesystem"},
 	{">> writing boot configuration", 40, "Preparing the boot setup"},
 	{">> installing packages", 50, "Installing packages"},
-	{">> configuring the system", 700, "Configuring the system"},
+	{">> configuring the system", 900, "Configuring the system"},
 	{">> configuring snapper", 960, "Setting up snapshots"},
 	{">> checking the boot entries", 975, "Checking the boot entries"},
 	{">> finishing", 990, "Finishing"},
 }
 
 // progressOf reads the install log and returns how far the install is,
-// in per mille below 1000, and the current phase's label.
-func progressOf(log string) (int, string) {
-	at, label := 0, "Starting"
+// in per mille below 1000, how far the bar may creep while the log says
+// nothing new (see creep), and the current phase's label.
+func progressOf(log string) (at, until int, label string) {
+	at, label = 0, "Starting"
 	for i, p := range phases {
 		idx := strings.Index(log, p.marker)
 		if idx < 0 {
 			continue
 		}
-		at, label = p.start, p.label
+		at, until, label = p.start, 0, p.label
 		next := 1000
 		if i+1 < len(phases) {
 			next = phases[i+1].start
@@ -59,17 +110,7 @@ func progressOf(log string) (int, string) {
 		rest := log[idx:]
 		switch p.marker {
 		case ">> installing packages":
-			if m := packagesTotal.FindStringSubmatch(rest); m != nil {
-				total, _ := strconv.Atoi(m[1])
-				done := len(installingPkg.FindAllStringIndex(rest, -1))
-				if total > 0 {
-					if done > total {
-						done = total
-					}
-					at = p.start + (next-p.start)*done/total
-					label = fmt.Sprintf("Installing packages (%d of %d)", done, total)
-				}
-			}
+			at, until, label = packagesProgress(rest, at, label, next)
 		case ">> configuring the system":
 			lines := strings.Count(rest, "\n")
 			if lines > configureLines {
@@ -81,22 +122,142 @@ func progressOf(log string) (int, string) {
 	if at > 999 {
 		at = 999
 	}
-	return at, label
+	return at, max(at, until), label
 }
 
-// tips rotate under the bar while the install runs.
+// creep moves the bar from at towards until while the log has said
+// nothing new for quiet: a DKMS build can print nothing for minutes.
+func creep(at, until int, quiet time.Duration) int {
+	if until <= at || quiet <= 0 {
+		return at
+	}
+	return at + int(int64(until-at)*int64(quiet)/int64(quiet+creepTime))
+}
+
+// packagesProgress follows pacstrap's output: pacman's checks, then the
+// packages it unpacks, then its hooks, which end at next. When pacstrap
+// runs a second time, the last run counts.
+func packagesProgress(log string, at int, label string, next int) (int, int, string) {
+	found := packagesTotal.FindAllStringSubmatchIndex(log, -1)
+	if found == nil {
+		return at, 0, label
+	}
+	last := found[len(found)-1]
+	total, _ := strconv.Atoi(log[last[2]:last[3]])
+	if total <= 0 {
+		return at, 0, label
+	}
+	rest := log[last[0]:]
+	if h := hooksStart.FindAllStringIndex(rest, -1); h != nil {
+		list, _, _ := strings.Cut(rest, "\n")
+		at, until, label := hooksProgress(rest[h[len(h)-1][1]:], list, next)
+		return at, until, label
+	}
+	if done := len(installingPkg.FindAllStringIndex(rest, -1)); done > 0 {
+		if done > total {
+			done = total
+		}
+		return unpackAt + (hooksAt-unpackAt)*done/total, 0, fmt.Sprintf("Installing packages (%d of %d)", done, total)
+	}
+	// Before the first package unpacks: what pacman is doing.
+	at, label = 50, "Getting the packages ready"
+	for _, step := range pacmanSteps {
+		if strings.Contains(rest, "\n"+step.line) {
+			at, label = step.at, step.label
+		}
+	}
+	if label == "Downloading packages" {
+		got := len(downloading.FindAllStringIndex(rest, -1))
+		if got > total {
+			got = total
+		}
+		at += 20 * got / total
+	}
+	return at, 0, label
+}
+
+// hooksProgress places pacman's hooks between hooksAt and next. A quick
+// hook gets one share, a slow one whose package is in the package list
+// (list) slowShare; each line a hook prints moves the bar a little
+// closer to the next hook's share, and until is where that share ends.
+func hooksProgress(hooks, list string, next int) (at, until int, label string) {
+	steps := hookStep.FindAllStringSubmatchIndex(hooks, -1)
+	if steps == nil {
+		return hooksAt, 0, "Setting up packages"
+	}
+	step := steps[len(steps)-1]
+	n, _ := strconv.Atoi(hooks[step[2]:step[3]])
+	m, _ := strconv.Atoi(hooks[step[4]:step[5]])
+	if n < 1 || n > m {
+		return hooksAt, 0, "Setting up packages"
+	}
+	share := func(desc string) int {
+		for _, h := range slowHooks {
+			if strings.HasPrefix(desc, h.desc) && h.pkg.MatchString(list) {
+				return slowShare
+			}
+		}
+		return 1
+	}
+	shares := m
+	for _, h := range slowHooks {
+		if h.pkg.MatchString(list) {
+			shares += slowShare - 1
+		}
+	}
+	done := n - 1
+	for _, s := range steps[:len(steps)-1] {
+		done += share(hooks[s[6]:s[7]]) - 1
+	}
+	this := share(hooks[step[6]:step[7]])
+	if done+this > shares {
+		shares = done + this // a slow hook from a package not in the list
+	}
+	lines := strings.Count(hooks[step[1]:], "\n")
+	span := next - hooksAt
+	at = hooksAt + span*(done*(lines+8)+this*lines)/(shares*(lines+8))
+	until = hooksAt + span*(done+this)/shares
+	return at, until, fmt.Sprintf("Setting up packages (%d of %d)", n, m)
+}
+
+// tips rotate under the bar while the install runs. Each fits the
+// column under the mark with "Tip: " in front.
 var tips = []string{
 	"Super + Return opens a terminal.",
 	"Super + Space opens the launcher.",
 	"Super + W closes the window in front.",
-	"Super + 1 to 9 switches workspaces; add Shift to move a window there.",
+	"Super + 1 to 9 switches workspaces; Shift moves a window.",
 	"Super + F makes a window full screen.",
 	"Super + S shows the scratchpad workspace.",
 	"Super + Ctrl + V opens the clipboard history.",
-	"`subcult update` updates the system and takes a snapshot first.",
+	"subcult update takes a snapshot, then updates the system.",
 	"A bad update can be undone: pick a snapshot in the boot menu.",
-	"`pult apply <theme>` recolours the shell, the lock and the windows.",
-	"The disk passphrase is asked at every boot; `subcult disk tpm` can let the TPM unlock it.",
+	"pult apply <theme> recolours the shell, lock and windows.",
+	"subcult disk tpm lets the TPM unlock the disk at boot.",
+}
+
+// escapes are terminal escape sequences in the log: CSI (colours),
+// OSC, and the two-byte ones.
+var escapes = regexp.MustCompile("\x1b(\\[[0-?]*[ -/]*[@-~]|\\][^\x07\x1b]*(\x07|\x1b\\\\)?|[@-_])")
+
+// plainLine is a log line as text the screen can show: no escape
+// sequences or control bytes, which would colour the screen or move the
+// cursor.
+func plainLine(l string) string {
+	return strings.Map(func(r rune) rune {
+		if r < 0x20 || r == 0x7f {
+			return -1
+		}
+		return r
+	}, escapes.ReplaceAllString(l, ""))
+}
+
+// clip cuts a line to width columns, with an ellipsis where it was cut.
+func clip(l string, width int) string {
+	if r := []rune(l); len(r) > width && width > 0 {
+		return string(r[:width-1]) + "…"
+	}
+	return l
 }
 
 func bar(permille, width int) string {
@@ -203,15 +364,7 @@ func (s *screens) drawProgress(permille int, label string, took time.Duration, t
 		for i := 0; i < logRows; i++ {
 			l := ""
 			if i < len(logLines) {
-				l = strings.Map(func(r rune) rune {
-					if r < 0x20 || r == 0x7f {
-						return -1 // control bytes would move the cursor
-					}
-					return r
-				}, logLines[i])
-				if r := []rune(l); len(r) > inner {
-					l = string(r[:inner])
-				}
+				l = clip(plainLine(logLines[i]), inner)
 			}
 			fmt.Fprintf(s.out, "%*s%s│ %s%-*s %s│\x1b[0m\x1b[K\n", left, "", edge, sgr(colMuted), inner, l, edge)
 		}
@@ -259,6 +412,7 @@ func (s *screens) progress(logPath string) (stop func()) {
 	go func() {
 		defer close(finished)
 		best, showLog := 0, false
+		seen, since := -1, time.Now() // where the log last put the bar, and when
 		tick := time.NewTicker(200 * time.Millisecond)
 		defer tick.Stop()
 		// One more frame is drawn after stop is called, so the view always
@@ -274,7 +428,11 @@ func (s *screens) progress(logPath string) (stop func()) {
 			if k := next(); k == 'l' || k == 'L' {
 				showLog = !showLog
 			}
-			at, label := progressOf(log)
+			at, until, label := progressOf(log)
+			if at != seen {
+				seen, since = at, time.Now()
+			}
+			at = creep(at, until, time.Since(since))
 			if at < best {
 				at = best // the bar never goes back
 			}
@@ -305,12 +463,15 @@ func (s *screens) finishedScreen(e env, took time.Duration) {
 	if e.action == nil {
 		return
 	}
-	if yes, err := s.confirm("Reboot now?", "Reboot now", "Stay in the live system", true); err == nil && yes {
+	yes, err := s.confirm("Reboot now?", "Reboot now", "Stay in the live system", true)
+	// The console's own colours back, whichever way: the shutdown
+	// messages or the live shell come next.
+	restoreConsole(s.out)
+	if err == nil && yes {
 		if err := e.action("reboot"); err != nil {
 			s.notice(capital(err.Error()))
 		}
 	}
-	fmt.Fprint(s.out, "\x1b[2J\x1b[H")
 }
 
 // failedScreen is the last screen of a failed install. It returns when
@@ -325,10 +486,7 @@ func (s *screens) failedScreen(e env, cause error) {
 		if e.logTail != nil {
 			width := s.width() - s.pad() - 2
 			for _, l := range e.logTail(10) {
-				if r := []rune(l); len(r) > width && width > 0 {
-					l = string(r[:width])
-				}
-				s.line(colMuted, l)
+				s.line(colMuted, clip(plainLine(l), width))
 			}
 			fmt.Fprintln(s.out)
 		}
@@ -339,8 +497,11 @@ func (s *screens) failedScreen(e env, cause error) {
 		}
 		what, err := s.choose("What would you like to do?", []string{view, shell, reboot, off}, shell)
 		if err != nil || what == shell {
-			fmt.Fprint(s.out, "\x1b[2J\x1b[H")
+			restoreConsole(s.out)
 			return
+		}
+		if what != view {
+			restoreConsole(s.out)
 		}
 		if err := e.action(actions[what]); err != nil {
 			s.notice(capital(err.Error()))

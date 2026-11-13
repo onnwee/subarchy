@@ -162,7 +162,9 @@ func (s *screens) choose(header string, options []string, selected string) (stri
 	args := []string{"choose", "--height", "12", "--header", header, "--padding", s.padding(),
 		"--cursor.foreground", colAcid, "--header.foreground", colViolet, "--selected.foreground", colAcid}
 	if selected != "" {
-		args = append(args, "--selected", selected)
+		// gum splits --selected on commas and drops a backslash in front of
+		// any character, so a comma or backslash in the row is escaped.
+		args = append(args, "--selected", strings.NewReplacer(`\`, `\\`, ",", `\,`).Replace(selected))
 	}
 	out, code := s.gum(append(args, options...)...)
 	if code != 0 || out == "" {
@@ -171,6 +173,9 @@ func (s *screens) choose(header string, options []string, selected string) (stri
 	return out, nil
 }
 
+// filter is a list to search by typing. What is typed matches as a
+// substring, in list order, not fuzzily, so "chi" lists America/Chicago
+// first rather than a name that merely starts with a C.
 func (s *screens) filter(header string, options []string, first string) (string, error) {
 	// The likely answer goes first, so Return alone accepts it.
 	list := []string{first}
@@ -181,7 +186,7 @@ func (s *screens) filter(header string, options []string, first string) (string,
 	}
 	args := []string{"filter", "--height", "12", "--header", header, "--padding", s.padding(),
 		"--placeholder", "Type to search", "--indicator.foreground", colAcid, "--header.foreground", colViolet,
-		"--match.foreground", colAcid}
+		"--match.foreground", colAcid, "--no-fuzzy"}
 	out, code := s.gum(append(args, list...)...)
 	if code != 0 || out == "" {
 		return "", errBack
@@ -207,8 +212,11 @@ func (s *screens) input(prompt, placeholder, value string, password bool) (strin
 
 // confirm returns the answer; Escape counts as back.
 func (s *screens) confirm(question, yes, no string, def bool) (bool, error) {
+	// gum's own margins would put the question and the first button a
+	// column right of the page's text; the buttons keep their gap.
 	out, code := s.gum("confirm", question, "--affirmative", yes, "--negative", no,
 		fmt.Sprintf("--default=%t", def), "--padding", s.padding(),
+		"--prompt.margin", "0", "--selected.margin", "0 2 0 0", "--unselected.margin", "0 2 0 0",
 		"--prompt.foreground", colPaper, "--selected.background", colAcid, "--selected.foreground", "0",
 		"--unselected.foreground", colPaper, "--unselected.background", "0")
 	_ = out
@@ -292,8 +300,36 @@ func (s *screens) language(a *setup.Answers, e env) error {
 	return nil
 }
 
-// zones lists the time zones under dir ("Europe/Berlin"), sorted.
+// zones lists the time zones under dir ("Europe/Berlin"), sorted. The
+// list comes from tzdata's zone.tab and zone1970.tab, which name each
+// country's zones by a city, so the old alias names (US/Central,
+// Canada/Eastern) stay out of it. Without those tables, every zone file
+// counts.
 func zones(dir string) []string {
+	seen := map[string]bool{"UTC": true}
+	for _, table := range []string{"zone.tab", "zone1970.tab"} {
+		data, err := os.ReadFile(filepath.Join(dir, table))
+		if err != nil {
+			continue
+		}
+		for _, line := range strings.Split(string(data), "\n") {
+			f := strings.Fields(line)
+			if len(f) < 3 || strings.HasPrefix(f[0], "#") {
+				continue
+			}
+			if info, err := os.Stat(filepath.Join(dir, f[2])); err == nil && !info.IsDir() {
+				seen[f[2]] = true
+			}
+		}
+	}
+	if len(seen) > 1 {
+		out := make([]string, 0, len(seen))
+		for z := range seen {
+			out = append(out, z)
+		}
+		sort.Strings(out)
+		return out
+	}
 	var out []string
 	filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
@@ -448,8 +484,10 @@ func (s *screens) askSecret(title, prompt, placeholder string) (string, error) {
 }
 
 func (s *screens) account(a *setup.Answers, e env, separate *bool) error {
-	const title = "Let's set up your account."
-	s.page(title)
+	// The time zone and the computer name belong to the machine, not the
+	// account; they keep their places in the order.
+	const title, machine = "Let's set up your account.", "Let's set up your machine."
+	s.page(machine)
 	tz, err := s.filter("Time zone", zones(e.zoneinfo), a.Timezone)
 	if err != nil {
 		return err
@@ -461,7 +499,7 @@ func (s *screens) account(a *setup.Answers, e env, separate *bool) error {
 	if a.Password, err = s.askSecret(title, "Password", "At least 8 characters"); err != nil {
 		return err
 	}
-	if a.Hostname, err = s.ask(title, "Computer name", "Letters, digits and dashes", a.Hostname, setup.ValidHostname); err != nil {
+	if a.Hostname, err = s.ask(machine, "Computer name", "Letters, digits and dashes", a.Hostname, setup.ValidHostname); err != nil {
 		return err
 	}
 	s.page("The disk is always encrypted.", "Its passphrase unlocks the disk at every boot. Losing it loses the data.")
@@ -481,13 +519,16 @@ func (s *screens) account(a *setup.Answers, e env, separate *bool) error {
 
 func (s *screens) summary(a setup.Answers, separate bool) error {
 	s.page("Here is what you chose.")
+	// Secrets show as set, never as one star per character: the length
+	// would be on the screen.
+	const hidden = "set (hidden)"
 	passphrase := "same as the password"
 	if separate {
-		passphrase = strings.Repeat("*", len(a.Passphrase))
+		passphrase = hidden
 	}
 	for _, row := range [][2]string{
 		{"Language", a.Locale}, {"Keyboard", a.Keymap}, {"Time zone", a.Timezone}, {"User name", a.Username},
-		{"Password", strings.Repeat("*", len(a.Password))}, {"Computer name", a.Hostname}, {"Disk passphrase", passphrase},
+		{"Password", hidden}, {"Computer name", a.Hostname}, {"Disk passphrase", passphrase},
 		{"Install disk", a.Disk + " (erased)"},
 	} {
 		fmt.Fprintf(s.out, "%*s\x1b[3%sm%-17s\x1b[3%sm%s\x1b[0m\n", s.pad(), "", colViolet, row[0], colPaper, row[1])
@@ -503,20 +544,28 @@ func (s *screens) summary(a setup.Answers, separate bool) error {
 // disk picks the target, shows what is on it and offers the read-only
 // browse. The summary and the erase question come after it.
 func (s *screens) disk(a *setup.Answers, e env, disks []setup.Disk) error {
+	// The list opens on the disk looked at last, or chosen before the
+	// summary; on the first visit, at the top.
+	last := a.Disk
 	for {
 		s.page("Where should Subarchy go?", "The disk you choose is erased. The others are not touched.")
 		var rows []string
+		selected := ""
 		byRow := map[string]setup.Disk{}
 		for _, d := range disks {
 			row := d.String() + "  [" + contents(d) + "]"
 			rows = append(rows, row)
 			byRow[row] = d
+			if d.Path == last {
+				selected = row
+			}
 		}
-		row, err := s.choose("Install disk", rows, "")
+		row, err := s.choose("Install disk", rows, selected)
 		if err != nil {
 			return err
 		}
 		d := byRow[row]
+		last = d.Path
 		const install, look, other = "Install here", "Browse it read-only first", "Choose a different disk"
 		for {
 			var body []string
@@ -581,19 +630,9 @@ func contents(d setup.Disk) string {
 	}
 	var kinds []string
 	for _, p := range d.Parts {
-		kind := p.FSType
-		switch kind {
-		case "":
-			continue
-		case "crypto_LUKS":
-			kind = "encrypted"
-		case "BitLocker":
-			kind = "BitLocker"
+		if p.FSType != "" {
+			kinds = append(kinds, p.Kind()) // as the disk's own screen writes it
 		}
-		if p.Label != "" {
-			kind += " " + p.Label
-		}
-		kinds = append(kinds, kind)
 	}
 	if len(kinds) == 0 {
 		return fmt.Sprintf("%d partitions", len(d.Parts))
@@ -672,6 +711,13 @@ func prepareConsole(out io.Writer) {
 		fmt.Fprintf(out, "\x1b]P%X%s", i, palette[i])
 	}
 	fmt.Fprint(out, "\x1b[37;40m\x1b[2J\x1b[H")
+}
+
+// restoreConsole undoes prepareConsole before the installer hands the
+// console on: the default attributes, the console's default palette
+// (Linux's "ESC ] R"), and a clear screen.
+func restoreConsole(out io.Writer) {
+	fmt.Fprint(out, "\x1b[0m\x1b]R\x1b[2J\x1b[H")
 }
 
 func realScreens() *screens {

@@ -104,6 +104,17 @@ Decision map item R2. Accepted 2026-11-06.
   and a rotating tip replace the raw output, which stays in the log. A
   language screen sets the installed system's locale; the installer's own
   text stays English.
+- 2026-11-12: after the first install on real hardware. The bar names
+  pacman's checks before the first package unpacks, and counts pacman's
+  hooks after the last one ("Setting up packages (n of m)"), where the
+  DKMS modules and kernel images are built; the configuring phase starts
+  at 90%. The log window drops terminal escape sequences and marks a cut
+  line with an ellipsis. The time zone and computer name come under the
+  machine heading, the time zone list holds tzdata's zone.tab and
+  zone1970.tab names (no US/Central-style aliases) and matches typed text
+  as a substring, and the summary shows each secret as "set (hidden)".
+  Before a reboot or power-off the installer restores the console's
+  palette and lowers the kernel's console log level.
 - 2026-11-12: before the read-only browse opens, a page lists the
   partitions it opened, the ones it left closed and why, and how to come
   back: q, or Esc then 0, since F10 is a media key on many laptops. `mc`
