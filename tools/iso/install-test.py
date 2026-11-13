@@ -572,6 +572,17 @@ def screensaver_ok(output: str) -> bool:
     return len(fields) == 2 and fields[0] == "exec" and fields[1].isdigit() and int(fields[1]) > 0
 
 
+def widget_hidden(status: str, widget: str) -> bool:
+    """The shell status (its last JSON line) has widget loaded on some
+    output and shown on none: a hardware widget with its hardware absent."""
+    try:
+        doc = json.loads(status.strip().splitlines()[-1])
+        loaded, shown = doc["loaded"], doc["shown"]
+        return any(widget in ids for ids in loaded.values()) and not any(widget in ids for ids in shown.values())
+    except (IndexError, ValueError, KeyError, TypeError, AttributeError):
+        return False
+
+
 def wait_for(serial: Serial, command: str, seconds: int = 60) -> str:
     """Poll a shell condition in the guest for up to `seconds`."""
     return serial.run(
@@ -1101,6 +1112,7 @@ finally:
         "shell log has no QML errors": r["shell_errors"].strip() == "",
         "one bar layer per monitor": r["layers"].strip() == "1",
         "full bar with widgets": '"subcult.clock"' in r["shell_status"] and '"subcult.menu"' in r["shell_status"],
+        "HT3 widget loaded and hidden without headphones": widget_hidden(r["shell_status"], "subcult.ht3"),
         "bar colours (base, line, text)": {"100B19", "1F1830", "F0ECE4"} <= r["bar_colours"],
         "font roles": r["fonts"].split("\n")[:3] == ["JetBrainsMono Nerd Font", "JetBrainsMono Nerd Font Propo", "Libertinus Mono"],
         "GTK icons and cursor": "'Papirus-Dark'" in r["gtk"] and "'subcult-cursor'" in r["gtk"],

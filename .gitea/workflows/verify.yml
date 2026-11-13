@@ -86,6 +86,7 @@ jobs:
           tools/test/lock-focus-test.sh
           python3 -m unittest discover -s tools/bluetooth -p 'test_*.py' -v
           tools/test/bluetooth-panel-test.sh build/bluetooth-preview
+          tools/test/ht3-panel-test.sh build/ht3-preview
           tools/test/battery-panel-test.sh build/battery-preview
           for scale in 1 1.6 2; do
             QT_SCALE_FACTOR="$scale" tools/test/greeter-test.sh "build/greeter-preview/scale-$scale"

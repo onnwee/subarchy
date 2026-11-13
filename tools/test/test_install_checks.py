@@ -263,5 +263,19 @@ class GreeterSession(unittest.TestCase):
         self.assertFalse(install_test.screensaver_ok("exec\n"))
 
 
+class WidgetHidden(unittest.TestCase):
+    def test_loaded_but_not_shown(self):
+        status = '{"loaded": {"Virtual-1": ["subcult.menu", "subcult.ht3"]}, "shown": {"Virtual-1": ["subcult.menu"]}}'
+        self.assertTrue(install_test.widget_hidden("noise\n" + status + "\n", "subcult.ht3"))
+
+    def test_shown_missing_or_unreadable_fails(self):
+        shown = '{"loaded": {"Virtual-1": ["subcult.ht3"]}, "shown": {"Virtual-1": ["subcult.ht3"]}}'
+        self.assertFalse(install_test.widget_hidden(shown, "subcult.ht3"))
+        self.assertFalse(install_test.widget_hidden('{"loaded": {"Virtual-1": []}, "shown": {}}', "subcult.ht3"))
+        self.assertFalse(install_test.widget_hidden("", "subcult.ht3"))
+        self.assertFalse(install_test.widget_hidden("not json", "subcult.ht3"))
+        self.assertFalse(install_test.widget_hidden('{"loaded": []}', "subcult.ht3"))
+
+
 if __name__ == "__main__":
     unittest.main()

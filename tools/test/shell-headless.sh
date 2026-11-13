@@ -82,6 +82,9 @@ if [ "$1 $2" = "thermal watch" ]; then
   printf '{"zone":0,"type":"SKIN","trip":3,"kind":"hot","tripTemp":82050,"temp":83000,"direction":"up"}\n'
   exec sleep infinity
 fi
+# The HT3 panel's helper must not start here: there is no BlueZ, so no
+# HT3 is connected. A start leaves a note for the test.
+if [ "$1 $2" = "ht3 watch" ]; then echo "$*" >>"$HOME/ht3-started"; exit 1; fi
 # The agents' usage, as the command reads it from local files.
 if [ "$1 $2 $3" = "agent usage --json" ]; then
   cat <<'JSON'
@@ -634,6 +637,9 @@ kill -0 "$other_inhibitor" || fail "the unrelated inhibitor was stopped"
 st=$(status "$home1")
 [[ $(json '"subcult.media" in d["loaded"]["HEADLESS-1"] and "subcult.media" not in d["shown"]["HEADLESS-1"]') == True ]] ||
   fail "the media widget is not loaded-and-hidden without a player: $st"
+# So does the HT3 headphones widget without a connected HT3 (no BlueZ here).
+[[ $(json '"subcult.ht3" in d["loaded"]["HEADLESS-1"] and "subcult.ht3" not in d["shown"]["HEADLESS-1"]') == True ]] ||
+  fail "the HT3 widget is not loaded-and-hidden without headphones: $st"
 
 # The settings panel (SUBCULT mark): current values, a preview of pending
 # changes, apply to the user files only, undo the last apply.
@@ -685,15 +691,17 @@ for _ in $(seq 20); do
   sleep 0.5
 done
 [[ $(calendar) == *"Headless standup 10:00" ]] || fail "the calendar widget did not pick up the written cache: $(calendar)"
-# The network and Bluetooth panels open without NetworkManager or BlueZ
-# (nothing to list, nothing scans) and close like any panel.
-for w in network bluetooth; do
+# The network, Bluetooth and HT3 panels open without NetworkManager or
+# BlueZ (nothing to list, nothing scans, no HT3 helper) and close like any
+# panel.
+for w in network bluetooth ht3; do
   HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel "subcult.$w" >/dev/null
   sleep 1
   st=$(status "$home1")
   [[ $(json 'd.get("panel")') == "subcult.$w" ]] || fail "the $w panel did not open: $st"
   HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
 done
+[[ ! -e "$home1/ht3-started" ]] || fail "the HT3 helper started without headphones: $(cat "$home1/ht3-started")"
 # Motion: the setting file is read live and the compositor is told. With no
 # battery here, `auto` means on.
 st=$(status "$home1")

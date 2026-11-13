@@ -1,0 +1,8 @@
+{
+  "id": "subcult.ht3",
+  "name": "HT3 headphones",
+  "version": "1.0.0",
+  "api": 0,
+  "kind": "bar-widget",
+  "panel": true
+}

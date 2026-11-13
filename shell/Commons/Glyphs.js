@@ -90,3 +90,4 @@ const radio = "\u{F043B}" // radio
 const play = "\u{F040A}" // play
 const stop = "\u{F04DB}" // stop
 const n8n = "\u{F062C}" // source_branch
+const headphones = "\u{F02CB}" // headphones

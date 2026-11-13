@@ -8,3 +8,4 @@ singleton Weather 1.0 Weather.qml
 singleton DellPower 1.0 DellPower.qml
 singleton BluetoothPairing 1.0 BluetoothPairing.qml
 singleton MediaChoice 1.0 MediaChoice.qml
+singleton Ht3 1.0 Ht3.qml

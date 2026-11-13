@@ -88,6 +88,7 @@ for path in etc/xdg/nvim/sysinit.vim usr/share/icons/default/index.theme; do
 done
 for path in usr/share/subcult/shell/shell.qml usr/share/subcult/shell/Bar.qml usr/share/subcult/shell/Commons/qmldir \
   usr/share/subcult/shell/widgets/index.json usr/lib/systemd/user/subcult-shell.service \
+  usr/share/subcult/shell/widgets/ht3/Panel.qml usr/share/subcult/shell/services/Ht3.qml usr/bin/subcult-ht3 \
   usr/lib/systemd/user/graphical-session.target.wants/subcult-shell.service; do
   grep -qx "$path" <<<"$list" || fail "missing $path"
 done
