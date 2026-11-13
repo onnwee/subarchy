@@ -20,7 +20,6 @@ PENDING = {
     "pipewire-control-center",
     "disktree-bin",
     "tuxguitar",
-    "claude-code",
 }
 
 

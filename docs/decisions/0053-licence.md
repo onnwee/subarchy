@@ -66,6 +66,7 @@ public.
 
   | Package | Licence | Note |
   |---|---|---|
+  | `claude-code` | Proprietary (Anthropic) | Anthropic's terms page, shipped as the package licence, says preinstalling Claude Code in a product requires agreeing to its Commercial Terms of Service, shipping the binary unmodified and keeping its sign-in methods. The package runs the binary as published, through a wrapper that only sets `DISABLE_UPDATES` and `DISABLE_INSTALLATION_CHECKS`. The registry is public, so adding the package redistributes the binary: the owner accepted those terms before it was added |
   | `proton-mail-bin`, `proton-pass-bin`, `proton-pass-cli`, `proton-authenticator-bin` | GPL-3.0-or-later | `proton-pass-bin` also bundles Electron (MIT) |
   | `proton-drive-cli-bin`, `cliamp`, `ttfx`, `voxtype-bin` | MIT | `voxtype-bin` ships no models; the user downloads one |
   | `localsend-bin` | Apache-2.0 |  |

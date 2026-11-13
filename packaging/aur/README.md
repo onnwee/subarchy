@@ -16,6 +16,7 @@ sha256 in the PKGBUILD.
 | `ufw-docker` | 251123-1 | `76e18ac8` | Docker behind ufw (ADR 0025 list); a shell script from the GitHub tag, b2sum-pinned |
 | `nvidia-580xx-utils` | 580.196.07-2 (AUR: -1; see the PKGBUILD) | `0b45a070` | the 580xx driver branch for Maxwell to Pascal GPUs (ADR 0006): `nvidia-580xx-utils`, `nvidia-580xx-dkms` and `opencl-nvidia-580xx` from NVIDIA's `.run` installer, sha256-pinned, with the AUR's two kernel patches |
 | `lib32-nvidia-580xx-utils` | 580.196.07-1 | `489271ac` | the 32-bit libraries of the same branch (Steam, Wine): `lib32-nvidia-580xx-utils` and `lib32-opencl-nvidia-580xx` |
+| `claude-code` | 2.1.323-1 | `e04b815a` | the default coding agent (app list, ADR 0047): Anthropic's binary from downloads.claude.ai, sha256 as in its release manifest. Proprietary; the terms page is kept here as `legal-and-compliance.md` (the AUR fetches it unpinned). 154 MB, uploaded through the origin |
 | `cliamp` | 2.4.1-1 | `544da13c` | the terminal music player (app list); Go build from the GitHub tag |
 | `localsend-bin` | 1.18.2-2 | `f35ec0d6` | LocalSend file sharing (ADR 0056); upstream's `.deb`, Apache-2.0. `fuse2` dropped from depends: it is for the AppImage |
 | `voxtype-bin` | 1.2.1-1 | `eb385fd6` | dictation (ADR 0056); upstream's binaries, MIT. Built with the baseline, avx2, avx512 and vulkan variants whatever the build machine; no ONNX or CUDA variants (see the PKGBUILD) |
@@ -45,6 +46,8 @@ each new version is uploaded the same way before its PKGBUILD changes.
 takes its development path: developer tools on, no rewrite of the cookie
 and CORS headers its `file://` pages need for Proton's API, and the
 browser-extension host looked up in a build directory.
+The packaged Claude Code cannot update itself (`DISABLE_UPDATES=1`), so
+every Claude Code release means a PKGBUILD bump and another upload.
 
 `proton-mail-bin` runs on Arch's Electron, as the AUR package does.
 Electron then reports an unpackaged app, so Proton Mail takes its

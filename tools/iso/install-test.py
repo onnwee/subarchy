@@ -733,7 +733,7 @@ def boot(disk: Path, vars_file: Path) -> bool:
             # One command from each group of install/packages/cli.txt.
             "cli_tools": serial.run(
                 "for c in curl rsync 7z bat eza rg fzf zoxide jq yq tldr starship atuin btop yazi lazygit lazydocker tmux"
-                " fastfetch gh gt tea delta yt-dlp ffmpeg magick dust duf codex opencode cliamp ttfx; do"
+                " fastfetch gh gt tea delta yt-dlp ffmpeg magick dust duf claude codex opencode cliamp ttfx; do"
                 " command -v $c >/dev/null || echo missing:$c; done; tea --version >/dev/null 2>&1 || echo missing:tea-runs; echo CLI_DONE"
             ),
             # The apps rebuilt in Subarchy's repository, Proton VPN and the

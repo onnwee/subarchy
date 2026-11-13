@@ -61,7 +61,9 @@ ufw-docker
 # Networking (ADR 0058): tailscaled runs; the user signs in when they want it.
 tailscale
 
-# Coding agents with a terminal interface (app list, "AI and development")
+# Coding agents with a terminal interface (app list, "AI and development").
+# claude-code is rebuilt in Subarchy's repository (packaging/aur).
+claude-code
 openai-codex
 opencode
 
