@@ -1,7 +1,8 @@
 # Subarchy desktop defaults (shell and look design). Fonts point at the
-# fontconfig aliases, so GTK follows `subcult font set`.
+# fontconfig aliases, so GTK follows `subcult font set`. adw-gtk3 takes
+# Pult's colours, which Adwaita's GTK 3 theme would not (ADR 0037).
 [org.gnome.desktop.interface]
-gtk-theme='Adwaita-dark'
+gtk-theme='adw-gtk3-dark'
 color-scheme='prefer-dark'
 icon-theme='Papirus-Dark'
 cursor-theme='subcult-cursor'

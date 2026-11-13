@@ -449,6 +449,93 @@ def lock_shutdown(serial: Serial, qmp: Path, proc: subprocess.Popen, lock_status
     return {"locked": locked, "hidden_before": hidden_before, "frames": frames, "exposed": exposed}
 
 
+MANTLE, BASE, DRACULA_MANTLE = "0B0812", "100B19", "20222D"
+# Colours an app shows when it ignores Pult: Breeze Dark's view and
+# window (Dolphin); adw-gtk3-dark's and Adwaita-dark's window, and light
+# Adwaita's, which GTK 3 falls back to when the theme is missing (GTK 3).
+UNTHEMED = {"dolphin": ("141618", "202326"), "gtk": ("222226", "353535", "F6F5F4")}
+PROFILE_APPLY = "pult apply -yes -profile /usr/share/subcult/default/theme/subarchy.toml >/dev/null 2>&1"
+
+
+def app_colours(serial: Serial, qmp: Path, sudo: str) -> dict:
+    """Dolphin and a GTK 3 window after `pult apply` (ADR 0037, issue #77).
+
+    Dolphin comes from the mirror; the default profile is applied again so
+    Pult sees it. Each app is shown full screen on an empty workspace and
+    captured; `themed` says whether the capture has the palette's colour
+    and none of the colours the app shows unthemed. The GTK window is
+    checked under the profile. Dolphin is checked under Dracula when the
+    installed Pult has its `kde` entry, since the packaged scheme already
+    has the profile's colours; the profile is applied again afterwards.
+    A Pult without the entry (0.3.0) gets the packaged scheme only, which
+    Dolphin must still show. `state` is what the guest reports: exit codes,
+    the GTK import line, whether adw-gtk3-dark is installed, whether Pult
+    has a `kde` entry and wrote the scheme, and the GTK theme setting.
+    """
+    state = serial.run(
+        f"{sudo} pacman -S --noconfirm --needed dolphin >/dev/null 2>&1; echo DOLPHIN=$?;"
+        f" {PROFILE_APPLY}; echo APPLY=$?;"
+        " echo GTK=$(grep -c '^@import url(\"pult.css\");$' ~/.config/gtk-3.0/gtk.css 2>/dev/null);"
+        " echo ADW=$(test -d /usr/share/themes/adw-gtk3-dark/gtk-3.0 && echo 1);"
+        " echo KDE_ENTRY=$(pult list 2>/dev/null | grep -c '^kde ');"
+        " gsettings get org.gnome.desktop.interface gtk-theme", timeout=900)
+    kde = "KDE_ENTRY=1" in state.split()
+    gtk = "/tmp/subarchy-gtk.py"
+    serial.run(
+        "printf '%s\\n' 'import gi' 'gi.require_version(\"Gtk\", \"3.0\")' 'from gi.repository import Gtk'"
+        " 'w = Gtk.Window(title=\"subarchy-gtk\")' 'w.add(Gtk.Entry(text=\"SUBCULT\"))'"
+        f" 'w.connect(\"destroy\", Gtk.main_quit)' 'w.show_all()' 'Gtk.main()' >{gtk}")
+    windows, themed = {}, {}
+
+    def show(name: str, command: str, colour: str, unthemed: tuple) -> None:
+        windows[name] = serial.run(
+            "hyprctl -i 0 dispatch 'hl.dsp.focus({ workspace = \"9\" })' >/dev/null;"
+            f" hyprctl -i 0 dispatch 'hl.dsp.exec_cmd(\"{command}\")' >/dev/null;"
+            " for i in $(seq 30); do [ \"$(hyprctl -i 0 activeworkspace | grep -o 'windows: [0-9]*')\" != 'windows: 0' ] && break; sleep 1; done;"
+            " sleep 3; hyprctl -i 0 dispatch 'hl.dsp.window.fullscreen({ mode = \"fullscreen\" })' >/dev/null; sleep 2;"
+            " hyprctl -i 0 activewindow | grep -E '^\\s*(class|fullscreen):'", timeout=90)
+        png = VM / f"app-{name}.png"
+        screendump(qmp, png)
+        themed[name] = has_colour(png, colour) and not any(has_colour(png, c) for c in unthemed)
+        serial.run("hyprctl -i 0 dispatch 'hl.dsp.window.close()' >/dev/null; sleep 2;"
+                   " hyprctl -i 0 dispatch 'hl.dsp.focus({ workspace = \"1\" })' >/dev/null")
+
+    show("gtk", f"python3 {gtk}", BASE, UNTHEMED["gtk"])
+    if kde:
+        # Dracula's base in the user's scheme; Dolphin must show Dracula's
+        # mantle and not the packaged scheme's.
+        state += serial.run(
+            "pult apply -yes dracula >/dev/null 2>&1; echo DRACULA=$?;"
+            " echo KDE=$(grep -c '^BackgroundNormal=40,42,54$' ~/.local/share/color-schemes/Pult.colors 2>/dev/null)",
+            timeout=300)
+        show("dolphin", "dolphin", DRACULA_MANTLE, UNTHEMED["dolphin"] + (MANTLE,))
+        state += serial.run(f"{PROFILE_APPLY}; echo RESTORE=$?", timeout=300)
+    else:
+        show("dolphin", "dolphin", MANTLE, UNTHEMED["dolphin"])
+    return {"state": state, "windows": windows, "themed": themed}
+
+
+def app_colours_ok(result: dict) -> bool:
+    """Pult applied and wrote the GTK import, adw-gtk3-dark is installed
+    and set, and both apps showed full screen in the palette's colours.
+    With Pult's `kde` entry, Pult also wrote the KDE scheme for Dracula
+    and the profile went back on."""
+    state = set(result["state"].split())
+    want = {"DOLPHIN=0", "APPLY=0", "GTK=1", "ADW=1", "'adw-gtk3-dark'"}
+    if "KDE_ENTRY=1" in state:
+        want |= {"DRACULA=0", "KDE=1", "RESTORE=0"}
+    elif "KDE_ENTRY=0" not in state:
+        return False
+    windows = result["windows"]
+    return (
+        want <= state
+        and "org.kde.dolphin" in windows.get("dolphin", "")
+        and set(windows) == {"dolphin", "gtk"}
+        and all(re.search(r"fullscreen: 2$", w, re.M) for w in windows.values())
+        and result["themed"] == {"dolphin": True, "gtk": True}
+    )
+
+
 def lock_crash_ok(result: dict) -> bool:
     """A different process holds a secure lock after the kill, the desktop
     showed only before the lock and after the unlock, and the unit ended."""
@@ -638,7 +725,8 @@ def boot(disk: Path, vars_file: Path) -> bool:
             "fixes": serial.run("subcult hw fixes; echo ---; cat /etc/modprobe.d/hid_apple.conf; echo ---; grep '^WIRELESS_REGDOM=' /etc/conf.d/wireless-regdom"),
             # The system screens take the user's palette (ADR 0037): SDDM's
             # theme.conf, Limine's colours, a recoloured splash (one initramfs
-            # rebuild), Chromium skipped since it is not installed; again: nothing.
+            # rebuild), Chromium's colour policy (written though Chromium is not
+            # installed, over the packaged default); again: nothing.
             # The first run is the privileged half with pkexec's PATH, which
             # has no /usr/local/bin: the rebuild must still reach every UKI.
             "theme_system": serial.run(
@@ -833,6 +921,9 @@ finally:
         results["pult_restore"] = serial.run(
             "pult apply -yes -profile /usr/share/subcult/default/theme/subarchy.toml >/dev/null 2>&1; echo PULT_RESTORE=$?;"
             " grep -ci '\"base\": \"#100b19\"' ~/.config/subcult/theme/palette.json", timeout=120)
+        # Qt/KDE and GTK apps in Pult's colours (issue #77), after the package
+        # count above, since it installs Dolphin.
+        results["app_colours"] = app_colours(serial, qmp, sudo)
         # The shell's Hyprland dispatches on a Lua config: the workspace click
         # expression (as shell/Commons/HyprDispatch.js writes it).
         results["dispatch"] = serial.run(
@@ -1022,6 +1113,7 @@ finally:
         "pult owns the shell palette and the Hyprland colours": r["pult_targets"].split()[:1] == ["2"] and "Generated by Pult" in r["pult_targets"],
         "a catalog theme recolours the bar through pult, and the profile restores it": "PULT_APPLY=0" in r["pult_theme"]
             and "282A36" in r["dracula_colours"] and r["pult_restore"].split() == ["PULT_RESTORE=0", "1"],
+        "Dolphin and a GTK 3 app show Pult's colours (app-dolphin.png, app-gtk.png)": app_colours_ok(r["app_colours"]),
         "lock uses still art on battery even with motion on": '\"playing\":0' in r["lock_battery"] and '\"motion\":false' in r["lock_battery"] and '\"screensaver\":true' in r["lock_battery"],
         "shell sees battery power": '"onBattery":true' in r["battery"],
         "shell back on AC with the real UPower": '"onBattery":false' in r["ac_again"],
@@ -1037,6 +1129,11 @@ finally:
         print(f"install-test: {'ok  ' if ok else 'FAIL'} {name}")
     if not {"SWITCHED_GLOBAL", "SWITCHED_IPC"} <= set(r["altswitch"].splitlines()):
         print("install-test: Alt-Tab:\n" + r["altswitch"].strip())
+    if "KDE_ENTRY=0" in r["app_colours"]["state"].split():
+        print("install-test: app colours: this Pult has no kde entry; Dolphin was checked against the packaged scheme only")
+    if not app_colours_ok(r["app_colours"]):
+        a = r["app_colours"]
+        print(f"install-test: app colours: {a['state'].split()} themed {a['themed']}\n{a['windows']}")
     if r["shell_errors"].strip():
         print("install-test: shell errors:\n" + r["shell_errors"].strip())
     print(f"install-test: shell idle: {r['idle']} main-thread wake-ups in the quietest 60 s sampled, {r['idle_all']} over all threads (budget file {IDLE_BUDGET})")
@@ -1274,7 +1371,7 @@ def theme_system_ok(out: str) -> bool:
     fresh, stale = (ukis.split() + ["", ""])[:2]
     return (
         "rebuilding the initramfs" in first and "wrote /usr/share/sddm/themes/subarchy/theme.conf" in first
-        and "skipped: Chromium" in first and "SYSTEM_APPLY_EXIT=0" in first
+        and "wrote /etc/chromium/policies/managed/color.json" in first and "SYSTEM_APPLY_EXIT=0" in first
         and fresh.isdigit() and int(fresh) >= 2 and stale == "0"
         and "no initramfs rebuild" in second and "wrote" not in second
         and files.splitlines()[-4:-1] == ["1", "1", "subarchy-user"] and files.splitlines()[-1] == "1"

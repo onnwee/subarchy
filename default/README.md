@@ -14,6 +14,7 @@ this directory to `/usr/share/subcult/default/`. Omarchy counterpart:
 | `theme/palette.json` | The shell's palette, generated from `subcult-minimal.json` by `tools/theme/gen-palette.py` (`make verify` checks they agree); the user's `~/.config/subcult/theme/palette.json` overrides roles |
 | `shell/bar.json` | The bar layout; the user's `~/.config/subcult/shell/bar.json` overrides keys. `primary` and `full` name outputs by connector (`DP-3`) or by part of the monitor's description (`LG ULTRAGEAR`), so a monitor keeps its Full bar when it moves to another connector |
 | `chromium/extensions/` | Chromium external extension files (→ `/usr/share/chromium/extensions/`): Vencord Web for the Discord web app (ADR 0042) |
+| `chromium/policies/managed/color.json` | Chromium's frame colour for the default theme (→ `/etc/chromium/policies/managed/`); `subcult theme apply-system` replaces it with the user's (ADR 0037) |
 
 | `shell/workspaces.json` | Workspace names: `{"workspaces": [{"id": 3, "name": "Workbench", "short": "WRK"}]}`; the user's `~/.config/subcult/shell/workspaces.json` replaces entries by id. The bar shows the token (or the number), the OSD shows the name on a switch |
 | `shell/zshrc`, `shell/bashrc`, `shell/aliases.sh`, `shell/functions.sh`, `shell/starship.toml` | The interactive shell setup (ADR 0041), sourced by the user's `~/.zshrc` and `~/.bashrc`: aliases and functions for both shells (files through eza and fzf, git shortcuts, the coding agents, `y` for yazi, `ga`/`gd` worktrees, `fip`/`dip`/`lip` port forwards, the `tdl`/`tdlm`/`tsl` tmux layouts, `compress`), starship with this prompt until the user has `~/.config/starship.toml`, atuin on Ctrl-R, zoxide behind `cd`, fzf keys, mise. `shell/completions/` completes the `subcult` command in both shells from the `subcult-*` programs on `PATH` |
@@ -22,7 +23,8 @@ this directory to `/usr/share/subcult/default/`. Omarchy counterpart:
 | `launcher/favorites.json` | The launcher's home-screen favorites, by desktop entry id; the user's `~/.config/subcult/launcher/favorites.json` replaces the list (ADR 0057) |
 | `fontconfig/` | The three font roles (→ `/usr/share/fontconfig/conf.avail/`, linked from `/etc/fonts/conf.d/`); includes the user's `~/.config/subcult/fonts.conf` first |
 | `cursor/` | The Subarchy cursor's SVG shapes and `shapes.tsv`; `subcult cursor` builds them (the package ships the lavender theme in `/usr/share/icons/subcult-cursor/`) |
-| `gtk/` | GSettings override (→ `/usr/share/glib-2.0/schemas/`) and GTK 3/4 `settings.ini` (→ `/etc/xdg/`) |
+| `gtk/` | GSettings override (→ `/usr/share/glib-2.0/schemas/`) and GTK 3/4 `settings.ini` (→ `/etc/xdg/`); theme adw-gtk3-dark, which takes Pult's colours (ADR 0037) |
+| `kde/` | `kdeglobals` (→ `/etc/xdg/`) selecting the `Pult` colour scheme for KDE apps, and `Pult.colors` (→ `/usr/share/color-schemes/`), the default theme's copy until `pult apply` writes the user's (ADR 0037) |
 | `kitty/` | kitty's system config and the Subcult Ink colours (→ `/etc/xdg/kitty/`) |
 | `nvim/` | Subcult Ink for Neovim (→ `/usr/share/nvim/site/`) |
 | `system/` | systemd units, drop-ins and rules, including `subcult-shell.service` |

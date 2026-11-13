@@ -95,8 +95,7 @@ func fixtureRoot(t *testing.T) string {
 		filepath.Join(PlymouthThemeDir, "subarchy.script"):   "Window.SetBackgroundTopColor(0.063, 0.043, 0.098);\nWindow.SetBackgroundBottomColor(0.063, 0.043, 0.098);\nfun message_callback(text) {\n  local.image = Image.Text(text, 0.941, 0.925, 0.894);\n}\n",
 		filepath.Join(PlymouthThemeDir, "subarchy.plymouth"): "[Plymouth Theme]\nName=Subarchy\nModuleName=script\n\n[script]\nImageDir=/usr/share/plymouth/themes/subarchy\nScriptFile=/usr/share/plymouth/themes/subarchy/subarchy.script\nConsoleLogBackgroundColor=0x100B19\n",
 		filepath.Join(PlymouthThemeDir, "logo.png"):          "png",
-		PlymouthDaemon:       "[Daemon]\nTheme=subarchy\nShowDelay=0\n",
-		"etc/chromium/.keep": "",
+		PlymouthDaemon: "[Daemon]\nTheme=subarchy\nShowDelay=0\n",
 	}
 	for rel, c := range files {
 		full := filepath.Join(root, rel)
@@ -173,8 +172,30 @@ func TestApplySkipsAbsentTargets(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(rep.Written) != 0 || len(rep.Skipped) != 4 || rep.PlymouthChanged {
+	// Chromium's policy is written even with no /etc/chromium (Arch's
+	// chromium package ships nothing there); the other three are skipped.
+	if len(rep.Written) != 1 || rep.Written[0] != filepath.Join(ChromiumPolicyDir, "color.json") || len(rep.Skipped) != 3 || rep.PlymouthChanged {
 		t.Errorf("bare root: %+v", rep)
+	}
+}
+
+// The packaged Chromium policy is what Apply writes for the default theme,
+// so a Chromium installed before any apply-system starts in that theme.
+func TestPackagedChromiumPolicyIsTheDefaultTheme(t *testing.T) {
+	theme, err := os.ReadFile("../../default/theme/subcult-minimal.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, err := ParsePalette(theme)
+	if err != nil {
+		t.Fatal(err)
+	}
+	packaged, err := os.ReadFile("../../default/chromium/policies/managed/color.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(packaged) != ChromiumPolicy(p) {
+		t.Errorf("default/chromium/policies/managed/color.json is %q, want %q", packaged, ChromiumPolicy(p))
 	}
 }
 

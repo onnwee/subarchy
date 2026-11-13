@@ -49,7 +49,7 @@ jobs:
       options: --init --pids-limit=1024
     steps:
       - name: Install build tools
-        run: pacman -Syu --noconfirm --needed base-devel go git nodejs pacman-contrib fakeroot hypridle librsvg imagemagick xorg-xcursorgen hyprcursor python lua python-pyte python-pillow ffmpeg ttf-dejavu qt6-multimedia power-profiles-daemon python-gobject
+        run: pacman -Syu --noconfirm --needed base-devel go git nodejs pacman-contrib fakeroot hypridle librsvg imagemagick xorg-xcursorgen hyprcursor python lua python-pyte python-pillow ffmpeg ttf-dejavu qt6-multimedia power-profiles-daemon python-gobject adw-gtk-theme
       - name: Check process budget
         run: |
           cat /sys/fs/cgroup/pids.current /sys/fs/cgroup/pids.max

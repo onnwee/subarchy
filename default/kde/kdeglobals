@@ -1,0 +1,9 @@
+# Subarchy (ADR 0037): KDE Frameworks apps use the colour scheme Pult
+# writes from the palette, ~/.local/share/color-schemes/Pult.colors;
+# outside Plasma they would otherwise pick Breeze. Checked with Dolphin;
+# Okular, Ark and the rest read the same key but were not checked. Until
+# Pult has written the user's copy, /usr/share/color-schemes/Pult.colors
+# (SUBCULT Minimal) stands in. Pult writes it only once a KDE app is
+# installed, so after installing the first one run `pult apply` again.
+[UiSettings]
+ColorScheme=Pult

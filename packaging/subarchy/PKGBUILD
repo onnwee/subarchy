@@ -11,10 +11,10 @@ pkgdesc="Subarchy: SUBCULT's Arch Linux desktop (subcult CLI, defaults and OS id
 arch=('x86_64')
 url="https://git.subcult.tv/subculture-collective/subarchy"
 license=('GPL-3.0-or-later')
-depends=('bash' 'glibc' 'pacman-contrib' 'fakeroot' 'hypridle' 'python-pyte' 'python-pillow' 'ffmpeg' 'qt6-multimedia' 'power-profiles-daemon' 'python-gobject')
+depends=('bash' 'glibc' 'pacman-contrib' 'fakeroot' 'hypridle' 'python-pyte' 'python-pillow' 'ffmpeg' 'qt6-multimedia' 'power-profiles-daemon' 'python-gobject' 'adw-gtk-theme')
 makedepends=('go' 'git' 'librsvg' 'imagemagick' 'xorg-xcursorgen' 'hyprcursor' 'ttf-dejavu')
 options=('!debug')
-backup=(etc/xdg/gtk-3.0/settings.ini etc/xdg/gtk-4.0/settings.ini etc/xdg/kitty/kitty.conf etc/xdg/kitty/subcult-ink.conf etc/pam.d/subcult-lock)
+backup=(etc/xdg/gtk-3.0/settings.ini etc/xdg/gtk-4.0/settings.ini etc/xdg/kdeglobals etc/chromium/policies/managed/color.json etc/xdg/kitty/kitty.conf etc/xdg/kitty/subcult-ink.conf etc/pam.d/subcult-lock)
 
 _root() {
   realpath "$startdir/../.."
@@ -138,11 +138,18 @@ package() {
   for f in "$root"/default/chromium/extensions/*.json; do
     install -Dm644 "$f" "$pkgdir/usr/share/chromium/extensions/$(basename "$f")"
   done
+  # Chromium's frame colour for the default theme; `subcult theme
+  # apply-system` replaces it with the user's (ADR 0037).
+  install -Dm644 "$root/default/chromium/policies/managed/color.json" "$pkgdir/etc/chromium/policies/managed/color.json"
 
   # Look layer (shell and look design): GTK, kitty and Neovim defaults.
   install -Dm644 "$root/default/gtk/90-subarchy.gschema.override" "$pkgdir/usr/share/glib-2.0/schemas/90-subarchy.gschema.override"
   install -Dm644 "$root/default/gtk/settings.ini" "$pkgdir/etc/xdg/gtk-3.0/settings.ini"
   install -Dm644 "$root/default/gtk/settings.ini" "$pkgdir/etc/xdg/gtk-4.0/settings.ini"
+  # KDE apps select Pult's colour scheme; the packaged one stands in until
+  # `pult apply` writes the user's (ADR 0037).
+  install -Dm644 "$root/default/kde/kdeglobals" "$pkgdir/etc/xdg/kdeglobals"
+  install -Dm644 "$root/default/kde/Pult.colors" "$pkgdir/usr/share/color-schemes/Pult.colors"
   install -Dm644 "$root/default/kitty/kitty.conf" "$pkgdir/etc/xdg/kitty/kitty.conf"
   install -Dm644 "$root/default/kitty/subcult-ink.conf" "$pkgdir/etc/xdg/kitty/subcult-ink.conf"
   install -Dm644 "$root/default/nvim/colors/subcult-ink.lua" "$pkgdir/usr/share/nvim/site/colors/subcult-ink.lua"

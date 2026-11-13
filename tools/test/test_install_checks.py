@@ -150,6 +150,46 @@ class LockCrash(unittest.TestCase):
         self.assertFalse(install_test.lock_crash_ok(crash(end="active\n")))
 
 
+APP_STATE = "DOLPHIN=0\nAPPLY=0\nGTK=1\nADW=1\nKDE_ENTRY=1\n'adw-gtk3-dark'\nDRACULA=0\nKDE=1\nRESTORE=0\n"
+# Pult 0.3.0 has no kde entry: no Dracula round, Dolphin on the packaged scheme.
+APP_STATE_NO_KDE = "DOLPHIN=0\nAPPLY=0\nGTK=1\nADW=1\nKDE_ENTRY=0\n'adw-gtk3-dark'\n"
+APP_WINDOWS = {"dolphin": "\tclass: org.kde.dolphin\n\tfullscreen: 2\n", "gtk": "\tclass: python3\n\tfullscreen: 2\n"}
+
+
+def apps(**changes) -> dict:
+    """A passing app-colours record, with some of its parts replaced."""
+    return {"state": APP_STATE, "windows": dict(APP_WINDOWS), "themed": {"dolphin": True, "gtk": True}} | changes
+
+
+class AppColours(unittest.TestCase):
+    def test_both_apps_full_screen_in_the_palette_pass(self):
+        self.assertTrue(install_test.app_colours_ok(apps()))
+
+    def test_a_pult_without_the_kde_entry_passes_on_the_packaged_scheme(self):
+        self.assertTrue(install_test.app_colours_ok(apps(state=APP_STATE_NO_KDE)))
+
+    def test_an_app_in_its_own_colours_fails(self):
+        self.assertFalse(install_test.app_colours_ok(apps(themed={"dolphin": False, "gtk": True})))
+        self.assertFalse(install_test.app_colours_ok(apps(themed={"dolphin": True, "gtk": False})))
+
+    def test_a_missing_target_or_the_old_gtk_theme_fails(self):
+        for old, new in (("\nKDE=1", "\nKDE=0"), ("GTK=1", "GTK="), ("APPLY=0", "APPLY=1"), ("ADW=1", "ADW="),
+                         ("DRACULA=0", "DRACULA=1"), ("RESTORE=0", "RESTORE=1"), ("'adw-gtk3-dark'", "'Adwaita-dark'")):
+            with self.subTest(old=old):
+                self.assertFalse(install_test.app_colours_ok(apps(state=APP_STATE.replace(old, new))))
+
+    def test_no_word_on_the_kde_entry_fails(self):
+        self.assertFalse(install_test.app_colours_ok(apps(state=APP_STATE_NO_KDE.replace("KDE_ENTRY=0\n", ""))))
+
+    def test_a_window_that_never_showed_stayed_tiled_or_was_maximized_fails(self):
+        self.assertFalse(install_test.app_colours_ok(apps(windows=APP_WINDOWS | {"dolphin": ""})))
+        self.assertFalse(install_test.app_colours_ok(apps(windows={"dolphin": APP_WINDOWS["dolphin"]})))
+        for mode in ("0", "1"):
+            with self.subTest(mode=mode):
+                windows = APP_WINDOWS | {"gtk": f"\tclass: python3\n\tfullscreen: {mode}\n"}
+                self.assertFalse(install_test.app_colours_ok(apps(windows=windows)))
+
+
 class QuietestMinute(unittest.TestCase):
     """The idle sample: other programs waking the shell only add to a minute."""
 
@@ -184,7 +224,7 @@ class QuietestMinute(unittest.TestCase):
 
 def theme_probe(ukis: str, exit_code: int = 0) -> str:
     """The theme_system output: the privileged run, apply-system again, the UKI ages, the files."""
-    return ("wrote /usr/share/sddm/themes/subarchy/theme.conf\nskipped: Chromium\n"
+    return ("wrote /usr/share/sddm/themes/subarchy/theme.conf\nwrote /etc/chromium/policies/managed/color.json\n"
             f"the splash changed; rebuilding the initramfs (limine-mkinitcpio)\nSYSTEM_APPLY_EXIT={exit_code}\n---\n"
             "palette: x\nunchanged /boot/limine.conf\nthe splash is unchanged; no initramfs rebuild\n---\n"
             f"{ukis}\n---\n1\n1\nsubarchy-user\n1\n")

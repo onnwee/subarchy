@@ -293,7 +293,8 @@ type Report struct {
 }
 
 // Apply writes every target under root. A target whose program is not
-// installed (no Limine config, no Chromium) is skipped and said so.
+// installed (no Limine config, no Subarchy greeter or splash) is skipped
+// and said so; Chromium's policy is written whether or not Chromium is.
 func Apply(root string, p Palette) (Report, error) {
 	var rep Report
 	write := func(rel string, content []byte, mode os.FileMode) (bool, error) {
@@ -382,13 +383,11 @@ func Apply(root string, p Palette) (Report, error) {
 		rep.Skipped = append(rep.Skipped, "Plymouth: the Subarchy splash theme is not installed")
 	}
 
-	// Chromium: only where Chromium's configuration directory exists.
-	if fi, err := os.Stat(filepath.Join(root, "etc/chromium")); err == nil && fi.IsDir() {
-		if _, err := write(filepath.Join(ChromiumPolicyDir, "color.json"), []byte(ChromiumPolicy(p)), 0o644); err != nil {
-			return rep, err
-		}
-	} else {
-		rep.Skipped = append(rep.Skipped, "Chromium: not installed (no /etc/chromium)")
+	// Chromium: always, so a Chromium installed later starts in the palette.
+	// Arch's chromium package has nothing under /etc to detect it by, and
+	// the subarchy package ships this file for the default theme.
+	if _, err := write(filepath.Join(ChromiumPolicyDir, "color.json"), []byte(ChromiumPolicy(p)), 0o644); err != nil {
+		return rep, err
 	}
 	return rep, nil
 }

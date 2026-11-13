@@ -22,6 +22,39 @@ PINNED = {
 }
 
 
+# The packaged KDE colour scheme stands in for Pult's until `pult apply`
+# writes the user's copy; its main colours must be the default theme's.
+KDE_ROLES = {
+    ("Colors:Window", "BackgroundNormal"): "base",
+    ("Colors:Window", "ForegroundNormal"): "text",
+    ("Colors:View", "BackgroundNormal"): "mantle",
+    ("Colors:Button", "BackgroundNormal"): "surface0",
+    ("Colors:Selection", "BackgroundNormal"): "mauve",
+}
+
+
+def kde_errors(roles: dict) -> list:
+    errors = []
+    kdeglobals = (ROOT / "default/kde/kdeglobals").read_text()
+    if not re.search(r"^\[UiSettings\]\nColorScheme=Pult$", kdeglobals, re.M):
+        errors.append("default/kde/kdeglobals does not select the Pult colour scheme")
+    groups, group = {}, None
+    for line in (ROOT / "default/kde/Pult.colors").read_text().splitlines():
+        if line.startswith("["):
+            group = line.strip("[]")
+        elif "=" in line and group:
+            key, value = line.split("=", 1)
+            groups[(group, key)] = value
+    for where, role in KDE_ROLES.items():
+        want = roles.get(role, "#000000")
+        rgb = ",".join(str(int(want[i:i + 2], 16)) for i in (1, 3, 5))
+        if groups.get(where) != rgb:
+            errors.append(f"default/kde/Pult.colors [{where[0]}] {where[1]} is {groups.get(where)!r}, want {role} {rgb}")
+    if groups.get(("General", "Name")) != "Pult":
+        errors.append("default/kde/Pult.colors is not named Pult")
+    return errors
+
+
 def main() -> int:
     errors = []
     palette = json.loads((ROOT / "default/theme/palette.json").read_text())
@@ -55,6 +88,7 @@ def main() -> int:
     for needle in ("rgb(8F4BC8)", "rgb(1F1830)"):
         if needle not in theme:
             errors.append(f"default/hypr/theme.lua lacks {needle}")
+    errors += kde_errors(tt.get("colors", {}))
     for e in errors:
         print(f"palette-test: {e}", file=sys.stderr)
     if not errors:

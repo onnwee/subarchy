@@ -3,7 +3,7 @@ title: "Shell and look: design"
 type: plan
 status: accepted
 created: 2026-11-07
-updated: 2026-11-07
+updated: 2026-11-12
 tags: [plan, shell, theme, design]
 aliases: [Shell design, Look and feel design]
 ---
@@ -91,7 +91,7 @@ Each stage is one or more PRs; each PR is done when CI is green and it merges.
 | Theme tokens | `accent` = `green`, `border` = `mauve`, `borderInactive` = `surface0`, `selection` = `selection_bg`, `muted` = `overlay0`, `warning` = `yellow`, `error` = `red` |
 | Compositor | `default/hypr/looknfeel.lua`: gaps 0, border 1 px, rounding 0, opacity 1, no blur, shadow, dimming or animations. Border colours in a separate include that Theme Tender will own |
 | Fonts | Three switchable roles through fontconfig aliases, JetBrains Mono by default for monospace and interface, Libertinus Mono for serif ([[#Fonts]]) |
-| GTK | Adwaita-dark, `prefer-dark`, through a GSettings schema override in the package plus `/etc/xdg/gtk-3.0/settings.ini` and `gtk-4.0/settings.ini` |
+| GTK | adw-gtk3-dark (`adw-gtk-theme`; Adwaita-dark until 2026-11-12, whose GTK 3 colours Pult cannot change), `prefer-dark`, through a GSettings schema override in the package plus `/etc/xdg/gtk-3.0/settings.ini` and `gtk-4.0/settings.ini` |
 | Icons | Papirus-Dark (`papirus-icon-theme`, `extra`) |
 | Cursor | Subarchy's own flat cursor set, coloured from a palette role, default `lavender`, size 24 ([[#Cursor]]) |
 | kitty | System default config: JetBrainsMono Nerd Font 9 pt, no padding, decorations hidden, block cursor, Subcult Ink colours |
