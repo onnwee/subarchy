@@ -1,0 +1,35 @@
+[Unit]
+Description=Save files sent with Taildrop to %I's Downloads (ADR 0058)
+Documentation=https://git.subcult.tv/subculture-collective/subarchy
+# tailscaled hands Taildrop files only to root or its operator, and
+# Subarchy makes no one the operator (ADR 0062), so this runs as root and
+# hands each file to the user (/usr/lib/subcult/taildrop-receive). The
+# installer enables it for the account it makes. Requisite, not Requires:
+# when the user has turned tailscaled off, this must not start it; and
+# wanted by tailscaled, so it comes back whenever tailscaled is started.
+After=tailscaled.service
+Requisite=tailscaled.service
+PartOf=tailscaled.service
+ConditionPathExists=/usr/bin/tailscale
+
+[Service]
+Type=exec
+ExecStart=/usr/lib/subcult/taildrop-receive %I
+# Root's own staging folder, mode 0700; files wait here until they are in
+# the user's Downloads.
+StateDirectory=subcult-taildrop/%I
+StateDirectoryMode=0700
+Restart=on-failure
+RestartSec=30
+# Root here only reads its staging folder, talks to tailscaled's socket and
+# becomes the user (setpriv) to write ~/Downloads, so /home stays writable.
+CapabilityBoundingSet=CAP_SETUID CAP_SETGID
+NoNewPrivileges=yes
+ProtectSystem=full
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+
+[Install]
+WantedBy=tailscaled.service

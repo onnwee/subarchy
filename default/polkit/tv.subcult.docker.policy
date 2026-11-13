@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<!-- Subarchy (ADR 0055, ADR 0062): `subcult docker tui` runs lazydocker as
+     root through pkexec, because the user is not in the docker group and
+     the daemon's socket stays root's. The action names the exact program,
+     which takes only the terminal type as an argument. Driving Docker is
+     root access, so an administrator's password is asked, and kept for a
+     while as polkit does. -->
+<policyconfig>
+  <vendor>Subarchy</vendor>
+  <vendor_url>https://git.subcult.tv/subculture-collective/subarchy</vendor_url>
+  <action id="tv.subcult.docker.tui">
+    <description>Manage Docker containers with lazydocker</description>
+    <message>Authentication is required to manage Docker containers, which gives root access</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/subcult/lazydocker-root</annotate>
+  </action>
+</policyconfig>

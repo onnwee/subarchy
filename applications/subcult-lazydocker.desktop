@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=lazydocker
+GenericName=Docker manager
+Comment=Containers, images and logs in the terminal; asks for your password to reach Docker
+Exec=subcult-docker-tui
+Icon=docker
+Terminal=true
+Categories=Development;System;
+Keywords=docker;containers;compose;

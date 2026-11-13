@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<!-- Subarchy (ADR 0058, ADR 0062): the bar's Tailscale panel and
+     `subcult tailscale send` reach tailscaled through pkexec and this
+     helper, which runs only `tailscale up`, `down`, the sign-in, the exit
+     node and a Taildrop send, with fixed flags. No account is tailscaled's
+     operator, so the other settings (Tailscale SSH among them) still need
+     root; only before the first sign-in does a sign-in put them back to
+     their defaults (ADR 0062). These are network changes, which ADR 0062
+     lets the active session make without a password, as NetworkManager
+     does. -->
+<policyconfig>
+  <vendor>Subarchy</vendor>
+  <vendor_url>https://git.subcult.tv/subculture-collective/subarchy</vendor_url>
+  <action id="tv.subcult.tailscale">
+    <description>Connect, disconnect and sign in to Tailscale, pick the exit node and send files</description>
+    <message>Authentication is required to change the Tailscale connection</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/subcult/tailscale-helper</annotate>
+  </action>
+</policyconfig>

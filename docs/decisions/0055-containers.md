@@ -4,7 +4,7 @@ type: decision
 status: accepted
 adr: 55
 created: 2026-11-07
-updated: 2026-11-07
+updated: 2026-11-13
 tags: [decision, adr, system, security]
 aliases: [ADR 0055, S11, Containers, Docker]
 ---
@@ -47,5 +47,19 @@ Accepted 2026-11-07.
 
 - The first `docker` command after boot waits for the daemon to start.
 - Docker 29.9.2 is in Arch's `extra` (2026-11-07).
+
+## Progress
+
+- 2026-11-13: lazydocker reaches the daemon through polkit. `subcult docker
+  tui`, the launcher's lazydocker entry and the `lzd` alias run lazydocker
+  directly when the user can write the Docker socket (after `sudo subcult
+  docker sudoless` and a new login), and otherwise `pkexec
+  /usr/lib/subcult/lazydocker-root`. The polkit action
+  `tv.subcult.docker.tui` names that program and asks for an
+  administrator's password, kept a few minutes (`auth_admin_keep`). pkexec
+  clears the environment, TERM included, so the root side takes the
+  terminal type as its only argument. The socket keeps its owner and mode
+  (`root:docker`, 0660). lazydocker then runs as root, with root's
+  lazydocker config, starting in root's home instead of the current folder.
 
 Related: [[decision-map|Decision map]] · [[0019-firewall|ADR 0019]] · [[app-list|App list]]

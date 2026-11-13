@@ -33,6 +33,7 @@ TestCase {
     verify(Glyphs.bluetooth(true, 1) !== Glyphs.bluetooth(true, 0))
     verify(Glyphs.bluetooth(false, 0) !== Glyphs.bluetooth(true, 0))
     verify(Glyphs.powerProfile("power-saver") !== Glyphs.powerProfile("performance"))
+    verify(Glyphs.tailscale(true) !== Glyphs.tailscale(false))
   }
 
   function test_batteryHiddenWithoutDevice() {

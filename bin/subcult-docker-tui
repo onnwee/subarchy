@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# subcult:summary=Open lazydocker with access to the Docker daemon
+# subcult:examples=subcult docker tui
+#
+# ADR 0055. The user is not in the docker group, so the daemon's socket is
+# root's. lazydocker then runs as root through pkexec: polkit asks for an
+# administrator's password (action tv.subcult.docker.tui) and keeps it a few
+# minutes, as sudo would. After `sudo subcult docker sudoless` and a new
+# login the socket is the user's and lazydocker runs directly.
+set -euo pipefail
+
+socket=${SUBCULT_DOCKER_SOCKET:-/run/docker.sock}
+if [[ -w $socket ]]; then
+  exec lazydocker "$@"
+fi
+# pkexec clears the environment; the root side gets the terminal type as
+# its one argument.
+exec pkexec /usr/lib/subcult/lazydocker-root "${TERM:-xterm-256color}"

@@ -91,3 +91,10 @@ const play = "\u{F040A}" // play
 const stop = "\u{F04DB}" // stop
 const n8n = "\u{F062C}" // source_branch
 const headphones = "\u{F02CB}" // headphones
+const copy = "\u{F018F}" // content_copy
+const send = "\u{F048A}" // send
+
+// Tailscale: connected, or anything else.
+function tailscale(running) {
+  return running ? "\u{F0582}" : "\u{F0319}" // vpn : lan_disconnect
+}

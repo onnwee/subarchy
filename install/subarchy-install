@@ -430,6 +430,9 @@ EOF
   printf '%s:%s\n' "$user" "$(<"${conf[USER_PASSWORD_FILE]}")" | arch-chroot "$target" chpasswd
   arch-chroot "$target" passwd --lock root >/dev/null
   install -m 0440 /dev/stdin "$target/etc/sudoers.d/10-wheel" <<<'%wheel ALL=(ALL:ALL) ALL'
+  # Files sent with Taildrop land in this account's Downloads (ADR 0058).
+  arch-chroot "$target" systemctl enable --quiet \
+    "$(systemd-escape --template=subcult-taildrop@.service "$user")"
   # Failed passwords (ADR 0063): 10 lock the account for 2 minutes, not
   # Arch's 3 for 10. The pam package owns the file, so it is copied here.
   install -m 0644 "$target/usr/share/subcult/default/security/faillock.conf" "$target/etc/security/faillock.conf"

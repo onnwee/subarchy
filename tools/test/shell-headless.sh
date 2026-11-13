@@ -168,6 +168,33 @@ fi
 exec /usr/bin/systemctl "$@"
 STUB
 chmod +x "$work/bin/systemctl"
+# A stand-in for tailscale: signed out until the test writes
+# $HOME/tailscale-up, then one peer online; up and down are recorded.
+cat >"$work/bin/tailscale" <<'STUB'
+#!/bin/sh
+echo "$*" >>"$HOME/tailscale-log"
+case $1 in
+status)
+  if [ -f "$HOME/tailscale-up" ]; then cat <<'JSON'
+{"BackendState": "Running", "AuthURL": "", "Self": {"HostName": "headless", "DNSName": "headless.tail1.ts.net.", "TailscaleIPs": ["100.64.0.1"]},
+ "CurrentTailnet": {"Name": "test.example"},
+ "Peer": {"k1": {"HostName": "kvant", "DNSName": "kvant.tail1.ts.net.", "TailscaleIPs": ["100.64.0.2"], "Online": true, "TaildropTarget": 1}}}
+JSON
+  else echo '{"BackendState": "NeedsLogin", "AuthURL": "", "Self": {"HostName": "headless"}}'; fi;;
+up) printf '\nTo authenticate, visit:\n\n\thttps://login.tailscale.com/a/headless\n\n' >&2; exec sleep 30;;
+esac
+exit 0
+STUB
+# pkexec runs the root helper (ADR 0062) from this checkout, as the test
+# user, with the tailscale stand-in; anything else is refused.
+cat >"$work/bin/pkexec" <<STUB
+#!/bin/sh
+echo "\$*" >>"\$HOME/pkexec-log"
+[ "\$1" = /usr/lib/subcult/tailscale-helper ] || exit 127
+shift
+exec "$root/tools/tailscale/helper.sh" "\$@"
+STUB
+chmod +x "$work/bin/tailscale" "$work/bin/pkexec"
 # A stand-in for secret-tool: the n8n key once the test has "stored" it.
 cat >"$work/bin/secret-tool" <<'STUB'
 #!/bin/sh
@@ -864,6 +891,40 @@ st=$(status "$home1")
 [[ $(json 'd.get("panel")') == subcult.n8n ]] || fail "the n8n panel did not open: $st"
 HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
 rm "$home1/n8n-key"
+# Tailscale: in the default layout with its timer; signed out, the panel's
+# sign-in runs the root helper's `login` through pkexec, which prints the
+# link `tailscale up` gave (opened through xdg-open) and leaves; signed in,
+# the state shows this machine and its peer.
+printf '{"layout": {"left": ["subcult.test-probe", "subcult.tailscale"]}}\n' >"$home1/.config/subcult/shell/bar.json"
+sleep 2
+st=$(status "$home1")
+[[ $(json '"subcult.tailscale" in d["shown"]["HEADLESS-1"]') == True ]] || fail "tailscale did not load: $st"
+[[ $(json 'd["intervals"].get("subcult.tailscale.refresh", {}).get("interval")') == 60000 ]] || fail "tailscale timer not reported: $st"
+ts() { HOME=$home1 quickshell ipc -p "$shell" call subcult.tailscale "$@"; }
+# On failure: the state and every call the tailscale stand-in saw.
+tsfail() { fail "$1: state $(ts state 2>&1); tailscale calls: $(tr '\n' ';' <"$home1/tailscale-log" 2>/dev/null)"; }
+for _ in $(seq 20); do [[ $(ts state) == *'"state":"NeedsLogin"'* ]] && break; sleep 0.5; done
+[[ $(ts state) == *'"state":"NeedsLogin"'* ]] || tsfail "tailscale signed out not reported"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.tailscale >/dev/null
+sleep 1
+st=$(status "$home1")
+[[ $(json 'd.get("panel")') == subcult.tailscale ]] || fail "the tailscale panel did not open: $st"
+ts signIn >/dev/null
+for _ in $(seq 20); do [[ $(ts state) == *'"loginUrl":"https://login.tailscale.com/a/headless"'* ]] && break; sleep 0.5; done
+[[ $(ts state) == *'"loginUrl":"https://login.tailscale.com/a/headless"'* ]] || tsfail "no sign-in link from the helper"
+grep -qx '/usr/lib/subcult/tailscale-helper login' "$home1/pkexec-log" || tsfail "sign-in did not go through pkexec: $(cat "$home1/pkexec-log")"
+grep -qx 'up' "$home1/tailscale-log" || tsfail "sign-in did not run tailscale up"
+# While the browser is out, the status is read every few seconds: the
+# sign-in finishing in the browser shows without another click.
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
+touch "$home1/tailscale-up"
+for _ in $(seq 20); do [[ $(ts state) == *'"state":"Running"'* ]] && break; sleep 0.5; done
+[[ $(ts state) == *'"self":{"name":"headless","dnsName":"headless.tail1.ts.net","ip":"100.64.0.1","ipv6":""},"peers":1'* ]] ||
+  tsfail "tailscale signed in"
+[[ $(ts state) == *'"loginUrl":""'* ]] || tsfail "the sign-in link stayed after the sign-in"
+# Nothing asked tailscaled for a change directly: that needs operator rights.
+# The helper reads its settings (debug prefs) before up.
+if grep -qvxE 'status --json|debug prefs|up' "$home1/tailscale-log"; then tsfail "tailscale called directly"; fi
 # Weather: in the default layout; nothing is fetched until a location is
 # set (no Open-Meteo call in the curl log); the panel's search runs
 # linecast; a location set in the config fetches the conditions (stub curl)

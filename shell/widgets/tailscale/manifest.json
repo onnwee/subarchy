@@ -1,0 +1,11 @@
+{
+  "id": "subcult.tailscale",
+  "name": "Tailscale",
+  "version": "1.0.0",
+  "api": 0,
+  "kind": "bar-widget",
+  "panel": true,
+  "cost": {
+    "timers": [{ "name": "refresh", "ac": 60, "battery": 300 }]
+  }
+}

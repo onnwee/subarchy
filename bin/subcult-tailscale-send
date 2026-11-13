@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+# subcult:summary=Send files to a machine on your tailnet with Taildrop
+# subcult:args=[--name NAME] <machine> [file...]
+# subcult:examples=subcult tailscale send kvant | subcult tailscale send kvant ~/notes.pdf
+#
+# ADR 0058. Without files a file picker opens (the desktop portal's). The
+# result is a notification, so the bar's Tailscale panel can start this and
+# close. The machine is a name or address on the tailnet; the panel passes
+# the address, and the machine's name with --name for the picker and the
+# notification. tailscaled takes files to send only from root or its
+# operator, and no account is the operator (ADR 0062), so each file goes
+# through pkexec to the root helper (polkit action tv.subcult.tailscale,
+# no password in the active session). The helper gets the file as standard
+# input, opened here with the user's rights, and its name.
+set -euo pipefail
+
+die() { echo "subcult tailscale send: $*" >&2; exit 1; }
+usage="usage: subcult tailscale send [--name NAME] <machine> [file...]"
+chooser=${SUBCULT_FILE_CHOOSER:-/usr/lib/subcult/file-chooser}
+helper=${SUBCULT_TAILSCALE_HELPER:-/usr/lib/subcult/tailscale-helper}
+
+name=
+if [[ ${1:-} == --name ]]; then
+  (($# >= 2)) || die "$usage"
+  name=$2
+  shift 2
+fi
+(($# >= 1)) || die "$usage"
+machine=$1
+shift
+if [[ -z $name ]]; then
+  # A MagicDNS name reads better by its first label.
+  name=${machine%%.*}
+  [[ $machine =~ ^[0-9.]+$|: ]] && name=$machine
+fi
+
+sent=0
+failed() {
+  local title="Nothing sent to $name"
+  ((sent == 0)) || title="Only $sent of ${#files[@]} files sent to $name"
+  notify-send -a Taildrop -u critical -i dialog-error -- "$title" "$1" || true
+  echo "subcult tailscale send: $1" >&2
+  exit 1
+}
+
+files=("$@")
+# The helper takes a Tailscale address; a name is looked up first.
+address=$machine
+if [[ ! $machine =~ ^[0-9.]+$|: ]]; then
+  address=$(tailscale ip -1 "$machine" 2>/dev/null) || failed "$machine is not on the tailnet"
+fi
+
+if ((${#files[@]} == 0)); then
+  status=0
+  picked=$("$chooser" --title "Send to $name" --multiple) || status=$?
+  # 1: the picker was closed without a choice.
+  ((status == 1)) && exit 0
+  ((status == 0)) || failed "The file picker did not open"
+  mapfile -t files <<<"$picked"
+  [[ -n ${files[0]:-} ]] || exit 0
+fi
+
+for f in "${files[@]}"; do
+  [[ -f $f && -r $f ]] || failed "${f##*/} is not a file that can be read"
+done
+for f in "${files[@]}"; do
+  if ! err=$(pkexec "$helper" send "$address" "${f##*/}" <"$f" 2>&1 >/dev/null); then
+    err=$(grep -v '^$' <<<"$err" | head -1) || true
+    failed "${err:-tailscale file cp failed}"
+  fi
+  sent=$((sent + 1))
+done
+
+if ((${#files[@]} == 1)); then
+  what=${files[0]##*/}
+else
+  what="${#files[@]} files"
+fi
+notify-send -a Taildrop -i document-send -- "Sent to $name" "$what" || true

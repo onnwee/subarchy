@@ -30,7 +30,8 @@ command -v zoxide >/dev/null 2>&1 && alias cd='zd'
 # Tools
 alias t='tmux attach || tmux new -s Work'
 command -v lazygit >/dev/null 2>&1 && alias lg='lazygit'
-command -v lazydocker >/dev/null 2>&1 && alias lzd='lazydocker'
+# lazydocker reaches Docker through polkit unless the user has sudoless Docker (ADR 0055).
+command -v lazydocker >/dev/null 2>&1 && alias lzd='subcult-docker-tui'
 command -v docker >/dev/null 2>&1 && alias d='docker'
 command -v mise >/dev/null 2>&1 && alias mup='mise up'
 

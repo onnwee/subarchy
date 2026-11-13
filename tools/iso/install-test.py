@@ -706,6 +706,29 @@ def boot(disk: Path, vars_file: Path) -> bool:
                 "systemctl is-enabled tailscaled; systemctl is-active tailscaled;"
                 " tailscale status 2>&1 | grep -ci 'logged out'; tailscale version | head -1"
             ),
+            # No account is tailscaled's operator (ADR 0058, ADR 0062): the
+            # user cannot change tailscaled directly (signed out, `down` would
+            # change nothing anyway), and the panel goes through the root
+            # helper its polkit action names, without a password in the
+            # active session only. Taildrop arrives through a system unit
+            # for the installed user, which waits while signed out and is
+            # wanted by tailscaled, so it starts whenever tailscaled does.
+            "tailscale_helper": serial.run(
+                f"{sudo} tailscale debug prefs | grep -cE '\"OperatorUser\": \"[^\"]+\"';"
+                " tailscale down >/dev/null 2>&1 && echo USER_CONTROLS || echo USER_DENIED;"
+                " pkaction --verbose --action-id tv.subcult.tailscale | grep -E 'implicit (any|active)|exec.path' | tr -s ' ';"
+                " test -x /usr/lib/subcult/tailscale-helper && echo HELPER;"
+                f" test -L /etc/systemd/system/tailscaled.service.wants/subcult-taildrop@{USER}.service && echo WANTED;"
+                f" systemctl is-enabled subcult-taildrop@{USER}.service; systemctl is-active subcult-taildrop@{USER}.service"
+            ),
+            # lazydocker through polkit (ADR 0055): the action names the
+            # root side and keeps the password a while; the launcher entry
+            # starts `subcult docker tui`.
+            "docker_tui": serial.run(
+                "pkaction --verbose --action-id tv.subcult.docker.tui | grep -E 'implicit active|exec.path' | tr -s ' ';"
+                " test -x /usr/lib/subcult/lazydocker-root && echo ROOT_SIDE;"
+                " grep -c '^Exec=subcult-docker-tui$' /usr/share/applications/subcult-lazydocker.desktop"
+            ),
             # One command from each group of install/packages/cli.txt.
             "cli_tools": serial.run(
                 "for c in curl rsync 7z bat eza rg fzf zoxide jq yq tldr starship atuin btop yazi lazygit lazydocker tmux"
@@ -1108,6 +1131,9 @@ finally:
         "docker starts on demand, needs sudo, and is behind ufw": r["docker"].split()
         == ["enabled", "disabled", "inactive", "0", "USER_CANNOT", "SUDO_CAN", "active", "1", "COMPOSE", "BUILDX"],
         "tailscale is installed and running, signed out": r["tailscale"].split()[:3] == ["enabled", "active", "1"],
+        "no Tailscale operator; the panel's helper under its polkit action; Taildrop receiver running":
+            tailscale_helper_ok(r["tailscale_helper"]),
+        "lazydocker reaches Docker through its polkit action": docker_tui_ok(r["docker_tui"]),
         "command-line and terminal apps installed": "CLI_DONE" in r["cli_tools"] and "missing:" not in r["cli_tools"],
         "voxtype, LocalSend and the Proton apps installed": "APPS_DONE" in r["desktop_apps"]
         and "missing:" not in r["desktop_apps"],
@@ -1415,6 +1441,23 @@ def hw_ok(out: str) -> bool:
     wanted = {"GenuineIntel": {"intel-ucode", "thermald"}, "AuthenticAMD": {"amd-ucode"}}.get(vendor.group(1) if vendor else "")
     installed = {w for w in out.split() if w in ("intel-ucode", "amd-ucode", "thermald")}
     return wanted is not None and installed == wanted and "linux-firmware" not in out and "VM:        QEMU" in out
+
+
+def docker_tui_ok(out: str) -> bool:
+    """pkaction's lines for tv.subcult.docker.tui, the root side, the entry."""
+    return ("implicit active: auth_admin_keep" in out
+            and "org.freedesktop.policykit.exec.path -> /usr/lib/subcult/lazydocker-root" in out
+            and out.split()[-2:] == ["ROOT_SIDE", "1"])
+
+
+def tailscale_helper_ok(out: str) -> bool:
+    """No operator, the user refused, the polkit action, the helper, the receiver unit."""
+    words = out.split()
+    return (words[:2] == ["0", "USER_DENIED"]
+            and "implicit any: auth_admin" in out
+            and "implicit active: yes" in out
+            and "org.freedesktop.policykit.exec.path -> /usr/lib/subcult/tailscale-helper" in out
+            and words[-4:] == ["HELPER", "WANTED", "enabled", "active"])
 
 
 def theme_system_ok(out: str) -> bool:

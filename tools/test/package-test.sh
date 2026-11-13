@@ -133,6 +133,35 @@ for unit in "$work/root"/usr/lib/systemd/user/graphical-session.target.wants/*; 
   if grep -qx 'Type=oneshot' "$unit"; then fail "$(basename "$unit") holds back graphical-session.target"; fi
 done
 [[ -x $work/root/usr/lib/subcult/bluetooth-pair-agent ]] || fail "pairing helper is missing or not executable"
+# Tailscale (ADR 0058) and lazydocker through polkit (ADR 0055).
+for f in usr/lib/subcult/file-chooser usr/lib/subcult/lazydocker-root usr/lib/subcult/tailscale-helper \
+  usr/lib/subcult/taildrop-receive usr/bin/subcult-tailscale-send usr/bin/subcult-docker-tui; do
+  [[ -x $work/root/$f ]] || fail "$f is missing or not executable"
+done
+for f in usr/lib/systemd/system/subcult-taildrop@.service usr/share/applications/subcult-lazydocker.desktop; do
+  [[ -e $work/root/$f ]] || fail "missing $f"
+done
+grep -q '<annotate key="org.freedesktop.policykit.exec.path">/usr/lib/subcult/lazydocker-root</annotate>' \
+  "$work/root/usr/share/polkit-1/actions/tv.subcult.docker.policy" || fail "the lazydocker polkit action does not name its program"
+# The Tailscale panel's helper (ADR 0062): the action names it and lets the
+# active session use it without a password; the receiver runs it as root.
+ts_policy=$work/root/usr/share/polkit-1/actions/tv.subcult.tailscale.policy
+grep -q '<annotate key="org.freedesktop.policykit.exec.path">/usr/lib/subcult/tailscale-helper</annotate>' "$ts_policy" ||
+  fail "the Tailscale polkit action does not name its helper"
+{ grep -q '<allow_active>yes</allow_active>' "$ts_policy" && grep -q '<allow_any>auth_admin</allow_any>' "$ts_policy"; } ||
+  fail "the Tailscale polkit action's defaults"
+td_unit=$work/root/usr/lib/systemd/system/subcult-taildrop@.service
+grep -qx 'ExecStart=/usr/lib/subcult/taildrop-receive %I' "$td_unit" || fail "subcult-taildrop@.service does not run the receiver"
+# It starts whenever tailscaled does, and keeps only the rights to become the user.
+grep -qx 'WantedBy=tailscaled.service' "$td_unit" || fail "subcult-taildrop@.service is not wanted by tailscaled"
+grep -qx 'CapabilityBoundingSet=CAP_SETUID CAP_SETGID' "$td_unit" || fail "subcult-taildrop@.service keeps every capability"
+# No user unit receives Taildrop files any more, and nothing grants
+# tailscaled's operator role.
+[[ ! -e $work/root/usr/lib/systemd/user/subcult-tailscale-receive.service ]] || fail "the old user receiver is packaged"
+if grep -rlE -- '--operator(=|[[:space:]]|$)' "$work/root/usr/lib/subcult" "$work/root/usr/lib/systemd" "$work/root/usr/bin" \
+  "$work/root/usr/share/subcult/migrations" 2>/dev/null; then
+  fail "a packaged file sets tailscaled's operator"
+fi
 "$work/root/usr/bin/subcult" --version | grep -qx 'subcult 0.0.0' || fail "subcult --version"
 "$work/root/usr/bin/subcult-app" validate "$work/root/usr/share/subcult/default/apps.toml" >/dev/null ||
   fail "shipped app catalogue does not validate"
