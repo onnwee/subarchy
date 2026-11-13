@@ -14,13 +14,17 @@ python3 bin/subcult-screensaver-render --out build/screensaver \
   --palette default/theme/palette.json --captures branding/screensaver
 ```
 
-The renderer needs pyte, Pillow, ffmpeg and a monospace font. It streams
+The renderer needs pyte, Pillow, ffmpeg and a monospace font. It prefers
+JetBrainsMono Nerd Font, which Subarchy installs and the package build
+depends on, so the shipped art and user renders use the same font. It streams
 frames to ffmpeg at 960×540, 30 fps by default. ANSI colours use the palette;
 recorded truecolour gradients keep their brightness and take its lavender.
 ttfx draws at the terminal's top left; the renderer centres the cells any
 frame draws on. The last frame becomes still art. Input hashes include the palette, captures,
-renderer and output settings; unchanged inputs do nothing. A lock serialises
-renders, outputs replace atomically, and the index publishes last.
+font file, renderer and output settings; unchanged inputs do nothing. A lock serialises
+renders, outputs replace atomically, and the index publishes last. A render
+stopped part-way (a restart for a new theme, or the unit's time limit) leaves
+its `.render-*` work directory; the next render removes it.
 
 The shell watches the user's palette file, which Pult writes. After a
 750 ms debounce it restarts the low-priority `subcult-screensaver.service`

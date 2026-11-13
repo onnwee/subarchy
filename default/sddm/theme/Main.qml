@@ -107,8 +107,10 @@ Rectangle {
     repeat: true
     interval: 60050 - (Date.now() % 60000)
     onRunningChanged: {
-      if (running)
+      if (running) {
         root.now = new Date()
+        interval = 60050 - (root.now.getTime() % 60000)
+      }
     }
     onTriggered: {
       root.now = new Date()

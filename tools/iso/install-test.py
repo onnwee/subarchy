@@ -843,8 +843,9 @@ def boot(disk: Path, vars_file: Path) -> bool:
         results["greeter_colours"] = distinct_colours(VM / "greeter.png")
         results["greeter_palette"] = colours_in(VM / "greeter.png", 800)
         results["sddm_log"] = serial.run("journalctl -b -o cat | grep -i 'qml' | grep -ci 'error\\|is not a type\\|cannot assign\\|Could not load' ; true")
-        # The installer named the account as SDDM's last user, so the
-        # greeter's user field is filled before the first sign-in.
+        # The installer named the account and session as SDDM's last, so the
+        # greeter's user field is filled and its sign-in starts subarchy.desktop
+        # before the first sign-in.
         results["greeter_user"] = serial.run(f"{sudo} cat /var/lib/sddm/state.conf")
         # Nothing of the desktop runs for the greeter's sddm user: no bar,
         # idle or clipboard service, no graphical-session.target, no
@@ -1150,6 +1151,8 @@ finally:
         "greeter shows the theme (ink background, no QML errors)": "100B19" in r["greeter_palette"]
         and r["sddm_log"].strip().splitlines()[-1:] == ["0"],
         "greeter offers the installed account before any sign-in": f"User={USER}" in r["greeter_user"].split(),
+        "greeter's first sign-in starts the Subarchy session":
+            "Session=/usr/share/wayland-sessions/subarchy.desktop" in r["greeter_user"].split(),
         "greeter runs no desktop: no bar, idle or clipboard, no session target, no update window":
             greeter_session_ok(r["greeter_session"]),
         "faillock: 10 failures lock for 2 minutes": r["faillock"].split() == ["deny", "=", "10", "unlock_time", "=", "120"],

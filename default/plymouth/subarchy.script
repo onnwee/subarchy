@@ -1,8 +1,8 @@
 # Subarchy boot splash (ADR 0013), written for Subarchy against Plymouth's
 # script module. Ink background, the SUBCULT mark in the middle, a thin
-# violet track under it that fills with acid green as boot progresses, the
-# passphrase prompt as a field with a lock and bullets under a "Disk
-# passphrase" label, and messages in paper. Colours are the SUBCULT roles:
+# surface-coloured track under it that fills with acid green as boot
+# progresses, the passphrase prompt as a field with a lock and bullets under
+# a "Disk passphrase" label, and messages in paper. Colours are the SUBCULT roles:
 # ink #100B19, surface #1F1830, violet #8B5CF6, acid #00FF88, paper #F0ECE4.
 
 Window.SetBackgroundTopColor(0.063, 0.043, 0.098);

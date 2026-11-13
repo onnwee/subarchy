@@ -270,10 +270,14 @@ Item {
       fixture.height = 533
       wait(50)
       verify(greeter.compact && !timer.running, "no clock, no ticks")
+      // An interval left from before the clock was hidden.
+      timer.interval = 120000
       fixture.height = 800
       wait(50)
       verify(timer.running)
       verify(greeter.now.getFullYear() > 2001, "the clock catches up when it comes back")
+      verify(timer.interval <= 60050, "the next tick is at the coming minute: " + timer.interval)
+      compare(timer.interval, 60050 - (greeter.now.getTime() % 60000))
     }
 
     // theme.conf from subcult theme apply-system recolours the form.

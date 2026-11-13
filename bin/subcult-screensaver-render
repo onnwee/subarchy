@@ -24,6 +24,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -187,9 +188,14 @@ def main():
         print("subcult screensaver render: no captures in " + captures, file=sys.stderr)
         return 1
     os.makedirs(out, exist_ok=True)
-    # The path unit coalesces writes; flock also serialises manual renders.
+    # The shell debounces palette writes and restarts the unit; flock also serialises manual renders.
     with open(os.path.join(out, ".render.lock"), "w") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
+        # A render stopped by SIGTERM or SIGKILL (a restart for a new theme,
+        # RuntimeMaxSec) leaves its work directory; no render holds one now.
+        for entry in os.scandir(out):
+            if entry.name.startswith(".render-") and entry.is_dir(follow_symlinks=False):
+                shutil.rmtree(entry.path, ignore_errors=True)
         if a.user and not (a.out or a.captures or a.force) and (width, height, a.fps) == (960, 540, 30) \
                 and shipped_matches(system, palette_path):
             # The package rendered these colours already; the lock falls
@@ -216,15 +222,16 @@ def shipped_matches(system, palette_path):
 
 def render_all(a, names, captures, out, palette_path, width, height):
     palette = read_palette(palette_path)
-    font = None
+    font, font_path = None, None
     for path in FONTS:
         if os.path.exists(path):
-            font = ImageFont.truetype(path, int((height // 27) * 0.85))
+            font, font_path = ImageFont.truetype(path, int((height // 27) * 0.85)), path
             break
     if font is None:
         font = ImageFont.load_default()
-    inputs = [__file__, palette_path] + [os.path.join(captures, n + ext) for n in names for ext in (".log.gz", ".tm.gz")]
-    digest = hashlib.sha256(json.dumps([palette, width, height, a.fps], sort_keys=True).encode())
+    inputs = [__file__, palette_path] + ([font_path] if font_path else []) \
+        + [os.path.join(captures, n + ext) for n in names for ext in (".log.gz", ".tm.gz")]
+    digest = hashlib.sha256(json.dumps([palette, width, height, a.fps, font_path], sort_keys=True).encode())
     for path in inputs:
         with open(path, "rb") as f:
             digest.update(f.read())

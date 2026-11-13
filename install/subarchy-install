@@ -444,9 +444,11 @@ EOF
   # Arch's 3 for 10. The pam package owns the file, so it is copied here.
   install -m 0644 "$target/usr/share/subcult/default/security/faillock.conf" "$target/etc/security/faillock.conf"
   # The greeter offers the last user (ADR 0030); SDDM records one only after
-  # a sign-in, so start with the account made here. The sddm package made
-  # the directory, which is the sddm user's home.
-  printf '[Last]\nUser=%s\n' "$user" >"$target/var/lib/sddm/state.conf"
+  # a sign-in, so start with the account made here. The greeter has no session
+  # picker and signs in to the last session, which is otherwise the first
+  # file in wayland-sessions (hyprland-uwsm.desktop); SDDM matches it by full
+  # path. The sddm package made the directory, which is the sddm user's home.
+  printf '[Last]\nUser=%s\nSession=/usr/share/wayland-sessions/subarchy.desktop\n' "$user" >"$target/var/lib/sddm/state.conf"
   # The interactive shell setup (ADR 0041): the user's files source
   # Subarchy's and hold the user's own lines after that. (An empty
   # ~/.zshrc would also do to keep zsh's first-run wizard away.)

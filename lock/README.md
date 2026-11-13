@@ -31,7 +31,7 @@ The idle configuration sets `inhibit_sleep = 3`: sleep waits for the Wayland
 lock notification because Hypridle's automatic detection recognizes Hyprlock
 by name. DPMS commands explicitly use `action`, so repeated wake requests keep
 the display on. The password handler reclaims keyboard focus on activation,
-click and Tab; the visible prompt shows its focus and an empty-field label.
+click and Tab.
 
 If the lock program dies while locked, Hyprland keeps the session locked and
 the unit starts a replacement that takes the lock over; the Hyprland
