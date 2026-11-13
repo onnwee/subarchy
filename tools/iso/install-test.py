@@ -417,6 +417,22 @@ def lock_crash_ok(result: dict) -> bool:
     )
 
 
+def greeter_session_ok(output: str) -> bool:
+    """No desktop process or update window for sddm, and its session target
+    is not up (or it has no user manager at all)."""
+    fields = dict(line.split("=", 1) for line in output.strip().splitlines() if "=" in line)
+    return (
+        fields.get("PROCS") == "0" and fields.get("UPDATE") == "0"
+        and (fields.get("MANAGER") != "active" or fields.get("TARGET", "").split() == ["inactive", "inactive"])
+    )
+
+
+def screensaver_ok(output: str) -> bool:
+    """The render unit is Type=exec and found the shipped art matches."""
+    fields = output.split()
+    return len(fields) == 2 and fields[0] == "exec" and fields[1].isdigit() and int(fields[1]) > 0
+
+
 def wait_for(serial: Serial, command: str, seconds: int = 60) -> str:
     """Poll a shell condition in the guest for up to `seconds`."""
     return serial.run(
@@ -577,6 +593,21 @@ def boot(disk: Path, vars_file: Path) -> bool:
         results["greeter_colours"] = distinct_colours(VM / "greeter.png")
         results["greeter_palette"] = colours_in(VM / "greeter.png", 800)
         results["sddm_log"] = serial.run("journalctl -b -o cat | grep -i 'qml' | grep -ci 'error\\|is not a type\\|cannot assign\\|Could not load' ; true")
+        # The installer named the account as SDDM's last user, so the
+        # greeter's user field is filled before the first sign-in.
+        results["greeter_user"] = serial.run(f"{sudo} cat /var/lib/sddm/state.conf")
+        # Nothing of the desktop runs for the greeter's sddm user: no bar,
+        # idle or clipboard service, no graphical-session.target, no
+        # Hyprland update or donation window. The bar once came up about 15 s in.
+        time.sleep(20)
+        results["greeter_session"] = serial.run(
+            "echo PROCS=$(pgrep -u sddm -fc 'quickshell|hypridle|wl-paste|subcult-');"
+            " echo UPDATE=$(pgrep -fc 'hyprland-(update|donate)-screen');"
+            " echo MANAGER=$(systemctl is-active user@$(id -u sddm).service);"
+            f" echo TARGET=$({sudo} -u sddm XDG_RUNTIME_DIR=/run/user/$(id -u sddm)"
+            " systemctl --user is-active graphical-session.target hyprland-session.target | tr '\\n' ' ')")
+        # Failed passwords (ADR 0063): 10 tries, a 2-minute lock.
+        results["faillock"] = serial.run("grep -E '^(deny|unlock_time) ' /etc/security/faillock.conf")
         serial.run(
             f"echo {PASSWORD} | sudo -S -p '' -v && sudo mkdir -p /etc/sddm.conf.d"
             f" && printf '[Autologin]\\nUser={USER}\\nSession=subarchy.desktop\\n'"
@@ -590,10 +621,20 @@ def boot(disk: Path, vars_file: Path) -> bool:
             60,
         )
         results["uwsm"] = serial.run("systemctl --user list-units --plain --no-legend 'wayland-wm@*'")
+        # The session turns off upstream's update news and donation request,
+        # and neither window runs (the greeter's were counted above).
+        results["hypr_news"] = serial.run(
+            "hyprctl -i 0 getoption ecosystem:no_update_news; hyprctl -i 0 getoption ecosystem:no_donation_nag;"
+            " echo UPDATE=$(pgrep -fc 'hyprland-(update|donate)-screen')")
         # The desktop shell (shell and look design, Task 16).
         results["shell_active"] = wait_for(
             serial, "systemctl --user is-active subcult-shell.service | grep -qx active && echo ACTIVE", 90)
         time.sleep(8)
+        # The screensaver render does not hold back the session target (and
+        # the bar), and skips the default palette the package rendered.
+        results["screensaver_unit"] = serial.run(
+            "systemctl --user show -p Type --value subcult-screensaver.service;"
+            " journalctl --user -b -u subcult-screensaver.service -o cat | grep -c 'shipped art'")
         # The serial login has no WAYLAND_DISPLAY; the shell runs on the session's.
         shell_ipc = "quickshell ipc --any-display -p /usr/share/subcult/shell call subcult.shell status"
         results["shell_status"] = serial.run(shell_ipc)
@@ -841,6 +882,14 @@ finally:
         "greeter drew something": r["greeter_colours"] > 1,
         "greeter shows the theme (ink background, no QML errors)": "100B19" in r["greeter_palette"]
         and r["sddm_log"].strip().splitlines()[-1:] == ["0"],
+        "greeter offers the installed account before any sign-in": f"User={USER}" in r["greeter_user"].split(),
+        "greeter runs no desktop: no bar, idle or clipboard, no session target, no update window":
+            greeter_session_ok(r["greeter_session"]),
+        "faillock: 10 failures lock for 2 minutes": r["faillock"].split() == ["deny", "=", "10", "unlock_time", "=", "120"],
+        "no Hyprland update or donation window": len(re.findall(r"^(?:int: 1|bool: true)$", r["hypr_news"], re.M)) == 2
+        and "UPDATE=0" in r["hypr_news"].split(),
+        "screensaver render does not hold back the session, and skips the shipped colours":
+            screensaver_ok(r["screensaver_unit"]),
         "default palette restored after the system-theme probe": "THEME_RESET" in r["theme_reset"],
         "theme apply-system recolours SDDM, Limine and the splash, rebuilding the initramfs once": theme_system_ok(r["theme_system"]),
         "Plymouth theme selected with its images": "subarchy" in r["plymouth_theme"].split()

@@ -28,4 +28,6 @@ hl.config({
     force_default_wallpaper = 0,
   },
   animations = { enabled = false },
+  -- The greeter runs Hyprland as sddm too: no update or donation window.
+  ecosystem = { no_update_news = true, no_donation_nag = true },
 })

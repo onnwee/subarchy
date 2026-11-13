@@ -17,7 +17,8 @@ python3 bin/subcult-screensaver-render --out build/screensaver \
 The renderer needs pyte, Pillow, ffmpeg and a monospace font. It streams
 frames to ffmpeg at 960×540, 30 fps by default. ANSI colours use the palette;
 recorded truecolour gradients keep their brightness and take its lavender.
-The last frame becomes still art. Input hashes include the palette, captures,
+ttfx draws at the terminal's top left; the renderer centres the cells any
+frame draws on. The last frame becomes still art. Input hashes include the palette, captures,
 renderer and output settings; unchanged inputs do nothing. A lock serialises
 renders, outputs replace atomically, and the index publishes last.
 
@@ -28,6 +29,10 @@ start also checks for an existing palette.
 `subcult screensaver render --user` does the same by hand. Both write into
 `~/.cache/subcult/screensaver` (or `$XDG_CACHE_HOME/subcult/screensaver`).
 The lock prefers that completed index over `/usr/share/subcult/screensaver`.
+When the user's palette gives the same colours as the default one, `--user`
+renders nothing and removes its cached loops, so the lock uses the shipped
+art. The unit is `Type=exec`, so a render never holds back
+`graphical-session.target` or the bar.
 
 The standalone lock chooses one loop per lock, stops its decoder on input,
 and shows the password prompt while remaining locked. On battery or with

@@ -456,6 +456,9 @@ sleep 2
 launcher open >/dev/null
 st=$(status "$home1")
 [[ $(json 'd.get("launcher")') == True ]] || fail "the launcher did not open: $st"
+# The placeholder fits the search field in the shell's font, uncut.
+[[ $(python3 -c "import json,sys; print(json.loads(sys.argv[1])['placeholderCut'])" "$(launcher state)") == False ]] ||
+  fail "the launcher's placeholder does not fit its search field"
 if [[ -n ${SHELL_HEADLESS_LAUNCHER_SHOT:-} ]]; then shot HEADLESS-1; cp "$work/shot.png" "$SHELL_HEADLESS_LAUNCHER_SHOT"; fi
 launcher close >/dev/null
 st=$(status "$home1")

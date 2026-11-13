@@ -44,6 +44,13 @@ hl.config({
     -- session can only be recovered from a text console (ADR 0070).
     allow_session_lock_restore = true,
   },
+
+  -- No upstream "Hyprland updated" window after an update, and no
+  -- twice-yearly donation popup.
+  ecosystem = {
+    no_update_news = true,
+    no_donation_nag = true,
+  },
 })
 
 dofile(system .. "/default/hypr/theme.lua")

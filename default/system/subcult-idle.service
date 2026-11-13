@@ -3,6 +3,8 @@ Description=Subarchy idle handling: hypridle with the user's idle settings (ADR 
 PartOf=graphical-session.target
 After=graphical-session.target
 Requisite=graphical-session.target
+# Not for system users: the greeter runs a compositor as sddm.
+ConditionUser=!@system
 
 [Service]
 Type=exec

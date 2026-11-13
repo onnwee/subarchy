@@ -4,6 +4,8 @@ Documentation=file:///usr/share/subcult/shell
 PartOf=graphical-session.target
 After=graphical-session.target
 Requisite=graphical-session.target
+# Not for system users: the greeter runs a compositor as sddm.
+ConditionUser=!@system
 # Tray apps start after the shell's tray watcher is up.
 Before=xdg-desktop-autostart.target
 

@@ -47,6 +47,56 @@ class RenderTest(unittest.TestCase):
             result = subprocess.run(command + ["--size", "193x54"], capture_output=True)
             self.assertEqual(result.returncode, 2)
 
+    @staticmethod
+    def probe(directory):
+        """A capture that draws SUBCULT at the terminal's top left, as ttfx does."""
+        data = b"SUBCULT\r\n//"
+        with gzip.open(directory / "probe.log.gz", "wb") as f:
+            f.write(b"Script started\n" + data)
+        with gzip.open(directory / "probe.tm.gz", "wb") as f:
+            f.write(("0 %d\n0.2 0\n" % len(data)).encode())
+
+    def test_art_is_centred(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            work = Path(tmp)
+            self.probe(work)
+            palette = work / "palette.json"
+            palette.write_text(json.dumps({"colors": {"base": "#000000", "text": "#ffffff"}}))
+            out = work / "out"
+            subprocess.run([sys.executable, str(ROOT / "bin/subcult-screensaver-render"), "--captures", tmp,
+                            "--out", str(out), "--palette", str(palette), "--size", "960x540", "--fps", "2"],
+                           check=True, capture_output=True)
+            with Image.open(out / "probe.png") as image:
+                left, top, right, bottom = image.convert("L").point(lambda v: 255 if v > 64 else 0).getbbox()
+                # Within a cell (10x20 px) of the middle each way.
+                self.assertLess(abs((left + right) / 2 - 480), 10, (left, right))
+                self.assertLess(abs((top + bottom) / 2 - 270), 20, (top, bottom))
+
+    def test_user_render_skips_the_shipped_colours(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            work = Path(tmp)
+            system, home = work / "system", work / "home"
+            (system / "screensaver/captures").mkdir(parents=True)
+            (system / "default/theme").mkdir(parents=True)
+            self.probe(system / "screensaver/captures")
+            (system / "screensaver/index.json").write_text('{"schema": 1, "loops": ["probe"]}')
+            colours = {"colors": {"base": "#100B19", "lavender": "#A78BFA"}}
+            (system / "default/theme/palette.json").write_text(json.dumps(colours))
+            mine = home / ".config/subcult/theme/palette.json"
+            mine.parent.mkdir(parents=True)
+            mine.write_text(json.dumps(dict(colours, name="subcult-minimal")))
+            cache = home / ".cache/subcult/screensaver"
+            cache.mkdir(parents=True)
+            (cache / "index.json").write_text('{"schema": 1, "loops": ["probe"]}')
+            env = {"PATH": "/usr/bin:/bin", "HOME": str(home), "SUBCULT_PATH": str(system)}
+            command = [sys.executable, str(ROOT / "bin/subcult-screensaver-render"), "--user"]
+            result = subprocess.run(command, env=env, check=True, capture_output=True, text=True)
+            self.assertIn("shipped art", result.stdout)
+            self.assertFalse((cache / "index.json").exists(), "the lock falls back to the shipped art")
+            mine.write_text(json.dumps({"colors": {"base": "#223344"}}))
+            subprocess.run(command, env=env, check=True, capture_output=True)
+            self.assertTrue((cache / "index.json").exists(), "another palette is rendered")
+
 
 if __name__ == "__main__":
     unittest.main()

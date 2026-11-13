@@ -1,12 +1,16 @@
 [Unit]
 Description=Render SUBCULT screensaver in the user palette
+# Not for system users: the greeter runs a compositor as sddm.
+ConditionUser=!@system
 
 [Service]
-Type=oneshot
+# exec, not oneshot: graphical-session.target is ordered after this unit,
+# and a first render takes 10-15 s, so a oneshot held back the bar.
+Type=exec
 ExecStart=/usr/bin/subcult-screensaver-render --user
 Nice=19
 IOSchedulingClass=idle
-TimeoutStartSec=15min
+RuntimeMaxSec=15min
 
 [Install]
 WantedBy=graphical-session.target

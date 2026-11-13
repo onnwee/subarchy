@@ -181,5 +181,25 @@ class QuietestMinute(unittest.TestCase):
         self.assertFalse(install_test.idle_ok(-1))
 
 
+class GreeterSession(unittest.TestCase):
+    def test_nothing_of_the_desktop_for_sddm_passes(self):
+        ok = "PROCS=0\nUPDATE=0\nMANAGER=active\nTARGET=inactive inactive \n"
+        self.assertTrue(install_test.greeter_session_ok(ok))
+        self.assertTrue(install_test.greeter_session_ok("PROCS=0\nUPDATE=0\nMANAGER=inactive\nTARGET=\n"))
+
+    def test_a_bar_a_target_or_an_update_window_fails(self):
+        self.assertFalse(install_test.greeter_session_ok("PROCS=2\nUPDATE=0\nMANAGER=active\nTARGET=inactive inactive\n"))
+        self.assertFalse(install_test.greeter_session_ok("PROCS=0\nUPDATE=1\nMANAGER=active\nTARGET=inactive inactive\n"))
+        self.assertFalse(install_test.greeter_session_ok("PROCS=0\nUPDATE=0\nMANAGER=active\nTARGET=activating active\n"))
+        self.assertFalse(install_test.greeter_session_ok("PROCS=0\nUPDATE=0\nMANAGER=active\nTARGET=\n"))
+        self.assertFalse(install_test.greeter_session_ok(""))
+
+    def test_screensaver_unit(self):
+        self.assertTrue(install_test.screensaver_ok("exec\n1\n"))
+        self.assertFalse(install_test.screensaver_ok("oneshot\n1\n"))
+        self.assertFalse(install_test.screensaver_ok("exec\n0\n"))
+        self.assertFalse(install_test.screensaver_ok("exec\n"))
+
+
 if __name__ == "__main__":
     unittest.main()

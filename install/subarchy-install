@@ -336,6 +336,13 @@ EOF
   printf '%s:%s\n' "$user" "$(<"${conf[USER_PASSWORD_FILE]}")" | arch-chroot "$target" chpasswd
   arch-chroot "$target" passwd --lock root >/dev/null
   install -m 0440 /dev/stdin "$target/etc/sudoers.d/10-wheel" <<<'%wheel ALL=(ALL:ALL) ALL'
+  # Failed passwords (ADR 0063): 10 lock the account for 2 minutes, not
+  # Arch's 3 for 10. The pam package owns the file, so it is copied here.
+  install -m 0644 "$target/usr/share/subcult/default/security/faillock.conf" "$target/etc/security/faillock.conf"
+  # The greeter offers the last user (ADR 0030); SDDM records one only after
+  # a sign-in, so start with the account made here. The sddm package made
+  # the directory, which is the sddm user's home.
+  printf '[Last]\nUser=%s\n' "$user" >"$target/var/lib/sddm/state.conf"
   # The interactive shell setup (ADR 0041): the user's files source
   # Subarchy's and hold the user's own lines after that. (An empty
   # ~/.zshrc would also do to keep zsh's first-run wizard away.)

@@ -18,6 +18,7 @@ Item {
     property string lastUser: ""
     property string lastPassword: ""
     property int lastSession: -1
+    signal informationMessage(string message)
     signal loginFailed()
     signal loginSucceeded()
     function login(user, password, session) {
@@ -55,6 +56,8 @@ Item {
       greeter.authenticating = false
       greeter.startingSession = false
       greeter.message = ""
+      greeter.pamLines = []
+      greeter.afterPamText = false
       sddm.calls = 0
       sddm.lastPassword = ""
       user.text = "tester"
@@ -106,6 +109,72 @@ Item {
       verify(greeter.message.indexOf("password") >= 0)
       wait(30)
       capture("greeter-error.png")
+    }
+
+    // A wrong password as SDDM reports it: PAM's general result, then
+    // loginFailed twice (the error, then the finished check).
+    function test_wrongPasswordShowsTheGeneralLine() {
+      password.text = "fixture-password"
+      greeter.login()
+      sddm.informationMessage("Authentication failure")
+      sddm.loginFailed()
+      verify(greeter.authenticating, "the check is not over until the second loginFailed")
+      sddm.loginFailed()
+      verify(!greeter.authenticating)
+      compare(greeter.message, "That password didn't work. Try again.")
+      password.text = "next"
+      sddm.loginFailed()
+      compare(password.text, "next", "a loginFailed after the attempt keeps what was typed since")
+    }
+
+    // PAM translates its general result; the greeter knows it by position.
+    function test_translatedGeneralLine() {
+      password.text = "fixture-password"
+      greeter.login()
+      sddm.informationMessage("Fehler bei der Authentifizierung")
+      sddm.loginFailed()
+      sddm.loginFailed()
+      verify(!greeter.authenticating)
+      compare(greeter.message, "That password didn't work. Try again.")
+    }
+
+    // faillock's lines arrive, each with a loginFailed, while PAM still runs;
+    // the greeter shows them and stays busy until the check is over.
+    function test_lockedAccountSaysSoAndForHowLong() {
+      password.text = "fixture-password"
+      greeter.login()
+      sddm.informationMessage("The account is locked due to 10 failed logins.")
+      sddm.loginFailed()
+      verify(greeter.authenticating, "an early loginFailed does not end the attempt")
+      compare(greeter.message, "The account is locked due to 10 failed logins.")
+      sddm.informationMessage("(2 minutes left to unlock)\n")
+      sddm.loginFailed()
+      verify(greeter.authenticating)
+      sddm.informationMessage("Authentication failure")
+      sddm.loginFailed()
+      sddm.loginFailed()
+      verify(!greeter.authenticating)
+      verify(password.activeFocus)
+      compare(findChild(greeter, "loginError").text,
+              "The account is locked due to 10 failed logins. (2 minutes left to unlock)")
+      wait(30)
+      capture("greeter-locked.png")
+      password.text = "fixture-password"
+      greeter.login()
+      compare(greeter.message, "", "a new attempt starts without the old text")
+      sddm.loginFailed()
+      compare(greeter.message, "That password didn't work. Try again.")
+    }
+
+    // If the finished check never reports, the form comes back on its own.
+    function test_earlyFailureSettles() {
+      password.text = "fixture-password"
+      greeter.login()
+      sddm.informationMessage("The account is locked due to 10 failed logins.")
+      sddm.loginFailed()
+      verify(greeter.authenticating)
+      tryVerify(() => !greeter.authenticating, 12000)
+      compare(greeter.message, "The account is locked due to 10 failed logins.")
     }
 
     function test_mouseAndSuccess() {

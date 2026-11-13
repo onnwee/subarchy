@@ -12,11 +12,13 @@ trap 'rm -rf -- "$work"' EXIT
 mkdir -p "$work/lock" "$work/run"
 chmod 700 "$work/run"
 cp "$root/lock/"{LockView.qml,LockModel.js} "$work/lock/"
-rsvg-convert -w 720 -o "$work/lock/lockup-dark.png" "$root/branding/studio/logos/lockup-dark.svg"
+"$root/tools/branding/lockup-png.sh" 720 "$work/lock/lockup-dark.png"
 cp "$root/tools/test/lock-focus.qml" "$work/shell.qml"
-export QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software XDG_RUNTIME_DIR="$work/run"
+# A short loop for the still/loop check.
+ffmpeg -loglevel error -f lavfi -i color=c=0x100b19:s=64x36:d=2 -c:v libvpx-vp9 "$work/lock/loop.webm"
+export QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software XDG_RUNTIME_DIR="$work/run" LOCK_TEST_VIDEO="$work/lock/loop.webm"
 status=0
 quickshell --no-duplicate -p "$work" >"$work/log" 2>&1 || status=$?
 if ((status)) || ! grep -q 'PASS: lock focus' "$work/log"; then cat "$work/log"; exit 1; fi
 if grep -Eq 'ReferenceError|TypeError|Unable to assign|Cannot assign|Failed to load configuration' "$work/log"; then cat "$work/log"; exit 1; fi
-echo 'lock-focus-test: PASS (click, Tab, activation and password key handling)'
+echo 'lock-focus-test: PASS (click, Tab, activation and password key handling, hidden pointer, still art only without a loop)'

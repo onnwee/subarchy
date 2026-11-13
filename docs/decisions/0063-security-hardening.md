@@ -4,7 +4,7 @@ type: decision
 status: accepted
 adr: 63
 created: 2026-11-07
-updated: 2026-11-07
+updated: 2026-11-12
 tags: [decision, adr, security]
 aliases: [ADR 0063, Hardening]
 ---
@@ -50,5 +50,13 @@ recommendations.
   dumps, and ufw enabled with incoming denied. The VM test checks each. Not
   yet: per-profile enforce/complain choices, kernel lockdown with Secure
   Boot, the SSH wizard, and fast-tracked security updates.
+- 2026-11-12: failed passwords. The owner chose to keep pam_faillock's
+  lockout but make it less harsh: `deny = 10`, `unlock_time = 120` in
+  `/etc/security/faillock.conf` (from `default/security/faillock.conf`).
+  The pam package owns that file, so the installer copies it and a migration
+  copies it on earlier installs unless the file already sets `deny` or
+  `unlock_time`. Arch's defaults (3 failures, 10 minutes) had locked the
+  account after three typos at the greeter. The greeter and the lock show
+  faillock's own message, which says the account is locked and for how long.
 
 Related: [[decision-map|Decision map]] · [[0062-privilege-policy|ADR 0062]] · [[0012-secure-boot|ADR 0012]]

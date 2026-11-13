@@ -24,7 +24,7 @@ jobs:
       - name: Check disk reserve
         run: test "$(df -B1 --output=avail / | tail -1)" -ge 60000000000
       - name: Install build tools
-        run: pacman -Syu --noconfirm --needed base-devel git nodejs python go pacman-contrib fakeroot hypridle librsvg xorg-xcursorgen hyprcursor python-pyte python-pillow ffmpeg ttf-dejavu qt6-multimedia
+        run: pacman -Syu --noconfirm --needed base-devel git nodejs python go pacman-contrib fakeroot hypridle librsvg imagemagick xorg-xcursorgen hyprcursor python-pyte python-pillow ffmpeg ttf-dejavu qt6-multimedia
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0

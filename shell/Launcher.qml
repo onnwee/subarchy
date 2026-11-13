@@ -590,6 +590,7 @@ PanelWindow { // qmllint disable uncreatable-type
         query: launcher.query,
         pending: launcher.pending ? launcher.pending.id : "",
         argument: launcher.argFor ? launcher.argValues.length + 1 : 0,
+        placeholderCut: placeholder.truncated,
         aliases: Object.keys(launcher.aliasNames),
         rows: launcher.results.map(r => ({ kind: r.kind || "app", id: r.id, name: r.name, url: r.url || "" })),
         preview: launcher.previewing ? (launcher.selected.kind === "symbol" ? launcher.selected.char
@@ -736,11 +737,17 @@ PanelWindow { // qmllint disable uncreatable-type
             event.accepted = true
           }
 
+          // Short enough for the box; a long script argument placeholder
+          // is cut with an ellipsis.
           Text {
+            id: placeholder
             visible: field.text === ""
             anchors.verticalCenter: parent.verticalCenter
+            width: parent.width
+            elide: Text.ElideRight
+            textFormat: Text.PlainText
             text: launcher.argFor ? launcher.argFor.params[launcher.argValues.length].placeholder
-              : "Search apps, commands and snippets; = calculate, @ web, . files, : emoji, $ clipboard"
+              : "Search   = calc  @ web  . files  : emoji  $ clipboard"
             color: Theme.muted
             font: field.font
           }

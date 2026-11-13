@@ -4,7 +4,7 @@ type: decision
 status: accepted
 adr: 30
 created: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-12
 tags: [decision, adr, session, brand]
 aliases: [ADR 0030, L2, Login manager, SDDM]
 ---
@@ -60,5 +60,13 @@ Hyprland. Artwork and text are replaced (R4).
   with the roles the greeter reads from `config` (base, surface, border,
   borderInactive, text, subtext, muted, error); without the file the
   shipped colours stand.
+- 2026-11-12: the greeter's Hyprland runs with `HYPRLAND_NO_SD_TARGET=1`
+  and `HYPRLAND_NO_SD_VARS=1`, so it no longer starts
+  `hyprland-session.target` (and with it the bar, idle and clipboard
+  services) for the sddm user; the desktop's user units also carry
+  `ConditionUser=!@system`. The installer writes the new account as SDDM's
+  last user, so the user field is filled before the first sign-in. A failed
+  sign-in shows PAM's own text when there is some (a locked account says so
+  and for how long), otherwise the general line.
 
 Related: [[decision-map|Decision map]] · [[0031-session-manager|ADR 0031]] · [[0013-boot-splash|ADR 0013]]

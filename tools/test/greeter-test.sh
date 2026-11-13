@@ -24,7 +24,7 @@ cp "$root/default/sddm/theme/Main.qml" "$work/theme/"
 cp "$root/tools/test/greeter/tst_greeter.qml" "$work/tests/"
 # Use the real brand fonts without installing anything into the host.
 export FONTCONFIG_FILE="$root/branding/fontconfig.xml" XDG_RUNTIME_DIR="$work/run" QT_QUICK_BACKEND=software
-rsvg-convert -w 2000 -o "$work/theme/lockup-dark.png" "$root/branding/studio/logos/lockup-dark.svg"
+"$root/tools/branding/lockup-png.sh" 2000 "$work/theme/lockup-dark.png"
 cd "$work"
 status=0
 "$qt/qmltestrunner" -platform offscreen -input "$work/tests" >"$work/greeter-test.log" 2>&1 || status=$?

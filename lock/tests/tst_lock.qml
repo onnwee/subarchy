@@ -41,8 +41,8 @@ TestCase {
   }
 
   // pam_unix holds a failure for about two seconds. A retry typed during
-  // that wait must not lose its first characters: three failures reach
-  // faillock's default limit.
+  // that wait must not lose its first characters: each failure counts
+  // towards faillock's limit (10 in /etc/security/faillock.conf).
   function test_typingDuringACheckIsKeptForTheRetry() {
     let s = Model.key(type(Model.initial(), "wrong"), "Return", "\r").state
     s = type(s, "rightx")

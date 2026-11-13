@@ -29,7 +29,9 @@ The boot splash (`default/plymouth/`) renders `marks/mark-dark.svg`; the
 greeter (`default/sddm/theme/`) and lock use a PNG rendered from
 `studio/logos/lockup-dark.svg` during packaging. Qt's SVG renderer omits the
 master's embedded SVG mark; the librsvg export keeps the complete artwork.
-The original SVG and its geometry stay unchanged.
+`tools/branding/lockup-png.sh` makes that PNG and centres the ink on its
+canvas, since the master leaves its right part empty and both screens
+centre the image. The original SVG and its geometry stay unchanged.
 
 The palette Theme Tender ships for Subarchy (`default/theme/palette.json`,
 subcult-minimal) keeps these roles: violet, ink, acid and paper.

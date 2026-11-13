@@ -544,7 +544,7 @@ function askRow(agent, text) {
   if (!agent || !text)
     return null
   return { kind: "ask", id: "ask:" + agent.id, name: "Ask " + agent.name + ": \u201c" + text + "\u201d",
-    genericName: "Sends the text to " + agent.name + "'s provider: it leaves this machine. Enter asks", icon: "dialog-question", text: text }
+    genericName: "Sends the text to " + agent.name + "'s provider: it leaves this machine. Enter sends it", icon: "dialog-question", text: text }
 }
 
 // --- Clipboard history -----------------------------------------------------

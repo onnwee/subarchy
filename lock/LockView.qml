@@ -18,6 +18,8 @@ FocusScope {
   property bool animate: false
   property url video: ""
   property url still: ""
+  // The loop could not be played (a missing or broken file).
+  property bool videoFailed: false
 
   signal key(string name, string text)
   signal wake()
@@ -35,9 +37,13 @@ FocusScope {
     event.accepted = true
   }
 
+  // The still is the effect's last frame: shown in place of the loop (on
+  // battery, with motion off, or when the video fails), never under it,
+  // where it flashed before the first decoded frame.
   Image {
+    objectName: "lockStill"
     anchors.fill: parent
-    visible: !view.lockState.prompt
+    visible: !view.lockState.prompt && (!motionArt.active || view.videoFailed)
     source: view.still
     fillMode: Image.PreserveAspectFit
     smooth: true
@@ -45,6 +51,7 @@ FocusScope {
 
   // Destroy the decoder as soon as input opens the prompt or motion stops.
   Loader {
+    id: motionArt
     anchors.fill: parent
     active: !view.lockState.prompt && view.animate && view.video.toString() !== ""
     sourceComponent: Video {
@@ -61,13 +68,21 @@ FocusScope {
           view.playbackChanged(active)
         }
       }
-      Component.onDestruction: { if (reported) view.playbackChanged(false) }
+      onSourceChanged: view.videoFailed = false
+      onErrorOccurred: view.videoFailed = true
+      Component.onDestruction: {
+        view.videoFailed = false
+        if (reported) view.playbackChanged(false)
+      }
     }
   }
 
   MouseArea {
+    objectName: "lockPointer"
     anchors.fill: parent
     hoverEnabled: true
+    // The lock has nothing to point at; the pointer stayed over the clock.
+    cursorShape: Qt.BlankCursor
     // The initial enter isn't input; wait for a position change after it.
     property bool havePosition: false
     onEntered: havePosition = false

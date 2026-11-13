@@ -12,8 +12,9 @@ apart from the desktop shell, so a shell crash cannot unlock the session.
 - `LockView.qml` is one output's surface: the SUBCULT lockup, the clock, and
   the prompt that opens on keyboard or pointer input. Until then it plays
   a pre-rendered SUBCULT loop, or shows its still on battery or with motion
-  off; opening the prompt destroys the decoder. Its colours are the shell's tokens
-  (ADR 0037): `shell.qml` reads Subarchy's palette under the user's
+  off (and when the loop cannot play); opening the prompt destroys the
+  decoder. The pointer is hidden over the lock, which has nothing to
+  click. Its colours are the shell's tokens (ADR 0037): `shell.qml` reads Subarchy's palette under the user's
   `~/.config/subcult/theme/palette.json`, the file Pult writes, through the
   shell's `ThemeModel.js` (a copy here, since Quickshell refuses imports
   outside the program; `make shell-index-check` keeps the two equal), once

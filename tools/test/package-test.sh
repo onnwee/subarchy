@@ -103,6 +103,17 @@ mkdir "$work/root"
 bsdtar -xf "$pkg" -C "$work/root" usr
 cmp "$work/root/usr/share/sddm/themes/subarchy/lockup-dark.png" \
   "$work/root/usr/share/subcult/lock/lockup-dark.png" || fail "greeter and lock artwork differ"
+# The lockup's ink is centred, so it lines up with the caption and the clock.
+read -r ink_left ink_width canvas < <(magick "$work/root/usr/share/subcult/lock/lockup-dark.png" -trim -format '%X %w %W\n' info:)
+ink_right=$((canvas - ink_left - ink_width))
+((${ink_left#+} - ink_right <= canvas / 50 && ink_right - ${ink_left#+} <= canvas / 50)) ||
+  fail "lockup ink is off centre: ${ink_left#+} px left, $ink_right px right"
+# The desktop's session units skip the greeter's sddm user, and none is a
+# oneshot, which would hold back graphical-session.target and the bar.
+for unit in "$work/root"/usr/lib/systemd/user/graphical-session.target.wants/*; do
+  grep -qx 'ConditionUser=!@system' "$unit" || fail "$(basename "$unit") would start for the greeter's sddm user"
+  if grep -qx 'Type=oneshot' "$unit"; then fail "$(basename "$unit") holds back graphical-session.target"; fi
+done
 [[ -x $work/root/usr/lib/subcult/bluetooth-pair-agent ]] || fail "pairing helper is missing or not executable"
 "$work/root/usr/bin/subcult" --version | grep -qx 'subcult 0.0.0' || fail "subcult --version"
 "$work/root/usr/bin/subcult-app" validate "$work/root/usr/share/subcult/default/apps.toml" >/dev/null ||

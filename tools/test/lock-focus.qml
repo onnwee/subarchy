@@ -33,6 +33,8 @@ ShellRoot {
       test.check(++test.ticks < 200, "timed out at phase " + test.phase)
       switch (test.phase) {
       case 0:
+        // The lock hides the pointer; it has nothing to point at.
+        test.check(keys.findChild(view, "lockPointer").cursorShape === Qt.BlankCursor, "the pointer shows on the lock")
         other.forceActiveFocus()
         test.check(!view.activeFocus, "fixture did not remove focus")
         keys.mouseClick(view, 450, 350)
@@ -66,6 +68,26 @@ ShellRoot {
         test.check(view.activeFocus, "activation did not reclaim keyboard focus")
         keys.keyClick(Qt.Key_C)
         test.check(view.lockState.password === "c", "typing after activation")
+        test.phase++
+        break
+      case 4:
+        // The still shows in place of the loop, never under it, where it
+        // flashed before the first decoded frame.
+        view.lockState = Model.initial()
+        view.still = Qt.resolvedUrl("lock/lockup-dark.png")
+        test.check(keys.findChild(view, "lockStill").visible, "the still does not show without motion")
+        view.video = "file://" + Quickshell.env("LOCK_TEST_VIDEO")
+        view.animate = true
+        test.check(!keys.findChild(view, "lockStill").visible, "the still shows under the loop")
+        test.phase++
+        break
+      case 5:
+        // A loop that cannot play leaves the still.
+        view.video = "file:///nonexistent/loop.webm"
+        test.phase++
+        break
+      case 6:
+        if (!keys.findChild(view, "lockStill").visible) return
         console.log("PASS: lock focus")
         Qt.quit()
         break

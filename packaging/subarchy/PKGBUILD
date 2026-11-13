@@ -12,7 +12,7 @@ arch=('x86_64')
 url="https://git.subcult.tv/subculture-collective/subarchy"
 license=('GPL-3.0-or-later')
 depends=('bash' 'glibc' 'pacman-contrib' 'fakeroot' 'hypridle' 'python-pyte' 'python-pillow' 'ffmpeg' 'qt6-multimedia' 'power-profiles-daemon' 'python-gobject')
-makedepends=('go' 'git' 'librsvg' 'xorg-xcursorgen' 'hyprcursor' 'ttf-dejavu')
+makedepends=('go' 'git' 'librsvg' 'imagemagick' 'xorg-xcursorgen' 'hyprcursor' 'ttf-dejavu')
 options=('!debug')
 backup=(etc/xdg/gtk-3.0/settings.ini etc/xdg/gtk-4.0/settings.ini etc/xdg/kitty/kitty.conf etc/xdg/kitty/subcult-ink.conf etc/pam.d/subcult-lock)
 
@@ -38,10 +38,9 @@ build() {
   for f in bullet entry lock progress-bar progress-box; do
     rsvg-convert -o "$srcdir/plymouth/$f.png" "$root/default/plymouth/$f.svg"
   done
-  # Qt SVG omits the master lockup's nested SVG image. Render the unchanged
-  # source with librsvg so the greeter and lock show the full mark.
-  FONTCONFIG_FILE="$root/branding/fontconfig.xml" rsvg-convert -w 2000 \
-    -o "$srcdir/lockup-dark.png" "$root/branding/studio/logos/lockup-dark.svg"
+  # The master lockup for the greeter and lock, rendered by librsvg (Qt SVG
+  # omits its nested image) with its ink centred on the canvas.
+  tools/branding/lockup-png.sh 2000 "$srcdir/lockup-dark.png"
   python3 bin/subcult-screensaver-render --out "$srcdir/screensaver" \
     --palette default/theme/palette.json --captures branding/screensaver
 }

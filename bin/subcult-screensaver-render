@@ -62,6 +62,23 @@ def open_capture(path):
     return gzip.open(path, "rb") if path.endswith(".gz") else open(path, "rb")
 
 
+def ink_box(data, chunks, cols, rows):
+    """The cells any frame of the capture draws on, as (x0, y0, x1, y1).
+    ttfx draws its text-sized canvas at the terminal's top left."""
+    screen = pyte.Screen(cols, rows)
+    stream = pyte.ByteStream(screen)
+    x0, y0, x1, y1 = cols, rows, -1, -1
+    pos = 0
+    for _, size_ in chunks:
+        stream.feed(data[pos:pos + size_])
+        pos += size_
+        for y, line in screen.buffer.items():
+            for x, ch in line.items():
+                if ch.data.strip() and x < cols and y < rows:
+                    x0, y0, x1, y1 = min(x0, x), min(y0, y), max(x1, x), max(y1, y)
+    return (x0, y0, x1, y1) if x1 >= 0 else (0, 0, cols - 1, rows - 1)
+
+
 def render(name, log, timing, out, palette, size, fps, font):
     """One effect streamed to ffmpeg; the still is the last frame."""
     cols, rows = 96, 27
@@ -72,6 +89,10 @@ def render(name, log, timing, out, palette, size, fps, font):
     data = data[data.index(b"\n") + 1:]  # script's header line
     with open_capture(timing) as f:
         chunks = [(float(a), int(b)) for a, b in (line.split() for line in f.read().decode().splitlines() if line.strip())]
+    # Centre what the effect draws on the frame.
+    x0, y0, x1, y1 = ink_box(data, chunks, cols, rows)
+    dx = (cols * cell_w - (x1 - x0 + 1) * cell_w) // 2 - x0 * cell_w
+    dy = (rows * cell_h - (y1 - y0 + 1) * cell_h) // 2 - y0 * cell_h
     screen = pyte.Screen(cols, rows)
     stream = pyte.ByteStream(screen)
     ink, paper = palette["base"], palette["text"]
@@ -104,7 +125,7 @@ def render(name, log, timing, out, palette, size, fps, font):
                     for x in range(cols):
                         ch = screen.buffer[y][x]
                         if ch.data.strip():
-                            d.text((x * cell_w, y * cell_h), ch.data, fill=colour(ch.fg), font=font)
+                            d.text((x * cell_w + dx, y * cell_h + dy), ch.data, fill=colour(ch.fg), font=font)
                 return img.resize(size) if img.size != size else img
 
             pos, t, frame, next_t = 0, 0.0, 0, 0.0
@@ -169,7 +190,28 @@ def main():
     # The path unit coalesces writes; flock also serialises manual renders.
     with open(os.path.join(out, ".render.lock"), "w") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
+        if a.user and not (a.out or a.captures or a.force) and (width, height, a.fps) == (960, 540, 30) \
+                and shipped_matches(system, palette_path):
+            # The package rendered these colours already; the lock falls
+            # back to that art when the user's cache has no index.
+            for f in ["index.json"] + [n + ext for n in names for ext in (".webm", ".png")]:
+                try:
+                    os.remove(os.path.join(out, f))
+                except FileNotFoundError:
+                    pass
+            print("screensaver: the shipped art has these colours")
+            return 0
         return render_all(a, names, captures, out, palette_path, width, height)
+
+
+def shipped_matches(system, palette_path):
+    """Whether the package's art (/usr/share/subcult/screensaver, rendered
+    from the default palette) has the colours this palette would give."""
+    if not os.path.isfile(os.path.join(system, "screensaver/index.json")):
+        return False
+    default = read_palette(os.path.join(system, "default/theme/palette.json"))
+    mine = read_palette(palette_path)
+    return all(mine[role] == default[role] for role in FALLBACK)
 
 
 def render_all(a, names, captures, out, palette_path, width, height):
