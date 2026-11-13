@@ -12,3 +12,4 @@ singleton Ht3 1.0 Ht3.qml
 singleton SettingsRunner 1.0 SettingsRunner.qml
 singleton Tailscale 1.0 Tailscale.qml
 singleton Wallpaper 1.0 Wallpaper.qml
+singleton Screencasts 1.0 Screencasts.qml

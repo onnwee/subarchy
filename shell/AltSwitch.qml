@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Hyprland
+import Quickshell.Widgets
 import qs.Commons
 import "AltSwitchModel.js" as Model
 import "Commons/HyprDispatch.js" as Dispatch
@@ -13,7 +14,7 @@ import "Commons/HyprDispatch.js" as Dispatch
 // release); they arrive in key order on the shell's own connection, so a
 // quick tap cannot commit before the first step. The IPC handler stays for
 // tests. It remembers focus from Hyprland's events; the window list is read
-// only while switching.
+// only while switching. A card shows the app's icon, class and title.
 PanelWindow { // qmllint disable uncreatable-type
   id: sw
 
@@ -135,6 +136,10 @@ PanelWindow { // qmllint disable uncreatable-type
         required property var modelData
         required property int index
         readonly property var toplevel: sw.byAddress[modelData] || null
+        readonly property string appClass: card.toplevel ? Model.appClass(card.toplevel.lastIpcObject, card.toplevel.wayland ? card.toplevel.wayland.appId : "") : ""
+        // The app's desktop entry names its icon; without one, an icon
+        // theme may still have the class's own name.
+        readonly property var entry: card.appClass !== "" ? DesktopEntries.heuristicLookup(card.appClass) : null
 
         width: 160
         height: 52
@@ -142,13 +147,23 @@ PanelWindow { // qmllint disable uncreatable-type
         border.width: 1
         border.color: index === sw.index ? Theme.accent : Theme.surface
 
+        IconImage {
+          id: icon
+          anchors.left: parent.left
+          anchors.leftMargin: 6
+          anchors.verticalCenter: parent.verticalCenter
+          implicitSize: 24
+          source: Quickshell.iconPath(card.entry && card.entry.icon ? card.entry.icon : card.appClass, "application-x-executable")
+        }
+
         Column {
           anchors.fill: parent
           anchors.margins: 6
+          anchors.leftMargin: 6 + icon.implicitSize + 6
           spacing: 2
           Text {
             width: parent.width
-            text: card.toplevel && card.toplevel.lastIpcObject ? card.toplevel.lastIpcObject.class || "" : ""
+            text: card.appClass
             textFormat: Text.PlainText
             color: Theme.muted
             elide: Text.ElideRight

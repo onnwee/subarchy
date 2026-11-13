@@ -14,6 +14,13 @@
 // could be a video stream are tracked: untyped ones (type 0) that are not
 // PipeWire's drivers or a MIDI bridge. Audio streams, devices and sinks
 // carry flags and are never tracked.
+//
+// A client of the compositor's own capture protocols (wf-recorder over
+// wlr-screencopy, toplevel export) makes no PipeWire node. Hyprland posts
+// `screencast>>1,<type>` when such a session starts sending frames and
+// `screencast>>0,<type>` when it stops, once per session; screencasts()
+// counts the open ones, kept shell-wide by services/Screencasts.qml. A
+// session already running when the shell started is not seen.
 
 // PwNodeType flags.
 const AUDIO = 1
@@ -58,4 +65,16 @@ function marks(links, captures) {
       m.screen = true
   }
   return m
+}
+
+// The number of open compositor capture sessions after a Hyprland
+// `screencast` event's data ("1,0" starts one, "0,0" ends one).
+function screencasts(count, data) {
+  const n = Math.max(0, Number(count) || 0)
+  const state = String(data || "").split(",")[0]
+  if (state === "1")
+    return n + 1
+  if (state === "0")
+    return Math.max(0, n - 1)
+  return n
 }

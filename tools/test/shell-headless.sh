@@ -3,7 +3,8 @@
 # A copy of the shell gets a test-only probe widget (a magenta square with a
 # declared timer) so the widget contract, live timers and live reload can be
 # seen. Checks: no QML errors; the bar's own line and the background; the
-# probe loads with its real properties and a live AC interval; a palette and
+# probe loads with its real properties and a live AC interval; a notification
+# popup and the OSD are drawn on screen and gone once hidden; a palette and
 # a bar config written after start apply without a restart; outputs that
 # appear and disappear gain and lose a bar; a broken bar config and a
 # palette with one bad role fall back with one warning.
@@ -411,10 +412,16 @@ DBUS_SESSION_BUS_ADDRESS=unix:path=$work/bus gdbus call --session --dest org.fre
 sleep 1
 st=$(status "$home1")
 [[ $(json 'd.get("popups")') == 1 && $(json 'd.get("unread")') == 1 ]] || fail "no popup for a notification: $st"
+# The card is drawn, not only counted: mantle just inside its top-left
+# corner (360 wide, right margin 8, below the 26 px bar and an 8 px gap).
+shot HEADLESS-1
+[[ $(pixel 914 36) == 0B0812 ]] || fail "the popup is counted but not drawn (got $(pixel 914 36))"
 sleep 6
 st=$(status "$home1")
 [[ $(json 'd.get("popups")') == 0 && $(json 'd.get("unread")') == 1 ]] ||
   fail "the popup did not go after five seconds, or its record was lost: $st"
+shot HEADLESS-1
+[[ $(pixel 914 36) == 100B19 ]] || fail "the popup's surface stayed after it went (got $(pixel 914 36))"
 
 # A notification replaced through replaces_id (a download's progress)
 # updates its popup and history record instead of adding one. The first has
@@ -472,8 +479,21 @@ fi
 # backlight or brightnessctl, which CI lacks).
 HOME=$home1 quickshell ipc -p "$shell" call subcult.osd flash capslock >/dev/null 2>&1 ||
   fail "the OSD has no IPC handler"
+# It hides after 1.5 s, so the status is read first, then the shots.
 st=$(status "$home1")
 [[ $(json 'd.get("osd")') == capslock ]] || fail "the OSD did not show: $st"
+# Drawn as well as reported: mantle just inside the 280x40 box's top-left
+# corner (centred, 96 px above the bottom of the 1280x800 output). The
+# first frame lands a moment after the IPC call returns.
+for _ in 1 2 3 4 5; do
+  shot HEADLESS-1
+  [[ $(pixel 503 667) == 0B0812 ]] && break
+  sleep 0.1
+done
+[[ $(pixel 503 667) == 0B0812 ]] || fail "the OSD is reported but not drawn (got $(pixel 503 667))"
+sleep 2
+shot HEADLESS-1
+[[ $(pixel 503 667) == 100B19 ]] || fail "the OSD's surface stayed after it hid (got $(pixel 503 667))"
 
 # Alt-Tab answers its IPC calls (no windows here, so nothing to show).
 for call in next prev cancel; do

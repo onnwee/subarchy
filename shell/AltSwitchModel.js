@@ -24,6 +24,13 @@ function byFocus(toplevels) {
     .map(t => t.address)
 }
 
+// A window's class for its card: Hyprland's, from the last client list
+// read, else the Wayland app id, which a window opened since that read
+// already has.
+function appClass(ipc, appId) {
+  return (ipc && ipc.class) || appId || ""
+}
+
 // Put the newly focused window first, keep at most cap entries.
 function remember(history, address, cap) {
   if (!address)

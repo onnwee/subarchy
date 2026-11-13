@@ -58,4 +58,15 @@ TestCase {
     compare(Model.marks([], [91]), { microphone: false, camera: false, screen: false }, "a capture client without a link holds nothing")
     compare(Model.marks([micLink, cameraLink, screenLink, null], [90, 91]), { microphone: true, camera: true, screen: true })
   }
+
+  // Hyprland's screencast events: one start and one stop per session.
+  function test_screencasts() {
+    compare(Model.screencasts(0, "1,0"), 1, "a monitor capture started")
+    compare(Model.screencasts(1, "1,1"), 2, "a window capture beside it")
+    compare(Model.screencasts(2, "0,1"), 1)
+    compare(Model.screencasts(1, "0,0"), 0)
+    compare(Model.screencasts(0, "0,0"), 0, "a stop for a session started before the shell")
+    compare(Model.screencasts(1, ""), 1, "unknown data changes nothing")
+    compare(Model.screencasts(undefined, "1,0"), 1)
+  }
 }

@@ -47,6 +47,9 @@ ShellRoot {
   // Motion: the setting and the power source, pushed to the compositor on
   // change; referenced here so it runs for the session.
   readonly property bool motionReady: Motion.mode !== ""
+  // Compositor capture sessions (the screen mark): referenced here so the
+  // count runs from shell start, for bars created later too.
+  readonly property bool screencastsReady: Screencasts.count >= 0
 
   IpcHandler {
     target: "subcult.shell"

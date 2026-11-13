@@ -54,6 +54,16 @@ TestCase {
     compare(Model.byFocus([]), [])
   }
 
+  // A window opened since the last client list has no IPC object yet; its
+  // Wayland app id names it.
+  function test_appClass() {
+    compare(Model.appClass({ class: "kitty" }, "kitty-wl"), "kitty", "Hyprland's class first")
+    compare(Model.appClass(undefined, "org.gnome.Nautilus"), "org.gnome.Nautilus", "a new window")
+    compare(Model.appClass({ class: "" }, "firefox"), "firefox")
+    compare(Model.appClass(null, ""), "")
+    compare(Model.appClass(null, undefined), "")
+  }
+
   // After a shell start the history is empty; Hyprland's focus history
   // orders the clients, so Alt-Tab picks the window used before.
   function test_startsOnPreviousWithEmptyHistory() {
