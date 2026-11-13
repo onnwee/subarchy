@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# subcult:summary=Enroll a fingerprint so the lock screen takes a touch, or remove yours
+# subcult:args=[remove]
+# subcult:examples=subcult setup fingerprint | subcult setup fingerprint remove
+# subcult:requires-sudo=true
+#
+# ADR 0023 and #93. Fingerprint login is opt-in per machine. This installs
+# fprintd, enrolls a finger and checks it; the lock screen then runs its
+# own fingerprint check (/etc/pam.d/subcult-lock-fingerprint) beside the
+# password, which keeps working. No PAM file is edited: sudo and polkit
+# still ask for the password. `remove` deletes your enrolled fingers, and
+# the lock goes back to the password alone.
+set -euo pipefail
+
+die() { echo "subcult setup fingerprint: $*" >&2; exit 1; }
+
+[[ $EUID -ne 0 ]] || die "run it as yourself, not with sudo; it asks for sudo when it needs it"
+user=$(id -un)
+
+case ${1:-} in
+  remove)
+    if ! command -v fprintd-delete >/dev/null; then
+      echo "fprintd is not installed; no fingers are enrolled."
+      exit 0
+    fi
+    sudo fprintd-delete "$user"
+    echo "Done. The lock screen asks for your password only."
+    exit 0
+    ;;
+  "") ;;
+  *) die "unknown argument '$1' (use remove, or nothing to enroll)" ;;
+esac
+
+if ! command -v fprintd-enroll >/dev/null; then
+  subcult hw fingerprint || die "no fingerprint reader found"
+  echo "Installing fprintd..."
+  sudo pacman -S --needed --noconfirm fprintd
+fi
+
+# fprintd knows the readers libfprint can drive; a reader it does not know
+# gets this far and stops here.
+devices=$(LC_ALL=C fprintd-list "$user" 2>&1 || true)
+[[ $devices != *"No devices available"* ]] || die "fprintd finds no reader it can use (libfprint may not support this one)"
+
+# fprintd-enroll with no -f always takes the right index finger, so a
+# second run would replace it. Read what is enrolled and ask for the first
+# finger in fprintd's order that is not.
+enrolled() {
+  local l
+  while IFS= read -r l; do
+    [[ $l =~ ^[[:space:]]*-[[:space:]]*\#[0-9]+:[[:space:]]*([a-z-]+) ]] && echo "${BASH_REMATCH[1]}"
+  done < <(LC_ALL=C fprintd-list "$user" 2>/dev/null || true)
+  return 0
+}
+have=$(enrolled)
+finger=
+for f in right-index-finger left-index-finger right-middle-finger left-middle-finger right-thumb \
+  left-thumb right-ring-finger left-ring-finger right-little-finger left-little-finger; do
+  [[ $'\n'$have$'\n' == *$'\n'"$f"$'\n'* ]] || { finger=$f; break; }
+done
+[[ -n $finger ]] || die "all ten fingers are enrolled; remove them first with: subcult setup fingerprint remove"
+echo "Enrolling your ${finger//-/ }: touch the reader, lift, and touch it again until it says enroll-completed."
+sudo fprintd-enroll -f "$finger" "$user" || die "enrollment did not finish; run this again"
+echo "Now touch the reader once more to check it."
+fprintd-verify || die "the check did not match; run this again, or remove with: subcult setup fingerprint remove"
+mapfile -t fingers < <(enrolled)
+((${#fingers[@]} == 0)) || echo "Enrolled: ${fingers[*]}"
+echo "Done. The lock screen takes these fingers; the password still works. Run this again to add another finger. To undo: subcult setup fingerprint remove"

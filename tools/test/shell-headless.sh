@@ -977,6 +977,8 @@ if command -v wtype >/dev/null; then
   pids+=("$lockpid")
   for _ in $(seq 30); do lk=$(HOME=$home1 quickshell ipc -p "$root/lock" call subcult.lock status 2>/dev/null) && [[ $lk == *'"locked":true'* ]] && break; sleep 0.5; done
   [[ $lk == *'"locked":true'* && $lk == *'"prompt":false'* ]] || fail "the lock did not lock the session: ${lk:-no answer} $(tail -3 "$work/lock.log")"
+  # No fingerprint stack in the PAM directory: no fingerprint check runs (#93).
+  [[ $lk == *'"fingerprint":"off"'* && $lk == *'"fingerprintChecking":false'* ]] || fail "a fingerprint check runs without a reader: $lk"
   # The lock reads the user's palette (ADR 0037): home1's base is red since check 2.
   [[ ${lk,,} == *'"base":"#ff0000"'* ]] || fail "the lock did not take the user's palette: $lk"
   for _ in $(seq 30); do
@@ -1022,6 +1024,70 @@ if command -v wtype >/dev/null; then
   fi
   if wait "$lockpid"; then echo "lock: unlocked and exited"; else fail "the lock program exited with an error: $(tail -3 "$work/lock.log")"; fi
   grep -vE '^MESA|ZINK' "$work/lock.log" | grep -nE 'ERROR|TypeError|ReferenceError' && fail "QML errors in the lock log"
+
+  # Fingerprint unlock (#93). A stand-in fprintd-list reports an enrolled
+  # finger; the fingerprint stack waits until a file appears (the touch).
+  # The password check runs beside it, and either one unlocks.
+  mkdir -p "$work/fp-bin"
+  # shellcheck disable=SC2016 # $1 is the stand-in's argument
+  printf '#!/bin/sh\necho "Fingerprints for user $1 on Test Reader (press):"\necho " - #0: right-index-finger"\n' >"$work/fp-bin/fprintd-list"
+  printf '#!/bin/sh\nwhile [ ! -e %s ]; do sleep 0.2; done\n' "$work/pam/touch" >"$work/pam/touch.sh"
+  chmod +x "$work/fp-bin/fprintd-list" "$work/pam/touch.sh"
+  printf 'auth required pam_exec.so %s\nauth required pam_permit.so\naccount required pam_permit.so\n' "$work/pam/touch.sh" >"$work/pam/subcult-test-fp"
+  printf 'auth required pam_deny.so\n' >"$work/pam/subcult-test"
+  startlock() {
+    rm -f "$work/pam/touch"
+    PATH=$work/fp-bin:$PATH SUBCULT_PATH=$work/art SUBCULT_LOCK_PAM=subcult-test SUBCULT_LOCK_FINGERPRINT_PAM=subcult-test-fp \
+      SUBCULT_LOCK_PAM_DIR=$work/pam HOME=$home1 quickshell -n -p "$root/lock" >>"$work/lock-fp.log" 2>&1 &
+    lockpid=$!
+    pids+=("$lockpid")
+    for _ in $(seq 30); do lk=$(lockst 2>/dev/null) && [[ $lk == *'"fingerprintChecking":true'* ]] && break; sleep 0.5; done
+    [[ $lk == *'"locked":true'* && $lk == *'"fingerprint":"ready"'* && $lk == *'"fingerprintChecking":true'* ]] ||
+      fail "no fingerprint check with an enrolled finger: ${lk:-no answer} $(tail -3 "$work/lock-fp.log")"
+  }
+  exited() { # the lock program unlocked and exited cleanly
+    for _ in $(seq 30); do kill -0 "$lockpid" 2>/dev/null || break; sleep 0.5; done
+    kill -0 "$lockpid" 2>/dev/null && fail "$1: $(lockst 2>/dev/null) $(tail -3 "$work/lock-fp.log")"
+    wait "$lockpid" || fail "the lock program exited with an error: $(tail -3 "$work/lock-fp.log")"
+  }
+  startlock
+  # A wrong password while the fingerprint check waits: refused, the
+  # fingerprint check goes on.
+  wtype -s 150 -k Return 'wrong' -k Return
+  for _ in $(seq 40); do lk=$(lockst); [[ $lk == *'"attempts":1'* ]] && break; sleep 0.25; done
+  [[ $lk == *'"locked":true'* && $lk == *'"attempts":1'* && $lk == *'"fingerprintChecking":true'* ]] || fail "a wrong password stopped the fingerprint check: $lk"
+  touch "$work/pam/touch"
+  exited "the lock did not unlock on the fingerprint"
+  echo "lock: unlocked on the fingerprint beside a refused password"
+  # The password unlocks while the fingerprint check still waits.
+  startlock
+  printf 'auth required pam_permit.so\naccount required pam_permit.so\n' >"$work/pam/subcult-test"
+  wtype -s 150 -k Return 'secret' -k Return
+  exited "the lock did not unlock on the password while the fingerprint check waited"
+  touch "$work/pam/touch"
+  echo "lock: unlocked on the password while the fingerprint check waited"
+  # Stacks a broken reader or a wrong /etc/pam.d file would give: one that
+  # fails at once, one that asks for a password (it gets no answer and is
+  # stopped), and the shipped stack, whose pam_fprintd is not installed
+  # here. The lock stays locked, the line says the reader is not answering
+  # after three quick failures, and the password still unlocks.
+  printf 'auth required pam_deny.so\naccount required pam_permit.so\n' >"$work/pam/subcult-test-fp-deny"
+  printf 'auth required pam_exec.so expose_authtok /usr/bin/true\naccount required pam_permit.so\n' >"$work/pam/subcult-test-fp-asks"
+  cp "$root/default/pam/subcult-lock-fingerprint" "$work/pam/subcult-test-fp-shipped"
+  printf 'auth required pam_permit.so\naccount required pam_permit.so\n' >"$work/pam/subcult-test"
+  for fp in deny asks shipped; do
+    PATH=$work/fp-bin:$PATH SUBCULT_PATH=$work/art SUBCULT_LOCK_PAM=subcult-test SUBCULT_LOCK_FINGERPRINT_PAM=subcult-test-fp-$fp \
+      SUBCULT_LOCK_PAM_DIR=$work/pam HOME=$home1 quickshell -n -p "$root/lock" >>"$work/lock-fp.log" 2>&1 &
+    lockpid=$!
+    pids+=("$lockpid")
+    for _ in $(seq 60); do lk=$(lockst 2>/dev/null) && [[ $lk == *'"fingerprint":"unavailable"'* ]] && break; sleep 0.5; done
+    [[ $lk == *'"locked":true'* && $lk == *'"fingerprint":"unavailable"'* ]] ||
+      fail "fingerprint stack $fp did not back off to unavailable, or unlocked: ${lk:-no answer} $(tail -3 "$work/lock-fp.log")"
+    wtype -s 150 -k Return 'secret' -k Return
+    exited "the password did not unlock beside fingerprint stack $fp"
+  done
+  echo "lock: failing, asking and module-less fingerprint stacks back off and never unlock; the password still does"
+  grep -vE '^MESA|ZINK' "$work/lock-fp.log" | grep -nE 'ERROR|TypeError|ReferenceError' && fail "QML errors in the fingerprint lock log"
 else
   echo "shell-headless: wtype not installed, lock check skipped"
 fi

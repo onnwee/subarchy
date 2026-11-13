@@ -39,4 +39,47 @@ defaults set `misc.allow_session_lock_restore` for that
 ([ADR 0070](../docs/decisions/0070-lock-crash-recovery.md), which also has
 the recovery from a text console when the replacement keeps failing).
 
-Fingerprint unlock remains in #117.
+## Fingerprint
+
+Fingerprint unlock (#93, [ADR 0023](../docs/decisions/0023-authentication.md))
+is a second PAM check beside the password's, never part of it:
+`/etc/pam.d/subcult-lock` stays the password stack, and
+`/etc/pam.d/subcult-lock-fingerprint` holds `pam_fprintd` between two
+`pam_faillock` lines. At start the
+lock asks `fprintd-list` (fprintd's D-Bus `GetDevices` and
+`ListEnrolledFingers`) whether a reader has a finger enrolled for the user.
+Only then does it run the fingerprint check and show "Or touch the
+fingerprint reader" under the field; with no reader, no finger, no fprintd
+or no PAM file there is no fingerprint line and `pam_fprintd` never runs.
+An unknown answer (fprintd still starting) is asked again, from 2 s up to a
+minute apart.
+
+Both checks run at once, and the first to succeed unlocks. A touch works
+while the screensaver plays. A check that ends without a match (three
+touches, or 30 seconds) starts again at once; checks that fail straight
+away back off up to 40 s, and after three the line says the reader is not
+answering. The password works throughout. `FingerprintModel.js` holds the
+probe parsing, the pacing and the text, tested in `tests/`;
+`SUBCULT_LOCK_FINGERPRINT_PAM` points the headless test at a stand-in stack.
+
+Faillock ([ADR 0063](../docs/decisions/0063-security-hardening.md)): while
+password failures have the account locked, the fingerprint check is refused
+too, and backs off like a reader that fails. A fingerprint unlock clears the
+failure count, as a password unlock does. Wrong fingers are not counted, so
+they cannot lock the password out; as with hyprlock, there is no limit on
+touches beyond pam_fprintd's three per check.
+
+The "not recognised" line and the reader's recovery from "not answering"
+match pam_fprintd's English messages. In another language the line keeps
+saying "Or touch the fingerprint reader" after a wrong finger, and the
+password and the fingerprint still unlock.
+
+The check runs for as long as the lock is up, through the screensaver and
+display-off, so fprintd keeps the reader claimed. Whether that stops USB
+autosuspend or upsets readers after suspend is not tested yet.
+
+`subcult setup fingerprint` installs fprintd where `subcult hw fingerprint`
+finds a reader, enrolls a finger with `fprintd-enroll` and checks it with
+`fprintd-verify`; `subcult setup fingerprint remove` deletes the enrolled
+fingers. It edits no PAM file, so sudo and polkit still ask for the
+password.

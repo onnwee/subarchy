@@ -3,7 +3,7 @@ title: "Distribution CLI: the Bash command set"
 type: plan
 status: proposed
 created: 2026-11-08
-updated: 2026-11-09
+updated: 2026-11-12
 tags: [plan, cli]
 aliases: [CLI command set, E1]
 ---
@@ -105,6 +105,11 @@ stop the session's apps and do not close windows first. `subcult lock`
 | `setup git` | Git name and email | `setup-git` |
 | `setup docker` | Sudoless Docker (root-equivalent, says so) | `setup-security-sudoless-docker` |
 | `setup timezone`, `setup language` | Time zone and locale | `menu-timezone`, `language` |
+
+Built (#93, 2026-11-12): `setup fingerprint [remove]` installs fprintd,
+enrolls and verifies a finger for the lock screen, which has its own
+fingerprint PAM service. It edits no PAM file, so sudo and polkit still ask
+for the password; adding the fingerprint to them stays open.
 
 ### `subcult network`
 

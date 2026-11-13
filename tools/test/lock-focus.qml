@@ -68,6 +68,20 @@ ShellRoot {
         test.check(view.activeFocus, "activation did not reclaim keyboard focus")
         keys.keyClick(Qt.Key_C)
         test.check(view.lockState.password === "c", "typing after activation")
+        // Fingerprint unlock (#93): no line without a reader, a hint with
+        // one, and after a wrong password the hint stays, under the message.
+        var fp = keys.findChild(view, "lockFingerprint")
+        var msg = keys.findChild(view, "lockMessage")
+        test.check(!fp.visible, "a fingerprint line shows without a reader")
+        view.fingerprint = "ready"
+        test.check(fp.visible && fp.text.indexOf("fingerprint") > 0, "no fingerprint hint with a reader")
+        var saved = view.lockState
+        view.lockState = Object.assign({}, view.lockState, {message: "That did not work. Try again."})
+        view.fingerprint = "nomatch"
+        test.check(msg.visible && fp.visible && fp.text.indexOf("not recognised") > 0, "a wrong finger shows nothing after a wrong password")
+        test.check(fp.y >= msg.y + msg.height, "the fingerprint line overlaps the password message")
+        view.lockState = saved
+        view.fingerprint = "off"
         test.phase++
         break
       case 4:

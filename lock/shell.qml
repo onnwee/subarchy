@@ -8,19 +8,25 @@ import Quickshell.Wayland
 import "LockModel.js" as Model
 import "ThemeModel.js" as ThemeModel
 import "MotionModel.js" as MotionModel
+import "FingerprintModel.js" as Fingerprint
 
 // Subarchy's lock screen (ADR 0036): its own Quickshell program, apart from
 // the desktop shell, so a shell crash cannot unlock the session. It locks
 // the session the moment it starts, shows the SUBCULT lockup and the clock
 // on every output, opens the prompt on the first key, checks the password
-// through PAM (/etc/pam.d/subcult-lock) and exits once unlocked. The status
-// IPC answers the tests; nothing unlocks over IPC.
+// through PAM (/etc/pam.d/subcult-lock) and exits once unlocked. Where
+// fprintd has a finger enrolled for the user, a fingerprint check runs
+// beside the password's (/etc/pam.d/subcult-lock-fingerprint); either one
+// unlocks. The status IPC answers the tests; nothing unlocks over IPC.
 ShellRoot {
   id: root
 
   readonly property string pamConfig: Quickshell.env("SUBCULT_LOCK_PAM") || "subcult-lock"
   readonly property string pamDir: Quickshell.env("SUBCULT_LOCK_PAM_DIR") || "/etc/pam.d"
+  readonly property string fingerprintConfig: Quickshell.env("SUBCULT_LOCK_FINGERPRINT_PAM") || "subcult-lock-fingerprint"
   property var lockState: Model.initial()
+  // Set once either check succeeds: nothing starts after that.
+  property bool unlocking: false
 
   // The palette (ADR 0037): Subarchy's default under the user's file, which
   // Pult writes; read once at start, since the program lives for one lock.
@@ -113,6 +119,127 @@ ShellRoot {
     }
   }
 
+  // One check succeeded: stop the other, then unlock.
+  function unlock(byFingerprint) {
+    root.unlocking = true
+    fingerprintRetry.stop()
+    probeRetry.stop()
+    if (!byFingerprint && fingerprintAuth.active)
+      fingerprintAuth.abort()
+    if (byFingerprint && auth.active)
+      auth.abort()
+    root.lockState = Model.unlocked(root.lockState)
+    lock.locked = false
+    hardExit.start()
+    root.finish()
+  }
+
+  // Fingerprint unlock (#93, ADR 0023): a PAM check of its own, so the
+  // password stack and its check stay as they are. It runs only once
+  // fprintd says a reader has a finger enrolled for this user; without one
+  // nothing shows and pam_fprintd never runs. A check that ends without a
+  // match starts again; the password works the whole time.
+  property string fingerprint: "off"
+  property int fingerprintProbes: 0
+  property int fingerprintStreak: 0
+  property bool fingerprintRunning: false
+  property double fingerprintStarted: 0
+
+  Process {
+    id: fingerprintProbe
+    running: true
+    command: ["sh", "-c", Fingerprint.PROBE, "sh", root.pamDir + "/" + root.fingerprintConfig]
+    stdout: StdioCollector {
+      onStreamFinished: root.probed(text)
+    }
+  }
+
+  Timer {
+    id: probeRetry
+    onTriggered: fingerprintProbe.running = true
+  }
+
+  function probed(text) {
+    if (root.unlocking)
+      return
+    const answer = Fingerprint.classifyProbe(text)
+    if (answer === "yes") {
+      root.fingerprint = "ready"
+      root.startFingerprint()
+    } else if (answer === "unknown") {
+      probeRetry.interval = Fingerprint.probeRetryMs(++root.fingerprintProbes)
+      probeRetry.start()
+    }
+  }
+
+  function startFingerprint() {
+    if (root.unlocking || root.fingerprint === "off" || root.fingerprintRunning)
+      return
+    root.fingerprintRunning = true
+    root.fingerprintStarted = Date.now()
+    if (!fingerprintAuth.start())
+      root.fingerprintSettled()
+  }
+
+  // A check ended without unlocking: start the next one, paced.
+  function fingerprintSettled() {
+    if (!root.fingerprintRunning)
+      return
+    root.fingerprintRunning = false
+    if (root.unlocking)
+      return
+    const r = Fingerprint.settle(root.fingerprintStreak, Date.now() - root.fingerprintStarted)
+    root.fingerprintStreak = r.streak
+    if (Fingerprint.isUnavailable(r.streak))
+      root.fingerprint = "unavailable"
+    fingerprintRetry.interval = r.delayMs
+    fingerprintRetry.restart()
+  }
+
+  Timer {
+    id: fingerprintRetry
+    onTriggered: root.startFingerprint()
+  }
+
+  // "Not recognised" shows for a few seconds; the check is still running.
+  Timer {
+    id: nomatchClear
+    interval: 4000
+    onTriggered: {
+      if (root.fingerprint === "nomatch")
+        root.fingerprint = "ready"
+    }
+  }
+
+  PamContext {
+    id: fingerprintAuth
+    config: root.fingerprintConfig
+    configDirectory: root.pamDir
+    // pam_fprintd asks nothing. A stack that asks for a password is not a
+    // fingerprint stack: it gets no answer.
+    onResponseRequiredChanged: {
+      if (responseRequired) {
+        fingerprintAuth.abort()
+        root.fingerprintSettled()
+      }
+    }
+    onPamMessage: {
+      const mode = Fingerprint.message(root.fingerprint, message, messageIsError)
+      if (mode === "nomatch")
+        nomatchClear.restart()
+      root.fingerprint = mode
+    }
+    onCompleted: (result) => {
+      if (!root.fingerprintRunning)
+        return
+      if (result === PamResult.Success)
+        root.unlock(true)
+      else
+        root.fingerprintSettled()
+    }
+    onError: root.fingerprintSettled()
+  }
+
   // Once unlocked the program exits: on the compositor's word, or shortly
   // after asking, since a compositor that never confirmed the lock (secure
   // stays false, as under a headless sway) does not answer the unlock.
@@ -148,6 +275,7 @@ ShellRoot {
       LockView {
         anchors.fill: parent
         lockState: root.lockState
+        fingerprint: root.fingerprint
         theme: root.theme
         animate: root.animate
         video: root.effect ? "file://" + root.artDir + "/" + root.effect + ".webm" : ""
@@ -176,10 +304,7 @@ ShellRoot {
       if (!root.lockState.checking)
         return
       if (result === PamResult.Success) {
-        root.lockState = Model.unlocked(root.lockState)
-        lock.locked = false
-        hardExit.start()
-        root.finish()
+        root.unlock(false)
       } else {
         root.lockState = Model.failed(root.lockState, Model.failureMessage(root.lockState.attempts + 1))
       }
@@ -198,7 +323,8 @@ ShellRoot {
         locked: lock.locked, secure: lock.secure, prompt: root.lockState.prompt, checking: root.lockState.checking,
         attempts: root.lockState.attempts, message: root.lockState.message, typed: root.lockState.password.length,
         base: String(root.theme.base || ""), screensaver: !root.lockState.prompt,
-        motion: root.animate, playing: root.playing, effect: root.effect, artDir: root.artDir
+        motion: root.animate, playing: root.playing, effect: root.effect, artDir: root.artDir,
+        fingerprint: root.fingerprint, fingerprintChecking: root.fingerprintRunning
       })
     }
   }

@@ -11,7 +11,7 @@ work=$(mktemp -d)
 trap 'rm -rf -- "$work"' EXIT
 mkdir -p "$work/lock" "$work/run"
 chmod 700 "$work/run"
-cp "$root/lock/"{LockView.qml,LockModel.js} "$work/lock/"
+cp "$root/lock/"{LockView.qml,LockModel.js,FingerprintModel.js} "$work/lock/"
 "$root/tools/branding/lockup-png.sh" 720 "$work/lock/lockup-dark.png"
 cp "$root/tools/test/lock-focus.qml" "$work/shell.qml"
 # A short loop for the still/loop check.
@@ -21,4 +21,4 @@ status=0
 quickshell --no-duplicate -p "$work" >"$work/log" 2>&1 || status=$?
 if ((status)) || ! grep -q 'PASS: lock focus' "$work/log"; then cat "$work/log"; exit 1; fi
 if grep -Eq 'ReferenceError|TypeError|Unable to assign|Cannot assign|Failed to load configuration' "$work/log"; then cat "$work/log"; exit 1; fi
-echo 'lock-focus-test: PASS (click, Tab, activation and password key handling, hidden pointer, still art only without a loop)'
+echo 'lock-focus-test: PASS (click, Tab, activation and password key handling, hidden pointer, still art only without a loop, fingerprint line only with a reader)'

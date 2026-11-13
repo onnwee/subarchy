@@ -13,8 +13,9 @@ url="https://git.subcult.tv/subculture-collective/subarchy"
 license=('GPL-3.0-or-later')
 depends=('bash' 'glibc' 'pacman-contrib' 'fakeroot' 'hypridle' 'python-pyte' 'python-pillow' 'ffmpeg' 'qt6-multimedia' 'power-profiles-daemon' 'python-gobject' 'adw-gtk-theme')
 makedepends=('go' 'git' 'librsvg' 'imagemagick' 'xorg-xcursorgen' 'hyprcursor' 'ttf-dejavu')
+optdepends=('fprintd: fingerprint unlock on the lock screen (subcult setup fingerprint)')
 options=('!debug')
-backup=(etc/xdg/gtk-3.0/settings.ini etc/xdg/gtk-4.0/settings.ini etc/xdg/kdeglobals etc/chromium/policies/managed/color.json etc/xdg/kitty/kitty.conf etc/xdg/kitty/subcult-ink.conf etc/pam.d/subcult-lock)
+backup=(etc/xdg/gtk-3.0/settings.ini etc/xdg/gtk-4.0/settings.ini etc/xdg/kdeglobals etc/chromium/policies/managed/color.json etc/xdg/kitty/kitty.conf etc/xdg/kitty/subcult-ink.conf etc/pam.d/subcult-lock etc/pam.d/subcult-lock-fingerprint)
 
 _root() {
   realpath "$startdir/../.."
@@ -189,6 +190,9 @@ package() {
   )
   install -Dm644 "$srcdir/lockup-dark.png" "$pkgdir/usr/share/subcult/lock/lockup-dark.png"
   install -Dm644 "$root/default/pam/subcult-lock" "$pkgdir/etc/pam.d/subcult-lock"
+  # Fingerprint unlock (#93): a stack of its own beside the password's, run
+  # only where fprintd has a finger enrolled for the user.
+  install -Dm644 "$root/default/pam/subcult-lock-fingerprint" "$pkgdir/etc/pam.d/subcult-lock-fingerprint"
   install -Dm644 "$sys/subcult-lock.service" "$pkgdir/usr/lib/systemd/user/subcult-lock.service"
   install -Dm644 "$sys/subcult-idle.service" "$pkgdir/usr/lib/systemd/user/subcult-idle.service"
   ln -s ../subcult-idle.service "$pkgdir/usr/lib/systemd/user/graphical-session.target.wants/subcult-idle.service"

@@ -1,0 +1,19 @@
+#%PAM-1.0
+# Subarchy's lock screen, fingerprint (#93, ADR 0023). The lock runs this
+# beside its password stack (subcult-lock), never in its place, and only
+# when fprintd reports a finger enrolled for the user. Without fprintd or a
+# reader the module fails and the password still unlocks. pam_fprintd's
+# defaults hold: three touches or 30 seconds per check, then the lock
+# starts another.
+#
+# pam_faillock (ADR 0063): an account locked by password failures is locked
+# to the finger too, and a fingerprint unlock clears the failure count, as
+# a password unlock does. Fingerprint misses are not counted, so a wrong
+# finger cannot lock the password out. Each line is requisite or required
+# and no other module can grant access, so only a matching finger unlocks.
+# nodelay drops pam_faillock's 2-second wait after a failure, so a missing
+# or broken reader fails at once and the lock backs off from it.
+auth     requisite  pam_faillock.so preauth nodelay
+auth     requisite  pam_fprintd.so
+auth     required   pam_faillock.so authsucc
+account  include    system-auth

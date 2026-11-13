@@ -2,6 +2,7 @@
 """The install test's check functions that depend on the machine it runs on."""
 
 import importlib.util
+import json
 import os
 from pathlib import Path
 import re
@@ -148,6 +149,24 @@ class LockCrash(unittest.TestCase):
         self.assertFalse(install_test.lock_crash_ok(crash(shown=HIDDEN | {"before": False})))
         self.assertFalse(install_test.lock_crash_ok(crash(shown=HIDDEN | {"unlocked": False})))
         self.assertFalse(install_test.lock_crash_ok(crash(end="active\n")))
+
+
+def lock_run(**prompt) -> str:
+    """What the lock check prints: locked, after the shell died, the prompt, the units."""
+    base = {"locked": True, "secure": True, "prompt": False, "playing": 1, "screensaver": True,
+            "fingerprint": "off", "fingerprintChecking": False}
+    shown = base | {"prompt": True, "playing": 0, "screensaver": False} | prompt
+    return f"{json.dumps(base)}\n---\n{json.dumps(base)}\n---\n{json.dumps(shown)}\n---\ninactive\nactive\n"
+
+
+class Lock(unittest.TestCase):
+    def test_a_lock_without_a_fingerprint_check_passes(self):
+        self.assertTrue(install_test.lock_ok(lock_run()))
+
+    def test_a_fingerprint_check_without_a_reader_fails(self):
+        self.assertFalse(install_test.lock_ok(lock_run(fingerprint="ready", fingerprintChecking=True)))
+        self.assertFalse(install_test.lock_ok(lock_run(fingerprintChecking=True)))
+        self.assertFalse(install_test.lock_ok(lock_run(fingerprint=None)), "a lock that does not report it")
 
 
 APP_STATE = "DOLPHIN=0\nAPPLY=0\nGTK=1\nADW=1\nKDE_ENTRY=1\n'adw-gtk3-dark'\nDRACULA=0\nKDE=1\nRESTORE=0\n"

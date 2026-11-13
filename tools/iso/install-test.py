@@ -1357,7 +1357,11 @@ def boot_secureboot(disk: Path, vars_file: Path) -> bool:
 
 
 def lock_ok(out: str) -> bool:
-    """Playback, shell-crash survival, prompt without playback, then unlock."""
+    """Playback, shell-crash survival, prompt without playback, then unlock.
+
+    The VM has no fingerprint reader and no fprintd, so no fingerprint
+    check runs (#93) although the package ships its PAM service.
+    """
     parts = [p.strip() for p in out.split("---")]
     if len(parts) < 4:
         return False
@@ -1371,7 +1375,8 @@ def lock_ok(out: str) -> bool:
     return (first.get("locked") is True and first.get("playing", 0) > 0
             and first.get("screensaver") is True and second.get("locked") is True
             and prompt.get("locked") is True and prompt.get("prompt") is True
-            and prompt.get("playing") == 0 and tail[-2:] == ["inactive", "active"])
+            and prompt.get("playing") == 0 and tail[-2:] == ["inactive", "active"]
+            and prompt.get("fingerprint") == "off" and prompt.get("fingerprintChecking") is False)
 
 
 def hw_ok(out: str) -> bool:
