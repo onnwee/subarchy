@@ -191,15 +191,21 @@ def column_of(rows: list[str], text: str) -> int:
     return -1
 
 
-def wait_console(serial: Serial, vt: int, text: str, timeout: float) -> str:
+def wait_console(serial: Serial, vt: int, text: str, timeout: float, unless: str | None = None) -> str:
+    """Wait for text on the console; return early if unless shows instead."""
     deadline = time.monotonic() + timeout
     while True:
         shown = console_text(serial, vt)
-        if text in shown:
+        if text in shown or (unless and unless in shown):
             return shown
         if time.monotonic() > deadline:
             raise TimeoutError(f"waiting for {text!r} on tty{vt}; it shows: {shown[-600:]!r}")
         time.sleep(1)
+
+
+# The installer's network page, shown only with no link up and a Wi-Fi
+# device to offer (cmd/subarchy-setup/network.go).
+NETWORK_PAGE = "Let's get you online."
 
 
 def guided(serial: Serial, qmp: Path, timeout: float) -> str:
@@ -243,7 +249,14 @@ def guided(serial: Serial, qmp: Path, timeout: float) -> str:
     ]
     headings = True
     for shown, keys in steps:
-        screen = wait_console(serial, 2, shown, 60)
+        screen = wait_console(serial, 2, shown, 60, unless=NETWORK_PAGE if shown == "Time zone" else None)
+        if shown == "Time zone":
+            # The VM has a wired link (or, offline, no network device at
+            # all), so the keyboard is followed by the time zone.
+            skipped = NETWORK_PAGE not in screen
+            print(f"install-test: {'ok  ' if skipped else 'FAIL'} the network page is skipped without Wi-Fi to offer")
+            if not skipped:
+                raise TimeoutError("the network page showed in a VM with no Wi-Fi")
         time.sleep(0.5)
         # The time zone and the computer name are machine questions.
         if shown in ("Time zone", "Computer name>") and "Let's set up your machine." not in screen:

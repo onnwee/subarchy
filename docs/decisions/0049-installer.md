@@ -122,5 +122,23 @@ Decision map item R2. Accepted 2026-11-06.
   line, and the disk is mounted `noexec`, so typed text and Return on a
   file do not run anything. Its pull-down menus can still run a command
   typed into their dialogs.
+- 2026-11-12: a network page (review finding network-possibly-down: the
+  first install, on a laptop with no Ethernet port, came up offline
+  because the installer had no network step). With no link up and a Wi-Fi
+  device in iwd, the page after the keyboard lists the Wi-Fi networks,
+  joins one with a passphrase typed as a hidden input, or skips to an
+  offline install. The Wi-Fi network the live session is on when the
+  questions end, joined there or by hand with `iwctl`, becomes a
+  NetworkManager connection on the installed system
+  ([[0016-networking|ADR 0016]]), so the first boot is online. The
+  passphrase reaches `subarchy-install` in a mode-600 file, as the
+  other secrets do, and is never shown or logged. The VM test can only
+  check that a VM without Wi-Fi skips the page; joining a real network is
+  untested on hardware. After review, network names that start with `-`
+  go to gum and `iwctl` after `--` (both had read such a name as an
+  option and failed), names with control characters are not listed, the
+  page refuses the 64-digit key that iwd will not join with, iwd's escaped
+  saved passphrase is unescaped, and the connection file's name never
+  starts with a dot.
 
 Related: [[decision-map|Decision map]] · [[0050-hardware-support|ADR 0050]]

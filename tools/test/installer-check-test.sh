@@ -114,4 +114,54 @@ efibootmgr() {
   fi
 }
 [[ $(stale_boot_entries | tr '\n' ' ') == "0002 0003 " ]] || fail "stale boot entries: $(stale_boot_entries | tr '\n' ' ')"
+
+# The Wi-Fi network used during the install becomes a NetworkManager
+# connection on the new system: mode 600, the passphrase escaped for the
+# keyfile format and never in the output (the install log on the screen).
+wifi=$(mktemp -d)
+target=$wifi/root
+psk_file=$wifi/wifi-psk
+printf '%s\n' 'pass\word 42 ' >"$psk_file"
+conf[WIFI_SSID]="Home Net" conf[WIFI_PSK_FILE]=$psk_file
+(check_wifi) || fail "a good Wi-Fi network was refused"
+out=$(write_wifi_connection) || fail "write_wifi_connection failed"
+keyfile=$target/etc/NetworkManager/system-connections/Home_Net.nmconnection
+[[ -f $keyfile && $(stat -c %a "$keyfile") == 600 ]] || fail "keyfile missing or not mode 600: $(ls -l "$keyfile" 2>&1)"
+for line in "id=Home Net" "type=wifi" "ssid=Home Net" "key-mgmt=wpa-psk" 'psk=pass\\word 42\s' "method=auto"; do
+  grep -qxF -- "$line" "$keyfile" || fail "keyfile lacks $line: $(grep -v '^psk=' "$keyfile")"
+done
+grep -qE '^uuid=[0-9a-f-]{36}$' "$keyfile" || fail "keyfile has no uuid"
+[[ $out == "the installed system joins the Wi-Fi network Home Net" && $out != *word* ]] || fail "output: $out"
+# Any other name is written as its bytes; an open network has no security.
+conf[WIFI_SSID]="Café 5" conf[WIFI_PSK_FILE]=""
+write_wifi_connection >/dev/null
+keyfile=$target/etc/NetworkManager/system-connections/Caf___5.nmconnection
+grep -qxF "ssid=67;97;102;195;169;32;53;" "$keyfile" || fail "SSID bytes: $(grep '^ssid=' "$keyfile" || true)"
+if ! grep -qxF "id=Wi-Fi" "$keyfile" || grep -q wifi-security "$keyfile"; then fail "open network keyfile: $(cat "$keyfile")"; fi
+conf[WIFI_SSID]=12345
+write_wifi_connection >/dev/null
+grep -qxF "ssid=49;50;51;52;53;" "$target/etc/NetworkManager/system-connections/12345.nmconnection" || fail "a digits-only SSID was written as text"
+# NetworkManager skips hidden files, so a name starting with a dot is not
+# written as one.
+conf[WIFI_SSID]=.hidden
+write_wifi_connection >/dev/null
+[[ -f $target/etc/NetworkManager/system-connections/_hidden.nmconnection ]] ||
+  fail "a dot SSID's keyfile: $(ls -A "$target/etc/NetworkManager/system-connections")"
+rm -rf -- "$target"
+conf[WIFI_SSID]=""
+write_wifi_connection
+[[ ! -e $target ]] || fail "wrote a connection with no Wi-Fi network in the config"
+# Refused before the disk is wiped.
+for bad in "|$psk_file" "$(printf 'a\tb')|" "$(printf '%033d' 0)|" "Home|$wifi/missing"; do
+  conf[WIFI_SSID]=${bad%%|*} conf[WIFI_PSK_FILE]=${bad#*|}
+  (check_wifi) 2>/dev/null && fail "Wi-Fi config accepted: ${bad@Q}"
+done
+for psk in short "$(printf '%064d' 0)x" "$(printf 'tab\there1')"; do
+  printf '%s\n' "$psk" >"$psk_file"
+  conf[WIFI_SSID]=Home conf[WIFI_PSK_FILE]=$psk_file
+  (check_wifi) 2>/dev/null && fail "Wi-Fi passphrase accepted: ${psk@Q}"
+done
+printf '%064d\n' 0 >"$psk_file"
+(check_wifi) || fail "a 64-digit key was refused"
+rm -rf -- "$wifi"
 echo "installer-check-test: ok"

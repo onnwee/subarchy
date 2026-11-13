@@ -131,6 +131,9 @@ type env struct {
 	screens *screens
 	// installLog is where subarchy-install writes its output.
 	installLog string
+	// wifi is the live image's Wi-Fi; nil means no network page and
+	// nothing carried over.
+	wifi *wifi
 }
 
 // collect asks every question and returns the answers.
@@ -161,6 +164,9 @@ func collect(p *prompter, e env, repo, cmdlineExtra string) (setup.Answers, erro
 		if err := e.loadKeymap(a.Keymap); err != nil {
 			fmt.Fprintf(p.out, "Could not switch this console to %s (%v); it still types as before.\n", a.Keymap, err)
 		}
+	}
+	if err := p.network(e.wifi); err != nil {
+		return a, err
 	}
 	for a.Disk == "" {
 		fmt.Fprintln(p.out, "\nDisks (the chosen one is erased; the others are not touched):")
@@ -235,6 +241,9 @@ func collect(p *prompter, e env, repo, cmdlineExtra string) (setup.Answers, erro
 	if a.Timezone, err = p.ask("Time zone", "UTC", func(s string) error { return setup.ValidTimezone(e.zoneinfo, s) }); err != nil {
 		return a, err
 	}
+	if note := carryWiFi(&a, e.wifi); note != "" {
+		fmt.Fprintln(p.out, note)
+	}
 	return a, nil
 }
 
@@ -271,8 +280,12 @@ func xkbLayout(keymap string) string {
 // confirm shows the summary and asks whether to erase the disk. No is
 // the default, so Enter alone changes nothing.
 func confirm(p *prompter, a setup.Answers) (bool, error) {
-	fmt.Fprintf(p.out, "\nInstalling Subarchy:\n  disk      %s (ALL DATA ON IT WILL BE ERASED)\n  computer  %s\n  user      %s\n  time zone %s\n  keyboard  %s\n\n",
+	fmt.Fprintf(p.out, "\nInstalling Subarchy:\n  disk      %s (ALL DATA ON IT WILL BE ERASED)\n  computer  %s\n  user      %s\n  time zone %s\n  keyboard  %s\n",
 		a.Disk, a.Hostname, a.Username, a.Timezone, a.Keymap)
+	if a.WiFiSSID != "" {
+		fmt.Fprintf(p.out, "  Wi-Fi     %s (joined at first boot)\n", a.WiFiSSID)
+	}
+	fmt.Fprintln(p.out)
 	return p.yesNo(fmt.Sprintf("Erase %s and install", a.Disk), false)
 }
 
@@ -363,7 +376,7 @@ func run(args []string, stdin io.Reader, stdout io.Writer, e env, secret func() 
 		e.screens = nil
 	}
 	if *batch {
-		e.browse, e.action, e.screens = nil, nil, nil
+		e.browse, e.action, e.screens, e.wifi = nil, nil, nil, nil
 	}
 	var a setup.Answers
 	var err error
@@ -450,6 +463,7 @@ func main() {
 		installLog: installLog,
 		logTail:    logTail,
 		action:     action,
+		wifi:       realWiFi(),
 	}
 	if onConsole() {
 		prepareConsole(os.Stdout)

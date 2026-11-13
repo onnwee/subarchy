@@ -26,6 +26,8 @@
 #   PACKAGE_CACHE         pacman cache directory to reuse (optional)
 #   OFFLINE               1 to skip the mirrors and install from SUBARCHY_REPO alone (optional)
 #   KERNEL_CMDLINE_EXTRA  appended to the kernel command line (optional)
+#   WIFI_SSID             Wi-Fi network the installed system joins (optional)
+#   WIFI_PSK_FILE         file holding its passphrase; none for an open network
 set -euo pipefail
 
 here=$(dirname "$(realpath "$0")")
@@ -37,9 +39,9 @@ step() { echo ">> $*"; }
 
 declare -A conf=(
   [TIMEZONE]=UTC [LOCALE]=en_US.UTF-8 [KEYMAP]=us [XKB_LAYOUT]=us [XKB_VARIANT]=""
-  [PACKAGE_CACHE]="" [KERNEL_CMDLINE_EXTRA]="" [OFFLINE]=""
+  [PACKAGE_CACHE]="" [KERNEL_CMDLINE_EXTRA]="" [OFFLINE]="" [WIFI_SSID]="" [WIFI_PSK_FILE]=""
 )
-keys=" DISK HOSTNAME USERNAME USER_PASSWORD_FILE LUKS_PASSPHRASE_FILE TIMEZONE LOCALE KEYMAP XKB_LAYOUT XKB_VARIANT SUBARCHY_REPO PACKAGE_CACHE KERNEL_CMDLINE_EXTRA OFFLINE "
+keys=" DISK HOSTNAME USERNAME USER_PASSWORD_FILE LUKS_PASSPHRASE_FILE TIMEZONE LOCALE KEYMAP XKB_LAYOUT XKB_VARIANT SUBARCHY_REPO PACKAGE_CACHE KERNEL_CMDLINE_EXTRA OFFLINE WIFI_SSID WIFI_PSK_FILE "
 
 read_config() {
   local line key value n=0
@@ -60,6 +62,77 @@ read_config() {
   check_locale "${conf[LOCALE]}"
   [[ -s ${conf[USER_PASSWORD_FILE]} ]] || die "USER_PASSWORD_FILE: missing or empty"
   [[ -s ${conf[LUKS_PASSPHRASE_FILE]} ]] || die "LUKS_PASSPHRASE_FILE: missing or empty"
+  check_wifi
+}
+
+# check_wifi: a Wi-Fi network to carry over is checked before the disk is
+# wiped, not when its connection is written at the end.
+check_wifi() {
+  local LC_ALL=C ssid=${conf[WIFI_SSID]} psk
+  if [[ -z $ssid ]]; then
+    [[ -z ${conf[WIFI_PSK_FILE]} ]] || die "WIFI_PSK_FILE needs WIFI_SSID"
+    return 0
+  fi
+  if ((${#ssid} > 32)) || [[ $ssid == *[[:cntrl:]]* ]]; then die "WIFI_SSID: 1 to 32 bytes, no control characters"; fi
+  [[ -n ${conf[WIFI_PSK_FILE]} ]] || return 0
+  [[ -s ${conf[WIFI_PSK_FILE]} ]] || die "WIFI_PSK_FILE: missing or empty"
+  psk=$(<"${conf[WIFI_PSK_FILE]}")
+  [[ $psk =~ ^[[:xdigit:]]{64}$ || ($psk =~ ^[[:print:]]{8,63}$) ]] ||
+    die "WIFI_PSK_FILE: a Wi-Fi passphrase has 8 to 63 characters (or is the 64-digit key)"
+}
+
+# keyfile_value TEXT: TEXT as a NetworkManager keyfile (GKeyFile) string:
+# a backslash doubled, a space at either end written \s.
+keyfile_value() {
+  local v=${1//\\/\\\\}
+  [[ $v != " "* ]] || v="\\s${v:1}"
+  [[ $v != *" " ]] || v="${v%?}\\s"
+  printf '%s' "$v"
+}
+
+# write_wifi_connection: the Wi-Fi network from the config as a
+# NetworkManager connection, so the installed system joins it at its first
+# boot (ADR 0016). The passphrase goes only into that file, mode 600 as
+# NetworkManager requires, and never to the output, which is the install
+# log shown on the screen.
+write_wifi_connection() {
+  local LC_ALL=C ssid=${conf[WIFI_SSID]} name id ssid_value security=""
+  [[ -n $ssid ]] || return 0
+  # A plain name is written as text; any other as its bytes, which
+  # NetworkManager also reads ("72;111;109;101;").
+  if [[ $ssid =~ ^[A-Za-z0-9_.-]([A-Za-z0-9\ _.-]*[A-Za-z0-9_.-])?$ && $ssid == *[^0-9]* ]]; then
+    ssid_value=$ssid id=$ssid
+  else
+    ssid_value=$(printf '%s' "$ssid" | od -An -v -tu1 | xargs printf '%s;')
+    id=Wi-Fi
+  fi
+  name=${ssid//[^A-Za-z0-9_.-]/_}
+  # NetworkManager skips a file whose name starts with a dot.
+  [[ $name != .* ]] || name=_${name:1}
+  if [[ -n ${conf[WIFI_PSK_FILE]} ]]; then
+    security=$'\n[wifi-security]\nkey-mgmt=wpa-psk\npsk='$(keyfile_value "$(<"${conf[WIFI_PSK_FILE]}")")$'\n'
+  fi
+  local dir=$target/etc/NetworkManager/system-connections
+  mkdir -p "$dir"
+  install -m 600 /dev/stdin "$dir/$name.nmconnection" <<EOF
+# The Wi-Fi network used during the install (written by subarchy-install).
+[connection]
+id=$(keyfile_value "$id")
+uuid=$(</proc/sys/kernel/random/uuid)
+type=wifi
+
+[wifi]
+mode=infrastructure
+ssid=$ssid_value
+$security
+[ipv4]
+method=auto
+
+[ipv6]
+addr-gen-mode=default
+method=auto
+EOF
+  echo "the installed system joins the Wi-Fi network $id"
 }
 
 # check_locale NAME: the name must be one locale.gen lists, spelled the same
@@ -335,6 +408,7 @@ EOF
       arch-chroot "$target" systemctl enable --quiet "$svc"
     done <<<"$svc_list"
   fi
+  write_wifi_connection
   # DNS through resolved's stub (ADR 0020); .local through Avahi.
   ln -sf ../run/systemd/resolve/stub-resolv.conf "$target/etc/resolv.conf"
   sed -i 's/^hosts: mymachines resolve/hosts: mymachines mdns_minimal [NOTFOUND=return] resolve/' \
@@ -458,7 +532,7 @@ main() {
     case $1 in
       --config) config=${2:?--config needs a file}; shift 2 ;;
       --yes) yes=1; shift ;;
-      -h | --help) sed -n '2,26p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+      -h | --help) sed -n '2,28p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
       *) die "unknown argument $1" ;;
     esac
   done

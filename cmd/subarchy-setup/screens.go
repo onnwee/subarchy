@@ -41,6 +41,10 @@ func logoLines() []string { return strings.Split(strings.TrimRight(logo, "\n"), 
 // errBack is a step's way of saying "go to the previous step".
 var errBack = errors.New("back")
 
+// errSkip is a step's way of saying it had nothing to ask: the flow goes
+// on in the direction it was going.
+var errSkip = errors.New("skip")
+
 // The console palette, set once: SUBCULT's ink, paper, violet and acid in
 // the slots gum's colour numbers pick from.
 const (
@@ -164,9 +168,12 @@ func (s *screens) choose(header string, options []string, selected string) (stri
 	if selected != "" {
 		// gum splits --selected on commas and drops a backslash in front of
 		// any character, so a comma or backslash in the row is escaped.
-		args = append(args, "--selected", strings.NewReplacer(`\`, `\\`, ",", `\,`).Replace(selected))
+		// One argument, so a row that starts with "-" is not read as a flag.
+		args = append(args, "--selected="+strings.NewReplacer(`\`, `\\`, ",", `\,`).Replace(selected))
 	}
-	out, code := s.gum(append(args, options...)...)
+	// After "--" no row is read as a flag, not even a Wi-Fi network named
+	// "-=Free WiFi=-".
+	out, code := s.gum(append(append(args, "--"), options...)...)
 	if code != 0 || out == "" {
 		return "", errBack
 	}
@@ -369,18 +376,26 @@ func collectScreens(s *screens, e env, repo, cmdlineExtra string) (setup.Answers
 		func() error { return s.greeter() },
 		func() error { return s.language(&a, e) },
 		func() error { return s.keyboard(&a, e) },
+		// After the keyboard, so a Wi-Fi passphrase is typed under it.
+		func() error { return s.network(e.wifi) },
 		func() error { return s.account(&a, e, &separate) },
 		func() error { return s.disk(&a, e, disks) },
-		func() error { return s.summary(a, separate) },
+		func() error {
+			// Two statements, so the summary sees what carryWiFi put in a.
+			note := carryWiFi(&a, e.wifi)
+			return s.summary(a, separate, note)
+		},
 		func() error { return s.erase(a) },
 	}
-	for i := 0; i < len(steps); {
+	for i, step := 0, 1; i < len(steps); {
 		err := steps[i]()
 		switch {
 		case err == nil:
-			i++
+			i, step = i+1, 1
+		case errors.Is(err, errSkip):
+			i += step
 		case errors.Is(err, errBack) && i > 0:
-			i--
+			i, step = i-1, -1
 		default:
 			return a, err
 		}
@@ -517,7 +532,9 @@ func (s *screens) account(a *setup.Answers, e env, separate *bool) error {
 	return nil
 }
 
-func (s *screens) summary(a setup.Answers, separate bool) error {
+// summary shows every answer; note says why a Wi-Fi network is not
+// carried over, when it is not.
+func (s *screens) summary(a setup.Answers, separate bool, note string) error {
 	s.page("Here is what you chose.")
 	// Secrets show as set, never as one star per character: the length
 	// would be on the screen.
@@ -526,12 +543,20 @@ func (s *screens) summary(a setup.Answers, separate bool) error {
 	if separate {
 		passphrase = hidden
 	}
-	for _, row := range [][2]string{
+	rows := [][2]string{
 		{"Language", a.Locale}, {"Keyboard", a.Keymap}, {"Time zone", a.Timezone}, {"User name", a.Username},
 		{"Password", hidden}, {"Computer name", a.Hostname}, {"Disk passphrase", passphrase},
 		{"Install disk", a.Disk + " (erased)"},
-	} {
+	}
+	if a.WiFiSSID != "" {
+		rows = append(rows, [2]string{"Wi-Fi network", a.WiFiSSID + " (joined at first boot)"})
+	}
+	for _, row := range rows {
 		fmt.Fprintf(s.out, "%*s\x1b[3%sm%-17s\x1b[3%sm%s\x1b[0m\n", s.pad(), "", colViolet, row[0], colPaper, row[1])
+	}
+	if note != "" {
+		fmt.Fprintln(s.out)
+		s.line(colMuted, note)
 	}
 	fmt.Fprintln(s.out)
 	ok, err := s.confirm("Does this look right?", "Yes", "No, change it", true)

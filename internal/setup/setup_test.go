@@ -146,4 +146,62 @@ func TestWriteConfig(t *testing.T) {
 			t.Errorf("%s: mode %v, %v", name, info.Mode().Perm(), err)
 		}
 	}
+	if strings.Contains(string(conf), "WIFI_") {
+		t.Errorf("config names a Wi-Fi network nobody chose:\n%s", conf)
+	}
+}
+
+func TestWriteConfigWiFi(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "setup")
+	a := Answers{Disk: "/dev/vda", Hostname: "box", Username: "pat", Password: "pw-123456", Passphrase: "pw-123456",
+		Timezone: "UTC", Keymap: "us", XKBLayout: "us", Repo: "file:///opt/subarchy/repo",
+		WiFiSSID: "Cafe Wi-Fi", WiFiPSK: "wifi-secret-1"}
+	path, err := a.WriteConfig(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	conf, _ := os.ReadFile(path)
+	for _, want := range []string{"WIFI_SSID=Cafe Wi-Fi", "WIFI_PSK_FILE=" + filepath.Join(dir, "wifi-psk")} {
+		if !strings.Contains(string(conf), want+"\n") {
+			t.Errorf("config lacks %q:\n%s", want, conf)
+		}
+	}
+	if strings.Contains(string(conf), "wifi-secret-1") {
+		t.Error("config contains the Wi-Fi passphrase")
+	}
+	psk, err := os.ReadFile(filepath.Join(dir, "wifi-psk"))
+	info, _ := os.Stat(filepath.Join(dir, "wifi-psk"))
+	if err != nil || string(psk) != "wifi-secret-1\n" || info.Mode().Perm() != 0o600 {
+		t.Errorf("wifi-psk: %q, %v", psk, err)
+	}
+	// An open network has a name and no passphrase file.
+	a.WiFiPSK = ""
+	dir = filepath.Join(t.TempDir(), "open")
+	path, _ = a.WriteConfig(dir)
+	conf, _ = os.ReadFile(path)
+	if !strings.Contains(string(conf), "WIFI_SSID=Cafe Wi-Fi\n") || strings.Contains(string(conf), "WIFI_PSK_FILE") {
+		t.Errorf("open network config:\n%s", conf)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "wifi-psk")); err == nil {
+		t.Error("wrote a passphrase file for an open network")
+	}
+}
+
+func TestValidWiFi(t *testing.T) {
+	for _, ok := range []string{"12345678", strings.Repeat("x", 63), "pass word!", strings.Repeat("aF", 32)} {
+		if err := ValidWiFiPassphrase(ok); err != nil {
+			t.Errorf("%q refused: %v", ok, err)
+		}
+	}
+	for _, bad := range []string{"short", strings.Repeat("x", 64), "pässwort1", "tab\there1"} {
+		if ValidWiFiPassphrase(bad) == nil {
+			t.Errorf("%q accepted", bad)
+		}
+	}
+	for ssid, want := range map[string]bool{"Home": true, " spaced ": true, "Кафе": true, "": false,
+		strings.Repeat("n", 33): false, "line\nbreak": false, "\x1b[2Jclear": false, "csi\u009b2J": false, "bad\xffbyte": false} {
+		if ValidSSID(ssid) != want {
+			t.Errorf("ValidSSID(%q) = %v", ssid, !want)
+		}
+	}
 }

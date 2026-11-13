@@ -13,6 +13,8 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 )
 
 // MinDiskBytes is the smallest disk offered: the 4 GiB ESP plus room for
@@ -65,6 +67,40 @@ func ValidSecret(secret, again string, min int) error {
 		return errors.New("the two entries differ")
 	}
 	return nil
+}
+
+// ValidWiFiPassphrase checks a WPA passphrase: 8 to 63 printable ASCII
+// characters, or the 64 hex digits of the key itself, which is what iwd
+// and NetworkManager accept.
+func ValidWiFiPassphrase(s string) error {
+	if len(s) == 64 && strings.Trim(strings.ToLower(s), "0123456789abcdef") == "" {
+		return nil
+	}
+	if len(s) < 8 || len(s) > 63 {
+		return errors.New("a Wi-Fi passphrase has 8 to 63 characters")
+	}
+	for _, c := range []byte(s) {
+		if c < 0x20 || c > 0x7e {
+			return errors.New("a Wi-Fi passphrase has only letters, digits, punctuation and spaces from the US keyboard")
+		}
+	}
+	return nil
+}
+
+// ValidSSID reports whether a network name can go into the install config
+// on one line and be shown on the console: 1 to 32 bytes of UTF-8 and no
+// control characters, not even C1 ones such as U+009B, which the Linux
+// console reads as the start of an escape sequence.
+func ValidSSID(s string) bool {
+	if len(s) < 1 || len(s) > 32 || !utf8.ValidString(s) {
+		return false
+	}
+	for _, r := range s {
+		if unicode.IsControl(r) {
+			return false
+		}
+	}
+	return true
 }
 
 // ValidTimezone checks a zone name against the zoneinfo database at root.
@@ -287,6 +323,10 @@ type Answers struct {
 	Repo         string
 	CmdlineExtra string
 	PackageCache string
+	// WiFiSSID is the Wi-Fi network the installed system joins; empty for
+	// none. WiFiPSK is its passphrase, empty for an open network.
+	WiFiSSID string
+	WiFiPSK  string
 }
 
 // WriteConfig writes the secrets into private files in dir and returns the
@@ -296,6 +336,9 @@ func (a Answers) WriteConfig(dir string) (string, error) {
 		return "", fmt.Errorf("config: %w", err)
 	}
 	secrets := map[string]string{"user-password": a.Password, "luks-passphrase": a.Passphrase}
+	if a.WiFiPSK != "" {
+		secrets["wifi-psk"] = a.WiFiPSK
+	}
 	for name, value := range secrets {
 		if err := os.WriteFile(filepath.Join(dir, name), []byte(value+"\n"), 0o600); err != nil {
 			return "", fmt.Errorf("config: %w", err)
@@ -322,6 +365,12 @@ func (a Answers) WriteConfig(dir string) (string, error) {
 	}
 	if a.CmdlineExtra != "" {
 		lines = append(lines, "KERNEL_CMDLINE_EXTRA="+a.CmdlineExtra)
+	}
+	if a.WiFiSSID != "" {
+		lines = append(lines, "WIFI_SSID="+a.WiFiSSID)
+		if a.WiFiPSK != "" {
+			lines = append(lines, "WIFI_PSK_FILE="+filepath.Join(dir, "wifi-psk"))
+		}
 	}
 	path := filepath.Join(dir, "install.conf")
 	if err := os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0o600); err != nil {

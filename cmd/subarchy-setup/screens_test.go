@@ -95,8 +95,8 @@ func TestScreensInstall(t *testing.T) {
 		}
 		out, code := real(args...)
 		if p, ok := strings.CutPrefix(out, "<row:"); ok {
-			for i, a := range args {
-				if strings.HasPrefix(a, strings.TrimSuffix(p, ">")) && (i == 0 || args[i-1] != "--selected") {
+			for _, a := range args {
+				if strings.HasPrefix(a, strings.TrimSuffix(p, ">")) {
 					return a, code
 				}
 			}
@@ -135,7 +135,7 @@ func TestScreensInstall(t *testing.T) {
 			t.Errorf("screens lack %q", want)
 		}
 	}
-	if !strings.Contains(callText(g), "--header Keyboard layout --padding 0 0 0 26 --cursor.foreground 2 --header.foreground 5 --selected.foreground 2 --selected German") {
+	if !strings.Contains(callText(g), "--header Keyboard layout --padding 0 0 0 26 --cursor.foreground 2 --header.foreground 5 --selected.foreground 2 --selected=German --") {
 		t.Error("choosing German did not preselect the German keyboard")
 	}
 	if !strings.Contains(callText(g), `[vfat "EFI", ntfs "Windows"]`) || !strings.Contains(callText(g), "[empty]") {
@@ -143,7 +143,7 @@ func TestScreensInstall(t *testing.T) {
 	}
 	// Back from the summary, the disk list opens on the disk chosen, its
 	// commas escaped for gum.
-	if !strings.Contains(callText(g), `--selected /dev/vda  26 GB  unknown model  [vfat "EFI"\, ntfs "Windows"]`) {
+	if !strings.Contains(callText(g), `--selected=/dev/vda  26 GB  unknown model  [vfat "EFI"\, ntfs "Windows"]`) {
 		t.Errorf("disk list did not reopen on the chosen disk: %s", callText(g))
 	}
 	// The secrets are not shown, nor their lengths.
@@ -173,7 +173,7 @@ func TestChooseSelectedEscapes(t *testing.T) {
 	s, g, _ := testScreens(t, "")
 	row := `/dev/vda  1 TB  Model\x20One  [vfat, ext4]`
 	s.choose("Install disk", []string{row}, row)
-	if want := `--selected /dev/vda  1 TB  Model\\x20One  [vfat\, ext4]`; !strings.Contains(callText(g), want) {
+	if want := `--selected=/dev/vda  1 TB  Model\\x20One  [vfat\, ext4]`; !strings.Contains(callText(g), want) {
 		t.Errorf("gum call lacks %q: %s", want, callText(g))
 	}
 }
