@@ -47,21 +47,21 @@ Item {
   visible: widgetItem !== null && !widgetItem.hidden
 
   property bool warned: false
-  onEntryChanged: {
-    if (!entry && widgetId !== "" && !warned && Object.keys(WidgetIndex.widgets).length > 0) {
-      console.warn("subcult shell: unknown widget", widgetId)
-      warned = true
-    }
-    Qt.callLater(host.load)
-  }
+  onEntryChanged: Qt.callLater(host.load)
   Component.onCompleted: Qt.callLater(host.load)
 
   // The widget is created with its real mode, screen, settings and shell
   // (initial properties), so its own Component.onCompleted already sees
-  // them; the bindings follow in onLoaded.
+  // them; the bindings follow in onLoaded. An unknown id warns here, once
+  // the host is complete: entry starts out null, so its change handler
+  // never runs for an id the index lacks.
   function load() {
     if (!host.entry) {
       widget.source = ""
+      if (host.widgetId !== "" && !host.warned && Object.keys(WidgetIndex.widgets).length > 0) {
+        console.warn("subcult shell: unknown widget", host.widgetId)
+        host.warned = true
+      }
       return
     }
     widget.setSource(Qt.resolvedUrl("widgets/" + host.entry.dir + "/Widget.qml"),

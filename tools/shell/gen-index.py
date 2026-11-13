@@ -19,24 +19,43 @@ ID = re.compile(r"^subcult\.[a-z0-9-]+$")
 HOST = re.compile(r"^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$")
 
 
+def is_number(v) -> bool:
+    """A JSON number: Python's bool is an int, JavaScript's is not."""
+    return isinstance(v, (int, float)) and not isinstance(v, bool)
+
+
 def validate(m) -> list[str]:
     if not isinstance(m, dict):
         return ["manifest is not an object"]
     errors = []
-    if m.get("api") != API:
-        errors.append(f"api is {m.get('api')}, the shell speaks {API}")
+    api = m.get("api")
+    if not is_number(api) or api != API:
+        errors.append(f"api is {api}, the shell speaks {API}")
     if m.get("kind") not in ("bar-widget", "service"):
         errors.append(f"kind must be bar-widget or service, not {m.get('kind')}")
-    if not ID.match(str(m.get("id"))):
+    if not isinstance(m.get("id"), str) or not ID.fullmatch(m["id"]):
         errors.append(f"id {m.get('id')} must look like subcult.<name>")
-    cost = m.get("cost") or {}
-    for t in cost.get("timers") or []:
+    cost = m.get("cost")
+    cost = {} if cost is None else cost
+    if not isinstance(cost, dict):
+        return errors + ["cost must be an object"]
+    timers = cost.get("timers")
+    timers = [] if timers is None else timers
+    if not isinstance(timers, list):
+        errors.append("cost.timers must be a list")
+        timers = []
+    for t in timers:
         ok = isinstance(t, dict) and isinstance(t.get("name"), str) and \
-            all(isinstance(t.get(k), (int, float)) and t.get(k) > 0 for k in ("ac", "battery"))
+            all(is_number(t.get(k)) and t.get(k) > 0 for k in ("ac", "battery"))
         if not ok:
             errors.append(f"timer {t.get('name') if isinstance(t, dict) else t} needs a name and positive ac and battery seconds")
-    for h in cost.get("network") or []:
-        if not HOST.match(str(h)):
+    hosts = cost.get("network")
+    hosts = [] if hosts is None else hosts
+    if not isinstance(hosts, list):
+        errors.append("cost.network must be a list")
+        hosts = []
+    for h in hosts:
+        if not isinstance(h, str) or not HOST.fullmatch(h):
             errors.append(f"network host {h} is not a hostname")
     return errors
 

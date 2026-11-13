@@ -78,6 +78,23 @@ TestCase {
     compare(r.warning, "")
   }
 
+  function test_parseWrongTypes() {
+    const defaults = { primary: "", layout: { left: ["a"], right: ["b"] }, widgets: {} }
+    const r = ConfigModel.parse('{"primary": "DP-1", "layout": {"left": "c", "right": ["d", 3]}, "widgets": []}', defaults)
+    compare(r.config.primary, "DP-1", "a good value next to bad ones applies")
+    compare(r.config.layout.left, ["a"], "a string where a list belongs keeps the default")
+    compare(r.config.layout.right, ["b"], "a list with a number keeps the default")
+    compare(r.config.widgets, {})
+    verify(r.warning.indexOf("layout.left") >= 0 && r.warning.indexOf("layout.right") >= 0 && r.warning.indexOf("widgets") >= 0, r.warning)
+    const whole = ConfigModel.parse('{"layout": ["a"]}', defaults)
+    compare(whole.config.layout, defaults.layout)
+    verify(whole.warning.indexOf("layout is a list, not an object") >= 0, whole.warning)
+    compare(ConfigModel.parse('{"layout": {"left": []}, "extra": 1}', defaults).warning, "", "an empty list and unknown keys are fine")
+    const machine = ConfigModel.machine(defaults, '{"layout": {"right": "x"}}')
+    compare(machine.config.layout.right, ["b"])
+    verify(machine.warning.indexOf("layout.right") >= 0, machine.warning)
+  }
+
   function test_machineLayerEnables() {
     const defaults = { layout: { left: ["a"], right: ["b"] }, widgets: {} }
     const r = ConfigModel.machine(defaults, '{"#": "# Subarchy hardware fix dell-power", "enable": ["subcult.dell-power", "b"], "widgets": {"x": {"n": 1}}}')
@@ -250,6 +267,9 @@ TestCase {
       { tag: "id", m: { id: "omarchy.a", api: 0, kind: "bar-widget" } },
       { tag: "timer", m: { id: "subcult.a", api: 0, kind: "service", cost: { timers: [{ name: "t", ac: 60 }] } } },
       { tag: "host", m: { id: "subcult.a", api: 0, kind: "service", cost: { network: ["http://x/"] } } },
+      { tag: "string seconds", m: { id: "subcult.a", api: 0, kind: "service", cost: { timers: [{ name: "t", ac: "60", battery: 60 }] } } },
+      { tag: "id in a list", m: { id: ["subcult.a"], api: 0, kind: "service" } },
+      { tag: "cost not an object", m: { id: "subcult.a", api: 0, kind: "service", cost: "cheap" } },
       { tag: "missing", m: null }
     ]
   }

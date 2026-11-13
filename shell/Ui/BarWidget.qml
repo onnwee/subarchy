@@ -1,4 +1,5 @@
 import QtQuick
+import qs.Commons
 
 // The v0 widget contract (ADR 0068). Every widgets/<dir>/Widget.qml is a
 // BarWidget; the host sets these properties and listens to openPanel.
@@ -13,5 +14,5 @@ Item {
 
   signal openPanel()
 
-  implicitHeight: 26
+  implicitHeight: Style.barHeight
 }

@@ -50,19 +50,57 @@ function merge(defaults, user) {
   return out
 }
 
+// kindOf names a JSON value's type for a warning: "a list", "an object".
+function kindOf(v) {
+  return v === null ? "null" : Array.isArray(v) ? "a list" : isObject(v) ? "an object" : "a " + typeof v
+}
+
+// checked merges like merge, but a value whose type differs from the
+// default's (a string where the default is a list, say) keeps the default
+// and is named in problems, so a typo cannot empty the bar without a word.
+// A list of strings in the defaults also takes only strings.
+function checked(defaults, user, path, problems) {
+  const out = clone(defaults) || {}
+  if (!isObject(user))
+    return out
+  for (const key in user) {
+    const where = path + key
+    const d = out[key]
+    const u = user[key]
+    if (isObject(d) && isObject(u))
+      out[key] = checked(d, u, where + ".", problems)
+    else if (d !== undefined && d !== null && kindOf(d) !== kindOf(u))
+      problems.push(where + " is " + kindOf(u) + ", not " + kindOf(d))
+    else if (Array.isArray(d) && d.length > 0 && d.every(x => typeof x === "string") && !u.every(x => typeof x === "string"))
+      problems.push(where + " holds something other than strings")
+    else
+      out[key] = clone(u)
+  }
+  return out
+}
+
+// layered applies one layer over the defaults with checked; the warning
+// names the keys that kept their defaults.
+function layered(defaults, layer) {
+  const problems = []
+  const config = checked(defaults, layer, "", problems)
+  return { config: config, warning: problems.length > 0 ? problems.join("; ") + "; kept the defaults for these" : "" }
+}
+
 // parse returns the merged config, or the defaults and a warning when the
 // user's text is not a JSON object.
 function parse(text, defaults) {
   if (text === undefined || text === null || String(text).trim() === "")
     return { config: clone(defaults), warning: "" }
+  let user
   try {
-    const user = JSON.parse(text)
-    if (!isObject(user))
-      return { config: clone(defaults), warning: "config is not a JSON object; using the defaults" }
-    return { config: merge(defaults, user), warning: "" }
+    user = JSON.parse(text)
   } catch (e) {
     return { config: clone(defaults), warning: "config is not valid JSON (" + e.message + "); using the defaults" }
   }
+  if (!isObject(user))
+    return { config: clone(defaults), warning: "config is not a JSON object; using the defaults" }
+  return layered(defaults, user)
 }
 
 // machine applies the machine layer between the defaults and the user's
@@ -85,7 +123,8 @@ function machine(defaults, text) {
   const rest = clone(layer)
   delete rest.enable
   delete rest["#"]
-  const out = merge(defaults, rest)
+  const merged = layered(defaults, rest)
+  const out = merged.config
   if (!isObject(out.layout))
     out.layout = {}
   if (!Array.isArray(out.layout.right))
@@ -100,7 +139,7 @@ function machine(defaults, text) {
       out.layout.right.push(id)
       present[id] = true
     }
-  return { config: out, warning: "" }
+  return { config: out, warning: merged.warning }
 }
 
 // withWidgetSetting returns a copy of the user's config with one setting of

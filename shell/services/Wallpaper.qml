@@ -30,6 +30,15 @@ Singleton {
   readonly property string current: stateFile.text.trim()
   readonly property bool active: Model.active(Power.onBattery, root.settings.onBattery === true)
 
+  // What every output's background shows: the chosen image, else the
+  // default once the subarchy-wallpapers package has installed it.
+  // `readable` comes from one `test -r` for all outputs, run again when
+  // the path changes.
+  readonly property string defaultImage: "/usr/share/backgrounds/subarchy/01-acid-negative-space.png"
+  readonly property string image: root.current !== "" ? root.current : root.defaultImage
+  property bool readable: false
+  onImageChanged: check.start()
+
   function acquire(settings) {
     root.settings = settings || {}
     if (root.users++ === 0)
@@ -64,6 +73,25 @@ Singleton {
   WatchedFile {
     id: stateFile
     path: root.statePath
+  }
+
+  // The command is set when the check starts, not bound; a path that
+  // changed while a check ran is checked again when it ends.
+  Process {
+    id: check
+    function start() {
+      if (check.running)
+        return
+      check.command = ["test", "-r", root.image]
+      check.running = true
+    }
+    onExited: (code) => {
+      if (check.command[2] !== root.image)
+        Qt.callLater(check.start)
+      else
+        root.readable = code === 0
+    }
+    Component.onCompleted: check.start()
   }
 
   // The widget's "rotate" timer, reported through Power like a WidgetTimer.

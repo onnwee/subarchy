@@ -1036,13 +1036,20 @@ shot HEADLESS-1
   fail "a new palette was not applied live (bar $(bar_colour), line $(pixel 640 25))"
 
 [[ $(wc -l <"$home1/screensaver-reloads") == 1 ]] || fail "a palette burst did not request one background render"
+# The stub cursor apply takes a second; the burst must rebuild it once
+# (settings apply above ran it the first time).
+for _ in $(seq 10); do [[ $(grep -c '^cursor apply' "$home1/settings-actions") == 2 ]] && break; sleep 0.5; done
+sleep 1
+[[ $(grep -c '^cursor apply' "$home1/settings-actions") == 2 ]] || fail "a palette burst did not rebuild the cursor once: $(cat "$home1/settings-actions")"
 
-# 3. A bar config changed after start applies without a restart.
-printf '{"layout": {"left": []}}\n' >"$home1/.config/subcult/shell/bar.json"
+# 3. A bar config changed after start applies without a restart, and an
+# id the index lacks is named in the log.
+printf '{"layout": {"left": ["subcult.nope"]}}\n' >"$home1/.config/subcult/shell/bar.json"
 sleep 2
 st=$(status "$home1")
 [[ $(json '"subcult.test-probe" in d["loaded"]["HEADLESS-1"]') == False ]] ||
   fail "a changed bar config was not applied live: $st"
+grep -q 'unknown widget subcult.nope' "$work/qs1.log" || fail "an unknown widget id was not named in the log"
 
 # 4. Outputs that appear and disappear gain and lose a bar.
 swaymsg -q create_output

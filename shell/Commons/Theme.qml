@@ -50,22 +50,25 @@ Singleton {
     onLoaded: root.fallback = root.colorsOf(text())
   }
 
-  // Coalesce palette writes. Restarting the service also replaces a render
+  // Coalesce palette writes: a save that lands as several file events (a
+  // truncate and a write, or a burst of saves) rebuilds the cursor and the
+  // screensaver art once. Restarting the service also replaces a render
   // still working on the previous theme, so the last palette always wins.
   Timer {
     id: render
     interval: 750
-    onTriggered: Quickshell.execDetached(["systemctl", "--user", "restart", "subcult-screensaver.service"])
+    onTriggered: {
+      Quickshell.execDetached(["subcult", "cursor", "apply"])
+      Quickshell.execDetached(["systemctl", "--user", "restart", "subcult-screensaver.service"])
+    }
   }
 
   WatchedFile {
     path: root.userPath
     onChanged: (live) => {
       root.user = root.colorsOf(text)
-      if (live) {
-        Quickshell.execDetached(["subcult", "cursor", "apply"])
+      if (live)
         render.restart()
-      }
     }
   }
 }
