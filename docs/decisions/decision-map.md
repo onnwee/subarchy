@@ -97,7 +97,7 @@ NVMe.
 | D4 | Notifications, OSD, lock screen, idle | Shell plugins | [[0036-shell-components\|ADR 0036]]: notifications and OSD in shell; separate QML lock with screensaver until input; hypridle |
 | D5 | Theming system | `colors.toml` per theme rendered into per-app templates | [[0037-theming\|ADR 0037]]: Theme Tender; `subcult-minimal` as base and default |
 | D6 | Wallpaper engine | `owe` | [[0038-wallpaper\|ADR 0038]]: shell-drawn, still by default, video opt-in |
-| D7 | Fonts and icon theme | JetBrains Mono Nerd, Yaru icons | [[0039-fonts-icons\|ADR 0039]]: JetBrains Mono, Space Grotesk, Oswald, Yaru purple-dark icons |
+| D7 | Fonts and icon theme | JetBrains Mono Nerd, Yaru icons | [[0039-fonts-icons\|ADR 0039]]: switchable font roles (JetBrainsMono Nerd Font default), Papirus-Dark icons, own cursor |
 | D8 | Quality-of-life conveniences and keybindings | Omarchy's bindings, toggles, capture tools | [[0056-quality-of-life\|ADR 0056]]: Omarchy's set, 16 extras, 4 additions |
 | D9 | Default bar and calendar | Stock bar | [[0061-default-bar-calendar\|ADR 0061]]: the owner's current bar; Google and CalDAV calendar |
 

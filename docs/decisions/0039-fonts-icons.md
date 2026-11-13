@@ -4,7 +4,7 @@ type: decision
 status: accepted
 adr: 39
 created: 2026-11-06
-updated: 2026-11-07
+updated: 2026-11-13
 tags: [decision, adr, shell, brand]
 aliases: [ADR 0039, D7, Fonts, Icons]
 ---
@@ -65,5 +65,20 @@ Superseded in part by the owner's choices in
   original pick; Yaru is not used.
 - **The cursor is Subarchy's own** (`subcult-cursor`), coloured from a
   palette role (default `lavender`); `subcult cursor` builds and applies it.
+
+## Progress
+
+- 2026-11-13: what ships matches the revision. `papirus-icon-theme` is in
+  `install/packages/desktop.txt`; `default/gtk/settings.ini` sets
+  `gtk-icon-theme-name=Papirus-Dark` and
+  `default/gtk/90-subarchy.gschema.override` sets
+  `icon-theme='Papirus-Dark'`. `tools/test/package-test.sh` checks the
+  override in the package and the VM install test checks `gsettings` on
+  the installed system. The icon theme is fixed: themes carry no
+  `icons.theme`, so the Consequences line above about following the active
+  theme no longer applies, and `yaru-icon-theme` is not installed. The
+  `Yaru-purple-dark` in [[0037-theming|ADR 0037]] describes `sputnik`'s
+  theme as read on 2026-11-07; Subarchy's copy of `subcult-minimal` names
+  no icon theme.
 
 Related: [[decision-map|Decision map]] · [[0037-theming|ADR 0037]] · [[brand-identity|Brand identity]]
