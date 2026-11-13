@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Compile and exercise the shipped SDDM QML against a fake SDDM context.
-# Optional argument keeps the rendered wide, narrow and error-state previews.
+# Optional argument keeps the rendered previews (1280x800, 2560x1440, 320x480
+# and the error, locked, busy and Caps Lock states).
 set -euo pipefail
 root=$(git rev-parse --show-toplevel)
 qt=${QT6BIN:-/usr/lib/qt6/bin}
@@ -43,4 +44,4 @@ if [[ -n $artifacts ]]; then
 fi
 if ((status)); then cat "$work/greeter-test.log"; exit "$status"; fi
 grep '^Totals:' "$work/greeter-test.log"
-echo 'greeter-test: PASS (keyboard, mouse, authentication states, narrow layout and artwork)'
+echo 'greeter-test: PASS (keyboard, Escape, Caps Lock, mouse, authentication states, screen sizes and artwork)'

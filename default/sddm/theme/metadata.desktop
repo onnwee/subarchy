@@ -1,6 +1,6 @@
 [SddmGreeterTheme]
 Name=Subarchy
-Description=SUBCULT // Subarchy greeter: the lockup on ink, the last user and a passphrase field
+Description=SUBCULT // Subarchy greeter: the lockup, the clock and the sign-in form in the lock screen's style
 Author=SUBCULT
 License=GPL-3.0-or-later
 Type=sddm-theme

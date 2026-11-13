@@ -49,6 +49,9 @@ func TestSDDMConfAndFallback(t *testing.T) {
 	if !strings.Contains(conf, "base=#282a36\n") || !strings.Contains(conf, "border=#bd93f9\n") {
 		t.Errorf("sddm conf: %s", conf)
 	}
+	if !strings.Contains(conf, "accent=#00ff88\n") {
+		t.Errorf("the greeter bullets take green, here subcult-minimal's: %s", conf)
+	}
 	if !strings.Contains(conf, "error=#d52032\n") {
 		t.Errorf("a role the theme lacks must come from subcult-minimal: %s", conf)
 	}

@@ -118,7 +118,7 @@ func SDDMConf(p Palette) string {
 	return "# Written by subcult theme apply-system from the user's palette (ADR 0037).\n[General]\n" +
 		"base=" + p.role("base") + "\nsurface=" + p.role("surface0") + "\nborder=" + p.role("mauve") +
 		"\nborderInactive=" + p.role("surface1") + "\ntext=" + p.role("text") + "\nmuted=" + p.role("overlay0") +
-		"\nsubtext=" + p.role("subtext0") + "\nerror=" + p.role("red") + "\n"
+		"\nsubtext=" + p.role("subtext0") + "\naccent=" + p.role("green") + "\nerror=" + p.role("red") + "\n"
 }
 
 // limineKeys are the preamble lines Apply owns, in the order they are added.
