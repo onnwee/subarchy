@@ -116,6 +116,41 @@ func TestUpdateYes(t *testing.T) {
 	}
 }
 
+// A failed migration comes after the packages were replaced: the report
+// and the indicator refresh still happen, and the command exits 1.
+func TestMigrationFailureShowsReport(t *testing.T) {
+	r := &fakeRunner{
+		tools:  map[string]bool{"checkupdates": true},
+		series: map[string][]string{"checkupdates --nocolor": {"a 1 -> 2\n"}},
+		fail:   map[string]bool{},
+	}
+	a, out, errOut := newApp(t, r, "1790000001.sh")
+	m, err := a.migrations()
+	if err != nil {
+		t.Fatal(err)
+	}
+	r.fail["bash -euo pipefail "+filepath.Join(m.Dir, "1790000001.sh")] = true
+	if err := a.writeState(80); err != nil {
+		t.Fatal(err)
+	}
+	if code := a.main(context.Background(), []string{"--yes", "--no-snapshot"}); code != 1 {
+		t.Fatalf("exit %d, want 1: %s", code, errOut)
+	}
+	if !strings.Contains(out.String(), "reboot") {
+		t.Errorf("no report:\n%s", out)
+	}
+	if !strings.Contains(errOut.String(), "migration 1790000001.sh") {
+		t.Errorf("stderr = %q", errOut)
+	}
+	dir, err := a.stateDir()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if state, err := os.ReadFile(filepath.Join(dir, "update-count")); err != nil || string(state) != "1\n" {
+		t.Errorf("indicator = %q, %v; want refreshed", state, err)
+	}
+}
+
 func TestAuthorizationFailureStopsUpdate(t *testing.T) {
 	r := &fakeRunner{tools: map[string]bool{"snapper": true}, fail: map[string]bool{"sudo true": true}}
 	a, _, errOut := newApp(t, r)

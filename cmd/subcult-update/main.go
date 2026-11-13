@@ -164,7 +164,10 @@ func (a *app) update(ctx context.Context, yes, noSnapshot, dryRun bool) int {
 		HyprlandSession: os.Getenv("HYPRLAND_INSTANCE_SIGNATURE") != "",
 	}}
 	rep, err := u.Run(ctx)
-	if err != nil {
+	// After a failed migration the packages are replaced and every other
+	// step has run: show the report and refresh the indicator, then fail.
+	var migErr *update.MigrationError
+	if err != nil && !errors.As(err, &migErr) {
 		return a.fail(err)
 	}
 	fmt.Fprint(a.stdout, "\n"+rep.Summary())
@@ -175,6 +178,9 @@ func (a *app) update(ctx context.Context, yes, noSnapshot, dryRun bool) int {
 		if code := a.check(ctx, false, true); code == 1 {
 			fmt.Fprintln(a.stdout, "warning: the update indicator could not be refreshed.")
 		}
+	}
+	if err != nil {
+		return a.fail(err)
 	}
 	return 0
 }

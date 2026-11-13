@@ -18,6 +18,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"git.subcult.tv/subculture-collective/subarchy/internal/atomicfile"
 )
 
 // Palette is a theme's colours by Pult role, lower-case #rrggbb each, and
@@ -303,14 +305,9 @@ func Apply(root string, p Palette) (Report, error) {
 			rep.Unchanged = append(rep.Unchanged, rel)
 			return false, nil
 		}
-		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
-			return false, err
-		}
-		tmp := full + ".subcult-tmp"
-		if err := os.WriteFile(tmp, content, mode); err != nil {
-			return false, err
-		}
-		if err := os.Rename(tmp, full); err != nil {
+		// Flushed before the rename: a crash must not leave a truncated
+		// limine.conf on the ESP.
+		if err := atomicfile.Write(full, content, mode); err != nil {
 			return false, err
 		}
 		rep.Written = append(rep.Written, rel)

@@ -74,8 +74,7 @@ func readFacts(root string) Facts {
 			}
 		}
 	}
-	// omarchy-hw-laptop, omarchy-hw-laptop-closed: an ACPI lid, or an input
-	// device whose switch capabilities include SW_LID (bit 0).
+	// A system battery (not a peripheral's), for the laptop fixes.
 	for _, kind := range glob(root, "sys/class/power_supply/*/type") {
 		if b, err := os.ReadFile(kind); err == nil && strings.TrimSpace(string(b)) == "Battery" {
 			// A peripheral's battery (mouse, headset) has scope Device.
@@ -104,6 +103,8 @@ func readFacts(root string) Facts {
 		}
 	}
 	sort.Strings(f.PlatformProfiles)
+	// omarchy-hw-laptop, omarchy-hw-laptop-closed: an ACPI lid, or an input
+	// device whose switch capabilities include SW_LID (bit 0).
 	for _, state := range glob(root, "proc/acpi/button/lid/*/state") {
 		f.LidSwitch = true
 		if b, err := os.ReadFile(state); err == nil && strings.Contains(string(b), "closed") {
@@ -345,7 +346,7 @@ func (m Machine) Matches() map[string]bool {
 	return out
 }
 
-// Matcher finds a matcher by name.
+// FindMatcher finds a matcher by name.
 func FindMatcher(name string) (Matcher, bool) {
 	for _, mt := range Matchers {
 		if mt.Name == name {

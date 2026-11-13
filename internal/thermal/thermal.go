@@ -308,7 +308,9 @@ func (c *Conn) Recv() ([]Message, error) {
 		if errors.Is(err, unix.EAGAIN) || errors.Is(err, unix.EWOULDBLOCK) {
 			return nil, os.ErrDeadlineExceeded
 		}
-		if errors.Is(err, unix.EINTR) {
+		// ENOBUFS: the queue overflowed and the kernel dropped events;
+		// the socket still works.
+		if errors.Is(err, unix.EINTR) || errors.Is(err, unix.ENOBUFS) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("netlink receive: %w", err)

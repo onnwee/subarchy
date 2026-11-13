@@ -32,7 +32,7 @@ type Fix struct {
 var intelEHTRadios = map[uint16]bool{0xe440: true, 0x272b: true}
 
 // Intel CPU models (family 6) Omarchy runs intel-lpmd on: Alder Lake,
-// Raptor Lake, Meteor Lake, Arrow Lake, Lunar Lake and Panther Lake parts.
+// Raptor Lake, Meteor Lake, Lunar Lake and Panther Lake parts.
 var intelLPMDModels = map[int]bool{151: true, 154: true, 170: true, 172: true, 183: true, 186: true, 189: true, 191: true, 204: true}
 
 const intelPantherLake = 204
@@ -366,10 +366,6 @@ func Fixes(m Machine) []Fix {
 // from the user's.
 const Header = "# Subarchy hardware fix"
 
-// Apply writes the fixes' files under root, creating directories. It
-// returns the paths it wrote and the paths it kept: a file already holding
-// the content is left alone, and so is a file that does not start with the
-// Header, which the user wrote or edited.
 // ours reports whether a file on disk is one of the fixes' own: it starts
 // with Header, or carries it in its first line (a JSON file keeps it in a
 // "#" key).
@@ -378,6 +374,12 @@ func ours(content string) bool {
 	return strings.Contains(first, Header)
 }
 
+// Apply writes the fixes' files under root, creating directories. It
+// returns the paths it wrote and the paths it kept. A file that already
+// holds the content is left alone. A file whose first line lacks the
+// Header is the user's and is kept. A file that still carries the Header
+// is replaced, edits included: to keep an edited fix file, remove its
+// Header line (or the "#" key in a JSON file).
 func Apply(root string, fixes []Fix) (written, kept []string, err error) {
 	for _, f := range fixes {
 		paths := make([]string, 0, len(f.Files))

@@ -12,13 +12,23 @@ import (
 // finishes the package it is on and removes its lock on SIGINT, and leaves
 // both behind when killed.
 func TestRunInterruptsInsteadOfKilling(t *testing.T) {
-	marker := filepath.Join(t.TempDir(), "cleaned-up")
+	dir := t.TempDir()
+	marker, ready := filepath.Join(dir, "cleaned-up"), filepath.Join(dir, "ready")
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	done := make(chan error, 1)
 	go func() {
-		done <- ExecRunner{}.Run(ctx, "sh", "-c", `trap 'touch "$1"; exit 0' INT; sleep 30 & wait`, "sh", marker)
+		done <- ExecRunner{}.Run(ctx, "sh", "-c", `trap 'touch "$1"; exit 0' INT; touch "$2"; sleep 30 & wait`, "sh", marker, ready)
 	}()
-	time.Sleep(300 * time.Millisecond) // let sh set its trap
+	// Interrupt only once sh has set its trap.
+	for deadline := time.Now().Add(5 * time.Second); ; time.Sleep(10 * time.Millisecond) {
+		if _, err := os.Stat(ready); err == nil {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("sh did not set its trap")
+		}
+	}
 	cancel()
 	select {
 	case <-done:
