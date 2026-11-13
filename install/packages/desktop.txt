@@ -78,3 +78,41 @@ proton-vpn-gtk-app
 proton-vpn-cli
 proton-authenticator-bin
 proton-drive-cli-bin
+
+# App list (ADR 0044): the apps default/apps.toml marks preinstalled that
+# come from Arch's repositories. tools/test/apps-preinstalled-test.py checks
+# that every preinstalled app is named in an install list.
+# Files and archives
+dolphin
+kio-extras
+ffmpegthumbs
+kdegraphics-thumbnailers
+ark
+# Web and chat (chromium also runs the Discord web app)
+chromium
+signal-desktop
+halloy
+# Notes, passwords, printing, calculator, documents
+obsidian
+bitwarden-cli
+system-config-printer
+qalculate-qt
+libqalculate
+okular
+# Images, screenshots and screen recording
+swayimg
+grim
+slurp
+satty
+gpu-screen-recorder
+# Media and creative
+vlc
+vlc-plugin-ffmpeg
+vlc-plugin-freetype
+vlc-plugin-ass
+obs-studio
+kdenlive
+gimp
+inkscape
+glaxnimate
+qbittorrent

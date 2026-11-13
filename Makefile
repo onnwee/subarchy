@@ -3,8 +3,9 @@ GO ?= go
 BUILD := build
 VERSION ?= 0.0.0
 LDFLAGS := -X git.subcult.tv/subculture-collective/subarchy/internal/dispatch.Version=$(VERSION)
-# Vendored upstream scripts under packaging/aur are not ours to lint.
-SHELL_SCRIPTS := $(shell git ls-files '*.sh' 'bin/subcult-*' 2>/dev/null | grep -vE '^packaging/aur/|^bin/subcult-screensaver-render$$')
+# Vendored upstream scripts in packaging/aur/<name>/ are not ours to lint;
+# packaging/aur/build.sh is.
+SHELL_SCRIPTS := $(shell git ls-files '*.sh' 'bin/subcult-*' 2>/dev/null | grep -vE '^packaging/aur/[^/]+/|^bin/subcult-screensaver-render$$')
 QT6BIN ?= /usr/lib/qt6/bin
 QT6QML ?= /usr/lib/qt6/qml
 .DEFAULT_GOAL := verify
@@ -104,8 +105,9 @@ docs-check:
 	python3 tools/test/test_install_checks.py
 	python3 tools/portal/test_file_chooser.py
 	python3 tools/test/palette-test.py
+	python3 tools/test/apps-preinstalled-test.py
 	python3 tools/theme/gen-palette.py --check
-	python3 -m py_compile tools/inventory/collect.py tools/obsidian/check-vault.py tools/obsidian/install-plugins.py tools/iso/boot-test.py tools/iso/install-test.py tools/iso/vmlib.py tools/test/palette-test.py tools/test/test_install_checks.py tools/theme/gen-palette.py tools/portal/file-chooser.py
+	python3 -m py_compile tools/inventory/collect.py tools/obsidian/check-vault.py tools/obsidian/install-plugins.py tools/iso/boot-test.py tools/iso/install-test.py tools/iso/vmlib.py tools/test/palette-test.py tools/test/test_install_checks.py tools/theme/gen-palette.py tools/portal/file-chooser.py tools/test/apps-preinstalled-test.py
 
 # Checks the Hyprland Lua defaults where Hyprland is installed; CI runs it in
 # the Arch package job.

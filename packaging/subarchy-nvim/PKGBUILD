@@ -85,9 +85,9 @@ package() {
   install -dm755 "$skel/.config" "$skel/.local/share/nvim"
   cp -r "$home/.config/nvim" "$skel/.config/nvim"
   cp -r "$home/.local/share/nvim/lazy" "$skel/.local/share/nvim/lazy"
-  # Git metadata of the cached clones stays, so Lazy can show commits and
-  # the user can update by hand; the package's own copies are not needed
-  # for the first launch.
+  # The cached clones' .git folders are removed, so /etc/skel holds plain
+  # plugin trees. Plugin updates come with this package: update
+  # lazy-lock.json and rebuild (see README.md).
   find "$skel" -type d -name '.git' -prune -exec rm -rf {} +
   find "$skel" -type f -exec chmod 644 {} +
   find "$skel" -type d -exec chmod 755 {} +

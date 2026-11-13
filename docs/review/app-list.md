@@ -190,6 +190,22 @@ in their own pull requests: both packages are over the registry's 100 MB
 upload limit, and preinstalling Claude Code needs the owner's decision on
 Anthropic's Commercial Terms of Service ([[0053-licence|ADR 0053]]).
 
+### Repository apps on new installs (2026-11-13)
+
+The apps `default/apps.toml` marks preinstalled that come from Arch's
+repositories (Dolphin, Ark, Chromium, Signal, Halloy, Obsidian, the
+Bitwarden CLI, printer settings, Qalculate, Okular, swayimg, the
+screenshot tools, GPU Screen Recorder, VLC, OBS, Kdenlive, GIMP, Inkscape,
+Glaxnimate and qBittorrent) are now in `install/packages/desktop.txt`.
+Until then a new install had none of them, though the catalogue, the
+launcher favorites and `SUPER+SHIFT+F` (Dolphin) assumed they were there.
+`tools/test/apps-preinstalled-test.py` (`make docs-check`) fails when a
+preinstalled app is in no install list; the AUR apps still to rebuild
+(`zen-browser-bin`, `t3code-nightly-bin`, `visual-studio-code-bin`,
+`pipewire-control-center`, `disktree-bin`, `tuxguitar`, `claude-code`,
+`proton-pass-bin`) are named there as pending. These apps add several GB
+to the ISO's offline package set.
+
 ## Web apps
 
 **Discord** is the one preinstalled web app (owner, 2026-11-07), with the

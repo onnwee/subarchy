@@ -481,12 +481,13 @@ UNTHEMED = {"dolphin": ("141618", "202326"), "gtk": ("222226", "353535", "F6F5F4
 PROFILE_APPLY = "pult apply -yes -profile /usr/share/subcult/default/theme/subarchy.toml >/dev/null 2>&1"
 
 
-def app_colours(serial: Serial, qmp: Path, sudo: str) -> dict:
+def app_colours(serial: Serial, qmp: Path) -> dict:
     """Dolphin and a GTK 3 window after `pult apply` (ADR 0037, issue #77).
 
-    Dolphin comes from the mirror; the default profile is applied again so
-    Pult sees it. Each app is shown full screen on an empty workspace and
-    captured; `themed` says whether the capture has the palette's colour
+    Dolphin is preinstalled (install/packages/desktop.txt); `pacman -Q`
+    confirms it. The default profile is applied again so Pult sees it.
+    Each app is shown full screen on an empty workspace and captured;
+    `themed` says whether the capture has the palette's colour
     and none of the colours the app shows unthemed. The GTK window is
     checked under the profile. Dolphin is checked under Dracula when the
     installed Pult has its `kde` entry, since the packaged scheme already
@@ -497,7 +498,7 @@ def app_colours(serial: Serial, qmp: Path, sudo: str) -> dict:
     has a `kde` entry and wrote the scheme, and the GTK theme setting.
     """
     state = serial.run(
-        f"{sudo} pacman -S --noconfirm --needed dolphin >/dev/null 2>&1; echo DOLPHIN=$?;"
+        "pacman -Q dolphin >/dev/null 2>&1; echo DOLPHIN=$?;"
         f" {PROFILE_APPLY}; echo APPLY=$?;"
         " echo GTK=$(grep -c '^@import url(\"pult.css\");$' ~/.config/gtk-3.0/gtk.css 2>/dev/null);"
         " echo ADW=$(test -d /usr/share/themes/adw-gtk3-dark/gtk-3.0 && echo 1);"
@@ -735,12 +736,15 @@ def boot(disk: Path, vars_file: Path) -> bool:
                 " fastfetch gh gt tea delta yt-dlp ffmpeg magick dust duf codex opencode cliamp ttfx; do"
                 " command -v $c >/dev/null || echo missing:$c; done; tea --version >/dev/null 2>&1 || echo missing:tea-runs; echo CLI_DONE"
             ),
-            # The apps rebuilt in Subarchy's repository and Proton VPN, from
-            # install/packages/desktop.txt. /usr/bin/voxtype is made by the
-            # package's install script, so it also shows that script ran.
+            # The apps rebuilt in Subarchy's repository, Proton VPN and the
+            # app list's repository apps, from install/packages/desktop.txt.
+            # /usr/bin/voxtype is made by the package's install script, so it
+            # also shows that script ran.
             "desktop_apps": serial.run(
                 "for c in voxtype localsend proton-mail pass-cli protonvpn-app protonvpn"
-                " proton-authenticator proton-drive; do command -v $c >/dev/null || echo missing:$c; done; echo APPS_DONE"
+                " proton-authenticator proton-drive dolphin ark chromium signal-desktop halloy obsidian bw"
+                " system-config-printer qalculate-qt okular swayimg grim slurp satty gpu-screen-recorder vlc obs"
+                " kdenlive gimp inkscape glaxnimate qbittorrent; do command -v $c >/dev/null || echo missing:$c; done; echo APPS_DONE"
             ),
             "power_key": serial.run("busctl get-property org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager HandlePowerKey;"
                                     " busctl get-property org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager HandlePowerKeyLongPress"),
@@ -988,9 +992,8 @@ finally:
         results["pult_restore"] = serial.run(
             "pult apply -yes -profile /usr/share/subcult/default/theme/subarchy.toml >/dev/null 2>&1; echo PULT_RESTORE=$?;"
             " grep -ci '\"base\": \"#100b19\"' ~/.config/subcult/theme/palette.json", timeout=120)
-        # Qt/KDE and GTK apps in Pult's colours (issue #77), after the package
-        # count above, since it installs Dolphin.
-        results["app_colours"] = app_colours(serial, qmp, sudo)
+        # Qt/KDE and GTK apps in Pult's colours (issue #77).
+        results["app_colours"] = app_colours(serial, qmp)
         # The shell's Hyprland dispatches on a Lua config: the workspace click
         # expression (as shell/Commons/HyprDispatch.js writes it).
         results["dispatch"] = serial.run(
@@ -1136,7 +1139,7 @@ finally:
             tailscale_helper_ok(r["tailscale_helper"]),
         "lazydocker reaches Docker through its polkit action": docker_tui_ok(r["docker_tui"]),
         "command-line and terminal apps installed": "CLI_DONE" in r["cli_tools"] and "missing:" not in r["cli_tools"],
-        "voxtype, LocalSend and the Proton apps installed": "APPS_DONE" in r["desktop_apps"]
+        "voxtype, LocalSend, the Proton apps and the app list's repository apps installed": "APPS_DONE" in r["desktop_apps"]
         and "missing:" not in r["desktop_apps"],
         "power button: a short press is left to the session, a long press powers off": r["power_key"].split()
         == ["s", '"ignore"', "s", '"poweroff"'],

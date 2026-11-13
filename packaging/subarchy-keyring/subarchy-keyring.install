@@ -2,7 +2,10 @@
 # command in the target after pacstrap.
 post_install() {
   if [ -d /etc/pacman.d/gnupg ]; then
-    pacman-key --populate subarchy >/dev/null 2>&1 || :
+    # Errors stay visible: a key that fails to load shows up later only as
+    # signature errors on every Subarchy package. The install goes on.
+    pacman-key --populate subarchy >/dev/null ||
+      echo 'subarchy-keyring: pacman-key --populate subarchy failed; Subarchy packages will fail signature checks until it succeeds' >&2
   fi
 }
 

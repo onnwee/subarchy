@@ -16,6 +16,9 @@ for name in "$@"; do
   [[ -f $dir/PKGBUILD ]] || dir="$root/packaging/$name"
   [[ -f $dir/PKGBUILD ]] || { echo "build.sh: no packaging/aur/$name/PKGBUILD or packaging/$name/PKGBUILD" >&2; exit 1; }
   out="$root/build/aur/$name"
+  # A fresh folder per build: an older version left in it would be added to
+  # the repository again, and repo-add keeps whichever file it reads last.
+  rm -rf -- "$out"
   mkdir -p "$out"
   echo ">> building $name"
   # makedepends are read from the PKGBUILD; runtime depends are not needed
@@ -38,7 +41,8 @@ for name in "$@"; do
     ' >"$out/build.log" 2>&1 || { tail -30 "$out/build.log" >&2; exit 1; }
   for pkg in "$out"/*.pkg.tar.zst; do
     cp "$pkg" "$repo/"
-    repo-add --quiet "$repo/subarchy.db.tar.gz" "$repo/$(basename "$pkg")" >/dev/null
+    # -R deletes the file of the version this one replaces from build/repo.
+    repo-add --quiet -R "$repo/subarchy.db.tar.gz" "$repo/$(basename "$pkg")" >/dev/null
     echo ">> added $(basename "$pkg")"
   done
 done
