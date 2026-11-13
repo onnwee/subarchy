@@ -55,6 +55,17 @@ def kde_errors(roles: dict) -> list:
     return errors
 
 
+def kitty_errors(roles: dict) -> list:
+    # kitty's packaged colours stand in for Pult's until `pult apply`; the
+    # cursor must not change colour when Pult takes over.
+    conf = (ROOT / "default/kitty/subcult-ink.conf").read_text()
+    m = re.search(r"^cursor (#[0-9A-F]{6})$", conf, re.M)
+    have = m.group(1) if m else None
+    if have != roles.get("cursor"):
+        return [f"default/kitty/subcult-ink.conf cursor is {have!r}, the theme's is {roles.get('cursor')!r}"]
+    return []
+
+
 def main() -> int:
     errors = []
     palette = json.loads((ROOT / "default/theme/palette.json").read_text())
@@ -89,6 +100,7 @@ def main() -> int:
         if needle not in theme:
             errors.append(f"default/hypr/theme.lua lacks {needle}")
     errors += kde_errors(tt.get("colors", {}))
+    errors += kitty_errors(tt.get("colors", {}))
     for e in errors:
         print(f"palette-test: {e}", file=sys.stderr)
     if not errors:
