@@ -81,7 +81,10 @@ const lsblk = `{"blockdevices":[
  {"name":"nvme0n1","path":"/dev/nvme0n1","size":1000204886016,"type":"disk","model":"SPCC M.2 PCIe SSD ","tran":"nvme","ro":false},
  {"name":"sda","path":"/dev/sda","size":64000000000,"type":"disk","model":"USB Stick","tran":"usb","ro":false},
  {"name":"sdb","path":"/dev/sdb","size":8000000000,"type":"disk","model":"tiny","tran":"usb","ro":false},
- {"name":"sdc","path":"/dev/sdc","size":64000000000,"type":"disk","model":"locked","tran":"usb","ro":true}
+ {"name":"sdc","path":"/dev/sdc","size":64000000000,"type":"disk","model":"locked","tran":"usb","ro":true},
+ {"name":"sdd","path":"/dev/sdd","size":64000000000,"type":"disk","model":"Portable","tran":"usb","ro":false},
+ {"name":"mmcblk0","path":"/dev/mmcblk0","size":64000000000,"type":"disk","model":null,"tran":null,"ro":false,"rm":true},
+ {"name":"sde","path":"/dev/sde","size":500107862016,"type":"disk","model":"Samsung SSD","tran":"sata","ro":false,"rm":false}
 ]}`
 
 func TestDisks(t *testing.T) {
@@ -93,7 +96,8 @@ func TestDisks(t *testing.T) {
 	for _, d := range disks {
 		paths = append(paths, d.Path)
 	}
-	if strings.Join(paths, " ") != "/dev/nvme0n1 /dev/nvme1n1" {
+	// Internal disks first, then the USB and removable ones.
+	if strings.Join(paths, " ") != "/dev/nvme0n1 /dev/nvme1n1 /dev/sde /dev/mmcblk0 /dev/sdd" {
 		t.Errorf("disks = %v", paths)
 	}
 	if got := disks[0].String(); got != "/dev/nvme0n1  1.0 TB  SPCC M.2 PCIe SSD, nvme" {

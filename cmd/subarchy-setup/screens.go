@@ -371,14 +371,14 @@ func collectScreens(s *screens, e env, repo, cmdlineExtra string) (setup.Answers
 	if len(disks) == 0 {
 		return a, fmt.Errorf("no disk of at least %s found", setup.HumanSize(setup.MinDiskBytes))
 	}
-	separate := false
+	separate, tz := false, &zoneGuess{}
 	steps := []func() error{
 		func() error { return s.greeter() },
 		func() error { return s.language(&a, e) },
 		func() error { return s.keyboard(&a, e) },
 		// After the keyboard, so a Wi-Fi passphrase is typed under it.
 		func() error { return s.network(e.wifi) },
-		func() error { return s.account(&a, e, &separate) },
+		func() error { return s.account(&a, e, &separate, tz) },
 		func() error { return s.disk(&a, e, disks) },
 		func() error {
 			// Two statements, so the summary sees what carryWiFi put in a.
@@ -498,16 +498,25 @@ func (s *screens) askSecret(title, prompt, placeholder string) (string, error) {
 	}
 }
 
-func (s *screens) account(a *setup.Answers, e env, separate *bool) error {
+func (s *screens) account(a *setup.Answers, e env, separate *bool, tz *zoneGuess) error {
 	// The time zone and the computer name belong to the machine, not the
 	// account; they keep their places in the order.
 	const title, machine = "Let's set up your account.", "Let's set up your machine."
-	s.page(machine)
-	tz, err := s.filter("Time zone", zones(e.zoneinfo), a.Timezone)
+	list := zones(e.zoneinfo)
+	note := tz.guess(a, e.lookupZone, list, func() {
+		// Lower case: the VM test types the search once "Time zone" shows.
+		s.page(machine, "Looking up the time zone of where your network is...")
+	})
+	if note != "" {
+		s.page(machine, note)
+	} else {
+		s.page(machine)
+	}
+	zone, err := s.filter("Time zone", list, a.Timezone)
 	if err != nil {
 		return err
 	}
-	a.Timezone = tz
+	a.Timezone, tz.picked = zone, true
 	if a.Username, err = s.ask(title, "User name", "Lowercase letters and digits (like pat)", a.Username, setup.ValidUsername); err != nil {
 		return err
 	}

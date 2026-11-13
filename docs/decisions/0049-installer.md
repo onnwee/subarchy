@@ -4,7 +4,7 @@ type: decision
 status: accepted
 adr: 49
 created: 2026-11-06
-updated: 2026-11-12
+updated: 2026-11-13
 tags: [decision, adr, delivery]
 aliases: [ADR 0049, R2, Installer, ISO]
 ---
@@ -122,6 +122,15 @@ Decision map item R2. Accepted 2026-11-06.
   line, and the disk is mounted `noexec`, so typed text and Return on a
   file do not run anything. Its pull-down menus can still run a command
   typed into their dialogs.
+- 2026-11-13: more of issue #124. The disk list puts internal disks
+  before USB and removable ones. The time zone list opens on the zone of
+  the network's location when the live system is online (ipapi.co or
+  ipwho.is, two of the services tzupdate asks, per
+  [[0024-time-locale-input|ADR 0024]]), else on the chosen language's
+  zone, else UTC. A failed install says why it stopped and at which
+  step, from its own log, instead of "exit status 1". Still open:
+  installing into free space beside another system, which changes the
+  whole-disk layout of [[0009-disk-layout|ADR 0009]].
 - 2026-11-12: a network page (review finding network-possibly-down: the
   first install, on a laptop with no Ethernet port, came up offline
   because the installer had no network step). With no link up and a Wi-Fi

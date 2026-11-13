@@ -391,10 +391,72 @@ func tail(log string, n int) []string {
 	return lines
 }
 
+// installMessage is a line where the install says why it stopped:
+// subarchy-install's own fatal message (its die), or an error from
+// pacman, pacstrap or mkinitcpio. subarchy-install's other lines are
+// notes it carries on after (pult apply failed, a mirror fallback, the
+// cleanup), so they never count as the reason.
+var installMessage = regexp.MustCompile(`(?m)^(subarchy-install: error: |error: |==> ERROR: )(.+)$`)
+
+// failTail is how many lines at the end of the log failReason looks at
+// for an error: pacman reports mirrors that failed mid-download as
+// errors, and an earlier one of those is not why the install stopped.
+const failTail = 40
+
+// failReason reads the log of an install that failed: the step it was
+// on and why it stopped, each "" when the log does not say.
+// subarchy-install's own fatal message comes first, then the last error
+// from the tools it ran.
+func failReason(log string) (step, why string) {
+	if _, _, label := progressOf(log); label != "Starting" {
+		step = label
+	}
+	lines := strings.Split(strings.TrimRight(log, "\n"), "\n")
+	if len(lines) > failTail {
+		lines = lines[len(lines)-failTail:]
+	}
+	own, tool := "", ""
+	for _, l := range lines {
+		m := installMessage.FindStringSubmatch(plainLine(l))
+		switch {
+		case m == nil:
+		case m[1] == "subarchy-install: error: ":
+			own = m[2]
+		default:
+			tool = m[2]
+		}
+	}
+	if own != "" {
+		return step, own
+	}
+	return step, tool
+}
+
+// wrap breaks text into lines at most width columns wide, at spaces.
+func wrap(text string, width int) []string {
+	var lines []string
+	line := ""
+	for _, word := range strings.Fields(text) {
+		if line != "" && len([]rune(line))+1+len([]rune(word)) > width {
+			lines = append(lines, line)
+			line = ""
+		}
+		if line != "" {
+			line += " "
+		}
+		line += word
+	}
+	if line != "" {
+		lines = append(lines, line)
+	}
+	return lines
+}
+
 // progress shows the install view until the returned stop is called. It
 // reads the log from where it stood when the install started, since the
 // log is appended to across runs. L switches the log window on and off.
-func (s *screens) progress(logPath string) (stop func()) {
+// stop returns what this run added to the log.
+func (s *screens) progress(logPath string) (stop func() string) {
 	offset := int64(0)
 	if st, err := os.Stat(logPath); err == nil {
 		offset = st.Size()
@@ -409,6 +471,7 @@ func (s *screens) progress(logPath string) (stop func()) {
 	if s.poll != nil {
 		next, restore = s.poll()
 	}
+	runLog := ""
 	go func() {
 		defer close(finished)
 		best, showLog := 0, false
@@ -425,6 +488,7 @@ func (s *screens) progress(logPath string) (stop func()) {
 				}
 				log = string(data[offset:])
 			}
+			runLog = log
 			if k := next(); k == 'l' || k == 'L' {
 				showLog = !showLog
 			}
@@ -449,11 +513,12 @@ func (s *screens) progress(logPath string) (stop func()) {
 			}
 		}
 	}()
-	return func() {
+	return func() string {
 		close(done)
 		<-finished
 		restore()
 		fmt.Fprint(s.out, "\x1b[?25h")
+		return runLog
 	}
 }
 
@@ -474,18 +539,32 @@ func (s *screens) finishedScreen(e env, took time.Duration) {
 	}
 }
 
-// failedScreen is the last screen of a failed install. It returns when
-// the user picks the shell.
-func (s *screens) failedScreen(e env, cause error) {
+// failedScreen is the last screen of a failed install: why it stopped
+// and at which step, the end of this run's log (runLog), and a menu. It
+// returns when the user picks the shell.
+func (s *screens) failedScreen(e env, cause error, runLog string) {
 	const view, shell, reboot, off = "View the full log", "Open a shell", "Reboot", "Power off"
 	actions := map[string]string{view: "log", reboot: "reboot", off: "poweroff"}
+	step, why := failReason(runLog)
+	if why == "" {
+		why = cause.Error() // what subarchy-install said before its log began, or its exit status
+	}
+	width := s.width() - s.pad() - 2
+	if width < 20 {
+		width = 20
+	}
 	for {
 		s.page("")
-		s.line(colRed, fmt.Sprintf("Subarchy installation stopped: %v", cause))
+		for _, l := range wrap("Subarchy installation stopped: "+why, width) {
+			s.line(colRed, l)
+		}
+		if step != "" {
+			s.line(colPaper, "It stopped at this step: "+step)
+		}
 		fmt.Fprintln(s.out)
-		if e.logTail != nil {
-			width := s.width() - s.pad() - 2
-			for _, l := range e.logTail(10) {
+		// This run's lines only: an earlier run's would look like the reason.
+		if lines := tail(runLog, 10); len(lines) > 0 {
+			for _, l := range lines {
 				s.line(colMuted, clip(plainLine(l), width))
 			}
 			fmt.Fprintln(s.out)

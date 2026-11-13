@@ -247,7 +247,7 @@ def guided(serial: Serial, qmp: Path, timeout: float) -> str:
         ("Does this look right", ["ret"]),
         ("Erase /dev/vda and install Subarchy?", ["y"]),
     ]
-    headings = True
+    headings, zone_note = True, False
     for shown, keys in steps:
         screen = wait_console(serial, 2, shown, 60, unless=NETWORK_PAGE if shown == "Time zone" else None)
         if shown == "Time zone":
@@ -257,6 +257,17 @@ def guided(serial: Serial, qmp: Path, timeout: float) -> str:
             print(f"install-test: {'ok  ' if skipped else 'FAIL'} the network page is skipped without Wi-Fi to offer")
             if not skipped:
                 raise TimeoutError("the network page showed in a VM with no Wi-Fi")
+            # English (US) has no zone of its own, so a guess can only come
+            # from the network, and only when the VM is online and the
+            # geo-IP services answer; which one appeared is logged.
+            if "Guessed from where your network is." in screen:
+                guess = "from the network"
+            elif "Guessed from the language" in screen:
+                guess = ""
+            else:
+                guess = "none (offline or no answer)"
+            print(f"install-test: {'ok  ' if guess else 'FAIL'} time zone guess: {guess or 'from the language, which English (US) has none of'}")
+            zone_note = bool(guess)
         time.sleep(0.5)
         # The time zone and the computer name are machine questions.
         if shown in ("Time zone", "Computer name>") and "Let's set up your machine." not in screen:
@@ -305,7 +316,7 @@ def guided(serial: Serial, qmp: Path, timeout: float) -> str:
     screendump(qmp, VM / "installer-end.png")
     zone = "TIMEZONE=America/Chicago" in serial.run("cat /run/subarchy-setup/install.conf")
     print(f"install-test: {'ok  ' if zone else 'FAIL'} typing chi picked America/Chicago")
-    done = "Installed Subarchy in" in screen and view and log_window and autostart and font and headings and hooks and not zero and zone
+    done = "Installed Subarchy in" in screen and view and log_window and autostart and font and headings and hooks and not zero and zone and zone_note
     if "Installed Subarchy in" in screen:
         send_keys(qmp, "n")  # no reboot: the test powers the VM off
     log = serial.run("cat /var/log/subarchy-install.log", timeout=60)

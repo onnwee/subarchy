@@ -18,7 +18,13 @@ under the SUBCULT mark, with `gum` drawing the lists and inputs. The
 language screen sets the installed system's locale (the installer stays
 in English) and preselects that language's usual keyboard. The
 keyboard comes from a labelled list, the time zone from a searchable
-list, and the disk from a list that shows what is on each one. After
+list, and the disk from a list that shows what is on each one, internal
+disks before USB and removable ones. The time zone list opens on a
+guess: online, the zone of the network's location, from whichever of
+ipapi.co and ipwho.is answers first within 4 seconds (the request sends
+them the network's public address); otherwise the zone of the chosen
+language's country, or UTC for a language spoken across several, such
+as English (US). The page says where the guess came from. After
 choosing a disk the user can install there, browse it read-only first, or
 pick another. Before the browse opens, a page lists the partitions it
 mounted read-only and the ones it left closed (encrypted, LVM, RAID, ZFS,
@@ -31,7 +37,11 @@ so far at the right, a bar with a percentage, the current phase and a
 rotating tip (`progress.go`). L switches a window with the end of the
 install log on and off; the raw output goes to `/var/log/subarchy-install.log`,
 which is also where the percentage is read from. The finish screen offers
-"Reboot now", and a failure shows the end of the log with a menu. `--plain`
+"Reboot now". A failure says why the install stopped (subarchy-install's
+own fatal message, the line that starts `subarchy-install: error:`, else
+the last pacman or mkinitcpio error; its warnings, such as a failed
+`pult apply`, never count) and at which step,
+shows the end of this run's log and offers a menu. `--plain`
 gives the prompts below instead.
 
 After the keyboard comes a network page, but only when no link has a
@@ -87,7 +97,8 @@ file, an empty user menu and the nicedark skin, whose text stays readable
 in the installer palette. Typed letters search the panel, and Return on a
 file does not run it. `mc`'s pull-down menus can still run a command
 typed into one of their dialogs, as root. It then asks for the computer name, user name and password
-and time zone. The disk passphrase is the user's password unless the user
+and time zone; online, the time zone's default is the network's zone,
+found as on the screens. The disk passphrase is the user's password unless the user
 asks for a separate one. The desktop layout and variant come from
 systemd's `kbd-model-map`. Each answer is checked as it is entered. The user confirms
 with a yes/no question whose default is no. It then writes the config and

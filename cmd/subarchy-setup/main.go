@@ -134,6 +134,9 @@ type env struct {
 	// wifi is the live image's Wi-Fi; nil means no network page and
 	// nothing carried over.
 	wifi *wifi
+	// lookupZone returns the time zone of the network's location, or ""
+	// offline; nil means no lookup.
+	lookupZone func() string
 }
 
 // collect asks every question and returns the answers.
@@ -238,7 +241,16 @@ func collect(p *prompter, e env, repo, cmdlineExtra string) (setup.Answers, erro
 	} else if a.Passphrase, err = p.askSecret("Disk passphrase", 8); err != nil {
 		return a, err
 	}
-	if a.Timezone, err = p.ask("Time zone", "UTC", func(s string) error { return setup.ValidTimezone(e.zoneinfo, s) }); err != nil {
+	zone := "UTC"
+	if e.lookupZone != nil {
+		fmt.Fprintln(p.out, "Looking up the time zone of where your network is...")
+		// Only a zone the screens would list: any file under zoneinfo
+		// passes ValidTimezone, zone.tab and posixrules included.
+		if z := e.lookupZone(); listed(zones(e.zoneinfo), z) {
+			zone = z // the network's location; Enter takes it
+		}
+	}
+	if a.Timezone, err = p.ask("Time zone", zone, func(s string) error { return setup.ValidTimezone(e.zoneinfo, s) }); err != nil {
 		return a, err
 	}
 	if note := carryWiFi(&a, e.wifi); note != "" {
@@ -376,7 +388,7 @@ func run(args []string, stdin io.Reader, stdout io.Writer, e env, secret func() 
 		e.screens = nil
 	}
 	if *batch {
-		e.browse, e.action, e.screens, e.wifi = nil, nil, nil, nil
+		e.browse, e.action, e.screens, e.wifi, e.lookupZone = nil, nil, nil, nil, nil
 	}
 	var a setup.Answers
 	var err error
@@ -418,9 +430,9 @@ func run(args []string, stdin io.Reader, stdout io.Writer, e env, secret func() 
 		// Full screen: the install view in place of the raw output.
 		stop := e.screens.progress(e.installLog)
 		err := exec(conf, true)
-		stop()
+		runLog := stop()
 		if err != nil {
-			e.screens.failedScreen(e, err)
+			e.screens.failedScreen(e, err, runLog)
 			return 1
 		}
 		e.screens.finishedScreen(e, time.Since(started))
@@ -449,7 +461,7 @@ func main() {
 	}
 	e := env{
 		lsblk: func() ([]byte, error) {
-			return exec.Command("lsblk", "-J", "-b", "-o", "NAME,PATH,SIZE,TYPE,MODEL,TRAN,RO,FSTYPE,LABEL").Output()
+			return exec.Command("lsblk", "-J", "-b", "-o", "NAME,PATH,SIZE,TYPE,MODEL,TRAN,RO,RM,FSTYPE,LABEL").Output()
 		},
 		installMedia: installMedium,
 		zoneinfo:     "/usr/share/zoneinfo",
@@ -464,6 +476,12 @@ func main() {
 		logTail:    logTail,
 		action:     action,
 		wifi:       realWiFi(),
+		lookupZone: func() string {
+			if !hasDefaultRoute("/proc/net/route", "/proc/net/ipv6_route") {
+				return "" // offline: nothing to ask
+			}
+			return lookupZone(httpGet)
+		},
 	}
 	if onConsole() {
 		prepareConsole(os.Stdout)
@@ -475,8 +493,28 @@ func main() {
 		cmd := exec.Command("subarchy-install", "--config", conf, "--yes")
 		if !quiet {
 			cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+			return cmd.Run()
 		}
-		return cmd.Run()
+		// Under the install view the output goes only to the log. What
+		// subarchy-install says before its log begins (a disk it refuses)
+		// goes to stderr, and becomes the failure screen's reason. A file,
+		// not a pipe: Run would wait for a pipe's last writer, and the
+		// log's tee or a process the install started can outlive it.
+		stderr, err := os.CreateTemp("", "subarchy-install-stderr-")
+		if err != nil {
+			return cmd.Run()
+		}
+		defer os.Remove(stderr.Name())
+		defer stderr.Close()
+		cmd.Stderr = stderr
+		if err = cmd.Run(); err != nil {
+			if said, rerr := os.ReadFile(stderr.Name()); rerr == nil {
+				if _, why := failReason(string(said)); why != "" {
+					return errors.New(why)
+				}
+			}
+		}
+		return err
 	}
 	os.Exit(run(os.Args[1:], os.Stdin, os.Stdout, e, secret, installer))
 }

@@ -34,7 +34,10 @@ here=$(dirname "$(realpath "$0")")
 target=/mnt
 log=/var/log/subarchy-install.log
 
-die() { echo "subarchy-install: $*" >&2; exit 1; }
+# die stops the install. "error:" marks the message that ends a run, which
+# subarchy-setup shows as the reason; the other subarchy-install lines are
+# notes the install carries on after.
+die() { echo "subarchy-install: error: $*" >&2; exit 1; }
 step() { echo ">> $*"; }
 
 declare -A conf=(
