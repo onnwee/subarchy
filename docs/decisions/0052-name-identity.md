@@ -4,7 +4,7 @@ type: decision
 status: accepted
 adr: 52
 created: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-13
 tags: [decision, adr, brand]
 aliases: [ADR 0052, R4, Name, os-release, Subarchy]
 ---
@@ -76,5 +76,12 @@ This was not a formal trademark search.
   seven poster-press backgrounds, each with its source and commit in
   `branding/README.md`. The owner approved taking them as they are; the
   splash, greeter and screensaver art are built from them next (#73, #96).
+- 2026-11-13: the owner chose an identity for Subarchy itself, after five
+  review rounds in `subcult-tv` (`studio/studies/subarchy-directions`): the
+  SUBARCHY wordmark and an SA_ mark in the Bloody block font, acid with paper
+  highlights, and Departure Mono as the brand's face. The pack is
+  `studio/brands/subarchy`; the site in `site/` is the first use. The table
+  above is unchanged: the installer, boot, login and lock screens still show
+  the SUBCULT mark until the owner decides whether they switch.
 
 Related: [[decision-map|Decision map]] · [[brand-identity|Brand identity]] · [[0046-distribution-cli|ADR 0046]] · [[0053-licence|ADR 0053]]

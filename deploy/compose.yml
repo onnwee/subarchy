@@ -1,0 +1,16 @@
+services:
+  subarchy-site:
+    image: ${SUBARCHY_SITE_IMAGE:?Set the Subarchy site image}
+    container_name: subarchy-site
+    networks: [projects]
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp, /var/cache/nginx, /var/run]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    labels:
+      com.centurylinklabs.watchtower.enable: "false"
+      tv.subcult.source-revision: ${SUBARCHY_SITE_REVISION:?Set the source revision}
+networks:
+  projects:
+    external: true

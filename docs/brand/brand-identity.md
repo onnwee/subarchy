@@ -3,7 +3,7 @@ title: "Brand identity"
 type: brand
 status: draft
 created: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-13
 tags: [brand]
 aliases: [Brand draft]
 ---
@@ -83,5 +83,14 @@ Each replaces an Omarchy surface listed in
 Follow `SUBCULT Brand Voice.md` in the SUBCULT vault for user-facing text. The
 rice's documentation already uses a plain, specific style: it states what is
 verified and what is not.
+## Subarchy's own identity, 2026-11-13
+
+The sections above describe the SUBCULT assets Subarchy started from. On
+2026-11-13 the owner chose an identity for Subarchy itself
+([[0052-name-identity|ADR 0052]], progress): the SUBARCHY wordmark and the
+SA_ mark in the Bloody block font, acid `#00FF88` letters with paper
+`#F0ECE4` highlights on ink `#100B19`, and Departure Mono for text. The
+pack, guide and tokens are in `studio/brands/subarchy` in `subcult-tv`; the
+[[marketing-context|marketing context]] and the site in `site/` use them.
 
 Related: [[branding-surfaces|Branding surfaces]] · [[subcult-rice|SUBCULT rice]] · [[open-questions|Open questions]]

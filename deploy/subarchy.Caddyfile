@@ -1,0 +1,4 @@
+http://subarchy.subcult.tv {
+    encode gzip zstd
+    reverse_proxy subarchy-site:8080
+}

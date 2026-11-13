@@ -112,7 +112,9 @@ packaging/     PKGBUILDs: subarchy, keyring, Neovim, pinned AUR rebuilds
 shell/         desktop shell (Quickshell)
 themes/        unused (see default/)
 tools/         build, test, ISO, theme and inventory scripts
-docs/          decisions, inventory, brand notes and roadmap
+site/          landing page and user docs (static HTML)
+deploy/        container and proxy files that serve site/
+docs/          decisions, inventory, brand and marketing notes, roadmap
 ```
 
 ## Documentation

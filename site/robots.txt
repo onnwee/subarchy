@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://subarchy.subcult.tv/sitemap.xml
