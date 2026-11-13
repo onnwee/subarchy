@@ -1,8 +1,11 @@
 name: iso
 
 # Builds the live ISO, boots it in QEMU (issue #60), then installs from it
-# into a VM disk and checks the installed system (issue #68). Runs on main and
-# on demand; pull requests are verified on GitHub (.github/workflows/mirror-ci.yml).
+# into a VM disk and checks the installed system (issue #68). On pushes to main
+# and on demand. Pull requests are turned off on Gitea and are verified on
+# GitHub (.github/workflows/mirror-ci.yml), which has no ISO or VM job. Every
+# branch is mirrored here, so an image or harness change can run before it
+# merges: start this workflow by hand (workflow_dispatch) on its branch.
 on:
   push:
     branches: [main]

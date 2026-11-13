@@ -893,10 +893,6 @@ def boot(disk: Path, vars_file: Path) -> bool:
         # The serial login has no WAYLAND_DISPLAY; the shell runs on the session's.
         shell_ipc = "quickshell ipc --any-display -p /usr/share/subcult/shell call subcult.shell status"
         results["shell_status"] = serial.run(shell_ipc)
-        results["shell_errors"] = serial.run(
-            "journalctl --user -b -u subcult-shell.service --no-pager"
-            " | grep -vE 'Failed to (connect|create) pipewire context|MESA|ZINK'"
-            " | grep -E 'ERROR|TypeError|ReferenceError|is not a type|Cannot assign' | head -5")
         results["layers"] = serial.run("hyprctl -i 0 layers | grep -c 'namespace: subcult-bar'")
         # Exercise the generated commands twice from each state. Merely
         # accepting dispatch is insufficient: an unknown Lua field toggles.
@@ -1053,6 +1049,17 @@ finally:
         results["ac_again"] = serial.run(
             f"{sudo} pkill -f '[d]busmock --system --template upower'; {sudo} systemctl start upower.service"
             f" && sleep 2 && systemctl --user restart subcult-shell.service && sleep 8 && {shell_ipc}")
+        # After the restarts above, so their QML errors are read too; -b
+        # covers every start in the boot. The start count is the positive
+        # control: an empty error list only means something when the query
+        # sees all five starts (the session, the automatic restart after the
+        # lock test's SIGKILL, then battery, keep-awake and back on AC).
+        results["shell_starts"] = serial.run(
+            "journalctl --user -b -u subcult-shell.service -o cat --no-pager | grep -c '^Started '")
+        results["shell_errors"] = serial.run(
+            "journalctl --user -b -u subcult-shell.service --no-pager"
+            " | grep -vE 'Failed to (connect|create) pipewire context|MESA|ZINK'"
+            " | grep -E 'ERROR|TypeError|ReferenceError|is not a type|Cannot assign' | head -5")
         time.sleep(3)
         screendump(qmp, VM / "session.png")
         results["session_colours"] = distinct_colours(VM / "session.png")
@@ -1180,6 +1187,8 @@ finally:
         "session drew something": r["session_colours"] > 1,
         "shell service active": "ACTIVE" in r["shell_active"],
         "shell log has no QML errors": r["shell_errors"].strip() == "",
+        "shell log read covers all five shell starts": r["shell_starts"].strip().isdigit()
+        and int(r["shell_starts"].strip()) >= 5,
         "one bar layer per monitor": r["layers"].strip() == "1",
         "full bar with widgets": '"subcult.clock"' in r["shell_status"] and '"subcult.menu"' in r["shell_status"],
         "HT3 widget loaded and hidden without headphones": widget_hidden(r["shell_status"], "subcult.ht3"),

@@ -64,8 +64,8 @@ Other targets:
 | `make shell-native-test` | `quickshell`, `qt6-declarative`, `librsvg`, `imagemagick`, `python` | Draws the panels, greeter and lock offscreen and checks them; screenshots go to `build/*-preview/` |
 | `make iso` | `archiso`, sudo | Builds the live ISO into `build/iso/` |
 | `make iso-test` | `qemu-base`, `edk2-ovmf` | Boots the newest ISO in QEMU and checks it over the serial console |
-| `make install-test` | `qemu-base`, `edk2-ovmf` | Installs from the newest ISO into a VM disk, then boots and checks the result |
-| `make install-test-offline` | `qemu-base`, `edk2-ovmf` | The same through the guided installer with the guest's network off |
+| `make install-test` | `qemu-base`, `edk2-ovmf`, `swtpm`, `imagemagick` | Installs from the newest ISO into a VM disk, then boots and checks the result |
+| `make install-test-offline` | `qemu-base`, `edk2-ovmf`, `swtpm`, `imagemagick` | The same through the guided installer with the guest's network off |
 
 `tools/test/shell-headless.sh shell` runs the shell in a private headless
 sway session. Details are in [iso/README.md](iso/README.md) and

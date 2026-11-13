@@ -2,28 +2,53 @@ name: Auto-merge
 
 # Turns on GitHub auto-merge for each ready pull request opened from a branch of
 # this repository. GitHub then merges it once the checks that branch protection
-# requires have passed and the branch has no conflicts. Drafts and pull
-# requests from forks are left alone. To hold one back, turn auto-merge off on
-# the pull request (gh pr merge --disable-auto <number>).
+# requires have passed and the branch has no conflicts. Drafts, pull requests
+# labelled `hold` and pull requests from forks are left alone. Adding `hold`
+# turns auto-merge off again; removing it turns auto-merge back on.
+#
+# The job reads the draft state and labels when it runs, not from the event:
+# `gh pr create --label hold` opens the pull request first and adds the label
+# in a second call, so the `opened` event usually carries no labels. Runs for
+# one pull request queue behind each other, so the last one sees the final
+# labels.
 on:
   pull_request_target:
-    types: [opened, reopened, ready_for_review]
+    types: [opened, reopened, ready_for_review, labeled, unlabeled]
 
 permissions:
   contents: write
   pull-requests: write
 
+concurrency:
+  group: auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
 jobs:
   enable:
     name: Enable auto-merge
-    if: >-
-      !github.event.pull_request.draft &&
-      github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Enable auto-merge
+      - name: Enable or disable auto-merge
         env:
           GH_TOKEN: ${{ github.token }}
           PR_URL: ${{ github.event.pull_request.html_url }}
-        run: gh pr merge --auto --squash "$PR_URL"
+        run: |
+          state=$(gh pr view "$PR_URL" --json state,isDraft,labels,autoMergeRequest \
+            -q '[.state, .isDraft, ([.labels[].name] | index("hold") != null), (.autoMergeRequest != null)] | @tsv')
+          read -r open draft held auto <<<"$state"
+          if [ "$open" != OPEN ]; then
+            echo "Pull request is $open; nothing to do."
+          elif [ "$held" = true ]; then
+            if [ "$auto" = true ]; then
+              gh pr merge --disable-auto "$PR_URL"
+            fi
+            echo "Held by the hold label."
+          elif [ "$draft" = true ]; then
+            echo "Draft; left alone."
+          elif [ "$auto" = true ]; then
+            echo "Auto-merge is already on."
+          else
+            gh pr merge --auto --squash "$PR_URL"
+          fi

@@ -6,6 +6,9 @@ Subarchy, systemd reports a running (or only degraded) system, and the
 boot's messages go to the screen rather than only the serial port.
 
 Usage: tools/iso/boot-test.py path/to/subarchy.iso [--timeout 300] [--log FILE]
+
+The serial log goes to build/iso-boot.log unless --log names another file.
+On a timeout the screen is saved to build/vm/boot-test-timeout.png.
 """
 
 from __future__ import annotations
@@ -19,7 +22,9 @@ import tempfile
 import time
 from pathlib import Path
 
-from vmlib import OVMF_CODE, OVMF_VARS, Serial, qemu_command
+from vmlib import OVMF_CODE, OVMF_VARS, Serial, qemu_command, screendump
+
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def main() -> int:
@@ -37,8 +42,12 @@ def main() -> int:
     with tempfile.TemporaryDirectory() as tmp:
         vars_copy = Path(tmp) / "OVMF_VARS.fd"
         shutil.copy(OVMF_VARS, vars_copy)
-        log_path = args.log or Path(tmp) / "serial.log"
-        cmd = qemu_command(vars_copy, "-cdrom", str(args.iso), "-boot", "d")
+        # Outside the temporary directory, so the log the failure message
+        # names is still there afterwards.
+        log_path = args.log or ROOT / "build" / "iso-boot.log"
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        qmp = Path(tmp) / "qmp.sock"
+        cmd = qemu_command(vars_copy, "-qmp", f"unix:{qmp},server=on,wait=off", "-cdrom", str(args.iso), "-boot", "d")
         started = time.monotonic()
         with open(log_path, "wb") as log, subprocess.Popen(
             cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
@@ -53,7 +62,7 @@ def main() -> int:
                 serial.claim_prompt(60)
                 print(f"boot-test: root shell after {time.monotonic() - started:.0f}s")
                 osr = serial.run("cat /etc/os-release")
-                state = serial.run("systemctl is-system-running --wait", timeout=120).strip().splitlines()[-1]
+                state = (serial.run("systemctl is-system-running --wait", timeout=120).strip().splitlines() or [""])[-1]
                 kernel = serial.run("uname -r")
                 failed = serial.run("systemctl --failed --no-legend --plain | awk '{print $1}'")
                 installer = serial.run("subarchy-install --help | head -1")
@@ -61,6 +70,15 @@ def main() -> int:
                 consoles = serial.run("cat /sys/class/tty/console/active")
                 serial.send("poweroff\n")
             except TimeoutError as e:
+                # The screen is /dev/console: a boot stuck before the serial
+                # login (an initramfs error or rescue shell) shows only there.
+                shot = ROOT / "build" / "vm" / "boot-test-timeout.png"
+                try:
+                    shot.parent.mkdir(parents=True, exist_ok=True)
+                    screendump(qmp, shot)
+                    print(f"boot-test: screen at the timeout saved to {shot}", file=sys.stderr)
+                except Exception as err:  # noqa: BLE001 - a best-effort capture must not hide the timeout
+                    print(f"boot-test: no screenshot at the timeout: {err}", file=sys.stderr)
                 proc.kill()
                 print(f"boot-test: FAIL, timed out {e}; serial log: {log_path}", file=sys.stderr)
                 print(serial.tail(), file=sys.stderr)
