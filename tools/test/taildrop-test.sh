@@ -174,13 +174,16 @@ printf 'k' | deliver linked.txt || fail "--deliver failed on a name a link to a 
 [[ $(<"$dl/report-1.txt") == r && $(<"$dl/linked-1.txt") == k ]] || fail "folder names: $(ls -A "$dl")"
 [[ -z $(ls -A "$dl/report.txt") && -z $(ls -A "$work/elsewhere") ]] || fail "a file went inside a folder"
 rm -rf "$dl/report.txt" "$dl/linked.txt" "$work/elsewhere"
-# A file that cannot be saved fails and says so.
-: >"$work/notes"
-chmod 0500 "$dl"
-if printf 'x' | deliver blocked.txt 2>/dev/null; then fail "--deliver succeeded into a read-only Downloads"; fi
-chmod 0700 "$dl"
-grep -qx 'Could not save blocked.txt | Taildrop will try again when the next file arrives' "$work/notes" ||
-  fail "failure announcement: $(cat "$work/notes")"
+# A file that cannot be saved fails and says so. Root writes through the
+# read-only mode, so this part runs only as a user (CI's verify runs as root).
+if ((EUID != 0)); then
+  : >"$work/notes"
+  chmod 0500 "$dl"
+  if printf 'x' | deliver blocked.txt 2>/dev/null; then fail "--deliver succeeded into a read-only Downloads"; fi
+  chmod 0700 "$dl"
+  grep -qx 'Could not save blocked.txt | Taildrop will try again when the next file arrives' "$work/notes" ||
+    fail "failure announcement: $(cat "$work/notes")"
+fi
 rm -rf "${dl:?}"/* "$dl"/.taildrop-* 2>/dev/null || true
 
 # Send through the picker, to a machine by name.

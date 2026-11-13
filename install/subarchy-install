@@ -426,7 +426,9 @@ EOF
   # ufw: deny incoming, allow outgoing (its defaults), on at boot (ADR 0019).
   # LocalSend finds and receives from other devices on 53317 (ADR 0019,
   # 0056). ufw is still off here, so it only writes the rules to its files.
-  if [[ -e $target/usr/bin/localsend ]]; then
+  # -L: the package's link points to /opt/localsend/localsend, which -e
+  # resolves against the live system rather than the new one.
+  if [[ -L $target/usr/bin/localsend || -e $target/usr/bin/localsend ]]; then
     arch-chroot "$target" ufw allow 53317/tcp comment LocalSend >/dev/null
     arch-chroot "$target" ufw allow 53317/udp comment LocalSend >/dev/null
   fi
