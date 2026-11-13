@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Io
 import qs.Commons
 import qs.Ui
+import qs.services
 import "SettingsModel.js" as Model
 
 // The settings panel (rice port, ADR 0048): every setting in
@@ -13,8 +14,9 @@ import "SettingsModel.js" as Model
 // `subcult font set` or `subcult cursor apply` where the schema says so);
 // Undo puts back the values the last apply replaced, once. The shell
 // (Config), Hyprland and the tools pick the files up through their own
-// watches; nothing here polls. `subcult.settings` over IPC drives it for
-// the tests while the panel is open.
+// watches; nothing here polls. The commands run in the SettingsRunner
+// service, so closing the panel does not cut them off. `subcult.settings`
+// over IPC drives it for the tests while the panel is open.
 PanelBase {
   id: panel
 
@@ -80,9 +82,7 @@ PanelBase {
     undoFile.setText(JSON.stringify({ time: new Date().toISOString(), values: p.undo }) + "\n")
     // A command may still be running from the last Apply or Undo: these
     // wait behind it.
-    runner.queue = runner.queue.concat(p.commands)
-    if (!runner.running)
-      runner.next()
+    SettingsRunner.run(p.commands)
     panel.pending = {}
     panel.errors = {}
     panel.cleared()
@@ -139,23 +139,13 @@ PanelBase {
     }
   }
 
-  // The plan's commands, one after the other; fonts are read again after.
-  Process {
-    id: runner
-    property var queue: []
-    function next() {
-      if (runner.queue.length === 0) {
-        fontQuery.running = true
-        return
-      }
-      runner.command = runner.queue[0]
-      runner.queue = runner.queue.slice(1)
-      runner.running = true
-    }
-    onExited: (code) => {
-      if (code !== 0)
-        panel.status = "A command failed (exit " + code + "): " + runner.command.join(" ")
-      runner.next()
+  // Fonts are read again once the plan's commands have run.
+  Connections {
+    target: SettingsRunner
+    function onFinished() {
+      if (SettingsRunner.status !== "")
+        panel.status = SettingsRunner.status
+      fontQuery.running = true
     }
   }
 

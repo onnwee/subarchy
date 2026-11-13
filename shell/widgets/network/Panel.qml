@@ -20,6 +20,9 @@ PanelBase {
   readonly property var networks: wifi && wifi.networks ? Model.sortNetworks(wifi.networks.values) : []
   // The new secured network whose password is being typed.
   property var asking: null
+  // Why the typed password was not used; cleared when the prompt closes.
+  property string pskError: ""
+  onAskingChanged: panel.pskError = ""
 
   implicitWidth: 340
   implicitHeight: column.implicitHeight
@@ -145,10 +148,11 @@ PanelBase {
     }
 
     // The password for a new secured network; Enter joins, Escape cancels.
+    // A password under 8 characters keeps the prompt open with a hint.
     Rectangle {
       visible: panel.asking !== null
       width: parent.width
-      height: visible ? 60 : 0
+      height: visible ? 60 + (pskHint.visible ? pskHint.implicitHeight + 4 : 0) : 0
       color: Theme.base
       border.width: 1
       border.color: Theme.surface
@@ -174,7 +178,11 @@ PanelBase {
           font.family: Style.uiFontFamily
           font.pixelSize: Style.fontSize
           onAccepted: {
-            if (panel.asking && text.length >= 8)
+            if (panel.asking && text.length < 8) {
+              panel.pskError = "At least 8 characters"
+              return
+            }
+            if (panel.asking)
               panel.asking.connectWithPsk(text) // qmllint disable missing-property
             panel.asking = null
             text = ""
@@ -183,6 +191,14 @@ PanelBase {
             panel.asking = null
             text = ""
           }
+        }
+        Text {
+          id: pskHint
+          visible: panel.pskError !== ""
+          text: panel.pskError
+          color: Theme.error
+          font.family: Style.uiFontFamily
+          font.pixelSize: Style.fontSize - 2
         }
       }
     }

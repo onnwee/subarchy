@@ -37,6 +37,7 @@ BarWidget {
         required property var modelData
         readonly property bool named: Workspaces.names[slot.modelData.id] !== undefined
         readonly property string label: Workspaces.label(slot.modelData.id)
+        readonly property string title: Workspaces.title(slot.modelData.id)
         width: Math.max(16, text.implicitWidth + 6)
         height: Style.barHeight
 
@@ -52,11 +53,14 @@ BarWidget {
 
         Tooltip {
           target: slot
-          text: Workspaces.title(slot.modelData.id)
+          text: slot.title
+          shown: area.containsMouse && slot.title !== ""
         }
 
         MouseArea {
+          id: area
           anchors.fill: parent
+          hoverEnabled: true
           onClicked: {
             const ws = Hyprland.workspaces.values.find(w => w.id === slot.modelData.id)
             if (ws)

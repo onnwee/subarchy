@@ -33,16 +33,39 @@ Singleton {
   }
 
   Process {
+    id: thermalWatch
+    property double startedAt: 0
     command: ["subcult", "thermal", "watch"]
     running: true
     stdout: SplitParser {
       onRead: (line) => root.thermalLine(line)
     }
+    onRunningChanged: {
+      if (running)
+        startedAt = Date.now()
+    }
     // Exit 3: a kernel without thermal netlink events. The watch is not
-    // restarted: the alert source is gone until the next shell start.
+    // restarted: the alert source is gone until the next shell start. Any
+    // other exit starts it again after a delay that doubles up to the cap,
+    // and goes back to the first delay after a run longer than the cap.
     onExited: (code) => {
-      if (code !== 3)
-        console.warn("subcult shell: thermal watch ended with", code)
+      if (code === 3)
+        return
+      console.warn("subcult shell: thermal watch ended with", code)
+      if (Date.now() - startedAt > thermalRetry.cap)
+        thermalRetry.interval = thermalRetry.first
+      thermalRetry.start()
+    }
+  }
+
+  Timer {
+    id: thermalRetry
+    readonly property int first: 30000
+    readonly property int cap: 600000
+    interval: first
+    onTriggered: {
+      thermalWatch.running = true
+      interval = Math.min(interval * 2, cap)
     }
   }
 

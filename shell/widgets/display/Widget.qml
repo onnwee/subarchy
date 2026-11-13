@@ -4,7 +4,7 @@ import qs.Ui
 import "../../Commons/Glyphs.js" as Glyphs
 
 // A monitor glyph naming this output; shown on Minimal bars too, as on
-// sputnik. Its panel (display settings) comes in stage 2.
+// sputnik.
 BarWidget {
   id: root
 

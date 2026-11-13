@@ -109,6 +109,23 @@ TestCase {
     compare(Model.restore('{"not":"a list"}', 100), [])
   }
 
+  // Notifications can arrive before the history file is first read: they
+  // go in front of the saved records, and a clear or mark-all-read made in
+  // that window still applies to the saved ones.
+  function test_mergeEarly() {
+    const saved = [entry(2), entry(1)]
+    const early = [entry(4), entry(3)]
+    compare(Model.mergeEarly(saved, early, 100, false, false).map(e => e.id), [4, 3, 2, 1], "newest first")
+    compare(Model.mergeEarly(saved, early, 3, false, false).map(e => e.id), [4, 3, 2], "capped")
+    compare(Model.mergeEarly([], early, 100, false, false).map(e => e.id), [4, 3], "no saved file")
+    compare(Model.mergeEarly(saved, [], 100, false, false).map(e => e.id), [2, 1], "nothing early")
+    compare(Model.mergeEarly(saved, early, 100, true, false).map(e => e.id), [4, 3], "cleared before the read")
+    const read = Model.mergeEarly(saved, [entry(3)], 100, false, true)
+    compare(read.map(e => e.read), [false, true, true], "read before the read; later arrivals stay unread")
+    compare(saved.length, 2, "does not mutate")
+    verify(!saved[0].read, "does not mutate")
+  }
+
   // Notification ids start again at 1 with every shell start, and the
   // history file outlives the shell: yesterday's record and today's can
   // share an id.

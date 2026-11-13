@@ -56,7 +56,8 @@ cat >"$work/bin/subcult" <<'STUB'
 if [ "$1 $2" = "font current" ]; then
   printf 'monospace   (default)  resolves to DejaVu Sans Mono\nsans-serif  Inter\nserif       (default)  resolves to DejaVu Serif\n'; exit 0
 fi
-if [ "$1 $2" = "font set" ] || [ "$1 $2" = "cursor apply" ]; then echo "$*" >>"$HOME/settings-actions"; exit 0; fi
+# They take a moment, so the test can close the panel while one runs.
+if [ "$1 $2" = "font set" ] || [ "$1 $2" = "cursor apply" ]; then sleep 1; echo "$*" >>"$HOME/settings-actions"; exit 0; fi
 # The default agent for the launcher's Ask row, and its answer.
 if [ "$1 $2 $3" = "app ask --json" ]; then
   printf '{"id": "stub-agent", "name": "Stub Agent", "argv": ["echo"]}\n'; exit 0
@@ -103,12 +104,14 @@ cat <<'JSON'
 JSON
 STUB
 chmod +x "$work/bin/subcult"
-# A stand-in for yt-dlp: progress lines, then the file it "wrote".
+# A stand-in for yt-dlp: progress lines (only with --progress, since the
+# real one's --print implies --quiet), then the file it "wrote".
 cat >"$work/bin/yt-dlp" <<'STUB'
 #!/bin/sh
-dir=""; while [ $# -gt 0 ]; do case $1 in -P) dir=$2; shift 2;; --) shift; break;; *) shift;; esac; done
-echo "[download]  40.0% of 10.00MiB at 2.00MiB/s ETA 00:03"; sleep 1
-echo "[download] 100% of 10.00MiB in 00:00:02 at 5.00MiB/s"
+dir=""; progress=""
+while [ $# -gt 0 ]; do case $1 in -P) dir=$2; shift 2;; --progress) progress=1; shift;; --) shift; break;; *) shift;; esac; done
+[ -n "$progress" ] && echo "[download]  40.0% of 10.00MiB at 2.00MiB/s ETA 00:03"; sleep 2
+[ -n "$progress" ] && echo "[download] 100% of 10.00MiB in 00:00:02 at 5.00MiB/s"
 mkdir -p "$dir" && : >"$dir/Clip [abc].mp4" && echo "$dir/Clip [abc].mp4"
 STUB
 chmod +x "$work/bin/yt-dlp"
@@ -437,6 +440,15 @@ st=$(status "$home1")
 sleep 4
 st=$(status "$home1")
 [[ $(json 'd.get("popups")') == 0 ]] || fail "the replaced popup stayed past its timeout: $st"
+# A transient notification (volume, progress) pops up but is not recorded.
+tid=$(DBUS_SESSION_BUS_ADDRESS=unix:path=$work/bus gdbus call --session --dest org.freedesktop.Notifications \
+  --object-path /org/freedesktop/Notifications --method org.freedesktop.Notifications.Notify \
+  "subarchy-test" 0 "" "Volume 40%" "" "[]" "{'transient': <true>}" 2000 | sed -E 's/.*uint32 ([0-9]+).*/\1/')
+sleep 1
+st=$(status "$home1")
+[[ $(json 'd.get("popups")') == 1 && $(json 'd["history"][0]["id"]') != "$tid" && $(json 'd.get("unread")') == 2 ]] ||
+  fail "a transient notification did not pop up, or went into the history: $st"
+sleep 2.5
 
 # Markup and entities arrive as capped plain text in the history.
 DBUS_SESSION_BUS_ADDRESS=unix:path=$work/bus gdbus call --session --dest org.freedesktop.Notifications \
@@ -696,6 +708,9 @@ settings set font.ui "Iosevka Aile" >/dev/null
 settings set idle.lock 5 >/dev/null
 [[ $(python3 -c "import json,sys; print(len(json.loads(sys.argv[1])['preview']))" "$(settings state)") == 4 ]] || fail "four pending changes do not preview: $(settings state)"
 settings apply >/dev/null
+# Closing the panel right away must not cut the tools off: they run in the
+# SettingsRunner service, not in the panel.
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
 filewait "$home1/.config/subcult/idle.json" '{
   "lockAfterMinutes": 5
 }' || fail "apply did not write idle.json: $(cat "$home1/.config/subcult/idle.json" 2>/dev/null)"
@@ -704,6 +719,8 @@ filewait "$home1/.config/subcult/idle.json" '{
 [[ $(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['size'])" "$home1/.config/subcult/cursor.json") == 32 ]] || fail "apply did not write cursor.json"
 for _ in $(seq 20); do [[ $(grep -c . "$home1/settings-actions" 2>/dev/null) == 2 ]] && break; sleep 0.5; done
 [[ $(sort "$home1/settings-actions" 2>/dev/null | tr '\n' '|') == "cursor apply|font set Iosevka Aile --ui|" ]] || fail "apply did not run the tools: $(cat "$home1/settings-actions" 2>/dev/null)"
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.menu >/dev/null
+sleep 1.5
 for _ in $(seq 10); do [[ $(sfield canUndo) == True ]] && break; sleep 0.5; done
 [[ $(sfield canUndo) == True ]] || fail "no undo record after apply: $(settings state)"
 settings undo >/dev/null
@@ -815,24 +832,30 @@ sleep 2
 [[ $(cat "$home1/.local/state/subcult/wallpaper") == "$home1/walls/b.png" ]] || fail "auto-wallpaper did not go to the next image"
 rm -f "$home1/.local/state/subcult/wallpaper"
 # The downloads widget, off by default: enabled in bar.json it loads and
-# stays hidden; a queued URL runs the (stub) yt-dlp, shows while running,
-# finishes with the file, and hides again.
+# shows even when idle, so its panel can take the first URL; a queued URL
+# runs the (stub) yt-dlp, reports its progress and finishes with the file.
 printf '{"layout": {"left": ["subcult.test-probe", "subcult.downloads"]}, "widgets": {"subcult.downloads": {"directory": "%s/dl"}}}\n' "$home1" >"$home1/.config/subcult/shell/bar.json"
 sleep 2
 st=$(status "$home1")
-[[ $(json '"subcult.downloads" in d["loaded"]["HEADLESS-1"] and "subcult.downloads" not in d["shown"]["HEADLESS-1"]') == True ]] ||
-  fail "downloads did not load hidden when enabled: $st"
+[[ $(json '"subcult.downloads" in d["shown"]["HEADLESS-1"]') == True ]] ||
+  fail "downloads not shown when enabled and idle: $st"
+# auto-wallpaper left the bar, so the Wallpaper service's schedule is gone.
+[[ $(json '"subcult.auto-wallpaper.rotate" in d["intervals"]') == False ]] ||
+  fail "the auto-wallpaper timer is still reported after the widget left the bar: $st"
 HOME=$home1 quickshell ipc -p "$shell" call subcult.downloads add "https://x.test/v/1" >/dev/null || fail "downloads IPC failed"
 sleep 0.5
 st=$(status "$home1")
 [[ $(json '"subcult.downloads" in d["shown"]["HEADLESS-1"]') == True ]] || fail "downloads not shown while a job runs: $st"
+dl=$(HOME=$home1 quickshell ipc -p "$shell" call subcult.downloads state)
+[[ $(python3 -c "import json,sys; j=json.loads(sys.argv[1]); print(j[0]['status'], j[0]['percent'])" "$dl") == "running 40" ]] ||
+  fail "the running download did not report yt-dlp's progress: $dl"
 for _ in $(seq 10); do [[ -e "$home1/dl/Clip [abc].mp4" ]] && break; sleep 0.5; done
 sleep 1
 dl=$(HOME=$home1 quickshell ipc -p "$shell" call subcult.downloads state)
 [[ $(python3 -c "import json,sys; j=json.loads(sys.argv[1]); print(j[0]['status'], j[0]['percent'], j[0]['file'].endswith('Clip [abc].mp4'))" "$dl") == "done 100 True" ]] ||
   fail "the download did not finish as expected: $dl"
 st=$(status "$home1")
-[[ $(json '"subcult.downloads" in d["shown"]["HEADLESS-1"]') == False ]] || fail "downloads still shown when idle: $st"
+[[ $(json '"subcult.downloads" in d["shown"]["HEADLESS-1"]') == True ]] || fail "downloads hidden again when idle: $st"
 # The agents widget, off by default: enabled in bar.json it loads, reports
 # its timer, shows the (stub) usage and opens its panel.
 printf '{"layout": {"left": ["subcult.test-probe", "subcult.agents"]}}\n' >"$home1/.config/subcult/shell/bar.json"
@@ -847,18 +870,19 @@ sleep 1
 st=$(status "$home1")
 [[ $(json 'd.get("panel")') == subcult.agents ]] || fail "the agents panel did not open: $st"
 HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
-# SomaFM: in the default layout; its panel fetches the channel list (stub
-# curl), playing a channel starts the (stub) mpv with the aac stream and the
-# song arrives over mpv's IPC socket; stop ends mpv.
+# SomaFM: in the default layout; `play <id>` before the channel list has
+# loaded fetches it (stub curl) and then plays, starting the (stub) mpv with
+# the aac stream; the song arrives over mpv's IPC socket; the panel shows
+# the list; stop ends mpv.
 printf '{"layout": {"left": ["subcult.test-probe", "subcult.soma"]}}\n' >"$home1/.config/subcult/shell/bar.json"
 sleep 2
 st=$(status "$home1")
 [[ $(json '"subcult.soma" in d["shown"]["HEADLESS-1"]') == True ]] || fail "soma did not load: $st"
+[[ $(HOME=$home1 quickshell ipc -p "$shell" call subcult.soma play groovesalad) == true ]] || fail "play refused before the channel list loaded"
 HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.soma >/dev/null
 for _ in $(seq 20); do so=$(HOME=$home1 quickshell ipc -p "$shell" call subcult.soma state); [[ $(python3 -c "import json,sys; print(json.loads(sys.argv[1])['channels'])" "$so") == 2 ]] && break; sleep 0.5; done
-[[ $(python3 -c "import json,sys; print(json.loads(sys.argv[1])['channels'])" "$so") == 2 ]] || fail "the channel list did not load on panel open: $so"
+[[ $(python3 -c "import json,sys; print(json.loads(sys.argv[1])['channels'])" "$so") == 2 ]] || fail "the channel list did not load: $so"
 HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel close >/dev/null
-[[ $(HOME=$home1 quickshell ipc -p "$shell" call subcult.soma play groovesalad) == true ]] || fail "play refused"
 for _ in $(seq 30); do so=$(HOME=$home1 quickshell ipc -p "$shell" call subcult.soma state); [[ $(python3 -c "import json,sys; print(json.loads(sys.argv[1])['song'])" "$so") == "Stub Artist - Stub Song" ]] && break; sleep 0.5; done
 [[ $(python3 -c "import json,sys; j=json.loads(sys.argv[1]); print(j['playing'], j['channel'], j['song'])" "$so") == "True groovesalad Stub Artist - Stub Song" ]] || fail "no song over mpv's IPC: $so"
 grep -q -- '--input-ipc-server=.*subcult-soma.sock -- https://api.somafm.com/groovesalad130.pls' "$home1/mpv-args" || fail "mpv was not given the aac stream: $(cat "$home1/mpv-args")"

@@ -5,8 +5,9 @@ import Quickshell.Widgets
 import qs.Commons
 import qs.Ui
 
-// Status icons from apps (StatusNotifierItem). Left click activates, right
-// click opens the app's menu.
+// Status icons from apps (StatusNotifierItem). Left click activates, or
+// opens the menu of an item that only has a menu (nm-applet); middle click
+// is the app's secondary action; right click opens the app's menu.
 BarWidget {
   id: root
 
@@ -36,12 +37,15 @@ BarWidget {
 
         MouseArea {
           anchors.fill: parent
-          acceptedButtons: Qt.LeftButton | Qt.RightButton
+          acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
           onClicked: (mouse) => {
-            if (mouse.button === Qt.RightButton && slot.modelData.hasMenu)
+            const item = slot.modelData
+            if (item.hasMenu && (mouse.button === Qt.RightButton || (mouse.button === Qt.LeftButton && item.onlyMenu)))
               menu.open()
+            else if (mouse.button === Qt.MiddleButton)
+              item.secondaryActivate()
             else
-              slot.modelData.activate()
+              item.activate()
           }
         }
 

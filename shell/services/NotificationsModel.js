@@ -84,6 +84,15 @@ function restore(text, cap) {
   }
 }
 
+// The history once the saved file is first read: the records that arrived
+// before the read (newest first) in front of the saved ones, capped. A
+// clear made before the read drops the saved records; mark-all-read made
+// before it marks them read.
+function mergeEarly(saved, early, cap, cleared, read) {
+  const base = cleared ? [] : read ? markAllRead(saved) : (saved || [])
+  return (early || []).concat(base).slice(0, cap)
+}
+
 // The action run when the notification itself is clicked.
 function defaultAction(actions) {
   return (actions || []).find(a => a.identifier === "default") || null

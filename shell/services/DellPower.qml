@@ -17,7 +17,6 @@ Singleton {
   property var report: null
   property bool busy: false
   property string error: ""
-  property int users: 0 // widgets in a bar; the state is read while one is
   property bool refreshPending: false
 
   function refresh() {

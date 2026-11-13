@@ -22,19 +22,21 @@ BarWidget {
   Component.onCompleted: Weather.configure(settings)
 
   WidgetTimer {
+    id: currentTimer
     widget: root
     timerName: "current"
     running: Weather.location !== null
     repeat: true
-    onTriggered: Weather.refreshCurrent()
+    onTriggered: Weather.refreshCurrent(currentTimer.interval / 2)
   }
 
   WidgetTimer {
+    id: almanacTimer
     widget: root
     timerName: "almanac"
     running: Weather.location !== null
     repeat: true
-    onTriggered: Weather.refreshAlmanac()
+    onTriggered: Weather.refreshAlmanac(almanacTimer.interval / 2)
   }
 
   IconButton {

@@ -31,9 +31,4 @@ TestCase {
                            { id: 12, monitor: "eDP-1", windows: 1, active: true }], "eDP-1", 10)
     compare(s.filter(x => x.occupied || x.active).length, 0)
   }
-
-  function test_label() {
-    compare(Model.label(1), "1")
-    compare(Model.label(10), "0")
-  }
 }

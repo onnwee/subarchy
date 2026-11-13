@@ -29,6 +29,7 @@ TestCase {
   function test_otherGlyphs() {
     verify(Glyphs.microphone(true) !== Glyphs.microphone(false))
     verify(Glyphs.ethernet(true) !== Glyphs.ethernet(false))
+    compare(Glyphs.ethernet(false), "\u{F0202}", "ethernet-cable-off, not ethernet-cable")
     verify(Glyphs.bluetooth(true, 1) !== Glyphs.bluetooth(true, 0))
     verify(Glyphs.bluetooth(false, 0) !== Glyphs.bluetooth(true, 0))
     verify(Glyphs.powerProfile("power-saver") !== Glyphs.powerProfile("performance"))

@@ -1,7 +1,6 @@
 pragma Singleton
 import QtQuick
 import Quickshell
-import Quickshell.Io
 import Quickshell.Services.Notifications
 import qs.Commons
 import "NotificationsModel.js" as Model
@@ -17,6 +16,8 @@ import "NotificationsModel.js" as Model
 // (within 2..30 s, 5 s by default, critical ones stay), paused while the
 // pointer is over the card, restarted when the app replaces the
 // notification (replaces_id), which also updates its history record.
+// Transient notifications (the freedesktop hint, used for volume or
+// progress) pop up but stay out of the history.
 Singleton {
   id: root
 
@@ -29,6 +30,13 @@ Singleton {
   property bool dnd: false
   property var history: []
   property var popups: []
+  // A save asked for before the history file was first read: it waits for
+  // that read, so it cannot write a short history over the saved one.
+  property bool saveAfterLoad: false
+  // A clear or mark-all-read made before that read: applied to the saved
+  // records once they arrive.
+  property bool clearedEarly: false
+  property bool readEarly: false
   // Popup entries by notification id.
   property var entries: ({})
   readonly property int unread: Model.unread(history)
@@ -136,8 +144,10 @@ Singleton {
   // The app replaced the notification: new text in the popup (it binds to
   // the live object) and the history, and the timer starts over.
   function replaced(n) {
-    root.history = Model.updateRecord(root.history, n.id, root.record(n))
-    root.save()
+    if (!n.transient) {
+      root.history = Model.updateRecord(root.history, n.id, root.record(n))
+      root.save()
+    }
     const e = root.entries[n.id]
     if (e)
       e.arm(root.timeoutFor(n))
@@ -151,11 +161,15 @@ Singleton {
 
   function markAllRead() {
     root.history = Model.markAllRead(root.history)
+    if (!historyFile.settled)
+      root.readEarly = true
     save()
   }
 
   function clearHistory() {
     root.history = []
+    if (!historyFile.settled)
+      root.clearedEarly = true
     save()
   }
 
@@ -165,6 +179,10 @@ Singleton {
   }
 
   function save() {
+    if (!historyFile.settled) {
+      root.saveAfterLoad = true
+      return
+    }
     historyFile.setText(JSON.stringify(root.history) + "\n")
   }
 
@@ -178,8 +196,10 @@ Singleton {
     onNotification: (n) => {
       n.tracked = true
       const rec = Object.assign({ id: n.id, time: Date.now(), read: false }, root.record(n))
-      root.history = Model.push(root.history, rec, root.cap)
-      root.save()
+      if (!n.transient) {
+        root.history = Model.push(root.history, rec, root.cap)
+        root.save()
+      }
       n.closed.connect(() => root.drop(n))
       n.summaryChanged.connect(() => root.replaced(n))
       n.bodyChanged.connect(() => root.replaced(n))
@@ -198,9 +218,19 @@ Singleton {
   WatchedFile {
     id: historyFile
     path: root.historyPath
+    // The first read: the saved records, with any that arrived before it
+    // (newest first, as in memory) in front.
     onChanged: (live) => {
-      if (!live)
-        root.history = Model.restore(text, root.cap)
+      if (live)
+        return
+      root.history = Model.mergeEarly(Model.restore(text, root.cap), root.history, root.cap,
+        root.clearedEarly, root.readEarly)
+      root.clearedEarly = false
+      root.readEarly = false
+      if (root.saveAfterLoad) {
+        root.saveAfterLoad = false
+        root.save()
+      }
     }
   }
 }

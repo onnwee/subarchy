@@ -34,10 +34,12 @@ BarWidget {
 
   Process {
     id: query
-    command: ["sh", "-c", "for z do TZ=\"$z\" date +%z; done", "sh"].concat(root.zones)
+    // One line per zone, empty for a zone the system does not have (date
+    // would print UTC for it), so the lines stay in the zones' order.
+    command: ["sh", "-c", "for z do if [ -f \"/usr/share/zoneinfo/$z\" ]; then TZ=\"$z\" date +%z; else echo; fi; done", "sh"].concat(root.zones)
     stdout: StdioCollector {
       onStreamFinished: {
-        const lines = text.trim().split("\n")
+        const lines = text.split("\n")
         const next = {}
         root.zones.forEach((z, i) => {
           const o = Model.parseOffset(lines[i] || "")

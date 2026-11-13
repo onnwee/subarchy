@@ -18,7 +18,3 @@ function slots(workspaces, outputName, count) {
   }
   return out
 }
-
-function label(id) {
-  return id === 10 ? "0" : String(id)
-}

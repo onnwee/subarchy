@@ -4,9 +4,10 @@ import Quickshell
 import Quickshell.Io
 import "WorkspacesModel.js" as Model
 
-// Workspace names (ADR 0048 layering): the system file under
-// ~/.config/subcult/shell/workspaces.json, which is watched, so edits
-// show in the bar and the switch overlay at once.
+// Workspace names (ADR 0048 layering): the system defaults in
+// /usr/share/subcult/default/shell/workspaces.json, then the user's
+// ~/.config/subcult/shell/workspaces.json, which is watched, so edits show
+// in the bar and the switch overlay at once.
 Singleton {
   id: root
 

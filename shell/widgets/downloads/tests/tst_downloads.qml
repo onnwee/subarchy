@@ -26,7 +26,6 @@ TestCase {
 
   function test_finishedPath() {
     compare(Model.finishedPath("/home/u/Downloads/Clip [abc].mp4"), "/home/u/Downloads/Clip [abc].mp4")
-    compare(Model.finishedPath("[download] /home/u/Downloads/Clip [abc].mp4 has already been downloaded"), "/home/u/Downloads/Clip [abc].mp4")
     compare(Model.finishedPath("[download] Destination: x"), "")
   }
 
@@ -36,6 +35,7 @@ TestCase {
     compare(c[c.length - 1], "https://x.test/v")
     compare(c[c.length - 2], "--", "the URL comes after -- so it cannot be an option")
     verify(c.indexOf("--no-playlist") > 0)
+    verify(c.indexOf("--progress") > 0, "--print implies --quiet; without --progress no [download] lines arrive")
     verify(c.indexOf("-x") < 0)
     const a = Model.command("https://x.test/v", "/d", true)
     verify(a.indexOf("-x") > 0 && a.indexOf("-f") < 0)
@@ -44,8 +44,6 @@ TestCase {
   function test_queue() {
     const jobs = [{ url: "a", status: "done" }, { url: "b", status: "running" }, { url: "c", status: "queued" }]
     compare(Model.nextQueued(jobs).url, "c")
-    verify(Model.active(jobs))
-    verify(!Model.active([{ url: "a", status: "done" }, { url: "b", status: "failed" }]))
     compare(Model.nextQueued([]), null)
     compare(Model.expandHome("~/Downloads", "/home/u"), "/home/u/Downloads")
     compare(Model.expandHome("/tmp", "/home/u"), "/tmp")

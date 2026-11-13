@@ -40,15 +40,22 @@ Singleton {
     }
   }
 
-  function refreshCurrent() {
+  // A bar's timer passes half its interval as minAgeMs: with two full bars
+  // (a docked laptop) each runs its own timer, and the second one within
+  // that age is skipped instead of fetching again.
+  function refreshCurrent(minAgeMs) {
     if (!root.location || currentQuery.running)
+      return
+    if (minAgeMs > 0 && !Model.stale(root.currentAt, minAgeMs, Date.now()))
       return
     currentQuery.command = Model.currentCommand(root.location, root.imperial)
     currentQuery.running = true
   }
 
-  function refreshAlmanac() {
+  function refreshAlmanac(minAgeMs) {
     if (!root.location || almanacQuery.running)
+      return
+    if (minAgeMs > 0 && !Model.stale(root.almanacAt, minAgeMs, Date.now()))
       return
     almanacQuery.command = Model.almanacCommand(root.location, root.imperial)
     almanacQuery.running = true

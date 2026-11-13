@@ -33,7 +33,7 @@ function wifiOff() {
 }
 
 function ethernet(connected) {
-  return connected ? "\u{F0200}" : "\u{F0201}"
+  return connected ? "\u{F0200}" : "\u{F0202}"
 }
 
 function bluetooth(enabled, connectedCount) {

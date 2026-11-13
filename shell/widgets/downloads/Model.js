@@ -28,18 +28,18 @@ function progress(line) {
 }
 
 // The file a finished download landed in, from `--print after_move:filepath`
-// (a line that is a path) or yt-dlp's "has already been downloaded".
+// (a line that is a path), which yt-dlp also prints for a file it already
+// had. Its "has already been downloaded" note goes to stderr under the quiet
+// mode --print implies, so stdout never carries it.
 function finishedPath(line) {
   const s = String(line || "").trim()
-  const already = /^\[download\]\s+(.+?) has already been downloaded/.exec(s)
-  if (already)
-    return already[1]
   return s.startsWith("/") ? s : ""
 }
 
-// The yt-dlp command for a job.
+// The yt-dlp command for a job. --print implies --quiet, which also turns
+// progress off, so --progress brings the [download] lines back.
 function command(u, directory, audioOnly) {
-  const args = ["yt-dlp", "--newline", "--no-colors", "--no-playlist", "--print", "after_move:filepath",
+  const args = ["yt-dlp", "--newline", "--progress", "--no-colors", "--no-playlist", "--print", "after_move:filepath",
     "--no-simulate", "-P", directory, "-o", "%(title).150B [%(id)s].%(ext)s"]
   if (audioOnly)
     args.push("-x", "--audio-format", "best")
@@ -57,10 +57,6 @@ function expandHome(path, home) {
 // Queue entries are { url, status, percent, ... }. The next one to run.
 function nextQueued(jobs) {
   return (jobs || []).find(j => j.status === "queued") || null
-}
-
-function active(jobs) {
-  return (jobs || []).some(j => j.status === "queued" || j.status === "running")
 }
 
 function fileName(path) {
