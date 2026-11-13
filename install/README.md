@@ -20,7 +20,10 @@ in English) and preselects that language's usual keyboard. The
 keyboard comes from a labelled list, the time zone from a searchable
 list, and the disk from a list that shows what is on each one. After
 choosing a disk the user can install there, browse it read-only first, or
-pick another. A summary table of every answer, the disk included, then
+pick another. Before the browse opens, a page lists the partitions it
+mounted read-only and the ones it left closed (encrypted, LVM, RAID, ZFS,
+swap, no filesystem, or a failed mount) and says how to come back: q, or
+Esc then 0, or F10. A summary table of every answer, the disk included, then
 asks "Does this look right?", and the erase question comes last; its
 default is no. Escape goes back a step on every screen. While `subarchy-install` runs, the screen shows
 the mark in the middle of the screen, "Installing Subarchy" with the time
@@ -43,9 +46,16 @@ keyboard layout first and switches the console to it (`loadkeys`), so the
 password and passphrase are typed under the layout the installed system
 asks for them in. It then lists the disks of at least 20 GiB with the
 partitions already on each, leaving out the install medium. Answering
-`look 1` mounts that disk's plain filesystems read-only under
-`/run/subarchy-look` and opens `mc` there; encrypted partitions are named
-but not opened. It then asks for the computer name, user name and password
+`look 1` mounts that disk's plain filesystems read-only and `noexec`
+under `/run/subarchy-look`, prints the same list of what it opened and
+what it left closed, and asks before opening `mc` there. `mc` gets both
+panels on `/run/subarchy-look`, no subshell (`--nosubshell`) and a
+temporary profile (`MC_PROFILE_ROOT`) with the command line hidden, q
+bound to quit, Ctrl-O and F2 unbound, a confirmation before running a
+file, an empty user menu and the nicedark skin, whose text stays readable
+in the installer palette. Typed letters search the panel, and Return on a
+file does not run it. `mc`'s pull-down menus can still run a command
+typed into one of their dialogs, as root. It then asks for the computer name, user name and password
 and time zone. The disk passphrase is the user's password unless the user
 asks for a separate one. The desktop layout and variant come from
 systemd's `kbd-model-map`. Each answer is checked as it is entered. The user confirms

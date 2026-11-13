@@ -536,7 +536,7 @@ func (s *screens) disk(a *setup.Answers, e env, disks []setup.Disk) error {
 				break
 			}
 			if what == look {
-				if err := e.browse(d); err != nil {
+				if err := e.browse(d, s.beforeLook(d.Path)); err != nil {
 					s.notice(capital(err.Error()))
 				}
 				continue
@@ -544,6 +544,22 @@ func (s *screens) disk(a *setup.Answers, e env, disks []setup.Disk) error {
 			a.Disk = d.Path
 			return nil
 		}
+	}
+}
+
+// beforeLook is the page before the browse: what it opens, what it
+// leaves closed and how to come back. Return opens the file manager.
+func (s *screens) beforeLook(path string) func(opened, closed []string) bool {
+	return func(opened, closed []string) bool {
+		title, body := lookPage(path, opened, closed)
+		s.page(title, body...)
+		if len(opened) == 0 {
+			s.line(colPaper, "Press Return to go back.")
+			s.key()
+			return false
+		}
+		s.line(colPaper, "Press Return to open it, or Escape to go back.")
+		return s.key()
 	}
 }
 

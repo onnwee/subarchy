@@ -116,15 +116,26 @@ type Part struct {
 	Label  string
 }
 
-// Browsable reports whether the partition can be mounted read-only as it
-// is: it has a filesystem, and is not swap, an encrypted container or
-// part of a RAID or LVM set.
-func (p Part) Browsable() bool {
+// Closed says why the partition cannot be mounted read-only as it is, or
+// "" when it can: it needs a filesystem, and must not be swap, an
+// encrypted container or part of a RAID, LVM or ZFS set. It reads after
+// String: `/dev/sda2  996 GB  encrypted (LUKS), left locked`.
+func (p Part) Closed() string {
 	switch p.FSType {
-	case "", "swap", "crypto_LUKS", "BitLocker", "LVM2_member", "linux_raid_member", "zfs_member":
-		return false
+	case "":
+		return "nothing to open"
+	case "swap":
+		return "holds no files"
+	case "crypto_LUKS", "BitLocker":
+		return "left locked"
+	case "LVM2_member":
+		return "part of an LVM volume group"
+	case "linux_raid_member":
+		return "part of a RAID set"
+	case "zfs_member":
+		return "part of a ZFS pool"
 	}
-	return true
+	return ""
 }
 
 // String renders the partition for the picker.

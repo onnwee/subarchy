@@ -54,7 +54,12 @@ func TestScreensInstall(t *testing.T) {
 	var loaded string
 	e.loadKeymap = func(k string) error { loaded = k; return nil }
 	var looked []string
-	e.browse = func(d setup.Disk) error { looked = append(looked, d.Path); return nil }
+	var opens []bool
+	e.browse = func(d setup.Disk, show func(opened, closed []string) bool) error {
+		looked = append(looked, d.Path)
+		opens = append(opens, show([]string{d.Parts[0].String()}, []string{"/dev/vda3  1 GB  swap, holds no files"}))
+		return nil
+	}
 	s, g, out := testScreens(t,
 		"German",        // language, which preselects the German keyboard
 		"German",        // keyboard
@@ -107,10 +112,12 @@ func TestScreensInstall(t *testing.T) {
 	if string(pass) != "disk-pass-1\n" {
 		t.Errorf("passphrase = %q", pass)
 	}
-	if loaded != "de-latin1" || len(looked) != 1 || looked[0] != "/dev/vda" {
-		t.Errorf("loaded %q, browsed %v", loaded, looked)
+	if loaded != "de-latin1" || len(looked) != 1 || looked[0] != "/dev/vda" || !opens[0] {
+		t.Errorf("loaded %q, browsed %v, opened %v", loaded, looked, opens)
 	}
 	for _, want := range []string{"is a system account", "The two entries differ", `/dev/vda2  25 GB  ntfs "Windows"`,
+		"Browsing /dev/vda read-only", `  /dev/vda1  524 MB  vfat "EFI"`, "Not opened:", "  /dev/vda3  1 GB  swap, holds no files",
+		"press q, or Esc and then 0,", "or F10 (Fn+F10 on many laptops).", "Press Return to open it, or Escape to go back.",
 		"Everything on /dev/vda will be erased.", "Install disk", "/dev/vda (erased)", "Does this look right", "Escape goes back"} {
 		if !strings.Contains(out.String()+callText(g), want) {
 			t.Errorf("screens lack %q", want)
@@ -125,6 +132,26 @@ func TestScreensInstall(t *testing.T) {
 	// The erase question defaults to no.
 	if !strings.Contains(callText(g), "Erase /dev/vda and install Subarchy? --affirmative Yes, erase and install --negative No, go back --default=false") {
 		t.Error("erase confirm is not default-no")
+	}
+}
+
+// The page before the browse: Escape skips the file manager, and with
+// nothing to open there is only a way back.
+func TestBeforeLook(t *testing.T) {
+	s, _, out := testScreens(t)
+	s.key = func() bool { return false }
+	if s.beforeLook("/dev/vda")([]string{"/dev/vda1  1 GB  ext4"}, nil) {
+		t.Error("Escape on the browse page opened the file manager")
+	}
+	s.key = func() bool { return true }
+	if s.beforeLook("/dev/vda")(nil, []string{"/dev/vda1  1 GB  encrypted (LUKS), left locked"}) {
+		t.Error("opened the file manager with nothing mounted")
+	}
+	for _, want := range []string{"Press Return to open it, or Escape to go back.", "Nothing on /dev/vda can be opened read-only.",
+		"/dev/vda1  1 GB  encrypted (LUKS), left locked", "Press Return to go back."} {
+		if !strings.Contains(out.String(), want) {
+			t.Errorf("pages lack %q:\n%s", want, out.String())
+		}
 	}
 }
 

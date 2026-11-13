@@ -110,6 +110,16 @@ func TestDisks(t *testing.T) {
 	}
 }
 
+func TestPartClosed(t *testing.T) {
+	for fs, want := range map[string]string{"vfat": "", "ext4": "", "ntfs": "", "": "nothing to open", "swap": "holds no files",
+		"crypto_LUKS": "left locked", "BitLocker": "left locked", "LVM2_member": "part of an LVM volume group",
+		"linux_raid_member": "part of a RAID set", "zfs_member": "part of a ZFS pool"} {
+		if got := (Part{FSType: fs}).Closed(); got != want {
+			t.Errorf("Closed(%q) = %q, want %q", fs, got, want)
+		}
+	}
+}
+
 func TestWriteConfig(t *testing.T) {
 	dir := filepath.Join(t.TempDir(), "setup")
 	a := Answers{
