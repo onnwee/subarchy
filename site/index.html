@@ -52,11 +52,11 @@
 <section><div class="wrap sec"><header><div class="n">02</div><h2>The desktop</h2></header><div class="body"><p>The bar, notifications, on-screen display, polkit dialog, Alt-Tab switcher and launcher are one Quickshell program. Widgets update on events, not on a timer where they can avoid it.</p>
 <ul class="tags" aria-label="Some of the 27 widgets in the source"><li>workspaces</li><li>audio</li><li>network</li><li>bluetooth</li><li>battery</li><li>calendar</li><li>weather</li><li>media</li><li>tray</li><li>updates</li><li>clock</li><li>notifications</li><li>tailscale</li><li>downloads</li></ul>
 <p class="muted small">Fourteen of the 27 widget folders in <code>shell/widgets</code>. Some panels and launcher features are still open on the roadmap.</p>
-<p>One palette colours eight places: the shell, the lock screen, the terminal, Neovim, the cursor, the login screen, the boot splash and the boot menu. <a href="https://pult.subcult.tv">Pult</a> applies it.</p></div></div></section>
+<p>One palette colours eight places: the shell, the lock screen, the terminal, Neovim, the cursor, the login screen, the boot splash and the boot menu. <a href="https://pult.subcult.tv">Pult</a> applies it to the first four. The cursor follows with <code>subcult cursor apply</code>, and the last three, which are system files, with <code>subcult theme apply-system</code>.</p></div></div></section>
 <section><div class="wrap sec"><header><div class="n">03</div><h2>One command</h2></header><div class="body"><p>Every tool is a <code>subcult-*</code> program on the path, and <code>subcult</code> finds them. <code>sub</code> is the short form. These lines come from the summaries in the source.</p>
 <div class="cmds">
 <div><div class="cmd"><code>subcult update</code></div><p>Takes a snapshot, upgrades packages, runs migrations and cleans up.</p></div>
-<div><div class="cmd"><code>subcult theme set subcult-minimal</code></div><p>Applies a theme. <code>subcult theme list</code> shows what is installed.</p></div>
+<div><div class="cmd"><code>subcult theme apply-system</code></div><p>Carries the palette to the login screen, boot splash and boot menu. Themes themselves are switched with <code>pult apply</code>.</p></div>
 <div><div class="cmd"><code>subcult channel set edge</code></div><p>Follows the Arch mirrors directly. A new system follows the stable channel, a dated Arch Linux Archive snapshot.</p></div>
 <div><div class="cmd"><code>sudo subcult disk tpm enable</code></div><p>Unlocks the disk with the TPM instead of a typed passphrase.</p></div>
 <div><div class="cmd"><code>subcult gpu run steam</code></div><p>Runs one app on the NVIDIA GPU of a hybrid laptop.</p></div>

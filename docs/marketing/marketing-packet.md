@@ -76,7 +76,7 @@ Mono:
 
 1. The installer's summary screen and the erase question, default no.
 2. First login: the bar, a terminal, `subcult commands`.
-3. `subcult theme set` changing the bar, terminal and cursor together.
+3. `pult apply` changing the bar, window borders and terminal together.
 4. `subcult update`, then the Limine menu showing the snapshot it made.
 
 Record in a virtual machine with synthetic names. Show nothing that has not

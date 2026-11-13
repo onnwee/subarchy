@@ -27,6 +27,7 @@ the source changes.
 | Unattended install keys | the header of [install/subarchy-install](../install/subarchy-install) |
 | Default keys | [default/hypr/bindings.lua](../default/hypr/bindings.lua) |
 | Command summaries and examples | the `subcult:summary` and `subcult:examples` headers in [bin/](../bin/) and the commands in [cmd/](../cmd/) |
+| Switching themes | `pult help`, and the Pult profile in [default/theme/subarchy.toml](../default/theme/subarchy.toml) |
 | Widget names and the count of 27 | the folders in [shell/widgets/](../shell/widgets/) |
 | Bar and palette paths | [shell-and-look-design](../docs/plans/shell-and-look-design.md) |
 
