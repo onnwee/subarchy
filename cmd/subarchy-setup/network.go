@@ -46,7 +46,13 @@ func (n wifiNetwork) row() string {
 	if kind == "" {
 		kind = n.security
 	}
-	return fmt.Sprintf("%-32s  %-8s  %s", n.name, kind, strength(n.signal))
+	name := n.name
+	// Space at either end would vanish in the padded column, so two networks
+	// differing only there would get the same row; quote such a name.
+	if strings.TrimSpace(name) != name {
+		name = strconv.Quote(name)
+	}
+	return fmt.Sprintf("%-32s  %-8s  %s", name, kind, strength(n.signal))
 }
 
 // strength puts a signal in words, at iwctl's thresholds for its bars.
@@ -357,6 +363,26 @@ func unsupported(n wifiNetwork) string {
 	return n.name + " uses WEP, which Subarchy does not support."
 }
 
+// networkRows gives each network its own line in the pick list. A row already
+// taken (two networks with the same name, security and strength) gets a
+// number, so choosing a row always means one network.
+func networkRows(nets []wifiNetwork) ([]string, map[string]wifiNetwork) {
+	rows := []string{}
+	byRow := map[string]wifiNetwork{}
+	for _, n := range nets {
+		r := n.row()
+		for i := 2; ; i++ {
+			if _, taken := byRow[r]; !taken {
+				break
+			}
+			r = fmt.Sprintf("%s  (%d)", n.row(), i)
+		}
+		rows = append(rows, r)
+		byRow[r] = n
+	}
+	return rows, byRow
+}
+
 // network is the screens' network page. It returns errSkip when there is
 // nothing to ask: a link is up, or there is no Wi-Fi device.
 func (s *screens) network(w *wifi) error {
@@ -371,12 +397,7 @@ func (s *screens) network(w *wifi) error {
 		if err != nil {
 			s.notice("Could not look for networks: " + err.Error())
 		}
-		rows := []string{}
-		byRow := map[string]wifiNetwork{}
-		for _, n := range nets {
-			rows = append(rows, n.row())
-			byRow[n.row()] = n
-		}
+		rows, byRow := networkRows(nets)
 		if len(nets) == 0 {
 			s.page(networkTitle, body("", "No Wi-Fi networks were found.")...)
 		} else {

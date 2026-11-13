@@ -156,7 +156,7 @@ def timeout_screen(qmp: Path, name: str) -> None:
     try:
         screendump(qmp, VM / name)
         print(f"install-test: screen at the timeout saved to build/vm/{name}", file=sys.stderr)
-    except OSError as e:
+    except Exception as e:  # noqa: BLE001 - a best-effort capture must not hide the timeout
         print(f"install-test: no screenshot at the timeout: {e}", file=sys.stderr)
 
 
@@ -517,12 +517,13 @@ def app_colours(serial: Serial, qmp: Path, sudo: str) -> dict:
     if kde:
         # Dracula's base in the user's scheme; Dolphin must show Dracula's
         # mantle and not the packaged scheme's.
-        state += serial.run(
+        # Serial.run drops the trailing newline; keep each output on its own line.
+        state += "\n" + serial.run(
             "pult apply -yes dracula >/dev/null 2>&1; echo DRACULA=$?;"
             " echo KDE=$(grep -c '^BackgroundNormal=40,42,54$' ~/.local/share/color-schemes/Pult.colors 2>/dev/null)",
             timeout=300)
         show("dolphin", "dolphin", DRACULA_MANTLE, UNTHEMED["dolphin"] + (MANTLE,))
-        state += serial.run(f"{PROFILE_APPLY}; echo RESTORE=$?", timeout=300)
+        state += "\n" + serial.run(f"{PROFILE_APPLY}; echo RESTORE=$?", timeout=300)
     else:
         show("dolphin", "dolphin", MANTLE, UNTHEMED["dolphin"])
     return {"state": state, "windows": windows, "themed": themed}

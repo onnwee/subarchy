@@ -107,6 +107,33 @@ func (f *fakeIwd) wifi(dir string) *wifi {
 		sleep: func(time.Duration) {}, typed: map[string]string{}}
 }
 
+// Networks that would share a line keep separate lines, each picking its
+// own network: a name with space at an end is quoted, and an exact twin is
+// numbered.
+func TestNetworkRowsDistinct(t *testing.T) {
+	nets := []wifiNetwork{
+		{name: "Home", security: "psk", signal: -5000},
+		{name: "Home ", security: "psk", signal: -5000},
+		{name: "Cafe", security: "open", signal: -8000},
+		{name: "Cafe", security: "open", signal: -8000},
+	}
+	rows, byRow := networkRows(nets)
+	if len(rows) != 4 || len(byRow) != 4 {
+		t.Fatalf("rows %q", rows)
+	}
+	if !strings.Contains(rows[1], `"Home "`) {
+		t.Errorf("trailing space not shown: %q", rows[1])
+	}
+	if !strings.HasSuffix(rows[3], "(2)") {
+		t.Errorf("twin not numbered: %q", rows[3])
+	}
+	for i, r := range rows {
+		if byRow[r] != nets[i] {
+			t.Errorf("row %q picks %+v, want %+v", r, byRow[r], nets[i])
+		}
+	}
+}
+
 func TestWiFiScanAndNeeded(t *testing.T) {
 	f := newFakeIwd(t)
 	w := f.wifi(t.TempDir())
