@@ -4,8 +4,9 @@
 1. Boots the ISO with an empty virtio disk, shares this checkout (read-only)
    and a persistent package cache over 9p, and runs install/subarchy-install
    from the checkout, so installer changes need no ISO rebuild.
-2. Boots the disk alone, types the LUKS passphrase on the serial console,
-   logs in as the new user and checks the result.
+2. Boots the disk alone, types three wrong LUKS passphrases and then the
+   right one on the serial console, logs in as the new user and checks the
+   result.
 
 The disk, its OVMF variables and the test credentials stay in build/vm/.
 They are throwaway test values for a VM, not secrets.
@@ -121,6 +122,7 @@ def quietest_minute(sample, attempts: int = 3) -> tuple[int, int]:
 USER = "tester"
 PASSWORD = "subarchy-test"
 PASSPHRASE = "subarchy-disk-test"
+WRONG_PASSPHRASE = "not-the-disk-passphrase"
 
 
 def write_config() -> None:
@@ -491,8 +493,34 @@ def boot(disk: Path, vars_file: Path) -> bool:
         print(f"install-test: LUKS prompt after {time.monotonic() - started:.0f}s")
         time.sleep(2)
         screendump(qmp, VM / "luks.png")  # Plymouth draws the prompt (ADR 0013)
+        # Three wrong passphrases, then the right one. With tries=0 the
+        # prompt keeps asking; systemd-cryptsetup's default of three would
+        # end in the initrd's emergency shell, which the locked root
+        # account cannot open. Each wait covers the key check (about 2 s).
+        for _ in range(3):
+            serial.send(WRONG_PASSPHRASE + "\n")
+            time.sleep(10)
+        screendump(qmp, VM / "luks-retry.png")  # the prompt after a failed passphrase
         serial.send(PASSPHRASE + "\n")
-        serial.expect(re.compile(rb"login: "), 180)
+        unlocked = serial.expect(re.compile(rb"login: |emergency mode"), 180)
+        unlock_retry = unlocked.endswith(b"login: ") and b"account is locked" not in unlocked
+        if not unlock_retry:
+            # Emergency mode: sulogin waits for Enter, then the plain
+            # console asks for the passphrase again. The right passphrase
+            # sent above may have been that Enter, if sulogin was already
+            # waiting; when no prompt follows, press Enter now. This only
+            # gets the boot to the remaining checks; the unlock check fails.
+            try:
+                serial.expect(re.compile(rb"Press Enter"), 60)
+            except TimeoutError:
+                pass
+            try:
+                serial.expect(re.compile(rb"assphrase for"), 20)
+            except TimeoutError:
+                serial.send("\n")
+                serial.expect(re.compile(rb"assphrase for"), 120)
+            serial.send(PASSPHRASE + "\n")
+            serial.expect(re.compile(rb"login: "), 180)
         print(f"install-test: login prompt after {time.monotonic() - started:.0f}s")
         serial.send(USER + "\n")
         serial.expect(re.compile(rb"Password: "), 30)
@@ -557,6 +585,16 @@ def boot(disk: Path, vars_file: Path) -> bool:
             # service otherwise exits before importing its Python bindings.
             "power_cli": serial.run("powerprofilesctl --help >/dev/null; echo POWER_CLI_EXIT=$?"),
             "cmdline": serial.run("cat /proc/cmdline"),
+            # The three wrong passphrases typed at the prompt, and no
+            # emergency shell in this boot.
+            "unlock": serial.run(f"{sudo} journalctl -b -o cat | grep -c 'Failed to activate with specified passphrase';"
+                                 f" {sudo} journalctl -b -o cat | grep -c 'Emergency Shell'"),
+            # Boot images built by the install: one UKI per kernel, none of
+            # mkinitcpio's preset images (nothing boots them).
+            "boot_images": serial.run(
+                f"for k in linux-zen linux-lts; do {sudo} grep -c \"Building UKI for $k (\" /var/log/subarchy-install.log; done;"
+                f" {sudo} grep -c 'Building image from preset' /var/log/subarchy-install.log; {sudo} ls /boot | grep -c '^initramfs-'"
+            ),
             # GPU modes (ADR 0006): a VM has no hybrid graphics, so the uwsm
             # hook must stay silent and the session start in its default.
             "gpu": serial.run("test -r /usr/share/uwsm/env-hyprland.d/50-subarchy-gpu && echo HOOK;"
@@ -589,10 +627,17 @@ def boot(disk: Path, vars_file: Path) -> bool:
             # The system screens take the user's palette (ADR 0037): SDDM's
             # theme.conf, Limine's colours, a recoloured splash (one initramfs
             # rebuild), Chromium skipped since it is not installed; again: nothing.
+            # The first run is the privileged half with pkexec's PATH, which
+            # has no /usr/local/bin: the rebuild must still reach every UKI.
             "theme_system": serial.run(
                 "mkdir -p ~/.config/subcult/theme && printf '%s' '{\"schema\": 1, \"appearance\": \"dark\", \"colors\": {\"base\": \"#1a1b26\", \"text\": \"#c0caf5\", \"mauve\": \"#bb9af7\", \"surface0\": \"#24283b\"}}' > ~/.config/subcult/theme/palette.json;"
-                f" subcult theme apply-system --elevate sudo; {sudo} cp /boot/limine.conf /tmp/limine-after-theme.conf; echo ---;"
+                f" {sudo} touch /tmp/theme-stamp; sleep 1;"
+                f" {sudo} env PATH=/usr/sbin:/usr/bin:/sbin:/bin /usr/bin/subcult-theme system-apply"
+                " --colors base=#1a1b26,mauve=#bb9af7,surface0=#24283b,text=#c0caf5 --appearance dark; echo SYSTEM_APPLY_EXIT=$?;"
+                f" {sudo} cp /boot/limine.conf /tmp/limine-after-theme.conf; echo ---;"
                 f" subcult theme apply-system --elevate sudo; {sudo} diff -u /tmp/limine-after-theme.conf /boot/limine.conf; echo ---;"
+                f" {sudo} find /boot/EFI/Linux -name '*.efi' -newer /tmp/theme-stamp | wc -l;"
+                f" {sudo} find /boot/EFI/Linux -name '*.efi' ! -newer /tmp/theme-stamp | wc -l; echo ---;"
                 f" grep -c '^base=#1a1b26' /usr/share/sddm/themes/subarchy/theme.conf; {sudo} grep -c '^interface_branding_colour: bb9af7' /boot/limine.conf;"
                 " plymouth-set-default-theme; grep -c 'SetBackgroundTopColor(0.102, 0.106, 0.149)' /usr/share/plymouth/themes/subarchy-user/subarchy-user.script",
                 timeout=600,
@@ -878,6 +923,11 @@ finally:
         and ("starship=/usr/share/subcult/default/shell/starship.toml" in r["shell_setup"] or "own-prompt" in r["shell_setup"])
         and "atuin=1 zoxide=1 prompt=1" in r["shell_setup"],
         "both UKIs present": "subarchy_linux-zen.efi" in r["uki"] and "subarchy_linux-lts.efi" in r["uki"],
+        "each kernel built once, as its UKI; no initramfs images on the ESP": r["boot_images"].split() == ["1", "1", "0", "0"],
+        "disk unlock asks again without limit (rd.luks.options has tries=0)":
+            re.search(r"\brd\.luks\.options=\S*\btries=0\b", r["cmdline"]) is not None,
+        "three wrong passphrases ask again, then the right one boots, with no emergency mode": unlock_retry
+        and r["unlock"].split() == ["3", "0"],
         "snapshot boot entry": "rootflags=subvol=/@/.snapshots/" in r["snapshot"],
         "no self-referencing EFI entry": "/EFI/BOOT/BOOTX64.EFI" not in r["snapshot"],
         "subcult update authenticates before privileged work": "UNAUTH_STEP_EXIT=1" in r["update"]
@@ -929,7 +979,7 @@ finally:
         "screensaver render does not hold back the session, and skips the shipped colours":
             screensaver_ok(r["screensaver_unit"]),
         "default palette restored after the system-theme probe": "THEME_RESET" in r["theme_reset"],
-        "theme apply-system recolours SDDM, Limine and the splash, rebuilding the initramfs once": theme_system_ok(r["theme_system"]),
+        "theme apply-system recolours SDDM, Limine and the splash, rebuilding every UKI once (also with pkexec's PATH)": theme_system_ok(r["theme_system"]),
         "Plymouth theme selected with its images": "subarchy" in r["plymouth_theme"].split()
         and all(f in r["plymouth_theme"] for f in ("logo.png", "subarchy.script", "entry.png", "progress-bar.png")),
         "idle service runs generated config and DPMS on/off are idempotent":
@@ -1203,14 +1253,16 @@ def hw_ok(out: str) -> bool:
 
 
 def theme_system_ok(out: str) -> bool:
-    """Two apply-system runs (the first rebuilds the initramfs, the second changes nothing), then the files."""
+    """Two runs (the first rebuilds every UKI, the second changes nothing), then the files."""
     parts = [p.strip() for p in re.split(r"(?m)^---$", out)]
-    if len(parts) != 3:
+    if len(parts) != 4:
         return False
-    first, second, files = parts
+    first, second, ukis, files = parts
+    fresh, stale = (ukis.split() + ["", ""])[:2]
     return (
         "rebuilding the initramfs" in first and "wrote /usr/share/sddm/themes/subarchy/theme.conf" in first
-        and "skipped: Chromium" in first
+        and "skipped: Chromium" in first and "SYSTEM_APPLY_EXIT=0" in first
+        and fresh.isdigit() and int(fresh) >= 2 and stale == "0"
         and "no initramfs rebuild" in second and "wrote" not in second
         and files.splitlines()[-4:-1] == ["1", "1", "subarchy-user"] and files.splitlines()[-1] == "1"
     )

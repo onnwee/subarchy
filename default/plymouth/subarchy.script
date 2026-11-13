@@ -1,9 +1,9 @@
 # Subarchy boot splash (ADR 0013), written for Subarchy against Plymouth's
 # script module. Ink background, the SUBCULT mark in the middle, a thin
 # violet track under it that fills with acid green as boot progresses, the
-# passphrase prompt as a field with a lock and bullets, and messages in
-# paper. Colours are the SUBCULT roles: ink #100B19, surface #1F1830,
-# violet #8B5CF6, acid #00FF88, paper #F0ECE4.
+# passphrase prompt as a field with a lock and bullets under a "Disk
+# passphrase" label, and messages in paper. Colours are the SUBCULT roles:
+# ink #100B19, surface #1F1830, violet #8B5CF6, acid #00FF88, paper #F0ECE4.
 
 Window.SetBackgroundTopColor(0.063, 0.043, 0.098);
 Window.SetBackgroundBottomColor(0.063, 0.043, 0.098);
@@ -40,22 +40,48 @@ fun progress_callback(duration, progress) {
 }
 Plymouth.SetBootProgressFunction(progress_callback);
 
-# The passphrase prompt: a field under the track with a lock on its left;
-# one bullet per character typed, up to as many as fit inside the field.
+# Text in paper. Every text image is made here, because `subcult theme
+# apply-system` recolours this one call to the user's palette
+# (internal/systheme).
+fun paper_text(text) {
+  return Image.Text(text, 0.941, 0.925, 0.894);
+}
+
+# The passphrase prompt: a "Disk passphrase" label, the field under it with
+# a lock on its left, and one bullet per character typed, up to as many as
+# fit inside the field. After a wrong passphrase systemd-cryptsetup asks
+# again with the same prompt (rd.luks.options has tries=0, so it never gives
+# up); that ask shows a line under the field saying the last one failed.
+unlock.shown = 0;
+unlock.answered = "";
+
 fun dialog_setup() {
   local.entry;
   local.lock;
+  local.label;
+  local.error;
   entry.image = Image("entry.png");
   entry.sprite = Sprite(entry.image);
   entry.x = centre_x - entry.image.GetWidth() / 2;
-  entry.y = track.y + 40;
+  entry.y = track.y + 64;
   entry.sprite.SetPosition(entry.x, entry.y, 3);
   lock.image = Image("lock.png");
   lock.sprite = Sprite(lock.image);
   lock.sprite.SetPosition(entry.x - lock.image.GetWidth() - 14,
     entry.y + (entry.image.GetHeight() - lock.image.GetHeight()) / 2, 3);
+  label.image = paper_text("Disk passphrase");
+  label.sprite = Sprite(label.image);
+  label.sprite.SetPosition(centre_x - label.image.GetWidth() / 2,
+    entry.y - label.image.GetHeight() - 8, 3);
+  error.image = paper_text("That passphrase didn't work. Try again.");
+  error.sprite = Sprite(error.image);
+  error.sprite.SetPosition(centre_x - error.image.GetWidth() / 2,
+    entry.y + entry.image.GetHeight() + 12, 3);
+  error.sprite.SetOpacity(0);
   global.dialog.entry = entry;
   global.dialog.lock = lock;
+  global.dialog.label = label;
+  global.dialog.error = error;
   global.dialog.bullet_image = Image("bullet.png");
   global.dialog.capacity = Math.Int((entry.image.GetWidth() - 28 + 6)
     / (global.dialog.bullet_image.GetWidth() + 6));
@@ -65,13 +91,18 @@ fun dialog_setup() {
 fun dialog_opacity(opacity) {
   dialog.entry.sprite.SetOpacity(opacity);
   dialog.lock.sprite.SetOpacity(opacity);
+  dialog.label.sprite.SetOpacity(opacity);
   for (index = 0; dialog.bullet[index]; index++)
     dialog.bullet[index].sprite.SetOpacity(opacity);
 }
 
+# The prompt was answered: hide it while the disk checks the passphrase.
 fun display_normal_callback() {
-  if (global.dialog)
+  if (global.dialog && unlock.shown) {
     dialog_opacity(0);
+    dialog.error.sprite.SetOpacity(0);
+    unlock.shown = 0;
+  }
 }
 
 fun display_password_callback(prompt, bullets) {
@@ -79,6 +110,16 @@ fun display_password_callback(prompt, bullets) {
     dialog_setup();
   else
     dialog_opacity(1);
+  if (!unlock.shown) {
+    # A new ask. The same prompt as the one just answered means that
+    # passphrase did not open the disk.
+    if (unlock.answered != "" && prompt == unlock.answered)
+      dialog.error.sprite.SetOpacity(1);
+    else
+      dialog.error.sprite.SetOpacity(0);
+    unlock.shown = 1;
+    unlock.answered = prompt;
+  }
   if (bullets > dialog.capacity)
     bullets = dialog.capacity;
   for (index = 0; dialog.bullet[index] || index < bullets; index++) {
@@ -103,8 +144,8 @@ message.sprite = Sprite();
 message.sprite.SetPosition(0, 0, 5);
 
 fun message_callback(text) {
-  local.image = Image.Text(text, 0.941, 0.925, 0.894);
+  local.image = paper_text(text);
   message.sprite.SetImage(image);
-  message.sprite.SetPosition(centre_x - image.GetWidth() / 2, track.y + 110, 5);
+  message.sprite.SetPosition(centre_x - image.GetWidth() / 2, track.y + 150, 5);
 }
 Plymouth.SetMessageFunction(message_callback);

@@ -181,6 +181,28 @@ class QuietestMinute(unittest.TestCase):
         self.assertFalse(install_test.idle_ok(-1))
 
 
+
+def theme_probe(ukis: str, exit_code: int = 0) -> str:
+    """The theme_system output: the privileged run, apply-system again, the UKI ages, the files."""
+    return ("wrote /usr/share/sddm/themes/subarchy/theme.conf\nskipped: Chromium\n"
+            f"the splash changed; rebuilding the initramfs (limine-mkinitcpio)\nSYSTEM_APPLY_EXIT={exit_code}\n---\n"
+            "palette: x\nunchanged /boot/limine.conf\nthe splash is unchanged; no initramfs rebuild\n---\n"
+            f"{ukis}\n---\n1\n1\nsubarchy-user\n1\n")
+
+
+class ThemeSystem(unittest.TestCase):
+    def test_every_uki_rebuilt_passes(self):
+        self.assertTrue(install_test.theme_system_ok(theme_probe("2\n0")))
+
+    def test_a_uki_left_over_or_none_rebuilt_fails(self):
+        self.assertFalse(install_test.theme_system_ok(theme_probe("1\n1")))
+        self.assertFalse(install_test.theme_system_ok(theme_probe("0\n2")))
+        self.assertFalse(install_test.theme_system_ok(theme_probe("")))
+
+    def test_a_failed_privileged_run_fails(self):
+        self.assertFalse(install_test.theme_system_ok(theme_probe("2\n0", exit_code=1)))
+
+
 class GreeterSession(unittest.TestCase):
     def test_nothing_of_the_desktop_for_sddm_passes(self):
         ok = "PROCS=0\nUPDATE=0\nMANAGER=active\nTARGET=inactive inactive \n"

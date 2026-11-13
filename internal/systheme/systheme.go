@@ -232,7 +232,8 @@ func rgbFloats(c string) (string, error) {
 
 // PlymouthScript recolours the packaged splash script: the background from
 // base, the message text from text. Everything else (images, layout) is
-// kept, so the user theme follows the packaged one across updates.
+// kept, so the user theme follows the packaged one each time apply-system
+// runs; nothing rewrites it when the package updates.
 func PlymouthScript(packaged []byte, p Palette) ([]byte, error) {
 	bg, err := rgbFloats(p.role("base"))
 	if err != nil {

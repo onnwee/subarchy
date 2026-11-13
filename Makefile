@@ -62,6 +62,7 @@ smoke: build
 	tools/test/dispatcher-smoke.sh $(BUILD)/subcult
 	tools/test/power-auto-test.sh
 	tools/test/secureboot-test.sh
+	tools/test/migration-luks-tries-test.sh
 	tools/test/system-session-test.sh $(BUILD)/subcult
 	tools/test/dell-power-test.sh
 	tools/test/installer-check-test.sh

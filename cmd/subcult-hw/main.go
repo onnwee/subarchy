@@ -111,7 +111,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 			fmt.Fprintln(stdout, "kept", p, "(yours; not a Subarchy file)")
 		}
 		if hw.NeedsInitramfs(written) {
-			fmt.Fprintln(stdout, "initramfs: the initramfs or kernel command line changed; rebuild with `mkinitcpio -P` and `limine-update`")
+			fmt.Fprintln(stdout, "initramfs: the initramfs or kernel command line changed; rebuild the boot images with `sudo limine-mkinitcpio`")
 		}
 		return 0
 	}

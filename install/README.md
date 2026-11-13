@@ -81,7 +81,7 @@ What it builds:
 | Partition | GPT: 4 GiB FAT32 ESP at `/boot`, rest LUKS2 | 0009, 0010 |
 | Filesystems | btrfs `@ @home @log @pkg`, `compress=zstd:3,noatime` | 0009 |
 | Packages | `packages/base.txt` via pacstrap | 0002, 0004 |
-| initramfs | systemd hooks with `sd-encrypt`; `limine-mkinitcpio-hook` builds one UKI per kernel in `/boot/EFI/Linux` | 0008 |
+| initramfs | systemd hooks with `sd-encrypt`; `limine-mkinitcpio-hook` builds one UKI per kernel in `/boot/EFI/Linux`, once, during pacstrap (pacstrap runs the target's pacman hooks); `rd.luks.options=discard,tries=0`, so a wrong disk passphrase asks again instead of ending in the emergency shell | 0008 |
 | Boot | Limine with its own firmware entry and the `EFI/BOOT` fallback; menu from `/etc/default/limine` | 0007 |
 | Snapshots | snapper config `root` for `@`, 5 numbered, no timeline; `limine-snapper-sync` adds a boot entry per snapshot | 0011 |
 | System | zram swap, NetworkManager, timesyncd, user in `wheel` with zsh, root locked | 0014, 0016 |
@@ -120,8 +120,9 @@ the same way.
 `tools/iso/install-test.py ISO` (or `make install-test`) boots the live ISO
 in QEMU with an empty disk. It shares this checkout over 9p and runs the
 installer from it, so installer changes need no ISO rebuild. It then boots
-the installed disk, types the LUKS passphrase on the serial console, logs in
-and checks the result. Downloads are cached in `build/pkgcache`. With
+the installed disk, types three wrong LUKS passphrases and then the right
+one on the serial console (the prompt must keep asking), logs in and checks
+the result. Downloads are cached in `build/pkgcache`. With
 `--guided` it instead answers `subarchy-setup`'s full screens on a virtual console (keys through QMP, text read back from `/dev/vcs`), which
 tests the setup command, installer and repository shipped on the image.
 CI runs that form with the guest's network off after every ISO build

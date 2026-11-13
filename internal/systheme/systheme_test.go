@@ -209,3 +209,36 @@ func TestLimineConfKeepsEntryTrailingWhitespace(t *testing.T) {
 		})
 	}
 }
+
+// The packaged splash script: every text image goes through the one
+// recolourable Image.Text(text, ...) call, so a user palette reaches the
+// passphrase label and the wrong-passphrase line too; the prompt keeps its
+// label, its failure line and its bullet cap.
+func TestPackagedPlymouthScript(t *testing.T) {
+	packaged, err := os.ReadFile(filepath.Join("..", "..", "default", "plymouth", "subarchy.script"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(packaged)
+	if all, recolourable := strings.Count(s, "Image.Text("), len(plymouthText.FindAllString(s, -1)); all != 1 || recolourable != 1 {
+		t.Errorf("want one Image.Text call, of the form Image.Text(text, ...); found %d, %d recolourable", all, recolourable)
+	}
+	for _, want := range []string{
+		`paper_text("Disk passphrase")`,
+		`paper_text("That passphrase didn't work. Try again.")`,
+		"local.image = paper_text(text);",
+		"if (bullets > dialog.capacity)",
+	} {
+		if !strings.Contains(s, want) {
+			t.Errorf("the script lost %q", want)
+		}
+	}
+	p, _ := ParsePalette([]byte(sample))
+	out, err := PlymouthScript(packaged, p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(out), "Image.Text(text, 0.973, 0.973, 0.949)") || strings.Contains(string(out), "0.941, 0.925, 0.894") {
+		t.Errorf("the text colour was not replaced everywhere:\n%s", out)
+	}
+}

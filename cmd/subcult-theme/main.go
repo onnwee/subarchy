@@ -165,11 +165,11 @@ func (a *app) systemApply(args []string) int {
 	}
 	if rep.PlymouthChanged {
 		if *noInitramfs || *root != "/" {
-			fmt.Fprintln(a.stdout, "the splash changed; rebuild the initramfs with mkinitcpio -P for it to show at boot")
+			fmt.Fprintln(a.stdout, "the splash changed; rebuild the boot images with limine-mkinitcpio for it to show at boot")
 		} else {
-			fmt.Fprintln(a.stdout, "the splash changed; rebuilding the initramfs (mkinitcpio -P)")
+			fmt.Fprintln(a.stdout, "the splash changed; rebuilding the initramfs (limine-mkinitcpio)")
 			if err := a.initramfs(); err != nil {
-				fmt.Fprintf(a.stderr, "subcult theme system-apply: mkinitcpio: %v\n", err)
+				fmt.Fprintf(a.stderr, "subcult theme system-apply: limine-mkinitcpio: %v\n", err)
 				return 1
 			}
 		}
@@ -188,8 +188,12 @@ func main() {
 			cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 			return cmd.Run()
 		},
+		// limine-mkinitcpio rebuilds each kernel's UKI and its Limine entry,
+		// which is what boots. Installs have no mkinitcpio presets, so
+		// `mkinitcpio -P` fails, and under pkexec's PATH it skips the
+		// /usr/local/bin wrapper that would have run limine-mkinitcpio.
 		initramfs: func() error {
-			cmd := exec.Command("mkinitcpio", "-P")
+			cmd := exec.Command("/usr/bin/limine-mkinitcpio")
 			cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
 			return cmd.Run()
 		},

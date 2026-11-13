@@ -2,7 +2,8 @@
 """Boot a Subarchy ISO in QEMU (UEFI, headless) and check it from the serial console.
 
 Passes when the live system boots to a root shell, /etc/os-release says
-Subarchy, and systemd reports a running (or only degraded) system.
+Subarchy, systemd reports a running (or only degraded) system, and the
+boot's messages go to the screen rather than only the serial port.
 
 Usage: tools/iso/boot-test.py path/to/subarchy.iso [--timeout 300] [--log FILE]
 """
@@ -44,8 +45,10 @@ def main() -> int:
         ) as proc:
             serial = Serial(proc, log)
             try:
-                serial.expect(re.compile(rb"Welcome to .*Subarchy"), args.timeout)
-                print(f"boot-test: systemd greeting seen after {time.monotonic() - started:.0f}s")
+                # The screen is the boot's /dev/console, so systemd's
+                # greeting and status lines go there, not to the serial
+                # port. The serial console has the kernel's errors and its
+                # own root login.
                 serial.expect(re.compile(rb"automatic login"), args.timeout)
                 serial.claim_prompt(60)
                 print(f"boot-test: root shell after {time.monotonic() - started:.0f}s")
@@ -54,6 +57,8 @@ def main() -> int:
                 kernel = serial.run("uname -r")
                 failed = serial.run("systemctl --failed --no-legend --plain | awk '{print $1}'")
                 installer = serial.run("subarchy-install --help | head -1")
+                # The last console listed is /dev/console.
+                consoles = serial.run("cat /sys/class/tty/console/active")
                 serial.send("poweroff\n")
             except TimeoutError as e:
                 proc.kill()
@@ -71,6 +76,10 @@ def main() -> int:
         "kernel is linux-zen": "zen" in kernel,
         "system running or degraded": state in ("running", "degraded"),
         "installer on the image": "Subarchy installer" in installer,
+        # Boot progress shows on the screen, and the serial console is
+        # still a console (its getty is what this test logs in on).
+        "boot messages go to the screen (tty0 is /dev/console)": consoles.split()[-1:] == ["tty0"]
+        and "ttyS0" in consoles.split(),
     }
     for name, ok in checks.items():
         print(f"boot-test: {'ok  ' if ok else 'FAIL'} {name}")

@@ -85,6 +85,16 @@ rm -f -- "$calls"
 hooks=$(grep -o '^HOOKS=([^)]*)' "$root/install/subarchy-install")
 [[ $hooks == *" keyboard autodetect "* ]] || fail "keyboard must come before autodetect: $hooks"
 
+# A wrong disk passphrase asks again instead of ending in the initrd's
+# emergency shell after three tries.
+grep -q 'rd\.luks\.options=discard,tries=0 ' "$root/install/subarchy-install" || fail "the kernel command line has no tries=0"
+
+# pacstrap runs the target's pacman hooks, so limine-mkinitcpio-hook's
+# override replaces mkinitcpio's own and the kernels are built once.
+target=/mnt/target
+[[ $(pacman_conf 0 2>/dev/null | grep '^HookDir') == "HookDir = /mnt/target/etc/pacman.d/hooks/" ]] ||
+  fail "pacman.conf for pacstrap: $(pacman_conf 0 2>/dev/null | grep '^HookDir' || echo 'no HookDir')"
+
 # Boot entries left by earlier installs: only Limine's or Subarchy's whose
 # partition is gone are removed. This install's entry, another system's,
 # the firmware's own and a foreign entry with a missing partition stay.

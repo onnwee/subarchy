@@ -11,13 +11,19 @@ built with archiso.
 - add the `subarchy` package from a local repository, which sets
   `/etc/os-release`;
 - log root in on the serial console too, so the boot test can drive it;
-- boot quietly: the menu shows for 2 seconds (the speech and memory-test
-  entries are still there) and the kernel prints only errors, so the first
-  thing on screen is the installer. systemd's status lines go to the
-  serial console, which the boot test reads.
+- boot with its progress on screen: the menu shows for 2 seconds (the
+  speech and memory-test entries are still there), the kernel prints only
+  errors, and the screen is the last `console=`, so it is `/dev/console`
+  and shows the live medium's and systemd's status lines while the image
+  starts. Before 2026-11-12 the serial console came last and a laptop
+  showed a black screen for about 30 seconds. The serial console still
+  gets the kernel's errors and its own root login, which the tests drive.
 
 The installer, `subarchy-setup`, starts by itself on the first console
-(`airootfs/root/.zlogin`).
+(`airootfs/root/.zlogin`). That console's autologin prints no banner, and
+`.zlogin` turns systemd's status lines off and clears the boot messages and
+the motd first, so the installer is the first thing on the screen after
+boot and units still starting do not print over it.
 
 ## Build and test
 
@@ -29,8 +35,10 @@ make iso-test   # tools/iso/boot-test.py: UEFI boot in QEMU, checks over the ser
 ```
 
 The boot test passes when the image reaches a root shell, `/etc/os-release`
-says Subarchy, the kernel is `linux-zen`, and systemd reports `running` or
-`degraded`. The first passing run (2026-11-07, `sputnik` with KVM): systemd
+says Subarchy, the kernel is `linux-zen`, systemd reports `running` or
+`degraded`, and the screen is `/dev/console`. The systemd greeting now
+shows on the screen, not the serial log, so the test no longer times it.
+The first passing run (2026-11-07, `sputnik` with KVM): systemd
 greeting after 12 s, shell after 34 s, state `running`, no failed units.
 The image is 1.6 GB.
 

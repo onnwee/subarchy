@@ -163,7 +163,10 @@ make_filesystems() {
 # first build already produces the UKIs.
 write_boot_config() {
   step "writing boot configuration"
-  local cmdline="rd.luks.name=$luks_uuid=root rd.luks.options=discard root=/dev/mapper/root rootflags=subvol=@ rw"
+  # tries=0: a wrong disk passphrase asks again, without limit. The default
+  # of three ends in the initrd's emergency shell, which the locked root
+  # account cannot open.
+  local cmdline="rd.luks.name=$luks_uuid=root rd.luks.options=discard,tries=0 root=/dev/mapper/root rootflags=subvol=@ rw"
   # AppArmor (ADR 0063) and the Plymouth splash (ADR 0013).
   cmdline+=" lsm=landlock,lockdown,yama,integrity,apparmor,bpf quiet splash"
   [[ -n ${conf[KERNEL_CMDLINE_EXTRA]} ]] && cmdline+=" ${conf[KERNEL_CMDLINE_EXTRA]}"
@@ -239,6 +242,14 @@ pacman_conf() {
   if [[ ${conf[SUBARCHY_REPO]} == file://* ]]; then
     echo "CacheDir = ${conf[SUBARCHY_REPO]#file://}"
   fi
+  # The target's hook overrides, not the live system's: pacman -r does not
+  # move HookDir under the new root. limine-mkinitcpio-hook's
+  # 90-mkinitcpio-install.hook there replaces mkinitcpio's own, so each
+  # kernel is built once, as its UKI, and no unused initramfs-*.img lands
+  # on the ESP. It writes no /etc/mkinitcpio.d presets either, so
+  # `mkinitcpio -P` finds nothing to build; Subarchy's tools rebuild with
+  # limine-mkinitcpio.
+  echo "HookDir = $target/etc/pacman.d/hooks/"
   (($1)) && printf '[core]\nInclude = /etc/pacman.d/mirrorlist\n\n[extra]\nInclude = /etc/pacman.d/mirrorlist\n\n'
   printf '[subarchy]\nSigLevel = Optional TrustAll\nServer = %s\n' "${conf[SUBARCHY_REPO]}"
 }
@@ -375,9 +386,14 @@ setup_snapper() {
 
 install_limine() {
   step "checking the boot entries"
-  # The pacman hooks already built the UKIs and the menu while pacstrapping;
-  # run them once more now that snapper is set up, then sync snapshots.
-  arch-chroot "$target" limine-update
+  # pacstrap's hooks already deployed Limine (80-limine-efi-deploy runs
+  # limine-install) and built one UKI per kernel with its menu entry
+  # (mkinitcpio's hook, then limine-mkinitcpio). Nothing they read changes
+  # after pacstrap: the command line, mkinitcpio, Plymouth and Limine
+  # configuration are written before it, and limine-mkinitcpio asks only
+  # whether snapper is installed, not how it is set up. So check what they
+  # built instead of building it again; limine-snapper-sync adds the
+  # snapshot entries from the next boot.
   arch-chroot "$target" systemctl enable --quiet limine-snapper-sync.service
   local kernel
   for kernel in linux-zen linux-lts; do
