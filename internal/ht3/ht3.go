@@ -1,6 +1,6 @@
 // Package ht3 reads a TOZO HT3 headset's battery and noise mode over its
-// Bluetooth Classic control channel (issue #65; the HT3 widget in the shell
-// and look design).
+// Bluetooth Classic control channel and sets the noise mode (issues #65 and
+// #153; the HT3 widget in the shell and look design).
 //
 // The protocol is the one `PROTOCOL.md` in the owner's omarchy-plugin-ht3
 // repository documents, used here as a specification:
@@ -14,10 +14,13 @@
 //   - Battery is parameter 0x02, one byte 0–100. Noise mode is 0x30, one
 //     byte: 0 normal, 1 ANC, 2 transparency, 3 wind, 4 leisure, 6
 //     adaptive.
+//   - Normal is SET 0x04 payload 00, ANC SET 0x04 payload 01, transparency
+//     SET 0x05 payload 01. The saved boot mode is left alone.
 //   - The socket is a byte stream: a read may hold part of a packet or
 //     several, and the headset also sends vendor data in another envelope.
 //
-// This package only reads. It sends no SET packet.
+// The only SET this package sends is a noise mode, and a mode counts as
+// changed only when a GET 0x30 that follows it reports the new mode.
 package ht3
 
 import (
@@ -41,6 +44,16 @@ const (
 	ParamSpatial byte = 0x13
 	ParamEQ      byte = 0x0b
 	ParamMode    byte = 0x30
+	// SET parameters that select a noise mode.
+	ParamANC          byte = 0x04
+	ParamTransparency byte = 0x05
+)
+
+// The noise modes the panel can set.
+const (
+	ModeNormal       byte = 0
+	ModeANC          byte = 1
+	ModeTransparency byte = 2
 )
 
 // replyLen is the payload length of each GET reply PROTOCOL.md describes.
@@ -74,6 +87,33 @@ func Frame(op, param byte, payload []byte) []byte {
 // Get encodes a GET for param.
 func Get(param byte) []byte {
 	return Frame(OpGet, param, nil)
+}
+
+// SetMode encodes the SET that selects mode: normal is SET 04 00, ANC
+// SET 04 01, transparency SET 05 01 (PROTOCOL.md). ok is false for the
+// modes the headset reports but PROTOCOL.md gives no SET for.
+func SetMode(mode byte) (packet []byte, ok bool) {
+	switch mode {
+	case ModeNormal:
+		return Frame(OpSet, ParamANC, []byte{0x00}), true
+	case ModeANC:
+		return Frame(OpSet, ParamANC, []byte{0x01}), true
+	case ModeTransparency:
+		return Frame(OpSet, ParamTransparency, []byte{0x01}), true
+	}
+	return nil, false
+}
+
+// ModeByName is the byte of a mode SetMode can set, by its name in Modes.
+func ModeByName(name string) (byte, bool) {
+	for b, n := range Modes {
+		if n == name {
+			if _, ok := SetMode(b); ok {
+				return b, true
+			}
+		}
+	}
+	return 0, false
 }
 
 func checksum(payload []byte) byte {
@@ -124,6 +164,9 @@ func (p *Parser) Feed(b []byte) []Reply {
 	p.buf = p.buf[:0]
 	return out
 }
+
+// Pending reports whether Feed is holding the start of a packet.
+func (p *Parser) Pending() bool { return len(p.buf) > 0 }
 
 // Flush treats a kept partial packet as noise when complete replies follow
 // it, and returns those. Session calls it when a wait for replies runs out,
@@ -269,7 +312,7 @@ func (s *Session) Query(wait time.Duration, tries int, changed func(State) error
 		if _, err := s.conn.Write(ask); err != nil {
 			return err
 		}
-		if err := s.read(time.Now().Add(wait), true, changed); err != nil {
+		if err := s.read(time.Now().Add(wait), changed); err != nil {
 			return err
 		}
 	}
@@ -279,23 +322,127 @@ func (s *Session) Query(wait time.Duration, tries int, changed func(State) error
 	return nil
 }
 
-// Follow keeps reading, and asks for both values again every interval,
-// so a change on the headset reaches changed while the panel stays open.
-// It returns when the connection fails or closes.
-func (s *Session) Follow(every time.Duration, changed func(State) error) error {
-	for {
-		if err := s.read(time.Now().Add(every), false, changed); err != nil {
-			return err
+// ErrNotChanged means the readback after a mode SET reported another mode.
+var ErrNotChanged = errors.New("the headphones did not change the noise mode")
+
+// ErrNotSettable means a mode has no SET in PROTOCOL.md.
+var ErrNotSettable = errors.New("this noise mode cannot be set from here")
+
+// Watch is what Follow does besides reading.
+type Watch struct {
+	// Every is how often Follow asks for both values again.
+	Every time.Duration
+	// Wait is how long a readback may take before Follow asks again, and
+	// how long a partial packet is kept before Flush.
+	Wait time.Duration
+	// Tries is how many readbacks a mode change gets.
+	Tries int
+	// Modes carries the mode changes to make; nil for none.
+	Modes <-chan byte
+	// Changed is called with the state whenever a reply changes it.
+	Changed func(State) error
+	// Done is called once per mode change: err is nil when a readback
+	// reported the mode, ErrNotChanged when every readback reported
+	// another, ErrNotSettable for a mode without a SET.
+	Done func(mode byte, err error) error
+}
+
+// Follow keeps reading after Query until the connection fails or closes.
+// It asks for both values again every w.Every, so a change made on the
+// headset reaches w.Changed, and it carries out the mode changes sent on
+// w.Modes: SET, then GET 0x30, asked again after each w.Wait until the
+// readback reports the mode or w.Tries readbacks have not. A SET's
+// acknowledgement is never taken as the new mode. A change sent while
+// another is waiting replaces it.
+func (s *Session) Follow(w Watch) error {
+	if err := s.conn.SetReadDeadline(time.Time{}); err != nil {
+		return err
+	}
+	chunks := make(chan []byte)
+	failed := make(chan error, 1)
+	stop := make(chan struct{})
+	defer close(stop)
+	go func() {
+		for {
+			buf := make([]byte, 256)
+			n, err := s.conn.Read(buf)
+			if n > 0 {
+				select {
+				case chunks <- buf[:n]:
+				case <-stop:
+					return
+				}
+			}
+			if err != nil {
+				failed <- err
+				return
+			}
 		}
-		if _, err := s.conn.Write(append(Get(ParamBattery), Get(ParamMode)...)); err != nil {
+	}()
+	refresh := time.NewTicker(w.Every)
+	defer refresh.Stop()
+	var flush, retry <-chan time.Time
+	var want byte
+	left := 0 // readbacks still to ask for; retry is nil when no change waits
+	apply := func(replies []Reply) error {
+		for _, r := range replies {
+			if s.State.Apply(r) {
+				if err := w.Changed(s.State); err != nil {
+					return err
+				}
+			}
+			if retry != nil && r.Param == ParamMode && s.State.Mode == int(want) {
+				retry = nil
+				if err := w.Done(want, nil); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
+	for {
+		var err error
+		select {
+		case b := <-chunks:
+			err = apply(s.parse.Feed(b))
+			flush = nil
+			if s.parse.Pending() {
+				flush = time.After(w.Wait)
+			}
+		case err = <-failed:
+			return err
+		case <-flush:
+			flush = nil
+			err = apply(s.parse.Flush())
+		case <-refresh.C:
+			_, err = s.conn.Write(append(Get(ParamBattery), Get(ParamMode)...))
+		case mode := <-w.Modes:
+			packet, ok := SetMode(mode)
+			if !ok {
+				err = w.Done(mode, ErrNotSettable)
+				break
+			}
+			want, left, retry = mode, w.Tries-1, time.After(w.Wait)
+			_, err = s.conn.Write(append(packet, Get(ParamMode)...))
+		case <-retry:
+			if left <= 0 {
+				retry = nil
+				err = w.Done(want, ErrNotChanged)
+				break
+			}
+			left--
+			retry = time.After(w.Wait)
+			_, err = s.conn.Write(Get(ParamMode))
+		}
+		if err != nil {
 			return err
 		}
 	}
 }
 
-// read reads until the deadline or, with untilComplete, until the state is
-// complete. At the deadline it flushes a partial packet the parser kept.
-func (s *Session) read(deadline time.Time, untilComplete bool, changed func(State) error) error {
+// read reads until the state is complete or the deadline passes. At the
+// deadline it flushes a partial packet the parser kept.
+func (s *Session) read(deadline time.Time, changed func(State) error) error {
 	if err := s.conn.SetReadDeadline(deadline); err != nil {
 		return err
 	}
@@ -321,7 +468,7 @@ func (s *Session) read(deadline time.Time, untilComplete bool, changed func(Stat
 			}
 			return err
 		}
-		if untilComplete && s.State.Complete() {
+		if s.State.Complete() {
 			return nil
 		}
 	}

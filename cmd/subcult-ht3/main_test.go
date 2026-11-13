@@ -17,6 +17,12 @@ import (
 
 const address = "AA:BB:CC:DD:EE:FF"
 
+// Replies captured from a paired HT3 on 2026-09-19 (PROTOCOL.md).
+const (
+	capturedBattery = "0002015959" // 89 %
+	capturedMode    = "0030010202" // transparency
+)
+
 // pipeConn is a net.Pipe end that, like a socket, still takes a deadline
 // after the far end has closed.
 type pipeConn struct{ net.Conn }
@@ -53,7 +59,7 @@ func fakeHeadset(t *testing.T, extra string) {
 func TestStatus(t *testing.T) {
 	fakeHeadset(t, "")
 	var out, errOut bytes.Buffer
-	if code := run([]string{"status", address}, &out, &errOut); code != 0 {
+	if code := run([]string{"status", address}, nil, &out, &errOut); code != 0 {
 		t.Fatalf("exit %d: %s", code, errOut.String())
 	}
 	if got := out.String(); got != "Battery  89 %\nMode     transparency\n" {
@@ -61,7 +67,7 @@ func TestStatus(t *testing.T) {
 	}
 	out.Reset()
 	fakeHeadset(t, "")
-	if code := run([]string{"status", "--json", address}, &out, &errOut); code != 0 {
+	if code := run([]string{"status", "--json", address}, nil, &out, &errOut); code != 0 {
 		t.Fatalf("exit %d: %s", code, errOut.String())
 	}
 	if got := strings.TrimSpace(out.String()); got != `{"event":"state","battery":89,"mode":"transparency"}` {
@@ -73,7 +79,7 @@ func TestWatch(t *testing.T) {
 	// The mode changes to ANC later; then the headset closes the channel.
 	fakeHeadset(t, "0030010101")
 	var out, errOut bytes.Buffer
-	if code := run([]string{"watch", address}, &out, &errOut); code != 1 {
+	if code := run([]string{"watch", address}, strings.NewReader(""), &out, &errOut); code != 1 {
 		t.Fatalf("exit %d: %s", code, errOut.String())
 	}
 	want := []string{
@@ -88,12 +94,62 @@ func TestWatch(t *testing.T) {
 	}
 }
 
+func TestWatchSetsMode(t *testing.T) {
+	prev := dial
+	defer func() { dial = prev }()
+	asked := make(chan string, 1)
+	dial = func(string) (ht3.Conn, io.Closer, error) {
+		ours, theirs := net.Pipe()
+		go func() {
+			defer theirs.Close()
+			buf := make([]byte, 16)
+			if _, err := io.ReadFull(theirs, buf[:8]); err != nil {
+				return
+			}
+			out, _ := hex.DecodeString(capturedBattery + capturedMode)
+			if _, err := theirs.Write(out); err != nil {
+				return
+			}
+			// SET ANC (04 01), then GET 30.
+			if _, err := io.ReadFull(theirs, buf[:9]); err != nil {
+				return
+			}
+			asked <- hex.EncodeToString(buf[:9])
+			// A synthetic acknowledgement, then the readback: ANC.
+			out, _ = hex.DecodeString("1004010101" + "0030010101")
+			_, _ = theirs.Write(out)
+		}()
+		return pipeConn{ours}, ours, nil
+	}
+	var out, errOut bytes.Buffer
+	if code := run([]string{"watch", address}, strings.NewReader("mode loud\nmode anc\n"), &out, &errOut); code != 1 {
+		t.Fatalf("exit %d: %s", code, errOut.String())
+	}
+	if got := <-asked; got != "100401010100300000" {
+		t.Errorf("asked %s, want SET 04 01 then GET 30", got)
+	}
+	want := []string{
+		`{"event":"connected"}`,
+		`{"event":"state","battery":89}`,
+		`{"event":"state","battery":89,"mode":"transparency"}`,
+		`{"event":"state","battery":89,"mode":"anc"}`,
+		`{"event":"mode-set","mode":"anc"}`,
+		`{"event":"error","message":"The headphones closed the control channel."}`,
+	}
+	if got := strings.Split(strings.TrimSpace(out.String()), "\n"); strings.Join(got, "\n") != strings.Join(want, "\n") {
+		t.Errorf("watch:\n%s", out.String())
+	}
+	if !strings.Contains(errOut.String(), `ignored "mode loud"`) {
+		t.Errorf("stderr %q", errOut.String())
+	}
+}
+
 func TestWatchDialError(t *testing.T) {
 	prev := dial
 	defer func() { dial = prev }()
 	dial = func(string) (ht3.Conn, io.Closer, error) { return nil, nil, unix.EBUSY }
 	var out, errOut bytes.Buffer
-	if code := run([]string{"watch", address}, &out, &errOut); code != 1 {
+	if code := run([]string{"watch", address}, strings.NewReader(""), &out, &errOut); code != 1 {
 		t.Fatalf("exit %d", code)
 	}
 	var l line
@@ -105,12 +161,12 @@ func TestWatchDialError(t *testing.T) {
 func TestUsage(t *testing.T) {
 	for _, args := range [][]string{nil, {"set"}, {"status"}, {"watch", "not-an-address"}, {"status", address, "extra"}} {
 		var out, errOut bytes.Buffer
-		if code := run(args, &out, &errOut); code != 2 {
+		if code := run(args, nil, &out, &errOut); code != 2 {
 			t.Errorf("%q: exit %d", args, code)
 		}
 	}
 	var out bytes.Buffer
-	if code := run([]string{dispatch.MetadataFlag}, &out, io.Discard); code != 0 {
+	if code := run([]string{dispatch.MetadataFlag}, nil, &out, io.Discard); code != 0 {
 		t.Fatal(code)
 	}
 	var got []dispatch.Described

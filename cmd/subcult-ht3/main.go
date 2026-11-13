@@ -2,15 +2,20 @@
 // noise mode of TOZO HT3 headphones, read over their Bluetooth control
 // channel. `ht3 status` reads once and prints; `ht3 watch` is the HT3
 // panel's helper: it prints one JSON line per change and holds the channel
-// until the panel closes and stops it. Neither changes a setting.
+// until the panel closes and stops it. The panel changes the noise mode by
+// writing "mode normal", "mode anc" or "mode transparency" to watch's
+// standard input (issue #153); watch reports the change only once a GET
+// readback confirms it. `status` changes nothing.
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"time"
 
 	"git.subcult.tv/subculture-collective/subarchy/internal/dispatch"
@@ -22,7 +27,7 @@ var routes = []dispatch.Described{
 		Summary: "Show a connected TOZO HT3's battery and noise mode", Args: "<address> [--json]",
 		Examples: []string{"subcult ht3 status AA:BB:CC:DD:EE:FF"}}},
 	{Words: []string{"ht3", "watch"}, Metadata: dispatch.Metadata{
-		Summary: "Print a TOZO HT3's battery and noise mode as JSON lines while it stays connected (the HT3 panel's helper)",
+		Summary: "Print a TOZO HT3's battery and noise mode as JSON lines while it stays connected, and set the noise mode from standard input (the HT3 panel's helper)",
 		Args:    "<address>", Hidden: true,
 		Examples: []string{"subcult ht3 watch AA:BB:CC:DD:EE:FF"}}},
 }
@@ -65,7 +70,7 @@ func stateLine(s ht3.State) line {
 	return l
 }
 
-func run(args []string, stdout, stderr io.Writer) int {
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	if len(args) == 1 && args[0] == dispatch.MetadataFlag {
 		if err := json.NewEncoder(stdout).Encode(routes); err != nil {
 			return 1
@@ -99,7 +104,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return 2
 	}
 	if args[0] == "watch" {
-		return watch(address, stdout)
+		return watch(address, stdin, stdout, stderr)
 	}
 	return status(address, *asJSON, stdout, stderr)
 }
@@ -127,8 +132,10 @@ func status(address string, asJSON bool, stdout, stderr io.Writer) int {
 }
 
 // watch runs until the channel fails or the panel stops it (SIGTERM). A
-// failure is the last line, an error event, and exit 1.
-func watch(address string, stdout io.Writer) int {
+// failure is the last line, an error event, and exit 1. A mode change
+// read from stdin ends in a mode-set line once the readback reports the
+// mode, or a mode-failed line; neither ends watch.
+func watch(address string, stdin io.Reader, stdout, stderr io.Writer) int {
 	enc := json.NewEncoder(stdout)
 	fail := func(err error) int {
 		_ = enc.Encode(line{Event: "error", Message: ht3.Explain(err)})
@@ -147,9 +154,43 @@ func watch(address string, stdout io.Writer) int {
 	if err := s.Query(replyWait, tries, changed); err != nil {
 		return fail(err)
 	}
-	return fail(s.Follow(refreshEvery, changed))
+	return fail(s.Follow(ht3.Watch{
+		Every:   refreshEvery,
+		Wait:    replyWait,
+		Tries:   tries,
+		Modes:   commands(stdin, stderr),
+		Changed: changed,
+		Done: func(mode byte, err error) error {
+			if err != nil {
+				return enc.Encode(line{Event: "mode-failed", Mode: ht3.ModeName(int(mode)), Message: modeFailed})
+			}
+			return enc.Encode(line{Event: "mode-set", Mode: ht3.ModeName(int(mode))})
+		},
+	}))
+}
+
+const modeFailed = "The headphones did not confirm the new noise mode. Try again."
+
+// commands reads the panel's requests, one per line: "mode normal",
+// "mode anc" or "mode transparency". Anything else is reported on stderr
+// and skipped. The channel stays open after stdin ends.
+func commands(in io.Reader, stderr io.Writer) <-chan byte {
+	out := make(chan byte)
+	go func() {
+		sc := bufio.NewScanner(in)
+		for sc.Scan() {
+			word, name, _ := strings.Cut(strings.TrimSpace(sc.Text()), " ")
+			mode, ok := ht3.ModeByName(name)
+			if word != "mode" || !ok {
+				fmt.Fprintf(stderr, "subcult ht3: ignored %q (want mode normal|anc|transparency)\n", sc.Text())
+				continue
+			}
+			out <- mode
+		}
+	}()
+	return out
 }
 
 func main() {
-	os.Exit(run(os.Args[1:], os.Stdout, os.Stderr))
+	os.Exit(run(os.Args[1:], os.Stdin, os.Stdout, os.Stderr))
 }

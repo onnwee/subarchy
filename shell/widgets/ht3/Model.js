@@ -1,6 +1,7 @@
 .pragma library
-// TOZO HT3 headphones: which Bluetooth device is one, and the lines of the
-// panel's helper, `subcult ht3 watch <address>` (one JSON object each).
+// TOZO HT3 headphones: which Bluetooth device is one, the lines of the
+// panel's helper, `subcult ht3 watch <address>` (one JSON object each), and
+// the headset's own output in PipeWire.
 
 const modes = {
   normal: "Normal",
@@ -10,6 +11,18 @@ const modes = {
   leisure: "Leisure",
   adaptive: "Adaptive",
   unknown: "Unknown"
+}
+
+// The modes the panel can set, in button order. PROTOCOL.md gives a SET
+// only for these three; the others are shown, never set.
+const choices = [
+  { id: "normal", name: "Normal" },
+  { id: "anc", name: "ANC" },
+  { id: "transparency", name: "Transparency" }
+]
+
+function settable(mode) {
+  return choices.some(c => c.id === mode)
 }
 
 // An HT3 by its BlueZ alias or remote name: one that contains both "HT3"
@@ -58,6 +71,11 @@ function event(line) {
   }
   case "error":
     return typeof doc.message === "string" && doc.message !== "" ? { event: "error", message: doc.message } : null
+  case "mode-set":
+    return settable(doc.mode) ? { event: "mode-set", mode: doc.mode } : null
+  case "mode-failed":
+    return settable(doc.mode) && typeof doc.message === "string" && doc.message !== ""
+      ? { event: "mode-failed", mode: doc.mode, message: doc.message } : null
   }
   return null
 }
@@ -77,4 +95,27 @@ function bluezBattery(d) {
     return -1
   const b = Number(d.battery) || 0
   return Math.round(b <= 1 ? b * 100 : b)
+}
+
+// The HT3's own output: the PipeWire sink WirePlumber names
+// bluez_output.<address, colons as underscores>, optionally followed by
+// .<profile or index>. The address must match exactly, so another
+// headset's or the default output is never picked; streams never are.
+function sinkFor(nodes, address) {
+  if (typeof address !== "string" || !/^([0-9A-F]{2}:){5}[0-9A-F]{2}$/i.test(address))
+    return null
+  const want = ("bluez_output." + address.replace(/:/g, "_")).toUpperCase()
+  return (nodes || []).find(n => n && n.isSink && !n.isStream && typeof n.name === "string"
+    && (n.name.toUpperCase() === want || n.name.toUpperCase().startsWith(want + "."))) || null
+}
+
+// A volume the panel sets: 0..1, never above 100 %.
+function capVolume(v) {
+  const n = Number(v)
+  return Number.isFinite(n) ? Math.max(0, Math.min(1, n)) : 0
+}
+
+function volumeText(v) {
+  const n = Number(v)
+  return Number.isFinite(n) ? Math.round(Math.max(0, n) * 100) + " %" : ""
 }

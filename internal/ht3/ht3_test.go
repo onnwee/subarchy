@@ -42,6 +42,58 @@ func TestGetFrames(t *testing.T) {
 	}
 }
 
+// The SETs PROTOCOL.md names for the three modes the panel offers, built
+// by its frame rule: opcode 16, parameter, length 1, payload, checksum.
+func TestSetModeFrames(t *testing.T) {
+	for mode, want := range map[byte]string{
+		ModeNormal:       "1004010000",
+		ModeANC:          "1004010101",
+		ModeTransparency: "1005010101",
+	} {
+		got, ok := SetMode(mode)
+		if !ok || hex.EncodeToString(got) != want {
+			t.Errorf("SET for %s = %x %v, want %s", ModeName(int(mode)), got, ok, want)
+		}
+		if b, ok := ModeByName(ModeName(int(mode))); !ok || b != mode {
+			t.Errorf("ModeByName(%s) = %d %v", ModeName(int(mode)), b, ok)
+		}
+	}
+	// Wind, leisure and adaptive are read, never set: PROTOCOL.md gives
+	// no SET for them.
+	for _, mode := range []byte{3, 4, 6, 0xff} {
+		if got, ok := SetMode(mode); ok || got != nil {
+			t.Errorf("SET for mode %d = %x", mode, got)
+		}
+	}
+	for _, name := range []string{"wind", "leisure", "adaptive", "unknown", "", "ANC"} {
+		if _, ok := ModeByName(name); ok {
+			t.Errorf("ModeByName(%q) accepted", name)
+		}
+	}
+}
+
+// The GET 0x30 readback for each mode the panel sets: transparency is the
+// captured reply, the other two follow the same frame rule.
+func TestModeReadbacks(t *testing.T) {
+	for stream, want := range map[string]string{
+		"0030010000": "normal",
+		"0030010101": "anc",
+		capturedMode: "transparency",
+	} {
+		var p Parser
+		// The SET's acknowledgement before the readback is not a reading.
+		got := p.Feed(unhex(t, "1004010101"+stream))
+		if len(got) != 1 {
+			t.Fatalf("%s: replies %+v", stream, got)
+		}
+		s := Unknown()
+		s.Apply(got[0])
+		if ModeName(s.Mode) != want {
+			t.Errorf("%s read as %s, want %s", stream, ModeName(s.Mode), want)
+		}
+	}
+}
+
 func TestCapturedReplies(t *testing.T) {
 	var p Parser
 	got := p.Feed(unhex(t, capturedBattery+capturedMode+capturedSpatial))
@@ -254,12 +306,12 @@ func TestSessionQuery(t *testing.T) {
 	// A later reply (as if the mode changed on the headset) reaches Follow.
 	done := make(chan error, 1)
 	go func() {
-		done <- s.Follow(time.Hour, func(st State) error {
+		done <- s.Follow(Watch{Every: time.Hour, Wait: time.Second, Tries: 3, Changed: func(st State) error {
 			if st.Mode == 1 {
 				return io.ErrUnexpectedEOF // stop here
 			}
 			return nil
-		})
+		}})
 	}()
 	if _, err := theirs.Write(unhex(t, "0030010101")); err != nil {
 		t.Fatal(err)
@@ -281,7 +333,9 @@ func TestFollowAsksAgain(t *testing.T) {
 	}
 	<-asked
 	done := make(chan error, 1)
-	go func() { done <- s.Follow(20*time.Millisecond, func(State) error { return nil }) }()
+	go func() {
+		done <- s.Follow(Watch{Every: 20 * time.Millisecond, Wait: time.Second, Tries: 3, Changed: func(State) error { return nil }})
+	}()
 	select {
 	case got := <-asked:
 		if hex.EncodeToString(got) != "0002000000300000" {
@@ -320,5 +374,164 @@ func TestSessionRetriesOnlyMissing(t *testing.T) {
 	}
 	if Explain(err) == "" || Explain(io.EOF) == Explain(err) {
 		t.Error("explanations")
+	}
+}
+
+// modeHeadset is a headset that keeps a noise mode: it acknowledges each
+// SET with an opcode-16 frame (synthetic), switches mode when obey is
+// set, and answers GET battery and GET mode. Every frame asked is sent on
+// asked. Replies go out from their own goroutine, as a socket buffers
+// them, so the fake never blocks Follow's writes.
+func modeHeadset(t *testing.T, c net.Conn, mode byte, obey bool, asked chan<- []byte) {
+	t.Helper()
+	replies := make(chan []byte, 16)
+	go func() {
+		for r := range replies {
+			if _, err := c.Write(r); err != nil {
+				return
+			}
+		}
+	}()
+	defer close(replies)
+	var buf []byte
+	chunk := make([]byte, 64)
+	for {
+		n, err := c.Read(chunk)
+		if err != nil {
+			return
+		}
+		buf = append(buf, chunk[:n]...)
+		for len(buf) >= 4 && len(buf) >= 4+int(buf[2]) {
+			end := 4 + int(buf[2])
+			frame := append([]byte(nil), buf[:end]...)
+			buf = buf[end:]
+			asked <- frame
+			op, param, payload := frame[0], frame[1], frame[3:end-1]
+			switch {
+			case op == OpSet:
+				replies <- frame // the acknowledgement echoes the SET
+				if obey && param == ParamANC {
+					mode = payload[0]
+				} else if obey && param == ParamTransparency && payload[0] == 1 {
+					mode = ModeTransparency
+				}
+			case param == ParamMode:
+				replies <- Frame(OpGet, ParamMode, []byte{mode})
+			case param == ParamBattery:
+				replies <- unhex(t, capturedBattery)
+			}
+		}
+	}
+}
+
+type modeDone struct {
+	mode byte
+	err  error
+}
+
+// follow runs Follow on a fresh session already holding the captured
+// state (89 %, transparency) and returns where its events go.
+func follow(t *testing.T, ours net.Conn, w Watch) (chan State, chan modeDone, chan error) {
+	t.Helper()
+	changed := make(chan State, 8)
+	done := make(chan modeDone, 8)
+	stopped := make(chan error, 1)
+	s := NewSession(ours)
+	s.State = State{Battery: 89, Mode: int(ModeTransparency)}
+	w.Changed = func(st State) error { changed <- st; return nil }
+	w.Done = func(m byte, err error) error { done <- modeDone{m, err}; return nil }
+	go func() { stopped <- s.Follow(w) }()
+	return changed, done, stopped
+}
+
+func waitFor[T any](t *testing.T, c <-chan T, what string) T {
+	t.Helper()
+	select {
+	case v := <-c:
+		return v
+	case <-time.After(5 * time.Second):
+		t.Fatalf("no %s", what)
+	}
+	var zero T
+	return zero
+}
+
+func TestFollowSetsMode(t *testing.T) {
+	for _, mode := range []byte{ModeANC, ModeNormal, ModeTransparency} {
+		ours, theirs := net.Pipe()
+		asked := make(chan []byte, 16)
+		go modeHeadset(t, theirs, ModeTransparency, true, asked)
+		modes := make(chan byte, 1)
+		changed, done, stopped := follow(t, ours, Watch{Every: time.Hour, Wait: time.Second, Tries: 3, Modes: modes})
+		modes <- mode
+		set, _ := SetMode(mode)
+		if got := waitFor(t, asked, "SET"); !bytes.Equal(got, set) {
+			t.Errorf("%s: first frame %x, want the SET %x", ModeName(int(mode)), got, set)
+		}
+		if got := waitFor(t, asked, "readback"); !bytes.Equal(got, Get(ParamMode)) {
+			t.Errorf("%s: SET not followed by GET 30: %x", ModeName(int(mode)), got)
+		}
+		if mode != ModeTransparency {
+			// The new mode reaches Changed before Done reports it.
+			if st := waitFor(t, changed, "change"); st.Mode != int(mode) {
+				t.Errorf("changed to %s", ModeName(st.Mode))
+			}
+		}
+		if d := waitFor(t, done, "done"); d.mode != mode || d.err != nil {
+			t.Errorf("%s: done %+v", ModeName(int(mode)), d)
+		}
+		theirs.Close()
+		if err := waitFor(t, stopped, "stop"); err == nil {
+			t.Error("Follow returned no error after the channel closed")
+		}
+		ours.Close()
+	}
+}
+
+func TestFollowModeNotConfirmed(t *testing.T) {
+	ours, theirs := net.Pipe()
+	defer ours.Close()
+	asked := make(chan []byte, 16)
+	// The headset acknowledges the SET but stays in transparency.
+	gone := make(chan struct{})
+	go func() { modeHeadset(t, theirs, ModeTransparency, false, asked); close(gone) }()
+	modes := make(chan byte, 1)
+	changed, done, stopped := follow(t, ours, Watch{Every: time.Hour, Wait: 30 * time.Millisecond, Tries: 3, Modes: modes})
+	modes <- ModeANC
+	if d := waitFor(t, done, "done"); d.mode != ModeANC || !errors.Is(d.err, ErrNotChanged) {
+		t.Errorf("done %+v", d)
+	}
+	theirs.Close()
+	waitFor(t, stopped, "stop")
+	<-gone
+	readbacks := 0
+	for len(asked) > 0 {
+		if bytes.Equal(<-asked, Get(ParamMode)) {
+			readbacks++
+		}
+	}
+	if readbacks != 3 {
+		t.Errorf("%d readbacks, want 3", readbacks)
+	}
+	if len(changed) != 0 {
+		t.Errorf("the acknowledgement or an unchanged readback was taken as a change: %+v", <-changed)
+	}
+}
+
+func TestFollowRefusesModeWithoutSet(t *testing.T) {
+	ours, theirs := net.Pipe()
+	defer ours.Close()
+	asked := make(chan []byte, 16)
+	go modeHeadset(t, theirs, ModeTransparency, true, asked)
+	modes := make(chan byte, 1)
+	_, done, stopped := follow(t, ours, Watch{Every: time.Hour, Wait: time.Second, Tries: 3, Modes: modes})
+	modes <- 6 // adaptive
+	if d := waitFor(t, done, "done"); d.mode != 6 || !errors.Is(d.err, ErrNotSettable) {
+		t.Errorf("done %+v", d)
+	}
+	theirs.Close()
+	waitFor(t, stopped, "stop")
+	if len(asked) != 0 {
+		t.Errorf("sent %x for a mode without a SET", <-asked)
 	}
 }

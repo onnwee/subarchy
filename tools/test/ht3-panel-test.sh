@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
-# Run the real HT3 panel and helper controller with a fake Bluetooth adapter
-# and a stub `subcult ht3 watch`: the helper starts with the panel, its
-# readings show, it stops when the panel closes, and nothing starts without
-# a connected HT3. The readings from real headphones are the owner's check.
+# Run the real HT3 panel and helper controller with a fake Bluetooth adapter,
+# fake PipeWire nodes and a stub `subcult ht3 watch`: the helper starts with
+# the panel, its readings show, a mode change shows only after the stub's
+# readback, volume moves only the HT3's node up to 100 %, the helper stops
+# when the panel closes, and nothing starts without a connected HT3. Real
+# headphones are the owner's check.
 set -euo pipefail
 root=$(git rev-parse --show-toplevel)
 artifacts=""
@@ -20,12 +22,14 @@ done
 work=$(mktemp -d)
 trap 'rm -rf -- "$work"' EXIT
 shell="$work/shell"
-mkdir -p "$shell/widgets/ht3" "$shell/Commons" "$shell/Ui" "$shell/services" "$work/imports/TestBluetooth" "$work/run" "$work/bin"
+mkdir -p "$shell/widgets/ht3" "$shell/Commons" "$shell/Ui" "$shell/services" "$work/imports/TestBluetooth" "$work/imports/TestPipewire" "$work/run" "$work/bin"
 chmod 700 "$work/run"
 : >"$work/started"
 : >"$work/stopped"
+: >"$work/commands"
 cp "$root/shell/widgets/ht3/Model.js" "$shell/widgets/ht3/"
-sed 's/^import Quickshell.Bluetooth$/import TestBluetooth/' "$root/shell/widgets/ht3/Panel.qml" >"$shell/widgets/ht3/Panel.qml"
+sed -e 's/^import Quickshell.Bluetooth$/import TestBluetooth/' -e 's/^import Quickshell.Services.Pipewire$/import TestPipewire/' \
+  "$root/shell/widgets/ht3/Panel.qml" >"$shell/widgets/ht3/Panel.qml"
 cp "$root/shell/services/Ht3.qml" "$shell/services/"
 printf 'module qs.services\nsingleton Ht3 1.0 Ht3.qml\n' >"$shell/services/qmldir"
 cp "$root/shell/Ui/PanelBase.qml" "$shell/Ui/"
@@ -41,6 +45,8 @@ QtObject {
  property color subtext: "#9a92a8"
  property color accent: "#8b5cf6"
  property color warning: "#f6d447"
+ property color base: "#100b19"
+ property color selection: "#3b2470"
 }
 QML
 cat >"$shell/Commons/Style.qml" <<'QML'
@@ -66,9 +72,50 @@ QtObject {
  }
 }
 QML
+# PipeWire: the HT3's output (by its address), another headset's and the
+# default speakers. Pipewire.tracked records what PwObjectTracker binds.
+printf 'module TestPipewire\nsingleton Pipewire 1.0 Pipewire.qml\nPwObjectTracker 1.0 PwObjectTracker.qml\n' >"$work/imports/TestPipewire/qmldir"
+cat >"$work/imports/TestPipewire/Pipewire.qml" <<'QML'
+pragma Singleton
+import QtQuick
+QtObject {
+ id: pw
+ property var tracked: []
+ property QtObject ht3: QtObject {
+  property string name: "bluez_output.AA_BB_CC_DD_EE_FF.1"
+  property bool isSink: true
+  property bool isStream: false
+  property QtObject audio: QtObject { property real volume: 0.75; property bool muted: false }
+ }
+ property QtObject otherHeadset: QtObject {
+  property string name: "bluez_output.AA_BB_CC_DD_EE_F0.1"
+  property bool isSink: true
+  property bool isStream: false
+  property QtObject audio: QtObject { property real volume: 0.3; property bool muted: false }
+ }
+ property QtObject speakers: QtObject {
+  property string name: "alsa_output.pci-0000_00_1f.3.analog-stereo"
+  property bool isSink: true
+  property bool isStream: false
+  property QtObject audio: QtObject { property real volume: 0.4; property bool muted: false }
+ }
+ property var defaultAudioSink: speakers
+ property var preferredDefaultAudioSink: null
+ property var nodes: QtObject { property var values: [pw.speakers, pw.otherHeadset, pw.ht3] }
+}
+QML
+cat >"$work/imports/TestPipewire/PwObjectTracker.qml" <<'QML'
+import QtQuick
+QtObject {
+ property var objects: []
+ onObjectsChanged: Pipewire.tracked = objects
+}
+QML
 # The stub helper: odd runs answer with PROTOCOL.md's captured readings
-# (89 %, transparency) and wait to be stopped; the second reads the battery,
-# then fails as when the phone app holds the control channel.
+# (89 %, transparency), then act on the panel's mode requests until
+# stopped: ANC is confirmed after a short delay, Normal is not; the second
+# run reads the battery, then fails as when the phone app holds the control
+# channel.
 cat >"$work/bin/subcult" <<'PY'
 #!/usr/bin/python3
 import json
@@ -76,6 +123,7 @@ import os
 from pathlib import Path
 import signal
 import sys
+import time
 
 work = Path(os.environ["HT3_PANEL_TEST"])
 
@@ -98,6 +146,16 @@ if runs % 2 == 1:
     emit({"event": "connected"})
     emit({"event": "state", "battery": 89})
     emit({"event": "state", "battery": 89, "mode": "transparency"})
+    for request in sys.stdin:
+        with (work / "commands").open("a") as stream:
+            stream.write(request)
+        time.sleep(0.3)
+        if request.strip() == "mode anc":
+            emit({"event": "state", "battery": 89, "mode": "anc"})
+            emit({"event": "mode-set", "mode": "anc"})
+        elif request.strip() == "mode normal":
+            emit({"event": "mode-failed", "mode": "normal",
+                  "message": "The headphones did not confirm the new noise mode. Try again."})
     while True:
         signal.pause()
 emit({"event": "connected"})
@@ -125,4 +183,4 @@ while read -r pid; do
   if kill -0 "$pid" 2>/dev/null; then echo "ht3-panel-test: helper $pid still running" >&2; exit 1; fi
 done <"$work/started"
 if grep -Eq 'ReferenceError|TypeError|Unable to assign|Cannot assign|Failed to load configuration' "$work/log"; then cat "$work/log"; exit 1; fi
-echo 'ht3-panel-test: PASS (helper starts with the panel, readings shown, error clears them, restarts on reconnect, stops on close, none without an HT3)'
+echo 'ht3-panel-test: PASS (helper starts with the panel, readings shown, mode shown only after readback, volume only on the HT3 node up to 100 %, error clears them, restarts on reconnect, stops on close, none without an HT3)'
