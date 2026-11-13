@@ -517,8 +517,7 @@ func logTail(n int) []string {
 // browse mounts each plain filesystem on the disk read-only under
 // /run/subarchy-look and calls show with what it opened and what it left
 // closed. When show returns true it opens a file manager there, and it
-// unmounts again when that exits. noload and norecovery keep a journal
-// from being replayed, so nothing on the disk changes.
+// unmounts again when that exits.
 func browse(d setup.Disk, show func(opened, closed []string) bool) error {
 	const root = "/run/subarchy-look"
 	var mounted, opened, closed []string
@@ -538,16 +537,7 @@ func browse(d setup.Disk, show func(opened, closed []string) bool) error {
 		if err := os.MkdirAll(dir, 0o700); err != nil {
 			return err
 		}
-		opts := "ro"
-		switch part.FSType {
-		case "ext3", "ext4":
-			opts = "ro,noload"
-		case "xfs":
-			opts = "ro,norecovery"
-		case "btrfs":
-			opts = "ro,rescue=nologreplay"
-		}
-		if exec.Command("mount", "-o", opts, part.Path, dir).Run() != nil {
+		if exec.Command("mount", "-o", lookMountOptions(part.FSType), part.Path, dir).Run() != nil {
 			os.Remove(dir)
 			closed = append(closed, part.String()+", could not be mounted")
 			continue
@@ -571,9 +561,27 @@ func browse(d setup.Disk, show func(opened, closed []string) bool) error {
 	return cmd.Run()
 }
 
+// lookMountOptions are the mount options for a filesystem the browse
+// opens. noload, norecovery and nologreplay keep a journal from being
+// replayed, so nothing on the disk changes. noexec stops Return in mc from
+// running a file as root: vfat and ntfs3 mark every file executable.
+func lookMountOptions(fstype string) string {
+	opts := "ro,noexec,nosuid,nodev"
+	switch fstype {
+	case "ext3", "ext4":
+		opts += ",noload"
+	case "xfs":
+		opts += ",norecovery"
+	case "btrfs":
+		opts += ",rescue=nologreplay"
+	}
+	return opts
+}
+
 // lookKeys is how to leave the file manager. F10 is a media key on many
-// laptops, so the two other ways come first.
-const lookKeys = "To come back here, press q, or Esc and then 0, or F10 (Fn+F10 on many laptops)."
+// laptops, so the two other ways come first. Each line stays within the
+// logo's width, so it does not wrap on an 80-column console.
+var lookKeys = []string{"To come back here, press q, or Esc and then 0,", "or F10 (Fn+F10 on many laptops)."}
 
 // lookPage is the text shown before the browse: what is opened, what is
 // left closed and why, and how to come back.
@@ -597,7 +605,8 @@ func lookPage(path string, opened, closed []string) (title string, body []string
 		}
 	}
 	if len(opened) > 0 {
-		body = append(body, "", "Arrow keys and Return move between folders; F3 shows a file and q closes it.", lookKeys)
+		body = append(body, "", "Arrow keys and Return move between folders.", "F3 shows a file, and q closes it.")
+		body = append(body, lookKeys...)
 	}
 	return title, body
 }
@@ -605,15 +614,19 @@ func lookPage(path string, opened, closed []string) (title string, body []string
 // The file manager's settings for the browse, in a temporary profile so
 // the live system's own mc settings are not used or changed. The command
 // line is hidden, so typed letters search the panel instead of becoming
-// a root command. q quits: mc hands a key the panel does not act on to
+// a root command. Return on an executable file asks first (the mounts are
+// noexec as well). q quits: mc hands a key the panel does not act on to
 // the file manager's keys. Ctrl-O, which shows an empty screen without a
-// subshell, does nothing. The nicedark skin keeps text on the ink
+// subshell, does nothing. F2 does nothing either: mc would read a
+// .mc.menu from the browsed directory, and a root-owned file on a
+// read-only disk passes its trust check. The nicedark skin keeps text on the ink
 // background: the installer palette makes cyan the same acid green as
 // green, and mc's default skin draws white and yellow menu text on cyan.
 const (
 	lookIni = `[Midnight-Commander]
 skin=nicedark
 confirm_exit=false
+confirm_execute=true
 [Layout]
 command_prompt=false
 message_visible=false
@@ -621,13 +634,15 @@ message_visible=false
 	lookKeymap = `[filemanager]
 Quit = f10; q
 Shell =
+UserMenu =
 [panel]
 Quit = q
 `
 )
 
 // writeLookProfile writes the browse's mc settings under dir, the mc
-// profile root. An empty user menu leaves F2 with no commands to run.
+// profile root. The user menu is empty, so Command > User menu has
+// nothing of the live system's to run.
 func writeLookProfile(dir string) error {
 	conf := filepath.Join(dir, ".config", "mc")
 	if err := os.MkdirAll(conf, 0o700); err != nil {

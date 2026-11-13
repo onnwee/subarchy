@@ -278,9 +278,16 @@ func TestLookPageAndCommand(t *testing.T) {
 		[]string{`/dev/nvme0n1p2  996 GB  encrypted (LUKS) "subarchy-luks", left locked`})
 	text := title + "\n" + strings.Join(body, "\n")
 	for _, want := range []string{"Browsing /dev/nvme0n1 read-only", "Opened read-only", `  /dev/nvme0n1p1  4 GB  vfat "EFI"`,
-		"Not opened:", `  /dev/nvme0n1p2  996 GB  encrypted (LUKS) "subarchy-luks", left locked`, "press q, or Esc and then 0, or F10"} {
+		"Not opened:", `  /dev/nvme0n1p2  996 GB  encrypted (LUKS) "subarchy-luks", left locked`, "press q, or Esc and then 0,\nor F10"} {
 		if !strings.Contains(text, want) {
 			t.Errorf("page lacks %q:\n%s", want, text)
+		}
+	}
+	// The page's own lines fit the logo's width, so an 80-column console
+	// does not wrap them.
+	for _, l := range body {
+		if !strings.HasPrefix(l, "  /dev/") && len(l) > logoWidth() {
+			t.Errorf("line wider than the logo (%d): %q", logoWidth(), l)
 		}
 	}
 	title, body = lookPage("/dev/vda", nil, []string{"/dev/vda1  1 GB  swap, holds no files"})
@@ -302,14 +309,22 @@ func TestLookPageAndCommand(t *testing.T) {
 		}
 		return string(data)
 	}
-	if ini := read("ini"); !strings.Contains(ini, "[Layout]\ncommand_prompt=false\n") || !strings.Contains(ini, "skin=nicedark\n") {
+	if ini := read("ini"); !strings.Contains(ini, "[Layout]\ncommand_prompt=false\n") || !strings.Contains(ini, "skin=nicedark\n") ||
+		!strings.Contains(ini, "confirm_execute=true\n") {
 		t.Errorf("ini:\n%s", ini)
 	}
-	if km := read("mc.keymap"); !strings.Contains(km, "[filemanager]\nQuit = f10; q\nShell =\n") || !strings.Contains(km, "[panel]\nQuit = q\n") {
+	if km := read("mc.keymap"); !strings.Contains(km, "[filemanager]\nQuit = f10; q\nShell =\nUserMenu =\n") || !strings.Contains(km, "[panel]\nQuit = q\n") {
 		t.Errorf("keymap:\n%s", km)
 	}
 	if menu := read("menu"); menu != "" {
 		t.Errorf("user menu = %q", menu)
+	}
+	// Every browse mount is read-only and runs nothing, whatever the
+	// filesystem; journalled ones also skip their replay.
+	for fs, extra := range map[string]string{"vfat": "", "ntfs3": "", "ext4": ",noload", "xfs": ",norecovery", "btrfs": ",rescue=nologreplay"} {
+		if got := lookMountOptions(fs); got != "ro,noexec,nosuid,nodev"+extra {
+			t.Errorf("%s mount options = %q", fs, got)
+		}
 	}
 	cmd := lookCommand("/run/subarchy-look", dir)
 	if got := strings.Join(cmd.Args, " "); got != "mc --nosubshell /run/subarchy-look /run/subarchy-look" {

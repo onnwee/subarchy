@@ -46,14 +46,16 @@ keyboard layout first and switches the console to it (`loadkeys`), so the
 password and passphrase are typed under the layout the installed system
 asks for them in. It then lists the disks of at least 20 GiB with the
 partitions already on each, leaving out the install medium. Answering
-`look 1` mounts that disk's plain filesystems read-only under
-`/run/subarchy-look`, prints the same list of what it opened and what it
-left closed, and asks before opening `mc` there. `mc` gets both panels on
-`/run/subarchy-look`, no subshell (`--nosubshell`) and a temporary profile
-(`MC_PROFILE_ROOT`) with the command line hidden, q bound to quit, Ctrl-O
-unbound, an empty user menu and the nicedark skin, whose text stays
-readable in the installer palette. Typed letters search the panel and
-never run as a root command. It then asks for the computer name, user name and password
+`look 1` mounts that disk's plain filesystems read-only and `noexec`
+under `/run/subarchy-look`, prints the same list of what it opened and
+what it left closed, and asks before opening `mc` there. `mc` gets both
+panels on `/run/subarchy-look`, no subshell (`--nosubshell`) and a
+temporary profile (`MC_PROFILE_ROOT`) with the command line hidden, q
+bound to quit, Ctrl-O and F2 unbound, a confirmation before running a
+file, an empty user menu and the nicedark skin, whose text stays readable
+in the installer palette. Typed letters search the panel, and Return on a
+file does not run it. `mc`'s pull-down menus can still run a command
+typed into one of their dialogs, as root. It then asks for the computer name, user name and password
 and time zone. The disk passphrase is the user's password unless the user
 asks for a separate one. The desktop layout and variant come from
 systemd's `kbd-model-map`. Each answer is checked as it is entered. The user confirms

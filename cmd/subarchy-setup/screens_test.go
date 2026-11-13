@@ -117,7 +117,7 @@ func TestScreensInstall(t *testing.T) {
 	}
 	for _, want := range []string{"is a system account", "The two entries differ", `/dev/vda2  25 GB  ntfs "Windows"`,
 		"Browsing /dev/vda read-only", `  /dev/vda1  524 MB  vfat "EFI"`, "Not opened:", "  /dev/vda3  1 GB  swap, holds no files",
-		"press q, or Esc and then 0, or F10", "Press Return to open it, or Escape to go back.",
+		"press q, or Esc and then 0,", "or F10 (Fn+F10 on many laptops).", "Press Return to open it, or Escape to go back.",
 		"Everything on /dev/vda will be erased.", "Install disk", "/dev/vda (erased)", "Does this look right", "Escape goes back"} {
 		if !strings.Contains(out.String()+callText(g), want) {
 			t.Errorf("screens lack %q", want)

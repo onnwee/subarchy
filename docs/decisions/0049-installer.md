@@ -108,6 +108,8 @@ Decision map item R2. Accepted 2026-11-06.
   partitions it opened, the ones it left closed and why, and how to come
   back: q, or Esc then 0, since F10 is a media key on many laptops. `mc`
   opens both panels on the disk and runs with no subshell and no command
-  line, so typed text no longer runs as a root command.
+  line, and the disk is mounted `noexec`, so typed text and Return on a
+  file do not run anything. Its pull-down menus can still run a command
+  typed into their dialogs.
 
 Related: [[decision-map|Decision map]] · [[0050-hardware-support|ADR 0050]]
