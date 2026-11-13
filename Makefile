@@ -84,6 +84,7 @@ smoke: build
 	tools/test/migration-faillock-test.sh
 	tools/test/fingerprint-setup-test.sh
 	tools/test/migration-taildrop-test.sh
+	tools/test/migration-linecast-test.sh
 	tools/test/tailscale-helper-test.sh
 	tools/test/taildrop-test.sh
 	tools/test/docker-tui-test.sh

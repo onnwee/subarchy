@@ -271,7 +271,8 @@ auto-wallpaper (`dizziee.auto-wallpaper`), agents usage (`omarchy.agents`).
 - One outside program stays outside: the weather widget calls
   [`linecast`](https://github.com/ashuttl/linecast) (v1.15.2 on `sputnik`)
   for forecast, sun, moon and tides. It ships as its own package with its own
-  licence, built from a pinned tag in `packaging/`; its licence is checked
+  licence, built from a pinned tag in `packaging/` and installed with the
+  desktop packages (`install/packages/desktop.txt`); its licence is checked
   before packaging.
 - Names are Subarchy's: widget ids `subcult.<name>`, commands
   `subcult-<group>-<action>`, config under `~/.config/subcult/`.

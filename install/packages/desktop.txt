@@ -36,6 +36,9 @@ papirus-icon-theme
 brightnessctl
 libnotify
 wtype
+# The weather widget and panel: forecast, sun, moon, tides and place
+# search, from packaging/linecast
+linecast
 # Launcher file search (`.`), emoji picker (`:`) and clipboard history (`$`,
 # wl-paste --watch), ADR 0056, 0057.
 fd

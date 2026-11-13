@@ -9,4 +9,4 @@ PKGBUILDs and the pacman repository definition. Omarchy publishes 256 packages a
 | `subarchy-nvim/` | Neovim with LazyVim prebuilt (ADR 0045): the starter at a pinned commit, `lazy-lock.json`, and the cached plugins for `/etc/skel`; its build fetches the plugins |
 | `subarchy-keyring/` | The package that installs the repository signing key and trusts it in pacman-key (ADR 0025) |
 | `pult/` | Pult, the theme tool, vendored from its release PKGBUILD (ADR 0037) |
-| `linecast/` | [linecast](https://github.com/ashuttl/linecast) from a pinned tag (MIT), which the weather widget calls for forecast, sun, moon and tides |
+| `linecast/` | [linecast](https://github.com/ashuttl/linecast) from a pinned tag (MIT), which the weather widget calls for forecast, sun, moon, tides and place search; installed from `install/packages/desktop.txt` |
