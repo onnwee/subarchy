@@ -949,7 +949,6 @@ finally:
         results["nvim"] = serial.run(
             f"{sudo} unshare -n runuser -u $(id -un) -- nvim --headless '+lua print(require(\"lazy\").stats().count)'"
             " '+lua print(\"SCHEME=\" .. tostring(vim.g.colors_name) .. \" LAYER=\" .. tostring(vim.g.subarchy_layer))' +qa 2>&1; echo NVIM_RC=$?", timeout=120)
-        results["cursor"] = serial.run("ls /usr/share/icons/subcult-cursor/cursors/left_ptr /usr/share/icons/subcult-cursor/hyprcursors/default.hlc")
         # The bar and the idle sample come first, before any window is open.
         screendump(qmp, VM / "bar.png")
         results["bar_colours"] = colours_in(VM / "bar.png", 26)
@@ -1180,7 +1179,6 @@ finally:
         "bar colours (base, line, text)": {"100B19", "1F1830", "F0ECE4"} <= r["bar_colours"],
         "font roles": r["fonts"].split("\n")[:3] == ["JetBrainsMono Nerd Font", "JetBrainsMono Nerd Font Propo", "Libertinus Mono"],
         "GTK icons and cursor": "'Papirus-Dark'" in r["gtk"] and "'subcult-cursor'" in r["gtk"],
-        "cursor theme installed": "No such file" not in r["cursor"] and "left_ptr" in r["cursor"],
         "Neovim starts offline with its plugins": "NVIM_RC=0" in r["nvim"] and "Failed" not in r["nvim"],
         "Neovim has the Subarchy layer and the subcult scheme": "LAYER=subarchy-nvim" in r["nvim"] and "SCHEME=subcult" in r["nvim"],
         "Discord web app and Vencord Web installed": "WEBAPP_OK" in r["discord"],

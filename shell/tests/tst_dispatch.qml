@@ -2,7 +2,6 @@ import QtQuick
 import QtTest
 
 import "../Commons/HyprDispatch.js" as Dispatch
-import "../services/NotificationsModel.js" as Notifications
 
 TestCase {
   name: "Dispatch"
@@ -20,15 +19,5 @@ TestCase {
 
   function test_windowRejectsInjection() {
     compare(Dispatch.window('0x1") }) os.execute("x'), "")
-  }
-
-  function test_defaultAction() {
-    compare(Notifications.defaultAction([{ identifier: "open" }, { identifier: "default" }]).identifier, "default")
-    compare(Notifications.defaultAction([{ identifier: "open" }]), null)
-    compare(Notifications.defaultAction(null), null)
-  }
-
-  function test_buttonActions() {
-    compare(Notifications.buttonActions([{ identifier: "default" }, { identifier: "reply" }]).map(a => a.identifier), ["reply"])
   }
 }

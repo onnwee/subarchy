@@ -7,11 +7,16 @@ root=$(git rev-parse --show-toplevel)
 fail() { echo "shell-rc-test: $*" >&2; exit 1; }
 work=$(mktemp -d)
 trap 'rm -rf -- "$work"' EXIT
+# zsh's compinit refuses group-writable directories on fpath, as a shared
+# checkout's are; an installed system's /usr/share is 0755. Test a copy.
+shelldir=$work/default-shell
+cp -r "$root/default/shell" "$shelldir"
+chmod -R go-w "$shelldir"
 
 check() { # shell, rc file
   local shell=$1 rc=$2 home=$work/$1 out
   mkdir -p "$home"
-  printf 'source %q\n' "$root/default/shell/$rc" >"$home/.$rc"
+  printf 'source %q\n' "$shelldir/$rc" >"$home/.$rc"
   # shellcheck disable=SC2016  # the commands run in the shell under test
   out=$(cd "$home" && env -i HOME="$home" PATH="$PATH" TERM=xterm-256color ZDOTDIR="$home" \
     "$shell" -ic 'alias g; alias gcm; type n | head -1; type zd | head -1; echo "editor=$EDITOR"; echo "starship=${STARSHIP_CONFIG:-}"' 2>"$home/err") ||
@@ -24,7 +29,7 @@ check() { # shell, rc file
   [[ $out == *"n is a"* && $out == *"zd is a"* ]] || fail "$shell: functions missing: $out"
   [[ $out == *"editor=nvim"* ]] || fail "$shell: EDITOR not set: $out"
   if command -v starship >/dev/null; then
-    [[ $out == *"starship=$root/default/shell/starship.toml"* ]] || fail "$shell: starship not pointed at the default prompt: $out"
+    [[ $out == *"starship=$shelldir/starship.toml"* ]] || fail "$shell: starship not pointed at the default prompt: $out"
     # The user's own prompt wins.
     mkdir -p "$home/.config" && : >"$home/.config/starship.toml"
     # shellcheck disable=SC2016

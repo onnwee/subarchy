@@ -124,4 +124,14 @@ TestCase {
     compare(updated.map(e => e.summary), ["Today's build, done", "Mail", "Yesterday's backup"],
       "a replaced notification rewrites its own record, the newest with that id")
   }
+
+  function test_defaultAction() {
+    compare(Model.defaultAction([{ identifier: "open" }, { identifier: "default" }]).identifier, "default")
+    compare(Model.defaultAction([{ identifier: "open" }]), null)
+    compare(Model.defaultAction(null), null)
+  }
+
+  function test_buttonActions() {
+    compare(Model.buttonActions([{ identifier: "default" }, { identifier: "reply" }]).map(a => a.identifier), ["reply"])
+  }
 }

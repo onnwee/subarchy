@@ -50,7 +50,7 @@ jobs:
       options: --init --pids-limit=1024
     steps:
       - name: Install build tools
-        run: pacman -Syu --noconfirm --needed base-devel go git nodejs pacman-contrib fakeroot hypridle librsvg xorg-xcursorgen hyprcursor imagemagick python lua python-pyte python-pillow ffmpeg ttf-dejavu qt6-multimedia power-profiles-daemon python-gobject adw-gtk-theme
+        run: pacman -Syu --noconfirm --needed base-devel go git nodejs pacman-contrib fakeroot hypridle librsvg xorg-xcursorgen hyprcursor imagemagick python lua python-pyte python-pillow ffmpeg ttf-dejavu qt6-multimedia power-profiles-daemon python-gobject adw-gtk-theme zsh neovim hyprland ttf-jetbrains-mono-nerd ttf-liberation
       - name: Check process budget
         run: |
           cat /sys/fs/cgroup/pids.current /sys/fs/cgroup/pids.max
@@ -64,6 +64,17 @@ jobs:
           git config --global --add safe.directory "$PWD"
           chown -R builder: "$PWD"
           su builder -c "git config --global --add safe.directory '$PWD' && make package"
+      - name: Checks the Ubuntu verify job skips
+        # Hyprland, Neovim, zsh, lua and the role fonts exist only here; each
+        # of these tests skips without its tool, so a skip fails this step.
+        # shell-rc-test drops zsh silently, so it must report both shells.
+        run: |
+          su builder -c 'export XDG_RUNTIME_DIR=$(mktemp -d); chmod 700 "$XDG_RUNTIME_DIR"; set -e
+            for t in hypr-motion-test hypr-theme-test nvim-theme-test fontconfig-test shell-rc-test; do
+              out=$(tools/test/$t.sh); echo "$out"; [[ $out != *skipped* ]]
+              [[ $t != shell-rc-test || $out == *"(2 shells)"* ]]
+            done
+            out=$(make -s hypr-check); echo "$out"; [[ $out == *ok* ]]'
 
   shell:
     if: github.repository == 'subculture-collective/subarchy'
@@ -85,26 +96,13 @@ jobs:
       - name: Model tests, lint and widget index
         run: |
           git config --global --add safe.directory "$PWD"
-          make shell-test shell-lint shell-index-check
-          tools/test/dell-power-refresh.sh
-          tools/test/lock-focus-test.sh
-          python3 -m unittest discover -s tools/bluetooth -p 'test_*.py' -v
-          tools/test/bluetooth-panel-test.sh build/bluetooth-preview
-          tools/test/ht3-panel-test.sh build/ht3-preview
-          tools/test/battery-panel-test.sh build/battery-preview
-          for scale in 1 1.6 2; do
-            QT_SCALE_FACTOR="$scale" tools/test/greeter-test.sh "build/greeter-preview/scale-$scale"
-          done
-      - name: Keep native greeter, battery, Bluetooth and HT3 previews
+          make shell-test shell-lint shell-index-check shell-native-test
+      - name: Keep native greeter and panel previews
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: shell-previews
-          path: |
-            build/greeter-preview/
-            build/battery-preview/
-            build/bluetooth-preview/
-            build/ht3-preview/
+          path: build/*-preview/
           retention-days: 1
           if-no-files-found: warn
       - name: Shell in a headless sway

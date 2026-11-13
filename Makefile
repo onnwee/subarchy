@@ -9,7 +9,7 @@ QT6BIN ?= /usr/lib/qt6/bin
 QT6QML ?= /usr/lib/qt6/qml
 .DEFAULT_GOAL := verify
 
-.PHONY: verify fmt-check vet test build smoke shellcheck docs-check package iso iso-test install-test hypr-check shell-test shell-lint shell-index-check
+.PHONY: verify fmt-check vet test build smoke shellcheck docs-check package iso iso-test install-test hypr-check shell-test shell-lint shell-index-check shell-native-test
 
 # Quickshell shell (shell and look design). Pure JavaScript models are tested
 # with Qt 6's qmltestrunner; QML files are linted. Needs qt6-declarative and,
@@ -21,6 +21,21 @@ shell-test:
 	  echo "shell-test: $$d"; \
 	  $(QT6BIN)/qmltestrunner -platform offscreen -input "$$d" >$(BUILD)/shell-test.log 2>&1 || { cat $(BUILD)/shell-test.log; exit 1; }; \
 	  grep -E '^Totals' $(BUILD)/shell-test.log; \
+	done
+
+# Panels, the greeter and the lock drawn by Quickshell itself, offscreen,
+# with screenshots under build/*-preview/. Needs quickshell, qt6-declarative,
+# librsvg, imagemagick and python; CI runs it in the Arch shell job.
+shell-native-test:
+	tools/test/dell-power-refresh.sh
+	tools/test/lock-focus-test.sh
+	python3 -m unittest discover -s tools/bluetooth -p 'test_*.py' -v
+	tools/test/bluetooth-panel-test.sh $(BUILD)/bluetooth-preview
+	tools/test/ht3-panel-test.sh $(BUILD)/ht3-preview
+	tools/test/battery-panel-test.sh $(BUILD)/battery-preview
+	@for scale in 1 1.6 2; do \
+	  echo "greeter-test: scale $$scale"; \
+	  QT_SCALE_FACTOR="$$scale" tools/test/greeter-test.sh "$(BUILD)/greeter-preview/scale-$$scale" || exit 1; \
 	done
 
 # The widget index is generated and committed; this fails when it is stale.
@@ -92,7 +107,8 @@ docs-check:
 	python3 tools/theme/gen-palette.py --check
 	python3 -m py_compile tools/inventory/collect.py tools/obsidian/check-vault.py tools/obsidian/install-plugins.py tools/iso/boot-test.py tools/iso/install-test.py tools/iso/vmlib.py tools/test/palette-test.py tools/test/test_install_checks.py tools/theme/gen-palette.py tools/portal/file-chooser.py
 
-# Checks the Hyprland Lua defaults where Hyprland is installed (not in CI).
+# Checks the Hyprland Lua defaults where Hyprland is installed; CI runs it in
+# the Arch package job.
 hypr-check:
 	@if command -v Hyprland >/dev/null; then \
 	  for c in default/hypr/user-hyprland.lua default/sddm/hyprland.lua; do \

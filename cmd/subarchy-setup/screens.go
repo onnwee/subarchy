@@ -79,6 +79,8 @@ type screens struct {
 	// fit sets a console font that suits the screen's resolution; nil in
 	// tests.
 	fit func()
+	// pause holds a notice on screen; nil means time.Sleep. Tests stub it.
+	pause func(time.Duration)
 }
 
 func (s *screens) pad() int {
@@ -159,7 +161,11 @@ func (s *screens) page(title string, body ...string) {
 // notice shows why an answer was refused, briefly, under the page.
 func (s *screens) notice(msg string) {
 	s.line(colRed, msg)
-	time.Sleep(1200 * time.Millisecond)
+	pause := s.pause
+	if pause == nil {
+		pause = time.Sleep
+	}
+	pause(1200 * time.Millisecond)
 }
 
 func (s *screens) choose(header string, options []string, selected string) (string, error) {

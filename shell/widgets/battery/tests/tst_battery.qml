@@ -21,11 +21,13 @@ TestCase {
     verify(Model.visible({ isPresent: true, isLaptopBattery: true }))
     verify(!Model.visible({ isPresent: true, isLaptopBattery: false }), "a mouse battery")
     verify(!Model.visible(null))
+    verify(!Model.visible({ isPresent: false, isLaptopBattery: true }), "no battery present")
   }
 
   function test_percent() {
     compare(Model.percent(0.734), 73)
     compare(Model.percent(42), 42)
+    compare(Model.percent(1), 100)
     compare(Model.percent(undefined), 0)
   }
 

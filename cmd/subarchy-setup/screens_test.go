@@ -39,7 +39,8 @@ func (g *fakeGum) run(args ...string) (string, int) {
 func testScreens(t *testing.T, answers ...string) (*screens, *fakeGum, *bytes.Buffer) {
 	g := &fakeGum{t: t, answers: answers}
 	var out bytes.Buffer
-	return &screens{out: &out, gum: g.run, width: func() int { return 120 }, key: func() bool { return true }}, g, &out
+	return &screens{out: &out, gum: g.run, width: func() int { return 120 }, key: func() bool { return true },
+		pause: func(time.Duration) {}}, g, &out
 }
 
 const partsJSON = `{"blockdevices":[

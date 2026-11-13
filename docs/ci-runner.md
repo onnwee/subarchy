@@ -30,12 +30,12 @@ for 470 packages in a test container. The image's 595 packages need about
 `GPGME error: Inappropriate ioctl for device` and `missing required
 signature`, which reads like a keyring fault and is not one.
 
-The label uses an Arch container. `.gitea/workflows/kvm.yml` checks at least
-60 GB free on its filesystem, then starts QEMU with `-enable-kvm` and
-requires the monitor to report `kvm support: enabled`. This is a runner
-capability check. `.gitea/workflows/iso.yml` builds the live ISO and boots
-it on this runner (#60), then installs from it into a VM disk and checks
-the installed system (#68). One such run takes about 40 minutes.
+The label uses an Arch container. `.gitea/workflows/iso.yml` checks at
+least 60 GB free on its filesystem, builds the live ISO and boots it on this
+runner with KVM (#60), then installs from it into a VM disk and checks the
+installed system (#68). One such run takes about 40 minutes. A separate KVM
+smoke workflow ran on every main push until 2026-11-13; the ISO run already
+needs KVM, so it was removed to free the runner's single slot.
 
 ## Operation and recovery
 

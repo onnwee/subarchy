@@ -19,8 +19,13 @@ pacman -T go >/dev/null 2>&1 || nodeps=(--nodeps)
   BUILDDIR="$work/build" PKGDEST="$work/out" SRCDEST="$work/src" \
     makepkg --force --cleanbuild --noconfirm "${nodeps[@]}" >"$work/makepkg.log" 2>&1
 ) || {
-  # A failed test is named far above the log's end: show those lines first.
-  grep -n -B2 -A25 -e '--- FAIL' -e '^panic:' "$work/makepkg.log" | head -120 >&2 || true
+  # A failed test, panic, vet error or [setup failed] package is named far
+  # above the log's end: show those lines first. When none matches, show
+  # everything check() printed except passing packages.
+  cause=$(grep -n -B2 -A25 -e '--- FAIL' -e '^panic:' -e '\[setup failed\]' -e '^# ' "$work/makepkg.log") ||
+    cause=$(sed -n '/Starting check()/,$p' "$work/makepkg.log" | grep -Ev '^(ok|\?) ' | tail -80) || true
+  head -120 <<<"$cause" >&2
+  # A failure in build() never reaches check(); its cause is at the end.
   tail -30 "$work/makepkg.log" >&2
   fail "makepkg failed"
 }
@@ -76,7 +81,8 @@ for path in usr/share/glib-2.0/schemas/90-subarchy.gschema.override etc/xdg/gtk-
   etc/xdg/gtk-4.0/settings.ini etc/xdg/kdeglobals usr/share/color-schemes/Pult.colors \
   etc/chromium/policies/managed/color.json \
   etc/xdg/kitty/kitty.conf etc/xdg/kitty/subcult-ink.conf \
-  usr/share/nvim/site/colors/subcult-ink.lua usr/share/nvim/site/plugin/subarchy-colors.lua; do
+  usr/share/nvim/site/colors/subcult-ink.lua usr/share/nvim/site/colors/subcult.lua \
+  usr/share/nvim/site/plugin/subarchy-colors.lua; do
   mode=$(bsdtar -tvf "$pkg" "$path" 2>/dev/null | cut -c1-10) || true
   [[ $mode == -rw-r--r-- ]] || fail "missing $path or mode ${mode:-none}, want 0644"
 done
@@ -168,7 +174,7 @@ fi
 
 "$root/tools/test/cursor-test.sh" "$work/root/usr/bin/subcult-cursor" || fail "cursor test"
 
-# Neovim: Subcult Ink when the user picked no scheme, the user's scheme otherwise.
+# Neovim: the subcult scheme (ADR 0045) when the user picked no scheme, the user's scheme otherwise.
 if command -v nvim >/dev/null; then
   nv="$work/nvim"
   mkdir -p "$nv/cfg/nvim" "$nv/home"
@@ -177,7 +183,7 @@ if command -v nvim >/dev/null; then
       XDG_STATE_HOME=$nv/home/state XDG_DATA_DIRS="$work/root/usr/share:/usr/share" \
       nvim --headless +'lua io.write(vim.g.colors_name or "none")' +qa 2>/dev/null
   }
-  [[ $(scheme) == subcult-ink ]] || fail "Neovim does not default to subcult-ink"
+  [[ $(scheme) == subcult ]] || fail "Neovim does not default to subcult"
   echo 'vim.cmd.colorscheme("habamax")' >"$nv/cfg/nvim/init.lua"
   [[ $(scheme) == habamax ]] || fail "Neovim overrides the user's colour scheme"
 fi

@@ -59,6 +59,7 @@ Other targets:
 |---|---|---|
 | `make package` | Arch Linux | Builds the `subarchy` pacman package and checks its contents |
 | `make shell-test shell-lint shell-index-check` | `qt6-declarative`, `quickshell` | Tests and lints the QML shell and lock screen |
+| `make shell-native-test` | `quickshell`, `qt6-declarative`, `librsvg`, `imagemagick`, `python` | Draws the panels, greeter and lock offscreen and checks them; screenshots go to `build/*-preview/` |
 | `make iso` | `archiso`, sudo | Builds the live ISO into `build/iso/` |
 | `make iso-test` | `qemu-base`, `edk2-ovmf` | Boots the newest ISO in QEMU and checks it over the serial console |
 | `make install-test` | `qemu-base`, `edk2-ovmf` | Installs from the newest ISO into a VM disk, then boots and checks the result |

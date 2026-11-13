@@ -2,7 +2,6 @@ import QtQuick
 import QtTest
 
 import "../Commons/Glyphs.js" as Glyphs
-import "../widgets/battery/Model.js" as Battery
 
 TestCase {
   name: "Glyphs"
@@ -34,18 +33,5 @@ TestCase {
     verify(Glyphs.bluetooth(false, 0) !== Glyphs.bluetooth(true, 0))
     verify(Glyphs.powerProfile("power-saver") !== Glyphs.powerProfile("performance"))
     verify(Glyphs.tailscale(true) !== Glyphs.tailscale(false))
-  }
-
-  function test_batteryHiddenWithoutDevice() {
-    verify(!Battery.visible(null))
-    verify(!Battery.visible({ isPresent: false, isLaptopBattery: true }))
-    verify(!Battery.visible({ isPresent: true, isLaptopBattery: false }), "a mouse or UPS is not the laptop battery")
-    verify(Battery.visible({ isPresent: true, isLaptopBattery: true }))
-  }
-
-  function test_batteryPercent() {
-    compare(Battery.percent(0.42), 42)
-    compare(Battery.percent(42), 42)
-    compare(Battery.percent(1), 100)
   }
 }
