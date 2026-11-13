@@ -187,6 +187,29 @@ func TestCatalogUsesMonoBuildsWhereFacesDiffer(t *testing.T) {
 	}
 }
 
+// otf-monaspace-nerd installs five families; each finds the package
+// (#4 Phase B M9).
+func TestFindEveryMonaspaceFamily(t *testing.T) {
+	for _, fam := range []string{"Ar", "Kr", "Ne", "Rn", "Xe"} {
+		e, ok := Find("Monaspice" + fam + " Nerd Font")
+		if !ok || e.Package != "otf-monaspace-nerd" {
+			t.Errorf("Monaspice%s Nerd Font: %+v %v", fam, e, ok)
+		}
+	}
+}
+
+func TestFcPattern(t *testing.T) {
+	for in, want := range map[string]string{
+		"JetBrainsMono Nerd Font": "JetBrainsMono Nerd Font:",
+		"Go-Mono":                 `Go\-Mono:`,
+		`A,B:C\D`:                 `A\,B\:C\\D:`,
+	} {
+		if got := FcPattern(in); got != want {
+			t.Errorf("FcPattern(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
 func hasRole(e Entry, r Role) bool {
 	for _, x := range e.Roles {
 		if x == r {

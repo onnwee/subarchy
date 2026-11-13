@@ -116,6 +116,14 @@ func run(ctx context.Context, args []string, e env) int {
 
 	var err error
 	switch args[0] {
+	case "current", "set", "import", "check", "patch":
+		err = needFontconfig(e)
+	}
+	if err != nil {
+		fmt.Fprintf(e.stderr, "subcult font: %v\n", err)
+		return 1
+	}
+	switch args[0] {
 	case "list":
 		err = list(ctx, e, *all)
 	case "current":
@@ -149,6 +157,21 @@ func run(ctx context.Context, args []string, e env) int {
 	return 1
 }
 
+// needFontconfig fails when a fontconfig tool is missing, so that is not
+// reported as a font that is not installed.
+func needFontconfig(e env) error {
+	var missing []string
+	for _, t := range []string{"fc-list", "fc-match", "fc-query", "fc-cache"} {
+		if !e.runner.Has(t) {
+			missing = append(missing, t)
+		}
+	}
+	if len(missing) > 0 {
+		return fmt.Errorf("%s not found; install the fontconfig package", strings.Join(missing, ", "))
+	}
+	return nil
+}
+
 func withOneName(rest []string, fn func(string) error) error {
 	if len(rest) != 1 || strings.TrimSpace(rest[0]) == "" {
 		return fmt.Errorf("%w: give one font name (quote names with spaces)", errUsage)
@@ -178,6 +201,16 @@ func loadConf(e env) (font.UserConf, error) {
 	return c, nil
 }
 
+// loadConfOrWarn is loadConf for the commands that only show the roles: a
+// broken file is reported on stderr and the roles show as defaults.
+func loadConfOrWarn(e env) font.UserConf {
+	c, err := loadConf(e)
+	if err != nil {
+		fmt.Fprintf(e.stderr, "subcult font: %s cannot be read (%v); showing the defaults\n", confPath(e), err)
+	}
+	return c
+}
+
 func resolved(ctx context.Context, e env, r font.Role) string {
 	out, err := e.runner.Output(ctx, "fc-match", "-f", "%{family[0]}", string(r))
 	if err != nil {
@@ -187,8 +220,7 @@ func resolved(ctx context.Context, e env, r font.Role) string {
 }
 
 func current(ctx context.Context, e env) error {
-	c, _ := loadConf(e) // shown as defaults when the file is broken
-	conf := c.Roles
+	conf := loadConfOrWarn(e).Roles
 	for _, r := range []font.Role{font.Mono, font.UI, font.Serif} {
 		got := resolved(ctx, e, r)
 		want, ok := conf[r]
@@ -205,8 +237,7 @@ func current(ctx context.Context, e env) error {
 }
 
 func list(ctx context.Context, e env, all bool) error {
-	c, _ := loadConf(e) // shown as defaults when the file is broken
-	conf := c.Roles
+	conf := loadConfOrWarn(e).Roles
 	inUse := map[string]bool{}
 	for _, r := range []font.Role{font.Mono, font.UI, font.Serif} {
 		if f, ok := conf[r]; ok {
@@ -221,20 +252,34 @@ func list(ctx context.Context, e env, all bool) error {
 			installed[p] = true
 		}
 	}
+	// A family can be installed outside pacman (imported, or from a
+	// release archive), so one fontconfig knows counts as installed too.
+	known := map[string]bool{}
+	if out, err := e.runner.Output(ctx, "fc-list", ":", "family"); err == nil {
+		for _, l := range strings.Split(out, "\n") {
+			for _, f := range strings.Split(l, ",") {
+				if f = strings.TrimSpace(f); f != "" {
+					known[strings.ToLower(f)] = true
+				}
+			}
+		}
+	}
 	for _, en := range font.Catalog() {
-		state := "available"
-		if installed[en.Package] {
-			state = "installed"
-		}
-		mark := " "
-		if inUse[strings.ToLower(en.Family)] {
-			mark = "*"
-		}
 		roles := make([]string, len(en.Roles))
 		for i, r := range en.Roles {
 			roles[i] = string(r)
 		}
-		fmt.Fprintf(e.stdout, "%s %-28s %-11s %s\n", mark, en.Family, strings.Join(roles, ","), state)
+		for _, fam := range en.Families() {
+			state := "available"
+			if installed[en.Package] || known[strings.ToLower(fam)] {
+				state = "installed"
+			}
+			mark := " "
+			if inUse[strings.ToLower(fam)] {
+				mark = "*"
+			}
+			fmt.Fprintf(e.stdout, "%s %-28s %-11s %s\n", mark, fam, strings.Join(roles, ","), state)
+		}
 	}
 	if all {
 		fmt.Fprintf(e.stdout, "\nNerd Fonts %s (subcult font install <name>):\n", font.NerdFontsVersion)
@@ -247,7 +292,7 @@ func list(ctx context.Context, e env, all bool) error {
 
 // faces returns the files of an installed family.
 func faces(ctx context.Context, e env, family string) []string {
-	out, err := e.runner.Output(ctx, "fc-list", "-f", `%{file}\n`, family+":")
+	out, err := e.runner.Output(ctx, "fc-list", "-f", `%{file}\n`, font.FcPattern(family))
 	if err != nil {
 		return nil
 	}
@@ -298,7 +343,7 @@ func set(ctx context.Context, e env, family string, role font.Role, force bool) 
 		return err
 	}
 	if role == font.Mono && (v == font.InterfaceOnly || v == font.BreaksTUI) && !force {
-		return fmt.Errorf("%w: %s %s; use --force to set it anyway", errUsage, info.Family, v)
+		return fmt.Errorf("%s: %s; use --force to set it anyway", info.Family, v)
 	}
 	c.Roles[role] = info.Family
 	switch role {
@@ -446,37 +491,56 @@ func importFonts(ctx context.Context, e env, files []string) error {
 	if len(files) == 0 {
 		return fmt.Errorf("%w: give the font files to import", errUsage)
 	}
+	seen := map[string]string{}
 	for _, f := range files {
 		if !fontExt[strings.ToLower(filepath.Ext(f))] {
 			return fmt.Errorf("%w: %s is not a .ttf, .otf or .ttc file", errUsage, f)
 		}
+		base := filepath.Base(f)
+		if prev, ok := seen[base]; ok {
+			return fmt.Errorf("%w: %s and %s have the same file name; rename one", errUsage, prev, f)
+		}
+		seen[base] = f
 	}
 	dir := filepath.Join(e.home, ".local", "share", "fonts", "subcult")
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return err
+	// Every file is read and checked before any is copied, so a file
+	// fontconfig cannot read never lands in the font directory and a
+	// different font is never replaced.
+	type imported struct {
+		target string
+		data   []byte
+		info   font.FontInfo
+		v      font.Verdict
 	}
-	var targets []string
+	var todo []imported
 	for _, f := range files {
 		data, err := os.ReadFile(f)
 		if err != nil {
 			return err
 		}
+		info, v, err := verdictOf(ctx, e, f)
+		if err != nil {
+			return fmt.Errorf("fontconfig cannot read %s (%v); nothing imported", f, err)
+		}
 		t := filepath.Join(dir, filepath.Base(f))
-		if err := writeAtomic(t, data); err != nil {
+		if old, err := os.ReadFile(t); err == nil && !bytes.Equal(old, data) {
+			return fmt.Errorf("%s already holds a different file; delete it or rename %s; nothing imported", t, f)
+		}
+		todo = append(todo, imported{t, data, info, v})
+	}
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
+	for _, im := range todo {
+		if err := writeAtomic(im.target, im.data); err != nil {
 			return err
 		}
-		targets = append(targets, t)
 	}
 	if err := e.runner.Run(ctx, "fc-cache", "-f"); err != nil {
 		return err
 	}
-	for _, t := range targets {
-		info, v, err := verdictOf(ctx, e, t)
-		if err != nil {
-			fmt.Fprintf(e.stdout, "%s: %v\n", filepath.Base(t), err)
-			continue
-		}
-		fmt.Fprintf(e.stdout, "%s: %s: %s\n", filepath.Base(t), info.Family, v)
+	for _, im := range todo {
+		fmt.Fprintf(e.stdout, "%s: %s: %s\n", filepath.Base(im.target), im.info.Family, im.v)
 	}
 	return nil
 }

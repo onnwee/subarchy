@@ -28,6 +28,7 @@ type fakeRunner struct {
 	calls   [][]string
 	outputs map[string]string
 	fail    map[string]bool
+	missing map[string]bool // commands Has reports absent
 	onRun   func(argv []string)
 }
 
@@ -64,7 +65,7 @@ func (f *fakeRunner) Output(_ context.Context, argv ...string) (string, error) {
 	return f.outputs[k], nil
 }
 
-func (f *fakeRunner) Has(string) bool { return true }
+func (f *fakeRunner) Has(name string) bool { return !f.missing[name] }
 
 func (f *fakeRunner) ran(prefix ...string) bool {
 	for _, c := range f.calls {
@@ -132,8 +133,10 @@ func TestSetWritesRoleAndRefreshes(t *testing.T) {
 func TestSetRefusesInterfaceOnlyForMonospace(t *testing.T) {
 	r := installedFont("Noto Sans", propLine)
 	e, _, _ := newEnv(t, r)
-	if code := run(context.Background(), []string{"set", "Noto Sans"}, e); code != 2 {
-		t.Fatalf("exit %d, want 2", code)
+	// A valid request the check turns down is a failure, not a usage
+	// mistake (#4 Phase B M7).
+	if code := run(context.Background(), []string{"set", "Noto Sans"}, e); code != 1 {
+		t.Fatalf("exit %d, want 1", code)
 	}
 	if _, err := os.Stat(confPath(e)); !os.IsNotExist(err) {
 		t.Error("role file written after a refusal")
@@ -312,7 +315,7 @@ func TestImportCopiesAndChecks(t *testing.T) {
 	r := &fakeRunner{outputs: map[string]string{}}
 	e, out, errb := newEnv(t, r)
 	target := filepath.Join(e.home, ".local", "share", "fonts", "subcult", "DankMono-Regular.otf")
-	r.outputs["fc-query -f "+font.FcQueryFormat+" "+target] = "Dank Mono\t100\t20-7e 2500-257f\n"
+	r.outputs["fc-query -f "+font.FcQueryFormat+" "+src] = "Dank Mono\t100\t20-7e 2500-257f\n"
 	if code := run(context.Background(), []string{"import", src}, e); code != 0 {
 		t.Fatalf("exit %d: %s", code, errb)
 	}
@@ -463,8 +466,125 @@ func TestSetRefusesAnUnreadableRoleFile(t *testing.T) {
 	if got, _ := os.ReadFile(confPath(e)); !bytes.Equal(got, broken) {
 		t.Errorf("role file changed: %q", got)
 	}
+	errb.Reset()
 	if code := run(context.Background(), []string{"current"}, e); code != 0 {
 		t.Errorf("current still works on a broken role file: exit %d", code)
+	}
+	if !strings.Contains(errb.String(), "showing the defaults") {
+		t.Errorf("current must say the role file is broken, stderr = %q", errb)
+	}
+}
+
+// A missing fontconfig tool is named, not reported as a missing font
+// (#4 Phase B M2).
+func TestMissingFontconfigIsNamed(t *testing.T) {
+	for _, cmd := range [][]string{{"current"}, {"set", "JetBrainsMono Nerd Font"}, {"check", "JetBrainsMono Nerd Font"}} {
+		r := installedFont("JetBrainsMono Nerd Font", nerdLine)
+		r.missing = map[string]bool{"fc-match": true}
+		e, out, errb := newEnv(t, r)
+		if code := run(context.Background(), cmd, e); code != 1 {
+			t.Errorf("%v: exit %d, want 1", cmd, code)
+		}
+		if !strings.Contains(errb.String(), "fc-match not found; install the fontconfig package") {
+			t.Errorf("%v: stderr = %q", cmd, errb)
+		}
+		if out.Len() != 0 || len(r.calls) != 0 {
+			t.Errorf("%v: printed %q and ran %v", cmd, out, r.calls)
+		}
+	}
+}
+
+// Family names are escaped in fontconfig patterns (#4 Phase B M3).
+func TestFacesEscapesThePattern(t *testing.T) {
+	r := &fakeRunner{outputs: map[string]string{
+		`fc-list -f %{file}\n Go\-Mono\, Bold\:x:`: "/f/g.ttf\n",
+	}}
+	e, _, _ := newEnv(t, r)
+	if got := faces(context.Background(), e, "Go-Mono, Bold:x"); len(got) != 1 {
+		t.Errorf("faces = %v, calls %v", got, r.calls)
+	}
+}
+
+// A file fontconfig cannot read is not copied, and nothing else from that
+// import is (#4 Phase B M5).
+func TestImportCopiesNothingWhenAFileIsUnreadable(t *testing.T) {
+	src := t.TempDir()
+	good := filepath.Join(src, "Good.otf")
+	bad := filepath.Join(src, "Bad.otf")
+	os.WriteFile(good, []byte("font"), 0o644)
+	os.WriteFile(bad, []byte("junk"), 0o644)
+	r := &fakeRunner{
+		outputs: map[string]string{"fc-query -f " + font.FcQueryFormat + " " + good: "Good\t100\t20-7e\n"},
+		fail:    map[string]bool{"fc-query -f " + font.FcQueryFormat + " " + bad: true},
+	}
+	e, _, errb := newEnv(t, r)
+	if code := run(context.Background(), []string{"import", good, bad}, e); code != 1 {
+		t.Fatalf("exit %d, want 1", code)
+	}
+	if !strings.Contains(errb.String(), "nothing imported") {
+		t.Errorf("stderr = %q", errb)
+	}
+	if _, err := os.Stat(filepath.Join(e.home, ".local", "share", "fonts", "subcult")); !os.IsNotExist(err) {
+		t.Errorf("font directory created or filled: %v", err)
+	}
+}
+
+func TestImportRefusesClashingNames(t *testing.T) {
+	a := filepath.Join(t.TempDir(), "Regular.otf")
+	b := filepath.Join(t.TempDir(), "Regular.otf")
+	os.WriteFile(a, []byte("a"), 0o644)
+	os.WriteFile(b, []byte("b"), 0o644)
+	line := "F\t100\t20-7e\n"
+	r := &fakeRunner{outputs: map[string]string{
+		"fc-query -f " + font.FcQueryFormat + " " + a: line,
+		"fc-query -f " + font.FcQueryFormat + " " + b: line,
+	}}
+	e, _, _ := newEnv(t, r)
+	if code := run(context.Background(), []string{"import", a, b}, e); code != 2 {
+		t.Fatalf("two files with one name: exit %d, want 2", code)
+	}
+	if code := run(context.Background(), []string{"import", a}, e); code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+	if code := run(context.Background(), []string{"import", a}, e); code != 0 {
+		t.Fatalf("importing the same file again: exit %d", code)
+	}
+	if code := run(context.Background(), []string{"import", b}, e); code != 1 {
+		t.Fatalf("a different file with the name of an imported one: exit %d, want 1", code)
+	}
+	target := filepath.Join(e.home, ".local", "share", "fonts", "subcult", "Regular.otf")
+	if got, _ := os.ReadFile(target); string(got) != "a" {
+		t.Errorf("imported file replaced: %q", got)
+	}
+}
+
+// A catalogue font that fontconfig knows counts as installed even when
+// pacman did not install it (#4 Phase B M6), and every Monaspace family
+// is listed (M9).
+func TestListUsesFontconfigAndShowsEveryMonaspaceFamily(t *testing.T) {
+	r := &fakeRunner{outputs: map[string]string{
+		"pacman -Qq":       "",
+		"fc-list : family": "Agave Nerd Font,Agave NF\nMonaspiceXe Nerd Font\n",
+	}}
+	e, out, _ := newEnv(t, r)
+	if code := run(context.Background(), []string{"list"}, e); code != 0 {
+		t.Fatalf("exit %d", code)
+	}
+	state := map[string]string{}
+	for _, line := range strings.Split(out.String(), "\n") {
+		for _, fam := range []string{"Agave Nerd Font", "MonaspiceNe Nerd Font", "MonaspiceXe Nerd Font", "MonaspiceAr Nerd Font"} {
+			if strings.Contains(line, fam+" ") {
+				f := strings.Fields(line)
+				state[fam] = f[len(f)-1]
+			}
+		}
+	}
+	want := map[string]string{"Agave Nerd Font": "installed", "MonaspiceXe Nerd Font": "installed",
+		"MonaspiceNe Nerd Font": "available", "MonaspiceAr Nerd Font": "available"}
+	for fam, w := range want {
+		if state[fam] != w {
+			t.Errorf("%s: %q, want %q\n%s", fam, state[fam], w, out)
+		}
 	}
 }
 

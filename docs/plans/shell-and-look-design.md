@@ -204,7 +204,7 @@ Sizes are pacman's installed sizes on 2026-11-07.
 | `subcult font current` | The family behind each role |
 | `subcult font set <family> [--ui \| --serif]` | Checks the font, installs it if needed, points the role's alias at it, sets kitty's `font_family` in the user layer and signals kitty; the shell watches the fontconfig file and repaints live. Without a flag it sets monospace; interface follows unless set separately |
 | `subcult font install <name>` | Any Nerd Fonts family: pacman when Arch packages it (through the privilege path, [[0062-privilege-policy\|ADR 0062]]), otherwise the official release archive, checked against the release's SHA-256 list and unpacked into `~/.local/share/fonts/nerd-fonts/` |
-| `subcult font import <files>` | Copies fonts the user owns (Dank Mono) into `~/.local/share/fonts/subcult/`, user-only, then runs `check` |
+| `subcult font import <files>` | Copies fonts the user owns (Dank Mono) into `~/.local/share/fonts/subcult/`, user-only, then runs `check`. It copies nothing when a file is not a font fontconfig reads, two files share a name, or a different file already has that name |
 | `subcult font check <family>` | Reports one of: full Nerd Font; works with fallback icons; interface text only (not monospace); breaks TUIs (no box drawing). Reads coverage with fontconfig and fontTools. `set` refuses the last two for the monospace role unless `--force` |
 | `subcult font patch <family>` | Opt-in. Runs Nerd Fonts' `font-patcher` (fetched at a pinned version, checksum-verified; needs `fontforge` from `extra`) and writes a separate "<family> Nerd Font" copy; the original is untouched. Warns that commercial licences may forbid modified copies |
 

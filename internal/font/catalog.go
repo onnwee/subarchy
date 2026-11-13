@@ -21,7 +21,13 @@ type Entry struct {
 	Package      string
 	Roles        []Role
 	Preinstalled bool
-	Source       string // "pacman", "aur" or "release"
+	Source       string   // "pacman", "aur" or "release"
+	Also         []string // other families the same package installs
+}
+
+// Families returns the entry's family and the others its package installs.
+func (e Entry) Families() []string {
+	return append([]string{e.Family}, e.Also...)
 }
 
 // Catalog is the owner's list (2026-11-07): seven preinstalled fonts, then
@@ -34,6 +40,9 @@ func Catalog() []Entry {
 	pick := func(family, pkg string, roles []Role, source string) Entry {
 		return Entry{Family: family, Package: pkg, Roles: roles, Source: source}
 	}
+	// otf-monaspace-nerd installs all five Monaspace families.
+	monaspace := pick("MonaspiceNe Nerd Font", "otf-monaspace-nerd", mono, "pacman")
+	monaspace.Also = []string{"MonaspiceAr Nerd Font", "MonaspiceKr Nerd Font", "MonaspiceRn Nerd Font", "MonaspiceXe Nerd Font"}
 	return []Entry{
 		pre("JetBrainsMono Nerd Font", "ttf-jetbrains-mono-nerd", mono),
 		pre("3270 Nerd Font", "ttf-3270-nerd", mono),
@@ -49,7 +58,7 @@ func Catalog() []Entry {
 		pick("CaskaydiaCove Nerd Font", "ttf-cascadia-code-nerd", mono, "pacman"),
 		pick("BlexMono Nerd Font", "ttf-ibmplex-mono-nerd", mono, "pacman"),
 		pick("VictorMono Nerd Font", "ttf-victor-mono-nerd", mono, "pacman"),
-		pick("MonaspiceNe Nerd Font", "otf-monaspace-nerd", mono, "pacman"),
+		monaspace,
 		pick("IosevkaTerm Nerd Font", "ttf-iosevkaterm-nerd", mono, "pacman"),
 		pick("OpenDyslexicM Nerd Font", "otf-opendyslexic-nerd", mono, "pacman"),
 		pick("Monofur Nerd Font Mono", "ttf-monofur-nerd", mono, "pacman"),
@@ -65,14 +74,30 @@ func Catalog() []Entry {
 	}
 }
 
-// Find looks a family up in the catalogue, ignoring case.
+// Find looks a family up in the catalogue, ignoring case. A family that
+// an entry's package also installs finds that entry.
 func Find(family string) (Entry, bool) {
 	for _, e := range Catalog() {
-		if strings.EqualFold(e.Family, family) {
-			return e, true
+		for _, f := range e.Families() {
+			if strings.EqualFold(f, family) {
+				return e, true
+			}
 		}
 	}
 	return Entry{}, false
+}
+
+// FcPattern is a fontconfig pattern that matches the family by name.
+// Backslash, '-', ':' and ',' are pattern syntax, so they are escaped.
+func FcPattern(family string) string {
+	var b strings.Builder
+	for _, r := range family {
+		if strings.ContainsRune(`\-:,`, r) {
+			b.WriteByte('\\')
+		}
+		b.WriteRune(r)
+	}
+	return b.String() + ":"
 }
 
 // NerdFontsVersion is the Nerd Fonts release `install` and `patch` use.
