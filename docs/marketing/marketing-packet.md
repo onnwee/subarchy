@@ -65,7 +65,8 @@ behind each fact is listed in `site/README.md`.
 > No release yet. If you want to look, build the ISO and put it in a VM.
 > subarchy.subcult.tv
 
-Hold this until the site is deployed and its address answers.
+The site answers at subarchy.subcult.tv since 2026-11-13, so the address
+in this draft is real. The post itself is still not approved.
 [C-SUBARCHY-02, 03]
 
 ## Demo brief
@@ -96,7 +97,8 @@ demo is recorded, and issues are answered on GitHub. No paid promotion.
 
 ## Open
 
-- The site is built but not deployed.
+- The site is live at <https://subarchy.subcult.tv> (deployed 2026-11-13
+  from `994d7fc`). A later change to `site/` needs a redeploy.
 - No post has been drafted for a specific channel; use `social-craft` in
   `subcult-tv` for that.
 

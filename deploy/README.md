@@ -1,7 +1,8 @@
 # deploy
 
 Files that serve [site/](../site/) at <https://subarchy.subcult.tv>, modelled
-on Pult's. The site is not deployed yet.
+on Pult's. The site has been live since 2026-11-13, first from commit
+`994d7fc`.
 
 | File | Does |
 |---|---|
@@ -17,6 +18,9 @@ docker build -f deploy/Dockerfile -t subarchy-site:local .
 docker run --rm -p 127.0.0.1:18792:8080 subarchy-site:local
 ```
 
-Deploying changes the shared Caddy on the edge host, so it is done by hand
-with the owner's approval, following the Pult website deployment report in
-the operations vault.
+Deploying is done by hand with the owner's approval: build the image on
+the edge host from a `git archive` of the commit, start it with
+`compose.yml`, and check that every served file matches the commit by
+hash. The route in the shared Caddy is already in place, so a redeploy
+only replaces the container. The operations vault has the dated report
+and the rollback.

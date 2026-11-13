@@ -80,7 +80,8 @@ This was not a formal trademark search.
   review rounds in `subcult-tv` (`studio/studies/subarchy-directions`): the
   SUBARCHY wordmark and an SA_ mark in the Bloody block font, acid with paper
   highlights, and Departure Mono as the brand's face. The pack is
-  `studio/brands/subarchy`; the site in `site/` is the first use. The table
+  `studio/brands/subarchy`; the site in `site/` is the first use, live at
+  `subarchy.subcult.tv` since the same day. The table
   above is unchanged: the installer, boot, login and lock screens still show
   the SUBCULT mark until the owner decides whether they switch.
 
