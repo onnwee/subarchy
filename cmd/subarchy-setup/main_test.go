@@ -213,16 +213,23 @@ func TestDiskContentsAndBrowse(t *testing.T) {
  {"name":"vdb","path":"/dev/vdb","size":64424509440,"type":"disk","model":"data","tran":null,"ro":false}]}`), nil
 	}
 	var looked []string
-	e.browse = func(d setup.Disk) error { looked = append(looked, d.Path); return nil }
+	var opens []bool
+	e.browse = func(d setup.Disk, show func(opened, closed []string) bool) error {
+		looked = append(looked, d.Path)
+		opens = append(opens, show([]string{d.Parts[0].String()}, []string{d.Parts[1].String() + ", " + d.Parts[1].Closed()}))
+		return nil
+	}
 	var out bytes.Buffer
-	in := "\nlook 1\n2\n\npat\nsecret-one\nsecret-one\n\n\ny\n"
+	// "look 1", Return to open the file manager, then disk 2.
+	in := "\nlook 1\n\n2\n\npat\nsecret-one\nsecret-one\n\n\ny\n"
 	if code := run([]string{"--dir", t.TempDir(), "--dry-run"}, strings.NewReader(in), &out, e, nil, nil); code != 0 {
 		t.Fatalf("exit %d:\n%s", code, out.String())
 	}
-	if len(looked) != 1 || looked[0] != "/dev/vda" {
-		t.Errorf("browsed %v", looked)
+	if len(looked) != 1 || looked[0] != "/dev/vda" || !opens[0] {
+		t.Errorf("browsed %v, opened %v", looked, opens)
 	}
-	for _, want := range []string{`/dev/vda1  524 MB  vfat "EFI"`, "/dev/vda2  25 GB  encrypted (LUKS)", "empty: no partitions"} {
+	for _, want := range []string{`/dev/vda1  524 MB  vfat "EFI"`, "/dev/vda2  25 GB  encrypted (LUKS)", "empty: no partitions",
+		"Browsing /dev/vda read-only", "Not opened:", "/dev/vda2  25 GB  encrypted (LUKS), left locked", "Esc and then 0", "Open the file manager"} {
 		if !strings.Contains(out.String(), want) {
 			t.Errorf("output lacks %q:\n%s", want, out.String())
 		}
@@ -260,5 +267,55 @@ func TestFinishAndFailureScreens(t *testing.T) {
 	}
 	if elapsed(192*time.Second) != "3m 12s" {
 		t.Errorf("elapsed = %q", elapsed(192*time.Second))
+	}
+}
+
+// The browse names what it opens and what it leaves closed, says how to
+// leave the file manager without F10, and runs mc with no subshell, no
+// command line and both panels on the browse root.
+func TestLookPageAndCommand(t *testing.T) {
+	title, body := lookPage("/dev/nvme0n1", []string{`/dev/nvme0n1p1  4 GB  vfat "EFI"`},
+		[]string{`/dev/nvme0n1p2  996 GB  encrypted (LUKS) "subarchy-luks", left locked`})
+	text := title + "\n" + strings.Join(body, "\n")
+	for _, want := range []string{"Browsing /dev/nvme0n1 read-only", "Opened read-only", `  /dev/nvme0n1p1  4 GB  vfat "EFI"`,
+		"Not opened:", `  /dev/nvme0n1p2  996 GB  encrypted (LUKS) "subarchy-luks", left locked`, "press q, or Esc and then 0, or F10"} {
+		if !strings.Contains(text, want) {
+			t.Errorf("page lacks %q:\n%s", want, text)
+		}
+	}
+	title, body = lookPage("/dev/vda", nil, []string{"/dev/vda1  1 GB  swap, holds no files"})
+	if title != "Nothing on /dev/vda can be opened read-only." || strings.Contains(strings.Join(body, "\n"), "come back") {
+		t.Errorf("nothing-opened page: %q %q", title, body)
+	}
+	if title, body = lookPage("/dev/vda", nil, nil); !strings.HasPrefix(title, "Nothing on") || body[0] != "It has no partitions." {
+		t.Errorf("empty-disk page: %q %q", title, body)
+	}
+
+	dir := t.TempDir()
+	if err := writeLookProfile(dir); err != nil {
+		t.Fatal(err)
+	}
+	read := func(name string) string {
+		data, err := os.ReadFile(filepath.Join(dir, ".config", "mc", name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(data)
+	}
+	if ini := read("ini"); !strings.Contains(ini, "[Layout]\ncommand_prompt=false\n") || !strings.Contains(ini, "skin=nicedark\n") {
+		t.Errorf("ini:\n%s", ini)
+	}
+	if km := read("mc.keymap"); !strings.Contains(km, "[filemanager]\nQuit = f10; q\nShell =\n") || !strings.Contains(km, "[panel]\nQuit = q\n") {
+		t.Errorf("keymap:\n%s", km)
+	}
+	if menu := read("menu"); menu != "" {
+		t.Errorf("user menu = %q", menu)
+	}
+	cmd := lookCommand("/run/subarchy-look", dir)
+	if got := strings.Join(cmd.Args, " "); got != "mc --nosubshell /run/subarchy-look /run/subarchy-look" {
+		t.Errorf("args = %q", got)
+	}
+	if env := cmd.Env; len(env) == 0 || env[len(env)-1] != "MC_PROFILE_ROOT="+dir {
+		t.Errorf("env = %q", env)
 	}
 }

@@ -4,7 +4,7 @@ type: decision
 status: accepted
 adr: 49
 created: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-12
 tags: [decision, adr, delivery]
 aliases: [ADR 0049, R2, Installer, ISO]
 ---
@@ -104,5 +104,10 @@ Decision map item R2. Accepted 2026-11-06.
   and a rotating tip replace the raw output, which stays in the log. A
   language screen sets the installed system's locale; the installer's own
   text stays English.
+- 2026-11-12: before the read-only browse opens, a page lists the
+  partitions it opened, the ones it left closed and why, and how to come
+  back: q, or Esc then 0, since F10 is a media key on many laptops. `mc`
+  opens both panels on the disk and runs with no subshell and no command
+  line, so typed text no longer runs as a root command.
 
 Related: [[decision-map|Decision map]] · [[0050-hardware-support|ADR 0050]]
