@@ -414,6 +414,12 @@ EOF
   sed -i 's/^hosts: mymachines resolve/hosts: mymachines mdns_minimal [NOTFOUND=return] resolve/' \
     "$target/etc/nsswitch.conf"
   # ufw: deny incoming, allow outgoing (its defaults), on at boot (ADR 0019).
+  # LocalSend finds and receives from other devices on 53317 (ADR 0019,
+  # 0056). ufw is still off here, so it only writes the rules to its files.
+  if [[ -e $target/usr/bin/localsend ]]; then
+    arch-chroot "$target" ufw allow 53317/tcp comment LocalSend >/dev/null
+    arch-chroot "$target" ufw allow 53317/udp comment LocalSend >/dev/null
+  fi
   sed -i 's/^ENABLED=no/ENABLED=yes/' "$target/etc/ufw/ufw.conf"
 
   local user=${conf[USERNAME]}

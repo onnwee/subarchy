@@ -4,7 +4,7 @@ type: decision
 status: accepted
 adr: 25
 created: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-13
 tags: [decision, adr, packages]
 aliases: [ADR 0025, P1, Package repository]
 ---
@@ -78,5 +78,12 @@ keyring release.
   and the installer run `pacman-key --populate subarchy`, so a system is
   ready for `SigLevel = Required` on the `[subarchy]` repository the moment
   packages are published there (#67).
+- 2026-11-13: the app list's AUR apps joined `packaging/aur/`, pinned and
+  built in a clean container: `cliamp`, `localsend-bin`, `voxtype-bin`,
+  `ttfx`, `proton-mail-bin`, `proton-pass-cli`, `proton-authenticator-bin`
+  and `proton-drive-cli-bin`. The install lists name them, so new installs
+  get them. `claude-code` and `proton-pass-bin` are over the registry's
+  100 MB upload limit and are added after their files are uploaded through
+  the origin ([[package-publishing|Package publishing]]).
 
 Related: [[decision-map|Decision map]] · [[0026-update-model|ADR 0026]] · [[0027-third-party-software|ADR 0027]]

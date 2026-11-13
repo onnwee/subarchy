@@ -4,7 +4,7 @@ type: decision
 status: accepted
 adr: 19
 created: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-13
 tags: [decision, adr, system, security]
 aliases: [ADR 0019, S6, Firewall]
 ---
@@ -37,5 +37,11 @@ Docker itself is decided in [[0055-containers|ADR 0055]].
 - Rules for apps Subarchy ships (LocalSend if kept, KDE Connect or similar)
   are added by those apps' install steps.
 - No per-network zones: the same rules apply at home and on public Wi-Fi.
+
+## Progress
+
+- 2026-11-13: LocalSend is preinstalled, so the installer adds
+  `53317/tcp` and `53317/udp` (comment `LocalSend`) before it turns ufw
+  on; the VM install test checks `ufw status` for both.
 
 Related: [[decision-map|Decision map]] · [[0016-networking|ADR 0016]]

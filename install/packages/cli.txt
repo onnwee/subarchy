@@ -64,3 +64,9 @@ tailscale
 # Coding agents with a terminal interface (app list, "AI and development")
 openai-codex
 opencode
+
+# Rebuilt in Subarchy's repository (packaging/aur): the terminal music
+# player (app list, "Music and video") and the terminal text effects the
+# screensaver loops are recorded from (ADR 0036, 0056)
+cliamp
+ttfx

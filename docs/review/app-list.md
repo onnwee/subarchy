@@ -4,7 +4,7 @@ type: review
 status: draft
 review: pending
 created: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-13
 tags: [review, apps]
 aliases: [Default apps list, App catalogue]
 ---
@@ -157,7 +157,7 @@ still work ([[0028-developer-toolchains|ADR 0028]]).
 | Media | `yt-dlp`, `ffmpeg`, `imagemagick` |
 | Disk usage | `dust`, `duf` |
 | Containers | `docker`, `docker-compose`, `docker-buildx` ([[0055-containers\|ADR 0055]]) |
-| Quality-of-life tools ([[0056-quality-of-life\|ADR 0056]]) | `wtype`, `hyprpicker`, `hyprsunset`, `tesseract`, `tesseract-data-eng`, `zbar`, `qrencode`, `udiskie`, `ddcutil`, `gcr-4`, `pacman-contrib`, `localsend` (AUR), `voxtype-bin` (AUR), `ttfx` (AUR) |
+| Quality-of-life tools ([[0056-quality-of-life\|ADR 0056]]) | `wtype`, `hyprpicker`, `hyprsunset`, `tesseract`, `tesseract-data-eng`, `zbar`, `qrencode`, `udiskie`, `ddcutil`, `gcr-4`, `pacman-contrib`, `localsend-bin` (AUR; upstream's `.deb`, the source build needs a Flutter SDK download), `voxtype-bin` (AUR), `ttfx` (AUR) |
 | Networking | `tailscale` ([[0058-tailscale\|ADR 0058]]) |
 | Agent desktop control | `ydotool`, `grim`, `wtype`, `wl-clipboard`, `at-spi2-core`, and Subarchy's MCP server ([[0059-agent-desktop-control\|ADR 0059]]) |
 
@@ -174,6 +174,21 @@ Installed automatically with Chromium ([[0042-browser|ADR 0042]]).
 |---|---|---|
 | Claude | `fcoeoabgfenejglbffodgkkbkcdhcgfn` | Anthropic; paid Claude plan |
 | ChatGPT (Codex browser control) | `hehggadaopoacecdllhhajmbjkdcmajg` | OpenAI; browser control needs the ChatGPT/Codex desktop app. On `sputnik` that is `openai-codex-desktop`, which only `[omarchy]` carries; the AUR has `chatgpt-desktop`. Not on the app list yet |
+
+### Rebuilt AUR apps on new installs (2026-11-13)
+
+`cliamp`, `ttfx`, `voxtype-bin`, `localsend-bin` and the Proton apps
+(`proton-mail-bin`, `proton-pass-cli`, `proton-authenticator-bin`,
+`proton-drive-cli-bin`, with Proton VPN from `extra`) are pinned rebuilds
+in `packaging/aur/` and are in `install/packages/cli.txt` and
+`desktop.txt`, so every new install has them. The installer opens
+LocalSend's port 53317 in ufw. Proton Mail Bridge (`protonmail-bridge`, in
+`extra`) stays out: the Proton Mail desktop app replaces it.
+
+`claude-code` and the Proton Pass desktop app (`proton-pass-bin`) follow
+in their own pull requests: both packages are over the registry's 100 MB
+upload limit, and preinstalling Claude Code needs the owner's decision on
+Anthropic's Commercial Terms of Service ([[0053-licence|ADR 0053]]).
 
 ## Web apps
 

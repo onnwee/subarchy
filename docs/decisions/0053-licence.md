@@ -4,7 +4,7 @@ type: decision
 status: accepted
 adr: 53
 created: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-13
 tags: [decision, adr, legal]
 aliases: [ADR 0053, R5, Licence, GPL]
 ---
@@ -57,5 +57,20 @@ public.
 - GPL-3.0 plugin code such as Obsidian's Advanced Tables could now be
   committed, but the vault still installs plugins from pinned releases to keep
   third-party code out of the repository.
+
+## Progress
+
+- 2026-11-13: the app-list packages Subarchy now rebuilds into its
+  repository (`packaging/aur/`) carry these licences, to check at the
+  release gate:
+
+  | Package | Licence | Note |
+  |---|---|---|
+  | `proton-mail-bin`, `proton-pass-cli`, `proton-authenticator-bin` | GPL-3.0-or-later |  |
+  | `proton-drive-cli-bin`, `cliamp`, `ttfx`, `voxtype-bin` | MIT | `voxtype-bin` ships no models; the user downloads one |
+  | `localsend-bin` | Apache-2.0 |  |
+
+  `displaylink` and the NVIDIA 580xx packages carry their vendors' own
+  licences (`custom`); their redistribution terms also need checking.
 
 Related: [[decision-map|Decision map]] · [[0052-name-identity|ADR 0052]]

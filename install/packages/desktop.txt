@@ -62,3 +62,19 @@ ttf-liberation
 noto-fonts
 noto-fonts-cjk
 noto-fonts-emoji
+
+# Dictation and file sharing (ADR 0056), rebuilt in Subarchy's repository
+# (packaging/aur). Neither runs in the background until the user starts
+# it: voxtype's user service is not enabled, and LocalSend listens only
+# while the app runs. The installer opens LocalSend's port 53317 in ufw.
+voxtype-bin
+localsend-bin
+
+# Proton (app list: preinstall everything from Proton). Proton VPN comes
+# from Arch's extra; the rest are rebuilt in Subarchy's repository.
+proton-mail-bin
+proton-pass-cli
+proton-vpn-gtk-app
+proton-vpn-cli
+proton-authenticator-bin
+proton-drive-cli-bin

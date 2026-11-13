@@ -120,7 +120,7 @@ What it builds:
 | Containers | Docker with compose and buildx; `docker.socket` enabled so the daemon starts on demand; the user is not in the `docker` group (`sudo subcult docker sudoless` grants it behind a warning); `ufw-docker` rules added at first boot by `subcult-ufw-docker.service` | 0055, 0019 |
 | Tailscale | `tailscale` installed, `tailscaled` enabled; nobody is signed in until the user runs `sudo tailscale up` | 0058 |
 | Shell setup | the user's `~/.zshrc` and `~/.bashrc` source `/usr/share/subcult/default/shell/zshrc` and `bashrc`: aliases, functions, starship with Subarchy's prompt, atuin (Ctrl-R), zoxide, fzf keys, mise | 0041 |
-| Services | ufw (incoming denied), AppArmor, systemd-resolved with Quad9 DoT, Avahi, power-profiles-daemon, thermald on Intel, BlueZ, Plymouth | 0013, 0018-0021, 0063 |
+| Services | ufw (incoming denied; LocalSend's 53317 tcp and udp open), AppArmor, systemd-resolved with Quad9 DoT, Avahi, power-profiles-daemon, thermald on Intel, BlueZ, Plymouth | 0013, 0018-0021, 0063 |
 | Command-line tools | `packages/cli.txt`: the app list's command-line and terminal apps (shell tools, starship, atuin, btop, yazi, lazygit, tmux, forge clients, media tools, Codex and OpenCode) | 0041, 0044 |
 | Desktop | `packages/desktop.txt`: SDDM, Hyprland under uwsm, portals, PipeWire, kitty, fonts; the user's `~/.config/hypr/hyprland.lua` | 0017, 0029-0033, 0040 |
 | Boot entries | firmware entries named Limine or Subarchy whose partition no longer exists (left by an earlier install on a disk since wiped) are removed; other systems' entries are not touched | 0007 |
