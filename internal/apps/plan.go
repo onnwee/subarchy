@@ -39,15 +39,6 @@ var mimeTypes = map[string][]string{
 	},
 }
 
-// MIMETypes returns the MIME types the default picker sets for role.
-func MIMETypes(role string) []string { return mimeTypes[role] }
-
-// InstallPlan returns the steps that install a. Web apps need the user's
-// folders: see InstallPlanAt.
-func InstallPlan(a App) ([]Step, error) {
-	return InstallPlanAt(a, Paths{})
-}
-
 // InstallPlanAt returns the steps that install a, with web apps written
 // into p.Applications.
 func InstallPlanAt(a App, p Paths) ([]Step, error) {
@@ -67,11 +58,6 @@ func InstallPlanAt(a App, p Paths) ([]Step, error) {
 	default:
 		return nil, fmt.Errorf("%s: installing %s apps is not supported yet", a.ID, a.Source)
 	}
-}
-
-// RemovePlan returns the steps that remove a. Web apps: see RemovePlanAt.
-func RemovePlan(a App) ([]Step, error) {
-	return RemovePlanAt(a, Paths{})
 }
 
 // RemovePlanAt returns the steps that remove a, web apps from p.Applications.

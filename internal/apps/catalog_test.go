@@ -178,14 +178,35 @@ func TestLoadErrors(t *testing.T) {
 		{"mime default without desktop", strings.Replace(systemTOML, `desktop = "zen.desktop"`, ``, 1), "", "", "needs a desktop file"},
 		{"bad id", strings.Replace(systemTOML, `id = "kitty"`, `id = "Kitty"`, 1), "", "", "lowercase"},
 		{"remove unknown", systemTOML, "schema = 1\n[[app]]\nid = \"nope\"\nremove = true\n", "", "no such app"},
-		{"choice unknown app", systemTOML, "", "[default]\nbrowser = \"lynx\"\n", "no such app"},
-		{"choice wrong role", systemTOML, "", "[default]\nbrowser = \"kitty\"\n", "does not have that role"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := load(t, tt.system, tt.user, tt.defaults)
 			if err == nil || !strings.Contains(err.Error(), tt.want) {
 				t.Fatalf("err = %v, want it to contain %q", err, tt.want)
+			}
+		})
+	}
+}
+
+// A defaults.toml choice whose app is gone or lost the role must not break
+// Load: the catalogue default stays and the choice becomes a warning.
+func TestStaleChoiceFallsBack(t *testing.T) {
+	tests := []struct{ name, defaults, want string }{
+		{"choice unknown app", "[default]\nbrowser = \"lynx\"\n", "no such app"},
+		{"choice wrong role", "[default]\nbrowser = \"kitty\"\n", "does not have that role"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c, err := load(t, systemTOML, "", tt.defaults)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := defaultID(c, "browser"); got != "zen" {
+				t.Errorf("browser default = %q, want the catalogue's zen", got)
+			}
+			if len(c.Warnings) != 1 || !strings.Contains(c.Warnings[0], tt.want) {
+				t.Errorf("warnings = %q, want one containing %q", c.Warnings, tt.want)
 			}
 		})
 	}

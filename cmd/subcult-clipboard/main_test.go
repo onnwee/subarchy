@@ -168,6 +168,59 @@ func TestListCopyShowRemoveClear(t *testing.T) {
 	}
 }
 
+// A history.json that does not parse must not stop recording, and clear
+// must still drop it.
+func TestCorruptHistoryRecovers(t *testing.T) {
+	f := &fake{types: "image/png\n", content: "PNG"}
+	a, out := newApp(t, f)
+	if err := os.MkdirAll(a.dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	history := filepath.Join(a.dir, "history.json")
+	if err := os.WriteFile(history, []byte(`{"schema": 1, "entries": [`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	stale := filepath.Join(a.dir, "old.png")
+	if err := os.WriteFile(stale, []byte("PNG"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if code := a.run([]string{"store"}); code != 0 {
+		t.Fatalf("store on a corrupt history: exit %d", code)
+	}
+	es := entries(t, a)
+	if len(es) != 1 || es[0].Kind != "image" {
+		t.Fatalf("entries %+v", es)
+	}
+	if _, err := os.Stat(filepath.Join(a.dir, es[0].File)); err != nil {
+		t.Errorf("the new image was removed: %v", err)
+	}
+	if _, err := os.Stat(stale); !os.IsNotExist(err) {
+		t.Errorf("an image the lost history listed was kept: %v", err)
+	}
+	if err := os.WriteFile(history, []byte("not json"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	keep := filepath.Join(a.dir, "notes.txt")
+	if err := os.WriteFile(keep, []byte("keep"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if code := a.run([]string{"clear"}); code != 0 || !strings.Contains(out.String(), "unreadable") {
+		t.Fatalf("clear on a corrupt history: exit %d, %s", code, out)
+	}
+	if left, _ := filepath.Glob(filepath.Join(a.dir, "*.png")); len(left) != 0 {
+		t.Errorf("images left behind: %v", left)
+	}
+	if _, err := os.Stat(history); !os.IsNotExist(err) {
+		t.Errorf("history.json left behind: %v", err)
+	}
+	if _, err := os.Stat(keep); err != nil {
+		t.Errorf("clear removed a file store did not write: %v", err)
+	}
+	if code := a.run([]string{"list"}); code != 0 {
+		t.Errorf("list after clear: exit %d", code)
+	}
+}
+
 func TestWatch(t *testing.T) {
 	a, _ := newApp(t, &fake{})
 	var ran []string

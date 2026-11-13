@@ -30,7 +30,7 @@ var routes = []dispatch.Described{
 		Args:    "[--quiet]", Hidden: true, RequiresSudo: true}},
 }
 
-// selfPath is what sudo re-runs for the root steps (and what sudoers names).
+// selfPath is what sudo re-runs for the root steps.
 const selfPath = "/usr/bin/subcult-channel"
 
 type app struct {

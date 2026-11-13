@@ -31,11 +31,11 @@ func TestInstallAndRemovePlans(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(string(tt.app.Source), func(t *testing.T) {
-			in, err := InstallPlan(tt.app)
+			in, err := InstallPlanAt(tt.app, Paths{})
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("install err = %v", err)
 			}
-			rm, err := RemovePlan(tt.app)
+			rm, err := RemovePlanAt(tt.app, Paths{})
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("remove err = %v", err)
 			}
@@ -76,7 +76,7 @@ func TestDefaultPlan(t *testing.T) {
 	if _, err := DefaultPlan("pdf-viewer", noDesktop, "/c"); err == nil {
 		t.Error("pdf-viewer without desktop should fail")
 	}
-	if got := MIMETypes("pdf-viewer"); len(got) != 1 || got[0] != "application/pdf" {
-		t.Errorf("MIMETypes = %v", got)
+	if got := mimeTypes["pdf-viewer"]; len(got) != 1 || got[0] != "application/pdf" {
+		t.Errorf("mimeTypes = %v", got)
 	}
 }

@@ -13,6 +13,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"git.subcult.tv/subculture-collective/subarchy/internal/atomicfile"
 )
 
 const (
@@ -182,12 +184,5 @@ func pointIncludes(path string) error {
 }
 
 func write(path, content string) error {
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
-	}
-	tmp := path + ".subcult-tmp"
-	if err := os.WriteFile(tmp, []byte(content), 0o644); err != nil {
-		return err
-	}
-	return os.Rename(tmp, path)
+	return atomicfile.Write(path, []byte(content), 0o644)
 }

@@ -22,10 +22,7 @@ const feed = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:a@x\r\nSUMMA
 	"BEGIN:VEVENT\r\nUID:d@x\r\nSUMMARY:No start\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
 
 func TestParseICS(t *testing.T) {
-	events, err := parseICS(feed, chicago)
-	if err != nil {
-		t.Fatal(err)
-	}
+	events := parseICS(feed, chicago)
 	if len(events) != 4 {
 		t.Fatalf("got %d events: %+v", len(events), events)
 	}
@@ -45,7 +42,7 @@ func TestParseICS(t *testing.T) {
 }
 
 func TestOccurrences(t *testing.T) {
-	events, _ := parseICS(feed, chicago)
+	events := parseICS(feed, chicago)
 	now := time.Date(2026, 11, 7, 12, 0, 0, 0, chicago)
 	occ := Occurrences("work", events, DefaultWindow(now))
 	var weekly []string
@@ -325,9 +322,9 @@ func TestDurationPropertyOrder(t *testing.T) {
 		"DTEND:20261108T130000Z\nDURATION:PT2H\n" + start,
 	} {
 		t.Run(properties, func(t *testing.T) {
-			events, err := parseICS("BEGIN:VEVENT\nUID:order\n"+properties+"END:VEVENT\n", time.UTC)
-			if err != nil || len(events) != 1 {
-				t.Fatalf("parse: %+v %v", events, err)
+			events := parseICS("BEGIN:VEVENT\nUID:order\n"+properties+"END:VEVENT\n", time.UTC)
+			if len(events) != 1 {
+				t.Fatalf("parse: %+v", events)
 			}
 			if got := events[0].end.Sub(events[0].start); got != time.Hour {
 				t.Fatalf("duration: got %v, want 1h", got)

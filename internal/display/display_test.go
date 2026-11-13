@@ -79,13 +79,40 @@ func TestCaptureAndPlan(t *testing.T) {
 	if !strings.Contains(moves[0], `workspace = "1", monitor = "DP-2"`) {
 		t.Errorf("workspace 1 goes with the LG: %s", moves[0])
 	}
-	// The two ONNs share a description: the first saved (DP-2, landscape)
-	// maps to the first connected by name (now DP-3), the second to DVI-I-1.
+	// The two ONNs share a description: the portrait one is still on its
+	// saved connector, DVI-I-1; the landscape one's DP-2 is now the LG, so
+	// it takes the ONN left over, DP-3.
 	if !strings.Contains(evals[2], `output = "DP-3"`) || !strings.Contains(evals[2], `transform = 0`) || !strings.Contains(evals[3], `output = "DVI-I-1"`) || !strings.Contains(evals[3], `transform = 1`) {
 		t.Errorf("identical monitors map in name order: %s | %s", evals[2], evals[3])
 	}
 	if !strings.Contains(evals[0], `output = "eDP-1"`) || !strings.Contains(evals[0], `scale = 1.6`) {
 		t.Errorf("panel: %s", evals[0])
+	}
+}
+
+// Identical monitors (issue #98) go back to the connectors they were saved
+// on. "DP-10" sorts before "DP-9", so connector-name order alone would swap
+// these two. A profile saved before connectors were recorded keeps
+// connector-name order.
+func TestPlanIdenticalMonitorsByConnector(t *testing.T) {
+	ms := []Monitor{
+		{Name: "DP-9", Description: "ONN 100002487", Width: 1920, Height: 1080, RefreshRate: 60, Transform: 1},
+		{Name: "DP-10", Description: "ONN 100002487", Width: 1920, Height: 1080, RefreshRate: 60, X: 1080},
+	}
+	p := Capture("pair", ms, nil)
+	if p.Monitors[0].Connector != "DP-9" || p.Monitors[1].Connector != "DP-10" {
+		t.Fatalf("capture records the connectors: %+v", p.Monitors)
+	}
+	steps, _ := Plan(p, ms)
+	if !strings.Contains(steps[0].Lua, `output = "DP-9"`) || !strings.Contains(steps[0].Lua, `transform = 1`) || !strings.Contains(steps[1].Lua, `output = "DP-10"`) {
+		t.Errorf("each layout returns to its connector: %s | %s", steps[0].Lua, steps[1].Lua)
+	}
+	for i := range p.Monitors {
+		p.Monitors[i].Connector = ""
+	}
+	steps, _ = Plan(p, ms)
+	if !strings.Contains(steps[0].Lua, `output = "DP-10"`) || !strings.Contains(steps[1].Lua, `output = "DP-9"`) {
+		t.Errorf("an old profile keeps connector-name order: %s | %s", steps[0].Lua, steps[1].Lua)
 	}
 }
 

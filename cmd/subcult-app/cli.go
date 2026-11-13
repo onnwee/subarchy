@@ -119,6 +119,7 @@ func (c *cli) main(args []string) int {
 	if err != nil {
 		return c.fail(err)
 	}
+	c.warn(cat)
 	switch sub {
 	case "list":
 		return c.list(cat, o)
@@ -153,6 +154,9 @@ func (c *cli) webapp(paths apps.Paths, o options) int {
 			return c.usageError(errors.New("webapp install needs a name and a URL"))
 		}
 		steps, err = apps.WebappPlan(paths.Applications, paths.Icons, o.args[1], o.args[2], o.icon)
+		if errors.Is(err, apps.ErrIconFormat) {
+			return c.usageError(err)
+		}
 	case "remove":
 		if len(o.args) != 2 {
 			return c.usageError(errors.New("webapp remove needs a name"))
@@ -197,6 +201,13 @@ func (c *cli) fail(err error) int {
 	return 1
 }
 
+// warn prints the catalogue's skipped defaults.toml choices to stderr.
+func (c *cli) warn(cat *apps.Catalog) {
+	for _, w := range cat.Warnings {
+		fmt.Fprintf(c.stderr, "subcult app: warning: %s\n", w)
+	}
+}
+
 func (c *cli) validate(o options) int {
 	if len(o.args) > 1 {
 		return c.usageError(errors.New("validate takes at most one file"))
@@ -217,6 +228,7 @@ func (c *cli) validate(o options) int {
 	if err != nil {
 		return c.fail(err)
 	}
+	c.warn(cat)
 	fmt.Fprintf(c.stdout, "catalogue ok: %d apps, %d roles\n", len(cat.Apps()), len(cat.Roles()))
 	return 0
 }

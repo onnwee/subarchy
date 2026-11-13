@@ -1,11 +1,12 @@
 // Package display saves and applies monitor layouts (rice port: dock and
 // monitor profiles). A profile records the connected monitors by their
-// description (make, model, serial), never by connector, and which
-// workspaces live on each. `subcult display watch` reacts to Hyprland's
-// monitor events (no polling) and applies the profile for the connected
-// set after a short debounce; `subcult display profile apply` does it by
-// hand. Changes go through `hyprctl eval` (monitor rules) and
-// `hyprctl dispatch` (workspace moves), the same Lua Hyprland's config uses.
+// description (make, model, serial) and which workspaces live on each. The
+// connector is kept only to tell identical monitors apart.
+// `subcult display watch` reacts to Hyprland's monitor events (no polling)
+// and applies the profile for the connected set after a short debounce;
+// `subcult display profile apply` does it by hand. Changes go through
+// `hyprctl eval` (monitor rules) and `hyprctl dispatch` (workspace moves),
+// the same Lua Hyprland's config uses.
 package display
 
 import (
@@ -17,6 +18,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"git.subcult.tv/subculture-collective/subarchy/internal/atomicfile"
 )
 
 // Monitor is what `hyprctl monitors all -j` reports, the parts kept.
@@ -99,7 +102,8 @@ func sameIdentity(a, b []string) bool {
 // ProfileMonitor is one monitor's saved layout.
 type ProfileMonitor struct {
 	Description string  `json:"description"`
-	Mode        string  `json:"mode"` // "2560x1440@144"
+	Connector   string  `json:"connector,omitempty"` // tells identical monitors apart
+	Mode        string  `json:"mode"`                // "2560x1440@144"
 	Position    string  `json:"position"`
 	Scale       float64 `json:"scale"`
 	Transform   int     `json:"transform"`
@@ -150,19 +154,7 @@ func Save(path string, s Store) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return err
 	}
-	tmp, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+"-*")
-	if err != nil {
-		return err
-	}
-	defer os.Remove(tmp.Name())
-	if _, err := tmp.Write(append(raw, '\n')); err != nil {
-		tmp.Close()
-		return err
-	}
-	if err := tmp.Close(); err != nil {
-		return err
-	}
-	return os.Rename(tmp.Name(), path)
+	return atomicfile.Write(path, append(raw, '\n'), 0o600)
 }
 
 // Capture makes a profile from the live monitors and workspaces.
@@ -174,6 +166,7 @@ func Capture(name string, monitors []Monitor, workspaces []Workspace) Profile {
 		}
 		pm := ProfileMonitor{
 			Description: m.Description,
+			Connector:   m.Name,
 			Mode:        fmt.Sprintf("%dx%d@%s", m.Width, m.Height, trimFloat(m.RefreshRate)),
 			Position:    fmt.Sprintf("%dx%d", m.X, m.Y),
 			Scale:       m.Scale,
@@ -238,8 +231,9 @@ type Step struct {
 }
 
 // Plan maps the profile's monitors onto the connected ones by description
-// (identical monitors in connector-name order) and returns the steps:
-// monitor rules first, then the workspace moves. A profile monitor that is
+// and returns the steps: monitor rules first, then the workspace moves.
+// Identical monitors go to the connector each was saved on when it is
+// connected, the rest in connector-name order. A profile monitor that is
 // not connected is skipped and named in the returned list.
 func Plan(p Profile, monitors []Monitor) ([]Step, []string) {
 	byDesc := map[string][]Monitor{}
@@ -249,19 +243,38 @@ func Plan(p Profile, monitors []Monitor) ([]Step, []string) {
 	for d := range byDesc {
 		sort.Slice(byDesc[d], func(i, j int) bool { return byDesc[d][i].Name < byDesc[d][j].Name })
 	}
-	used := map[string]int{}
+	// Saved connectors first, so a fallback pick cannot take a monitor a
+	// later profile entry was saved on.
+	used := map[string]bool{} // by connector
+	picked := make([]*Monitor, len(p.Monitors))
+	for i, pm := range p.Monitors {
+		for j, m := range byDesc[pm.Description] {
+			if pm.Connector != "" && m.Name == pm.Connector && !used[m.Name] {
+				picked[i], used[m.Name] = &byDesc[pm.Description][j], true
+				break
+			}
+		}
+	}
+	for i, pm := range p.Monitors {
+		if picked[i] != nil {
+			continue
+		}
+		for j, m := range byDesc[pm.Description] {
+			if !used[m.Name] {
+				picked[i], used[m.Name] = &byDesc[pm.Description][j], true
+				break
+			}
+		}
+	}
 	var steps []Step
 	var missing []string
 	var moves []Step
-	for _, pm := range p.Monitors {
-		list := byDesc[pm.Description]
-		i := used[pm.Description]
-		if i >= len(list) {
+	for i, pm := range p.Monitors {
+		if picked[i] == nil {
 			missing = append(missing, pm.Description)
 			continue
 		}
-		used[pm.Description] = i + 1
-		m := list[i]
+		m := *picked[i]
 		if pm.Disabled {
 			steps = append(steps, Step{"eval", fmt.Sprintf(`hl.monitor({ output = %s, disabled = true })`, luaString(m.Name))})
 			continue
@@ -281,7 +294,7 @@ func luaString(s string) string {
 	return `"` + strings.NewReplacer(`\`, `\\`, `"`, `\"`, "\n", `\n`, "\r", ``).Replace(s) + `"`
 }
 
-// Debounce is how long the watcher waits after the last monitor event.
+// DefaultDebounceMs is how long the watcher waits after a monitor event, in milliseconds.
 const DefaultDebounceMs = 1500
 
 // MonitorEvent reports whether a Hyprland event line changes the monitor

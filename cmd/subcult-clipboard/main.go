@@ -122,6 +122,10 @@ func (a *app) watch() int {
 // store records the current copy, unless it is a secret or nothing worth
 // keeping.
 func (a *app) store() int {
+	// wl-paste --watch pipes the selection to stdin; store reads it again by
+	// type, so a source that writes synchronously must not stay blocked on
+	// this pipe.
+	os.Stdin.Close()
 	raw, err := a.output([]string{"wl-paste", "--list-types"}, nil)
 	if err != nil {
 		return a.fail(fmt.Errorf("wl-paste --list-types: %w", err))
@@ -165,7 +169,13 @@ func (a *app) store() int {
 	}
 	s, err := clipboard.Load(a.dir)
 	if err != nil {
-		return a.fail(err)
+		// An unreadable history must not stop recording: the next save
+		// replaces it, so the images it listed are dropped with it.
+		fmt.Fprintf(a.stderr, "subcult clipboard: %v; starting a new history\n", err)
+		s = clipboard.Store{Schema: 1}
+		if err := a.removeStoreFiles(false, e.File); err != nil {
+			return a.fail(err)
+		}
 	}
 	dropped := s.Add(e)
 	if err := clipboard.Save(a.dir, s); err != nil {
@@ -262,7 +272,7 @@ func (a *app) one(verb, id string) int {
 func (a *app) clear() int {
 	s, err := clipboard.Load(a.dir)
 	if err != nil {
-		return a.fail(err)
+		return a.clearUnreadable(err)
 	}
 	all := s.Clear()
 	if err := clipboard.Save(a.dir, s); err != nil {
@@ -271,6 +281,40 @@ func (a *app) clear() int {
 	a.unlink(all)
 	fmt.Fprintf(a.stdout, "dropped %d entries\n", len(all))
 	return 0
+}
+
+// clearUnreadable drops a history that does not load: history.json and
+// the image files store writes beside it.
+func (a *app) clearUnreadable(loadErr error) int {
+	if err := a.removeStoreFiles(true, ""); err != nil {
+		return a.fail(err)
+	}
+	fmt.Fprintf(a.stdout, "dropped an unreadable history (%v)\n", loadErr)
+	return 0
+}
+
+// removeStoreFiles removes the image files store writes, except keep, and
+// history.json when withHistory is set. A missing folder is not an error.
+func (a *app) removeStoreFiles(withHistory bool, keep string) error {
+	files, err := os.ReadDir(a.dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	for _, f := range files {
+		name := f.Name()
+		if !f.Type().IsRegular() || name == keep {
+			continue
+		}
+		if (withHistory && name == "history.json") || strings.HasSuffix(name, ".png") {
+			if err := os.Remove(filepath.Join(a.dir, name)); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func realOutput(argv []string, stdin []byte) ([]byte, error) {

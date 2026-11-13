@@ -85,6 +85,7 @@ func TestCommands(t *testing.T) {
 		{args: []string{"remove", "discord", "--dry-run"}, out: "rm -f /home/u/.local/share/applications/discord.desktop", noSteps: true},
 		{args: []string{"webapp", "install", "Google Maps", "maps.google.com", "--dry-run"}, out: "write /home/u/.local/share/applications/google-maps.desktop", noSteps: true},
 		{args: []string{"webapp", "install", "Maps", "https://maps.google.com", "--icon", "/tmp/maps.png", "--dry-run"}, out: "install -Dm644 /tmp/maps.png /home/u/.local/share/icons/hicolor/256x256/apps/maps.png\nwrite /home/u/.local/share/applications/maps.desktop", noSteps: true},
+		{args: []string{"webapp", "install", "Maps", "https://maps.google.com", "--icon", "/tmp/maps.jpg", "--dry-run"}, code: 2, errOut: "icon must be PNG, SVG or XPM", noSteps: true},
 		{args: []string{"webapp", "remove", "Maps", "-n"}, out: "rm -f /home/u/.local/share/applications/maps.desktop", noSteps: true},
 		{args: []string{"webapp", "install", "Bad", "not a url"}, code: 1, errOut: "whitespace"},
 		{args: []string{"webapp", "install", "Bad"}, code: 2, errOut: "needs a name and a URL"},
@@ -138,6 +139,30 @@ func TestSetDefaultPersists(t *testing.T) {
 	h.run("default", "terminal")
 	if !strings.Contains(h.out.String(), "* wezterm") {
 		t.Errorf("default not persisted:\n%s", h.out)
+	}
+}
+
+// A choice for an app the catalogue dropped warns instead of breaking every
+// command, so `subcult app default` can still replace it.
+func TestStaleDefaultWarns(t *testing.T) {
+	h := newHarness(t)
+	if err := os.MkdirAll(filepath.Dir(h.paths.Defaults), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(h.paths.Defaults, []byte("[default]\nbrowser = \"lynx\"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	for _, args := range [][]string{{"list"}, {"validate"}, {"default", "browser", "chromium"}} {
+		if code := h.run(args...); code != 0 {
+			t.Fatalf("%v: exit %d: %s", args, code, h.errOut)
+		}
+		if !strings.Contains(h.errOut.String(), `warning: defaults: browser = "lynx": no such app`) {
+			t.Errorf("%v: stderr lacks the warning:\n%s", args, h.errOut)
+		}
+	}
+	h.run("default", "browser")
+	if !strings.Contains(h.out.String(), "* chromium") || h.errOut.Len() > 0 {
+		t.Errorf("the new choice should replace the stale one:\n%s%s", h.out, h.errOut)
 	}
 }
 

@@ -73,12 +73,7 @@ func Sync(ctx context.Context, cfg Config, prev Cache, now time.Time, fetch Fetc
 		var events []Event
 		if err == nil {
 			for _, t := range texts {
-				ves, perr := parseICS(t, now.Location())
-				if perr != nil {
-					err = perr
-					break
-				}
-				events = append(events, Occurrences(s.Name, ves, w)...)
+				events = append(events, Occurrences(s.Name, parseICS(t, now.Location()), w)...)
 			}
 		}
 		if err != nil {

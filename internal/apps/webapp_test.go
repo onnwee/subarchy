@@ -1,6 +1,7 @@
 package apps
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -69,6 +70,13 @@ func TestWebappPlan(t *testing.T) {
 	if !strings.Contains(withIcon[1].Content, "Icon=maps\n") {
 		t.Error("the entry must use the installed icon")
 	}
+	upper, err := WebappPlan("/apps", "/icons", "Maps", "https://maps.google.com", "/tmp/maps.PNG")
+	if err != nil || upper[0].Argv[len(upper[0].Argv)-1] != "/icons/hicolor/256x256/apps/maps.png" {
+		t.Errorf("an upper-case extension is lower-cased: %v, %v", upper, err)
+	}
+	if _, err := WebappPlan("/apps", "/icons", "Maps", "https://maps.google.com", "/tmp/maps.jpg"); !errors.Is(err, ErrIconFormat) {
+		t.Errorf("a JPEG icon is refused: %v", err)
+	}
 	if _, err := WebappPlan("/apps", "/icons", "Bad", "not a url", ""); err == nil {
 		t.Error("a bad URL must fail")
 	}
@@ -112,12 +120,16 @@ func TestWebappRemovesInstalledIconFormats(t *testing.T) {
 			if err := os.WriteFile(icon, []byte("icon fixture"), 0o644); err != nil {
 				t.Fatal(err)
 			}
-			install, err := WebappPlan(appsDir, iconsDir, "Probe", "https://x.test", icon)
-			if err != nil {
+			// Earlier releases installed any format; remove still finds those.
+			installed := filepath.Join(iconsDir, "hicolor", "256x256", "apps", "probe."+ext)
+			if install, err := WebappPlan(appsDir, iconsDir, "Probe", "https://x.test", icon); err == nil {
+				installed = install[0].Argv[len(install[0].Argv)-1]
+				if err := exec.Command(install[0].Argv[0], install[0].Argv[1:]...).Run(); err != nil {
+					t.Fatal(err)
+				}
+			} else if err := os.MkdirAll(filepath.Dir(installed), 0o755); err != nil {
 				t.Fatal(err)
-			}
-			installed := install[0].Argv[len(install[0].Argv)-1]
-			if err := exec.Command(install[0].Argv[0], install[0].Argv[1:]...).Run(); err != nil {
+			} else if err := os.WriteFile(installed, []byte("icon fixture"), 0o644); err != nil {
 				t.Fatal(err)
 			}
 			neighbor := filepath.Join(filepath.Dir(installed), "probe-other."+ext)

@@ -20,6 +20,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"git.subcult.tv/subculture-collective/subarchy/internal/atomicfile"
 )
 
 // Window is a token count over a period.
@@ -111,25 +113,7 @@ func (c Cache) Save(path string) error {
 	if err != nil {
 		return err
 	}
-	tmp, err := os.CreateTemp(filepath.Dir(path), ".agent-usage-*")
-	if err != nil {
-		return err
-	}
-	if _, err := tmp.Write(b); err != nil {
-		tmp.Close()
-		os.Remove(tmp.Name())
-		return err
-	}
-	if err := tmp.Chmod(0o600); err != nil {
-		tmp.Close()
-		os.Remove(tmp.Name())
-		return err
-	}
-	if err := tmp.Close(); err != nil {
-		os.Remove(tmp.Name())
-		return err
-	}
-	return os.Rename(tmp.Name(), path)
+	return atomicfile.Write(path, b, 0o600)
 }
 
 type provider struct {

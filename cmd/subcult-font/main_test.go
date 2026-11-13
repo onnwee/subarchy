@@ -441,3 +441,65 @@ func TestUIAndSerifTogetherRefused(t *testing.T) {
 		t.Fatalf("exit %d, want 2", code)
 	}
 }
+
+// A role file that does not parse is not rewritten with only the new role
+// (#4 Phase B M1).
+func TestSetRefusesAnUnreadableRoleFile(t *testing.T) {
+	r := installedFont("JetBrainsMono Nerd Font", nerdLine)
+	e, _, errb := newEnv(t, r)
+	if err := os.MkdirAll(filepath.Dir(confPath(e)), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	broken := []byte("<fontconfig><match>")
+	if err := os.WriteFile(confPath(e), broken, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if code := run(context.Background(), []string{"set", "JetBrainsMono Nerd Font"}, e); code != 1 {
+		t.Fatalf("exit %d, want 1", code)
+	}
+	if !strings.Contains(errb.String(), "cannot be read") || !strings.Contains(errb.String(), "fix or delete it") {
+		t.Errorf("stderr = %q", errb)
+	}
+	if got, _ := os.ReadFile(confPath(e)); !bytes.Equal(got, broken) {
+		t.Errorf("role file changed: %q", got)
+	}
+	if code := run(context.Background(), []string{"current"}, e); code != 0 {
+		t.Errorf("current still works on a broken role file: exit %d", code)
+	}
+}
+
+// The patch names the family it made; the curated list does not show it
+// (#4 Phase B M6).
+func TestPatchedFamiliesNamesTheNewFiles(t *testing.T) {
+	r := &fakeRunner{outputs: map[string]string{}}
+	e, _, _ := newEnv(t, r)
+	dir := t.TempDir()
+	old := filepath.Join(dir, "OldNerdFont-Regular.otf")
+	if err := os.WriteFile(old, []byte("old"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	before := modTimes(dir)
+	for _, name := range []string{"DankMonoNerdFont-Regular.otf", "DankMonoNerdFont-Italic.otf"} {
+		f := filepath.Join(dir, name)
+		if err := os.WriteFile(f, []byte("new"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		r.outputs["fc-query -f "+font.FcQueryFormat+" "+f] = "DankMono Nerd Font\t100\t20-7e 2500-257f e0b0 f015\n"
+	}
+	r.outputs["fc-query -f "+font.FcQueryFormat+" "+old] = "Old Nerd Font\t100\t20-7e\n"
+	got := patchedFamilies(context.Background(), e, dir, before)
+	if len(got) != 1 || got[0] != "DankMono Nerd Font" {
+		t.Errorf("families = %q, want only the new one", got)
+	}
+}
+
+// install, set and patch can run pacman, so the launcher asks for the
+// password (#4 Phase B M8).
+func TestPacmanRoutesRequireSudo(t *testing.T) {
+	for _, r := range routes {
+		verb := r.Words[1]
+		if want := verb == "install" || verb == "set" || verb == "patch"; r.RequiresSudo != want {
+			t.Errorf("font %s: RequiresSudo = %v, want %v", verb, r.RequiresSudo, want)
+		}
+	}
+}

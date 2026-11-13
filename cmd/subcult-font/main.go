@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -41,10 +42,10 @@ var routes = []dispatch.Described{
 	{Words: []string{"font", "current"}, Metadata: dispatch.Metadata{
 		Summary: "Show the family behind each font role", Examples: []string{"subcult font current"}}},
 	{Words: []string{"font", "set"}, Metadata: dispatch.Metadata{
-		Summary: "Use a font for the terminal and shell (or --ui, --serif)", Args: "<family> [--ui|--serif] [--force]",
+		Summary: "Use a font for the terminal and shell (or --ui, --serif)", Args: "<family> [--ui|--serif] [--force]", RequiresSudo: true,
 		Examples: []string{`subcult font set "SpaceMono Nerd Font"`, `subcult font set --serif "Source Serif 4"`}}},
 	{Words: []string{"font", "install"}, Metadata: dispatch.Metadata{
-		Summary: "Install a curated font or any Nerd Font", Args: "<name>",
+		Summary: "Install a curated font or any Nerd Font", Args: "<name>", RequiresSudo: true,
 		Examples: []string{"subcult font install FiraCode", "subcult font install UbuntuSans"}}},
 	{Words: []string{"font", "import"}, Metadata: dispatch.Metadata{
 		Summary: "Add font files you own for your user", Args: "<files...>",
@@ -53,7 +54,7 @@ var routes = []dispatch.Described{
 		Summary: "Check whether a font works in the terminal and shell", Args: "<family>",
 		Examples: []string{`subcult font check "Dank Mono"`}}},
 	{Words: []string{"font", "patch"}, Metadata: dispatch.Metadata{
-		Summary: "Make a copy of a font with Nerd Font icons", Args: "<family>",
+		Summary: "Make a copy of a font with Nerd Font icons", Args: "<family>", RequiresSudo: true,
 		Examples: []string{`subcult font patch "Dank Mono"`}}},
 }
 
@@ -159,17 +160,22 @@ func confPath(e env) string {
 	return filepath.Join(e.home, font.UserConfPath)
 }
 
-func loadConf(e env) font.UserConf {
+// loadConf reads the role file. A missing file is an empty one; the
+// error is for a file that cannot be read or parsed.
+func loadConf(e env) (font.UserConf, error) {
 	empty := font.UserConf{Roles: map[font.Role]string{}, Follows: map[font.Role]bool{}}
 	data, err := os.ReadFile(confPath(e))
+	if errors.Is(err, os.ErrNotExist) {
+		return empty, nil
+	}
 	if err != nil {
-		return empty
+		return empty, err
 	}
 	c, err := font.ParseUserConf(string(data))
 	if err != nil {
-		return empty
+		return empty, err
 	}
-	return c
+	return c, nil
 }
 
 func resolved(ctx context.Context, e env, r font.Role) string {
@@ -181,7 +187,8 @@ func resolved(ctx context.Context, e env, r font.Role) string {
 }
 
 func current(ctx context.Context, e env) error {
-	conf := loadConf(e).Roles
+	c, _ := loadConf(e) // shown as defaults when the file is broken
+	conf := c.Roles
 	for _, r := range []font.Role{font.Mono, font.UI, font.Serif} {
 		got := resolved(ctx, e, r)
 		want, ok := conf[r]
@@ -198,7 +205,8 @@ func current(ctx context.Context, e env) error {
 }
 
 func list(ctx context.Context, e env, all bool) error {
-	conf := loadConf(e).Roles
+	c, _ := loadConf(e) // shown as defaults when the file is broken
+	conf := c.Roles
 	inUse := map[string]bool{}
 	for _, r := range []font.Role{font.Mono, font.UI, font.Serif} {
 		if f, ok := conf[r]; ok {
@@ -265,6 +273,11 @@ func verdictOf(ctx context.Context, e env, file string) (font.FontInfo, font.Ver
 }
 
 func set(ctx context.Context, e env, family string, role font.Role, force bool) error {
+	// Rewriting a file that did not parse would keep only the new role.
+	c, err := loadConf(e)
+	if err != nil {
+		return fmt.Errorf("%s cannot be read (%v); fix or delete it", confPath(e), err)
+	}
 	files := faces(ctx, e, family)
 	if len(files) == 0 {
 		en, ok := font.Find(family)
@@ -287,7 +300,6 @@ func set(ctx context.Context, e env, family string, role font.Role, force bool) 
 	if role == font.Mono && (v == font.InterfaceOnly || v == font.BreaksTUI) && !force {
 		return fmt.Errorf("%w: %s %s; use --force to set it anyway", errUsage, info.Family, v)
 	}
-	c := loadConf(e)
 	c.Roles[role] = info.Family
 	switch role {
 	case font.UI:
@@ -521,6 +533,7 @@ func patch(ctx context.Context, e env, family string) error {
 	if err := os.MkdirAll(out, 0o755); err != nil {
 		return err
 	}
+	before := modTimes(out)
 	for _, f := range files {
 		if err := e.runner.Run(ctx, "fontforge", "-script", filepath.Join(tmp, "font-patcher"),
 			"--complete", "--outputdir", out, f); err != nil {
@@ -530,8 +543,46 @@ func patch(ctx context.Context, e env, family string) error {
 	if err := e.runner.Run(ctx, "fc-cache", "-f"); err != nil {
 		return err
 	}
-	fmt.Fprintf(e.stdout, "Patched copies are in %s; `subcult font list` shows the new family.\n", out)
+	families := patchedFamilies(ctx, e, out, before)
+	if len(families) == 0 {
+		fmt.Fprintf(e.stdout, "Patched copies are in %s.\n", out)
+		return nil
+	}
+	fmt.Fprintf(e.stdout, "Patched copies are in %s: %s; use subcult font set %q.\n", out, strings.Join(families, ", "), families[0])
 	return nil
+}
+
+// modTimes lists the files in dir with their modification times.
+func modTimes(dir string) map[string]time.Time {
+	times := map[string]time.Time{}
+	entries, _ := os.ReadDir(dir)
+	for _, en := range entries {
+		if info, err := en.Info(); err == nil && info.Mode().IsRegular() {
+			times[en.Name()] = info.ModTime()
+		}
+	}
+	return times
+}
+
+// patchedFamilies names the distinct families of the files in dir that are
+// new or rewritten since before, as fontconfig reads them. The curated
+// list does not show patched copies, so the patch reports them itself.
+func patchedFamilies(ctx context.Context, e env, dir string, before map[string]time.Time) []string {
+	var families []string
+	seen := map[string]bool{}
+	for name, t := range modTimes(dir) {
+		if old, ok := before[name]; ok && old.Equal(t) {
+			continue
+		}
+		info, _, err := verdictOf(ctx, e, filepath.Join(dir, name))
+		if err != nil || seen[info.Family] {
+			continue
+		}
+		seen[info.Family] = true
+		families = append(families, info.Family)
+	}
+	slices.Sort(families)
+	return families
 }
 
 func unzip(data []byte, dest string) error {

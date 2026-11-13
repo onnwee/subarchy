@@ -7,10 +7,7 @@ import (
 
 func occurrencesIn(t *testing.T, ics string, from, to time.Time) []Event {
 	t.Helper()
-	events, err := parseICS(ics, chicago)
-	if err != nil {
-		t.Fatal(err)
-	}
+	events := parseICS(ics, chicago)
 	return Occurrences("c", events, Window{From: from, To: to})
 }
 
@@ -137,5 +134,50 @@ func TestMonthlyBySetPosMonthDayAndMonth(t *testing.T) {
 		if got := starts(occurrencesIn(t, tc.ics, tc.from, tc.to)); !equal(got, tc.want) {
 			t.Errorf("%s: got %v, want %v", tc.name, got, tc.want)
 		}
+	}
+}
+
+// Thunderbird writes "every weekday" as FREQ=DAILY;BYDAY=MO,...,FR: the
+// weekend is skipped and does not count for COUNT. Weekly rules group weeks
+// from WKST, Monday unless the rule says otherwise, which matters when a
+// biweekly BYDAY includes Sunday. 2 November 2026 is a Monday.
+func TestDailyByDayAndWeekStart(t *testing.T) {
+	series := func(rrule string) string {
+		return "BEGIN:VEVENT\nUID:x\nSUMMARY:x\nDTSTART:20261102T090000\nDTEND:20261102T091500\nRRULE:" + rrule + "\nEND:VEVENT\n"
+	}
+	tests := []struct {
+		name, ics string
+		from, to  time.Time
+		want      []string
+	}{
+		{"every weekday", series("FREQ=DAILY;BYDAY=MO,TU,WE,TH,FR"),
+			day(2026, 11, 2), day(2026, 11, 9),
+			[]string{"2026-11-02 09:00", "2026-11-03 09:00", "2026-11-04 09:00", "2026-11-05 09:00", "2026-11-06 09:00"}},
+		{"every weekday, seven times", series("FREQ=DAILY;BYDAY=MO,TU,WE,TH,FR;COUNT=7"),
+			day(2026, 11, 2), day(2026, 11, 30),
+			[]string{"2026-11-02 09:00", "2026-11-03 09:00", "2026-11-04 09:00", "2026-11-05 09:00", "2026-11-06 09:00", "2026-11-09 09:00", "2026-11-10 09:00"}},
+		{"biweekly Monday and Sunday", series("FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,SU"),
+			day(2026, 11, 1), day(2026, 11, 30),
+			[]string{"2026-11-02 09:00", "2026-11-08 09:00", "2026-11-16 09:00", "2026-11-22 09:00"}},
+		{"biweekly Monday and Sunday, weeks from Sunday", series("FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,SU;WKST=SU"),
+			day(2026, 11, 1), day(2026, 11, 30),
+			[]string{"2026-11-02 09:00", "2026-11-15 09:00", "2026-11-16 09:00", "2026-11-29 09:00"}},
+	}
+	for _, tc := range tests {
+		if got := starts(occurrencesIn(t, tc.ics, tc.from, tc.to)); !equal(got, tc.want) {
+			t.Errorf("%s: got %v, want %v", tc.name, got, tc.want)
+		}
+	}
+}
+
+// One event whose DTSTART or DTEND does not parse is dropped; the rest of
+// the feed survives instead of the source keeping its stale cache.
+func TestBadEventDoesNotDropTheFeed(t *testing.T) {
+	ics := "BEGIN:VEVENT\nUID:good\nSUMMARY:Good\nDTSTART:20261102T090000Z\nDTEND:20261102T100000Z\nEND:VEVENT\n" +
+		"BEGIN:VEVENT\nUID:bad-start\nSUMMARY:Bad\nDTSTART:20261102T0900\nEND:VEVENT\n" +
+		"BEGIN:VEVENT\nUID:bad-end\nSUMMARY:Bad end\nDTSTART:20261103T090000Z\nDTEND:tomorrow\nEND:VEVENT\n"
+	events := parseICS(ics, chicago)
+	if len(events) != 1 || events[0].uid != "good" {
+		t.Errorf("want only the good event, got %+v", events)
 	}
 }

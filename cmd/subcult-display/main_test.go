@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"path/filepath"
 	"strings"
@@ -20,6 +21,7 @@ type fakeHypr struct {
 	workspaces string
 	evals      []string
 	dispatch   []string
+	failEvals  int // the next evaluations that fail
 }
 
 func (f *fakeHypr) Query(args ...string) ([]byte, error) {
@@ -31,7 +33,14 @@ func (f *fakeHypr) Query(args ...string) ([]byte, error) {
 	}
 	return []byte(wsJSON), nil
 }
-func (f *fakeHypr) Eval(lua string) error     { f.evals = append(f.evals, lua); return nil }
+func (f *fakeHypr) Eval(lua string) error {
+	if f.failEvals > 0 {
+		f.failEvals--
+		return errors.New("mode not offered")
+	}
+	f.evals = append(f.evals, lua)
+	return nil
+}
 func (f *fakeHypr) Dispatch(lua string) error { f.dispatch = append(f.dispatch, lua); return nil }
 
 func harness(t *testing.T) (*app, *fakeHypr, *bytes.Buffer, *bytes.Buffer) {
@@ -111,5 +120,42 @@ func TestWatchAppliesOnMonitorEvents(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), "applied home-dock") {
 		t.Errorf("out = %q", out.String())
+	}
+}
+
+// A profile that fails to apply, at startup or after an event, is
+// reported and the watcher goes on: an exit would restart the service into
+// the same failure until systemd's start limit stops it.
+func TestWatchSurvivesAFailedApply(t *testing.T) {
+	a, h, out, errOut := harness(t)
+	a.run([]string{"profile", "save", "home-dock"})
+	h.monitors = laptopJSON
+	a.run([]string{"profile", "save", "laptop"})
+	h.evals, h.dispatch = nil, nil
+	h.failEvals = 2 // the startup laptop profile, then the dock
+	layouts := []string{dockJSON, laptopJSON}
+	a.events = func() (io.ReadCloser, error) {
+		return io.NopCloser(strings.NewReader("monitoradded>>DP-3\nmonitorremoved>>DP-3\n")), nil
+	}
+	a.sleep = func(time.Duration) { h.monitors, layouts = layouts[0], layouts[1:] }
+	out.Reset()
+	if code := a.run([]string{"watch"}); code != 0 {
+		t.Fatalf("watch: %d; %s", code, errOut)
+	}
+	if strings.Count(errOut.String(), "mode not offered") != 2 {
+		t.Errorf("both failures are reported: %q", errOut.String())
+	}
+	if !strings.Contains(out.String(), "applied laptop") {
+		t.Errorf("the event after the failures is handled: %q", out.String())
+	}
+}
+
+// A read error ends the watcher with a failure, so systemd restarts it.
+func TestWatchFailsOnAReadError(t *testing.T) {
+	a, _, _, errOut := harness(t)
+	long := "windowtitlev2>>1," + strings.Repeat("x", 2<<20) + "\n"
+	a.events = func() (io.ReadCloser, error) { return io.NopCloser(strings.NewReader(long)), nil }
+	if code := a.run([]string{"watch"}); code != 1 || !strings.Contains(errOut.String(), "too long") {
+		t.Errorf("watch: %d %q", code, errOut.String())
 	}
 }

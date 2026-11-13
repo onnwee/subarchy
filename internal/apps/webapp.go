@@ -87,6 +87,10 @@ func desktopEscape(s string) string {
 	return strings.NewReplacer("\n", " ", "\r", " ").Replace(s)
 }
 
+// ErrIconFormat is WebappPlan's refusal of an icon the icon theme cannot
+// find.
+var ErrIconFormat = errors.New("icon must be PNG, SVG or XPM")
+
 // WebappPlan returns the steps that install a web app: the icon copied
 // into the user's icon theme when one is given, and the desktop entry.
 func WebappPlan(appsDir, iconsDir, name, rawURL, iconFile string) ([]Step, error) {
@@ -101,9 +105,14 @@ func WebappPlan(appsDir, iconsDir, name, rawURL, iconFile string) ([]Step, error
 	var steps []Step
 	icon := ""
 	if iconFile != "" {
-		ext := strings.TrimPrefix(filepath.Ext(iconFile), ".")
-		if ext == "" {
+		// The icon theme lookup finds only these formats in hicolor.
+		ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(iconFile), "."))
+		switch ext {
+		case "":
 			ext = "png"
+		case "png", "svg", "xpm":
+		default:
+			return nil, ErrIconFormat
 		}
 		dest := filepath.Join(iconsDir, "hicolor", "256x256", "apps", id+"."+ext)
 		steps = append(steps, Step{Argv: []string{"install", "-Dm644", iconFile, dest}})

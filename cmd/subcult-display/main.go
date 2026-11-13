@@ -269,27 +269,30 @@ func (a *app) watch(store display.Store) int {
 	if err != nil {
 		return a.fail(err)
 	}
+	// A profile that no longer applies (a mode the monitor stopped offering)
+	// is reported, not fatal: exiting would restart the service into the
+	// same failure until systemd's start limit stops it for the session.
+	// apply and syncLid print their own errors.
 	if p, ok := store.Match(ms); ok {
-		if code := a.apply(p, ms, false); code != 0 {
-			return code
-		}
+		a.apply(p, ms, false)
 	}
-	if code := a.syncLid(); code != 0 {
-		return code
-	}
+	a.syncLid()
 	debounce := time.Duration(store.Debounce) * time.Millisecond
 	if debounce <= 0 {
 		debounce = display.DefaultDebounceMs * time.Millisecond
 	}
 	last := display.Identity(ms)
 	sc := bufio.NewScanner(conn)
+	// windowtitlev2>> lines carry whole window titles.
+	sc.Buffer(make([]byte, 0, 64<<10), 1<<20)
 	for sc.Scan() {
 		if !display.MonitorEvent(sc.Text()) {
 			continue
 		}
+		// Each monitor event waits the debounce (Hyprland sends a v1 and a
+		// v2 line per change); a layout already applied is skipped by the
+		// identity check below.
 		a.sleep(debounce)
-		// Later events during the wait are already in the buffer; the
-		// layout is read once, after them.
 		ms, _, err := a.live()
 		if err != nil {
 			fmt.Fprintf(a.stderr, "subcult display: %v\n", err)
@@ -308,12 +311,14 @@ func (a *app) watch(store display.Store) int {
 		p, ok := store.Match(ms)
 		if !ok {
 			fmt.Fprintf(a.stdout, "monitors changed (%s): no saved profile, left as is\n", strings.Join(id, "; "))
-		} else if code := a.apply(p, ms, false); code != 0 {
-			return code
+		} else {
+			a.apply(p, ms, false)
 		}
-		if code := a.syncLid(); code != 0 {
-			return code
-		}
+		a.syncLid()
+	}
+	// A read error exits non-zero so Restart=on-failure brings it back.
+	if err := sc.Err(); err != nil {
+		return a.fail(err)
 	}
 	return 0
 }

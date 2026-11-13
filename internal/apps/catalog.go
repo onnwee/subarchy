@@ -121,6 +121,9 @@ func DefaultPaths() (Paths, error) {
 type Catalog struct {
 	apps     []App
 	defaults map[string]string // role -> app id
+	// Warnings lists defaults.toml choices that were skipped because the
+	// app is gone or lost the role; the catalogue default stays in place.
+	Warnings []string
 }
 
 // Load reads and merges the catalogue files, then validates the result.
@@ -243,17 +246,20 @@ func build(system, user []App, choices map[string]string) (*Catalog, error) {
 	for role, id := range userDefaults {
 		c.defaults[role] = id
 	}
+	// A stale choice must not break every command, including the
+	// `subcult app default` that would fix it, so it is only a warning.
 	for role, id := range choices {
 		a, ok := c.App(id)
 		switch {
 		case !ok:
-			errs = append(errs, fmt.Errorf("defaults: %s = %q: no such app", role, id))
+			c.Warnings = append(c.Warnings, fmt.Sprintf("defaults: %s = %q: no such app; using the catalogue default", role, id))
 		case !a.HasRole(role):
-			errs = append(errs, fmt.Errorf("defaults: %s = %q: app does not have that role", role, id))
+			c.Warnings = append(c.Warnings, fmt.Sprintf("defaults: %s = %q: app does not have that role; using the catalogue default", role, id))
 		default:
 			c.defaults[role] = id
 		}
 	}
+	slices.Sort(c.Warnings)
 	if len(errs) > 0 {
 		return nil, errors.Join(errs...)
 	}
