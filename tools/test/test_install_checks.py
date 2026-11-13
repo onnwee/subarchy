@@ -313,7 +313,7 @@ class TailscaleHelper(unittest.TestCase):
 
 class GreeterSession(unittest.TestCase):
     def test_nothing_of_the_desktop_for_sddm_passes(self):
-        ok = "PROCS=0\nUPDATE=0\nMANAGER=active\nTARGET=inactive inactive \n"
+        ok = "PROCS=0\nUPDATE=0\nMANAGER=active\nTARGET=inactive inactive \nTIMERS=0\n"
         self.assertTrue(install_test.greeter_session_ok(ok))
         self.assertTrue(install_test.greeter_session_ok("PROCS=0\nUPDATE=0\nMANAGER=inactive\nTARGET=\n"))
 
@@ -323,6 +323,10 @@ class GreeterSession(unittest.TestCase):
         self.assertFalse(install_test.greeter_session_ok("PROCS=0\nUPDATE=0\nMANAGER=active\nTARGET=activating active\n"))
         self.assertFalse(install_test.greeter_session_ok("PROCS=0\nUPDATE=0\nMANAGER=active\nTARGET=\n"))
         self.assertFalse(install_test.greeter_session_ok(""))
+
+    def test_a_subcult_timer_for_sddm_fails(self):
+        self.assertFalse(install_test.greeter_session_ok("PROCS=0\nUPDATE=0\nMANAGER=active\nTARGET=inactive inactive\nTIMERS=2\n"))
+        self.assertFalse(install_test.greeter_session_ok("PROCS=0\nUPDATE=0\nMANAGER=active\nTARGET=inactive inactive\n"))
 
     def test_screensaver_unit(self):
         self.assertTrue(install_test.screensaver_ok("exec\n1\n"))

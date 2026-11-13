@@ -1,5 +1,7 @@
 [Unit]
 Description=Daily check for Subarchy updates (ADR 0026); nothing installs on its own
+# Not for system users: the greeter's sddm user gets a user manager too.
+ConditionUser=!@system
 
 [Timer]
 OnStartupSec=15min

@@ -587,12 +587,13 @@ def lock_crash_ok(result: dict) -> bool:
 
 
 def greeter_session_ok(output: str) -> bool:
-    """No desktop process or update window for sddm, and its session target
-    is not up (or it has no user manager at all)."""
+    """No desktop process or update window for sddm, and neither its session
+    target nor a subcult timer is up (or it has no user manager at all)."""
     fields = dict(line.split("=", 1) for line in output.strip().splitlines() if "=" in line)
     return (
         fields.get("PROCS") == "0" and fields.get("UPDATE") == "0"
-        and (fields.get("MANAGER") != "active" or fields.get("TARGET", "").split() == ["inactive", "inactive"])
+        and (fields.get("MANAGER") != "active"
+             or (fields.get("TARGET", "").split() == ["inactive", "inactive"] and fields.get("TIMERS") == "0"))
     )
 
 
@@ -887,15 +888,18 @@ def boot(disk: Path, vars_file: Path) -> bool:
         # before the first sign-in.
         results["greeter_user"] = serial.run(f"{sudo} cat /var/lib/sddm/state.conf")
         # Nothing of the desktop runs for the greeter's sddm user: no bar,
-        # idle or clipboard service, no graphical-session.target, no
-        # Hyprland update or donation window. The bar once came up about 15 s in.
+        # idle or clipboard service, no graphical-session.target, no update
+        # check or calendar timer, no Hyprland update or donation window. The
+        # bar once came up about 15 s in.
         time.sleep(20)
         results["greeter_session"] = serial.run(
             "echo PROCS=$(pgrep -u sddm -fc 'quickshell|hypridle|wl-paste|subcult-');"
             " echo UPDATE=$(pgrep -fc 'hyprland-(update|donate)-screen');"
             " echo MANAGER=$(systemctl is-active user@$(id -u sddm).service);"
             f" echo TARGET=$({sudo} -u sddm XDG_RUNTIME_DIR=/run/user/$(id -u sddm)"
-            " systemctl --user is-active graphical-session.target hyprland-session.target | tr '\\n' ' ')")
+            " systemctl --user is-active graphical-session.target hyprland-session.target | tr '\\n' ' ');"
+            f" echo TIMERS=$({sudo} -u sddm XDG_RUNTIME_DIR=/run/user/$(id -u sddm)"
+            " systemctl --user list-timers --no-legend 'subcult-*' | wc -l)")
         # Failed passwords (ADR 0063): 10 tries, a 2-minute lock.
         results["faillock"] = serial.run("grep -E '^(deny|unlock_time) ' /etc/security/faillock.conf")
         serial.run(

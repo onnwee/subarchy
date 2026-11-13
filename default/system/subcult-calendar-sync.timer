@@ -1,5 +1,7 @@
 [Unit]
 Description=Calendar sync every quarter hour (ADR 0061); on battery a sync younger than an hour is kept
+# Not for system users: the greeter's sddm user gets a user manager too.
+ConditionUser=!@system
 
 [Timer]
 OnStartupSec=2min

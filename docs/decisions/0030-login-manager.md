@@ -89,5 +89,13 @@ Hyprland. Artwork and text are replaced (R4).
 - 2026-11-13: issue numbers here written before 2026-11-10 are Gitea
   numbers ([[vault-conventions#Links]]): #73 is Gitea #73 (GitHub #49) and
   #103 is Gitea #103 (GitHub #79). #104 is GitHub #104.
+- 2026-11-13: the update check and calendar sync timers, which the package
+  enables for every user, ran in the sddm user's manager as well. The two
+  timers and their services now carry `ConditionUser=!@system` too, so
+  the greeter's manager skips them. The package test checks every timer
+  in `timers.target.wants` and its service, and the VM install test
+  checks that the sddm user lists no `subcult-*` timer. No migration: the
+  greeter's user manager starts fresh with each greeter and reads the new
+  units then.
 
 Related: [[decision-map|Decision map]] · [[0031-session-manager|ADR 0031]] · [[0013-boot-splash|ADR 0013]]

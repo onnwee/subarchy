@@ -138,6 +138,14 @@ for unit in "$work/root"/usr/lib/systemd/user/graphical-session.target.wants/*; 
   grep -qx 'ConditionUser=!@system' "$unit" || fail "$(basename "$unit") would start for the greeter's sddm user"
   if grep -qx 'Type=oneshot' "$unit"; then fail "$(basename "$unit") holds back graphical-session.target"; fi
 done
+# The timers every user gets skip sddm as well, and so do their services.
+userunits=$work/root/usr/lib/systemd/user
+for unit in "$userunits"/timers.target.wants/*.timer; do
+  name=$(basename "$unit" .timer)
+  for f in "$userunits/$name.timer" "$userunits/$name.service"; do
+    grep -qx 'ConditionUser=!@system' "$f" || fail "$(basename "$f") would run for the greeter's sddm user"
+  done
+done
 [[ -x $work/root/usr/lib/subcult/bluetooth-pair-agent ]] || fail "pairing helper is missing or not executable"
 # Tailscale (ADR 0058) and lazydocker through polkit (ADR 0055).
 for f in usr/lib/subcult/file-chooser usr/lib/subcult/lazydocker-root usr/lib/subcult/tailscale-helper \

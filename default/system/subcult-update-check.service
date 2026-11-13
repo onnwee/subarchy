@@ -2,6 +2,8 @@
 Description=Count available Subarchy updates (ADR 0026)
 Documentation=https://git.subcult.tv/subculture-collective/subarchy
 After=network-online.target
+# Not for system users: the greeter's sddm user gets a user manager too.
+ConditionUser=!@system
 
 [Service]
 Type=oneshot
