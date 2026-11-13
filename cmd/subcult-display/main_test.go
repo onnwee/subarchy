@@ -150,6 +150,132 @@ func TestWatchSurvivesAFailedApply(t *testing.T) {
 	}
 }
 
+// A layout that failed to apply is not taken as handled: the next monitor
+// event for the same monitors (Hyprland's v2 line, say) tries again.
+func TestWatchRetriesAFailedApply(t *testing.T) {
+	a, h, out, errOut := harness(t)
+	a.run([]string{"profile", "save", "home-dock"})
+	h.monitors = laptopJSON
+	a.run([]string{"profile", "save", "laptop"})
+	h.monitors = dockJSON
+	h.evals, h.dispatch = nil, nil
+	h.failEvals = 1 // the dock profile at startup
+	a.events = func() (io.ReadCloser, error) {
+		return io.NopCloser(strings.NewReader("monitoraddedv2>>1,DP-3,LG\nmonitorremoved>>DP-3\nmonitorremovedv2>>1,DP-3,LG\n")), nil
+	}
+	// Per event: the monitors then, and how many evaluations fail.
+	layouts := []string{dockJSON, laptopJSON, laptopJSON}
+	fails := []int{0, 1, 0}
+	a.sleep = func(time.Duration) {
+		h.monitors, layouts = layouts[0], layouts[1:]
+		h.failEvals, fails = fails[0], fails[1:]
+	}
+	out.Reset()
+	if code := a.run([]string{"watch"}); code != 0 {
+		t.Fatalf("watch: %d; %s", code, errOut)
+	}
+	if strings.Count(errOut.String(), "mode not offered") != 2 {
+		t.Errorf("both failures are reported: %q", errOut.String())
+	}
+	if !strings.Contains(out.String(), "applied home-dock") {
+		t.Errorf("the dock profile that failed at startup is applied at the next event: %q", out.String())
+	}
+	if !strings.Contains(out.String(), "applied laptop") {
+		t.Errorf("the laptop profile that failed after an event is applied at the next one: %q", out.String())
+	}
+}
+
+// eventFeed is an event socket the fake Hyprland writes to while the
+// watcher runs, so the watcher's own steps produce events, as on hardware.
+type eventFeed struct {
+	buf bytes.Buffer
+	n   int
+}
+
+func (f *eventFeed) Read(p []byte) (int, error) {
+	if f.buf.Len() == 0 {
+		return 0, io.EOF
+	}
+	return f.buf.Read(p)
+}
+func (f *eventFeed) Close() error { return nil }
+func (f *eventFeed) emit(line string) {
+	if f.n < 50 { // a cap so a feedback loop ends the test instead of hanging it
+		f.n++
+		f.buf.WriteString(line + "\n")
+	}
+}
+
+// loopHypr turns eDP-1 on and off with the matching event and fails every
+// DP-3 step, like a dock profile whose external mode is no longer offered.
+type loopHypr struct {
+	*fakeHypr
+	feed  *eventFeed
+	tries int
+}
+
+func (l *loopHypr) Eval(lua string) error {
+	switch {
+	case strings.Contains(lua, `output = "DP-3"`):
+		l.tries++
+		return errors.New("mode not offered")
+	case strings.Contains(lua, `output = "eDP-1"`) && strings.Contains(lua, "disabled = true"):
+		l.feed.emit("monitorremoved>>eDP-1")
+	case strings.Contains(lua, `output = "eDP-1"`):
+		l.feed.emit("monitoraddedv2>>0,eDP-1,Samsung")
+	}
+	return l.fakeHypr.Eval(lua)
+}
+
+// A failed apply is retried once, not on every event its own steps cause:
+// docked with the lid closed, applying the dock profile turns the panel on
+// and the lid sync turns it off again, and each of those is an event.
+func TestWatchRetryIsBounded(t *testing.T) {
+	a, h := lidHarness(t)
+	a.run([]string{"profile", "save", "home-dock"})
+	feed := &eventFeed{}
+	l := &loopHypr{fakeHypr: h, feed: feed}
+	a.hypr = l
+	a.lidClosed = func() (bool, error) { return true, nil }
+	a.events = func() (io.ReadCloser, error) {
+		feed.emit("monitoraddedv2>>1,DP-3,LG")
+		return feed, nil
+	}
+	if code := a.run([]string{"watch"}); code != 0 {
+		t.Fatalf("watch: %d", code)
+	}
+	if l.tries != 2 {
+		t.Errorf("dock profile applied %d times, want 2 (startup and one retry); %d events", l.tries, feed.n)
+	}
+}
+
+// A lid sync that fails is tried again at the next event for the same
+// monitors, at startup and after a change.
+func TestWatchRetriesAFailedLidSync(t *testing.T) {
+	a, h := lidHarness(t)
+	h.monitors = laptopJSON
+	calls := 0
+	a.lidClosed = func() (bool, error) {
+		calls++
+		if calls == 1 || calls == 3 {
+			return false, errors.New("lid state unreadable")
+		}
+		return false, nil
+	}
+	a.events = func() (io.ReadCloser, error) {
+		return io.NopCloser(strings.NewReader("monitorremoved>>DP-3\nmonitoradded>>DP-3\nmonitoraddedv2>>1,DP-3,LG\nmonitoradded>>DP-3\n")), nil
+	}
+	// Per event: the monitors then.
+	layouts := []string{laptopJSON, dockJSON, dockJSON, dockJSON}
+	a.sleep = func(time.Duration) { h.monitors, layouts = layouts[0], layouts[1:] }
+	if code := a.run([]string{"watch"}); code != 0 {
+		t.Fatalf("watch: %d", code)
+	}
+	if calls != 4 {
+		t.Errorf("lid state read %d times, want 4 (startup, its retry, the dock, its retry)", calls)
+	}
+}
+
 // A read error ends the watcher with a failure, so systemd restarts it.
 func TestWatchFailsOnAReadError(t *testing.T) {
 	a, _, _, errOut := harness(t)

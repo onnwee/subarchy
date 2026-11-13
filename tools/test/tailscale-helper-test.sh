@@ -86,6 +86,8 @@ rm -f "$work/calls"
 printf 'payload' | "$helper" send 100.64.0.4 'a file.pdf' >/dev/null || fail "send refused"
 [[ $(calls) == 'file cp --update-interval=0 --name=a file.pdf - 100.64.0.4:' ]] || fail "send: $(calls)"
 [[ $(<"$work/sent") == payload ]] || fail "send did not pass standard input"
+ok send fd7a:115c:a1e0::3 a.txt
+[[ $(calls) == 'file cp --update-interval=0 --name=a.txt - [fd7a:115c:a1e0::3]:' ]] || fail "IPv6 send: $(calls)"
 for name in '' . .. ../etc/passwd a/b /etc/shadow $'a\nb' $'a\tb' "$(printf 'x%.0s' {1..256})"; do
   refused send 100.64.0.4 "$name"
 done

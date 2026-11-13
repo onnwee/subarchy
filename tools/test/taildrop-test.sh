@@ -5,11 +5,13 @@
 # Receive (/usr/lib/subcult/taildrop-receive, root): files tailscale
 # delivers into root's staging folder reach the user's Downloads through
 # setpriv as that user, under free names (a taken name gets -1), and each
-# is announced (a link to nowhere also takes a name, and a long name is
-# shortened to fit its number; a file that cannot be saved is announced as
-# such); a finished get an earlier run left is delivered first while
-# an unfinished one is dropped unannounced; a failed get delivers nothing; a
-# removed Downloads is made again; a refusal (signed out) fails --once.
+# is announced (a link to nowhere, a folder or a link to a folder also
+# takes a name, and a long name is shortened to fit its number; a file that
+# cannot be saved is announced as such); a finished get an earlier run left
+# is delivered first, and of an unfinished one the files it logged as
+# written arrive while a cut-off file is dropped unannounced; a failed get
+# delivers the files it finished; a removed Downloads is made again; a
+# refusal (signed out) fails --once.
 #
 # Send (`subcult tailscale send`): each picked file goes to the root helper
 # through pkexec as standard input, with its name and the machine's
@@ -34,10 +36,18 @@ case "$1 $2" in
 "file get")
   [[ -e $TD_TEST/signed-out ]] && { echo "getting WaitingFiles: Taildrop disabled; no storage directory" >&2; exit 1; }
   dest=${*: -1}
+  # As tailscale: each file is logged once written, before it leaves the
+  # inbox; "waiting for file..." has no line end.
+  printf 'waiting for file...'
   printf 'new' >"$dest/notes.txt"
-  # Killed halfway: one file written, then a failure.
-  [[ -e $TD_TEST/get-fails ]] && { echo "context canceled" >&2; exit 1; }
-  printf 'img' >"$dest/photo.png";;
+  echo "wrote notes.txt as $dest/notes.txt (3 bytes)"
+  # Failing halfway: one file written, the next one cut off. On a full
+  # disk the receiver's log of the get can lose the record too.
+  [[ -e $TD_TEST/log-lost ]] && rm -f -- "$dest.log"
+  [[ -e $TD_TEST/get-fails ]] && { printf 'im' >"$dest/photo.png"; echo "failed to write $dest/photo.png: no space left on device" >&2; exit 1; }
+  printf 'img' >"$dest/photo.png"
+  echo "wrote photo.png as $dest/photo.png (3 bytes)"
+  echo "moved 2/2 files";;
 "ip -1") [[ $3 == kvant* ]] && echo 100.64.0.2 || { echo "no such peer" >&2; exit 1; };;
 esac
 exit 0
@@ -80,35 +90,52 @@ dl=$work/home/Downloads
 spool=$work/spool
 
 # A taken name is kept, the new file gets -1; a finished get an earlier run
-# left arrives too, an unfinished one is dropped without a word.
+# left arrives too; of an unfinished one, the file it logged as written
+# arrives (tailscaled no longer has it) and the cut-off one is dropped
+# without a word.
 printf 'old' >"$dl/notes.txt"
 mkdir -p "$spool/done.AAAAAA" "$spool/get.BBBBBB"
 printf 'left' >"$spool/done.AAAAAA/left.bin"
+printf 'whole' >"$spool/get.BBBBBB/whole (1).txt"
 printf 'cut' >"$spool/get.BBBBBB/cut-off.iso"
+printf 'waiting for file...wrote whole.txt as %s (5 bytes)\n' "$spool/get.BBBBBB/whole (1).txt" >"$spool/get.BBBBBB.log"
 receive || fail "receive --once failed"
 [[ $(<"$dl/notes.txt") == old && $(<"$dl/notes-1.txt") == new ]] || fail "a taken name was overwritten: $(ls -A "$dl")"
 [[ $(<"$dl/photo.png") == img && $(<"$dl/left.bin") == left ]] || fail "files missing from Downloads: $(ls -A "$dl")"
+[[ $(<"$dl/whole (1).txt") == whole ]] || fail "a finished file of an unfinished get was lost: $(ls -A "$dl")"
 [[ ! -e $dl/cut-off.iso ]] || fail "a file from an unfinished get was delivered"
 [[ -z $(ls -A "$spool") ]] || fail "staging not emptied: $(ls -A "$spool")"
 [[ -z $(find "$dl" -name '.taildrop-*') ]] || fail "a hidden copy was left: $(ls -A "$dl")"
-grep -qE "^file get --wait --conflict=rename $spool/get\.[A-Za-z0-9]{6}\$" "$work/tailscale-log" ||
+grep -qE "^file get --wait --verbose --conflict=rename $spool/get\.[A-Za-z0-9]{6}\$" "$work/tailscale-log" ||
   fail "tailscale file get: $(cat "$work/tailscale-log")"
 # Each file went over as the user, with the session bus for the notification.
 uid=$(id -u) gid=$(id -g)
 [[ $(sort -u "$work/setpriv-log") == "--reuid=$uid --regid=$gid --init-groups --reset-env" ]] ||
   fail "not delivered as the user: $(sort -u "$work/setpriv-log")"
-[[ $(wc -l <"$work/setpriv-log") == 3 ]] || fail "deliveries: $(wc -l <"$work/setpriv-log")"
-[[ $(grep -c '^Received ' "$work/notes") == 3 ]] || fail "not every file announced: $(cat "$work/notes")"
+[[ $(wc -l <"$work/setpriv-log") == 4 ]] || fail "deliveries: $(wc -l <"$work/setpriv-log")"
+[[ $(grep -c '^Received ' "$work/notes") == 4 ]] || fail "not every file announced: $(cat "$work/notes")"
 grep -qx 'Received notes-1.txt | Saved to ~/Downloads' "$work/notes" || fail "announcement: $(cat "$work/notes")"
 grep -q 'cut-off' "$work/notes" && fail "a file from an unfinished get was announced"
 
-# A get that fails halfway delivers nothing and leaves nothing behind.
+# A get that fails halfway delivers the file it finished (tailscaled has
+# dropped it) but not the cut-off one, and leaves nothing behind.
 touch "$work/get-fails"
 : >"$work/notes"
-if receive 2>/dev/null; then fail "receive --once succeeded after a failed get"; fi
-rm "$work/get-fails"
-[[ ! -e $dl/notes-2.txt && ! -s $work/notes ]] || fail "a failed get delivered: $(ls -A "$dl"; cat "$work/notes")"
+rm -f "$dl/photo.png"
+if receive 2>"$work/err"; then fail "receive --once succeeded after a failed get"; fi
+[[ $(<"$work/err") == "taildrop-receive: failed to write $spool/get."??????"/photo.png: no space left on device" ]] ||
+  fail "failed get error: $(<"$work/err")"
+[[ $(<"$dl/notes-2.txt") == new ]] || fail "a failed get lost its finished file: $(ls -A "$dl")"
+[[ ! -e $dl/photo.png ]] || fail "a cut-off file was delivered: $(ls -A "$dl")"
+[[ $(cat "$work/notes") == 'Received notes-2.txt | Saved to ~/Downloads' ]] || fail "failed get announcements: $(cat "$work/notes")"
 [[ -z $(ls -A "$spool") ]] || fail "a failed get left files: $(ls -A "$spool")"
+# The same with the log on disk lost (a full disk): the finished file is
+# still delivered, from the record kept in memory.
+touch "$work/log-lost"
+if receive 2>/dev/null; then fail "receive --once succeeded after a failed get"; fi
+rm "$work/get-fails" "$work/log-lost"
+[[ $(<"$dl/notes-3.txt") == new ]] || fail "a failed get without its log lost its finished file: $(ls -A "$dl")"
+[[ ! -e $dl/photo.png && -z $(ls -A "$spool") ]] || fail "a failed get without its log: $(ls -A "$dl") / $(ls -A "$spool")"
 
 # Downloads removed: the delivery makes it again.
 rm -rf "$dl"
@@ -139,6 +166,14 @@ short=$(find "$dl" -name '*-1.txt' ! -name 'dangling-1.txt' -printf '%f\n')
 [[ $(LC_ALL=C; echo "${#short}") -le 255 && $short == "$(printf 'é%.0s' {1..124})-1.txt" ]] ||
   fail "long name: $short"
 iconv -f UTF-8 -t UTF-8 <<<"$short" >/dev/null || fail "a shortened name is not UTF-8: $short"
+# A folder, or a link to one, takes its name too: nothing goes inside.
+mkdir "$dl/report.txt" "$work/elsewhere"
+ln -s "$work/elsewhere" "$dl/linked.txt"
+printf 'r' | deliver report.txt || fail "--deliver failed on a name a folder takes"
+printf 'k' | deliver linked.txt || fail "--deliver failed on a name a link to a folder takes"
+[[ $(<"$dl/report-1.txt") == r && $(<"$dl/linked-1.txt") == k ]] || fail "folder names: $(ls -A "$dl")"
+[[ -z $(ls -A "$dl/report.txt") && -z $(ls -A "$work/elsewhere") ]] || fail "a file went inside a folder"
+rm -rf "$dl/report.txt" "$dl/linked.txt" "$work/elsewhere"
 # A file that cannot be saved fails and says so.
 : >"$work/notes"
 chmod 0500 "$dl"

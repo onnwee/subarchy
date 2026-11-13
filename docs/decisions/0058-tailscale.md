@@ -123,6 +123,21 @@ pause during captive portal sign-in.
   cannot be saved is announced ("Could not save ...") and stays in the
   staging folder until the next file arrives; nothing removes old files
   there, since they are the user's.
+- 2026-11-13, later: a get that fails or is cut off keeps the files it
+  finished. In tailscale 1.104.7 `file get` drops each file from the inbox
+  as soon as it is written, not at the end of the get, so throwing away
+  the folder of a failed get lost those files for good. The receiver now
+  runs `file get --verbose`, which logs each file once it is written and
+  before it leaves the inbox; the files the log names are delivered, even
+  when the get failed or an earlier run was stopped, and only a file it
+  does not name (cut off halfway, still in the inbox) is dropped. The
+  receiver reads that output from memory, so a full disk that keeps the
+  log from being written does not lose a file; the log on disk is only
+  for a get that a stop cut off. A file whose removal from the inbox
+  failed, or was cut off by a stop, can arrive twice. A folder or a
+  link to a folder in `~/Downloads` now also counts as a taken name
+  (`ln -T`), and a send to an IPv6 address passes it to `tailscale file
+  cp` in brackets, which tailscale requires. Found in review of PR #157.
 - Still open: the exit-node pause during captive portal sign-in
   ([[0020-dns|ADR 0020]]) and whether ufw needs a `tailscale0` rule.
 

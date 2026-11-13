@@ -19,15 +19,16 @@ PanelWindow { // qmllint disable uncreatable-type
   property string kind: ""
   property real value: 0
   property bool muted: false
-  property var lastVolume: null
   property string label: ""
   property int lastWorkspace: -1
   // The backlight's sysfs folder, found once at start; empty without one.
   property string backlight: ""
 
   readonly property var sink: Pipewire.defaultAudioSink
-  // A new sink's first reading is not a change of volume.
-  onSinkChanged: osd.lastVolume = null
+  // A new sink's first reading is not a change of volume; one that is
+  // already loaded gives its reading as the baseline at once.
+  readonly property var volume: Model.volumeTracker()
+  onSinkChanged: osd.volume.switchTo(osd.sink)
 
   visible: kind !== ""
   screen: place.screen
@@ -77,10 +78,8 @@ PanelWindow { // qmllint disable uncreatable-type
   }
 
   function volumeEvent() {
-    const now = { volume: osd.sink.audio.volume, muted: osd.sink.audio.muted }
-    if (Model.volumeChanged(osd.lastVolume, now))
+    if (osd.volume.reading(osd.sink))
       osd.show("volume")
-    osd.lastVolume = now
   }
 
   // sysfs does not report changes, so the level is read again each time.

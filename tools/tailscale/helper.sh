@@ -132,7 +132,10 @@ send)
   (($# == 2)) || die "$usage"
   tailscale_ip "$1" || die "not a Tailscale address: $1"
   file_name "$2" || die "not a file name: $2"
-  exec tailscale file cp --update-interval=0 --name="$2" - "$1:"
+  # tailscale file cp takes an IPv6 address only in brackets.
+  target=$1
+  [[ $target == *:* ]] && target="[$target]"
+  exec tailscale file cp --update-interval=0 --name="$2" - "$target:"
   ;;
 *)
   die "$usage"
