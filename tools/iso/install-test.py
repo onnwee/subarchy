@@ -149,6 +149,17 @@ def start(cmd: list[str], log_path: Path):
     return proc, Serial(proc, log), log
 
 
+def timeout_screen(qmp: Path, name: str) -> None:
+    """Save the screen when a phase times out. Boot messages go to the
+    screen, not the serial port (tty0 is /dev/console), so a VM stuck before
+    its login prompt leaves the serial log empty; the screenshot shows where."""
+    try:
+        screendump(qmp, VM / name)
+        print(f"install-test: screen at the timeout saved to build/vm/{name}", file=sys.stderr)
+    except OSError as e:
+        print(f"install-test: no screenshot at the timeout: {e}", file=sys.stderr)
+
+
 def stop(proc: subprocess.Popen, log) -> None:
     try:
         proc.wait(timeout=90)
@@ -356,6 +367,7 @@ def install(iso: Path, disk: Path, vars_file: Path, timeout: float, guided_setup
         serial.send("poweroff\n")
         return ok
     except TimeoutError as e:
+        timeout_screen(qmp, "install-timeout.png")
         proc.kill()
         print(f"install-test: FAIL during install, timed out {e}", file=sys.stderr)
         print(serial.tail(), file=sys.stderr)
@@ -896,6 +908,7 @@ finally:
         print(f"install-test: locked shutdown: {results['lock_shutdown']['frames']} frames captured,"
               f" desktop visible in frames {results['lock_shutdown']['exposed'] or 'none'}")
     except TimeoutError as e:
+        timeout_screen(qmp, "boot-timeout.png")
         proc.kill()
         print(f"install-test: FAIL during boot, timed out {e}", file=sys.stderr)
         print(serial.tail(), file=sys.stderr)
