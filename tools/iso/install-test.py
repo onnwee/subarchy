@@ -741,7 +741,7 @@ def boot(disk: Path, vars_file: Path) -> bool:
             # /usr/bin/voxtype is made by the package's install script, so it
             # also shows that script ran.
             "desktop_apps": serial.run(
-                "for c in voxtype localsend proton-mail pass-cli protonvpn-app protonvpn"
+                "for c in voxtype localsend proton-mail proton-pass pass-cli protonvpn-app protonvpn"
                 " proton-authenticator proton-drive dolphin ark chromium signal-desktop halloy obsidian bw"
                 " system-config-printer qalculate-qt okular swayimg grim slurp satty gpu-screen-recorder vlc obs"
                 " kdenlive gimp inkscape glaxnimate qbittorrent; do command -v $c >/dev/null || echo missing:$c; done; echo APPS_DONE"

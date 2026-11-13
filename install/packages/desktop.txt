@@ -73,6 +73,7 @@ localsend-bin
 # Proton (app list: preinstall everything from Proton). Proton VPN comes
 # from Arch's extra; the rest are rebuilt in Subarchy's repository.
 proton-mail-bin
+proton-pass-bin
 proton-pass-cli
 proton-vpn-gtk-app
 proton-vpn-cli

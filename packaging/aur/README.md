@@ -21,6 +21,7 @@ sha256 in the PKGBUILD.
 | `voxtype-bin` | 1.2.1-1 | `eb385fd6` | dictation (ADR 0056); upstream's binaries, MIT. Built with the baseline, avx2, avx512 and vulkan variants whatever the build machine; no ONNX or CUDA variants (see the PKGBUILD) |
 | `ttfx` | 0.5.1-1 | `67da1790` | terminal text effects, the source of the screensaver loops (ADR 0036; the package plays recorded loops and never runs ttfx); Rust build from the GitHub tag, MIT |
 | `proton-mail-bin` | 1.16.1-1 | `14d40f78` | Proton Mail and Calendar (app list); Proton's `.deb` run on Arch's `electron43`, GPL-3.0-or-later |
+| `proton-pass-bin` | 1.43.1-1 | `2a471ebe` | Proton Pass desktop; Proton's `.deb` with its own Electron, GPL-3.0-or-later. 145 MB, uploaded through the origin |
 | `proton-pass-cli` | 2.7.0-1 | `124cbe9a` | the Proton Pass command line (`pass-cli`); Rust build from the Git tag, b2sum-pinned, GPL-3.0-or-later. No debug package: with the AUR's debug info it is 145 MB |
 | `proton-authenticator-bin` | 1.1.6-1 | `560b882a` | Proton Authenticator; Proton's `.deb`, GPL-3.0-or-later |
 | `proton-drive-cli-bin` | 0.9.0-2 | `ad340ebd` | the Proton Drive command line (`proton-drive`); Proton's binary, MIT |
@@ -34,12 +35,16 @@ as makedepends: `build.sh` and CI install only makedepends (`makepkg
 --nodeps`). Proton VPN (`proton-vpn-gtk-app`, `proton-vpn-cli`) comes
 from Arch's `extra` and is not rebuilt here.
 
-`claude-code` (154 MB) and `proton-pass-bin` (145 MB, with its own
-Electron) are over the 100 MB the registry's public route accepts, like
-`nvidia-580xx-utils`. A PKGBUILD here is built and published by CI and
-fetched by the ISO build, so they are added only once their files are in
-both channels through the origin
-([package publishing](../../docs/package-publishing.md)).
+`proton-pass-bin` (145 MB) and `claude-code` (154 MB) are over the 100 MB
+the registry's public route accepts, like `nvidia-580xx-utils`. A
+PKGBUILD here is built and published by CI and fetched by the ISO build,
+so such a package is added only once its file is in both channels through
+the origin ([package publishing](../../docs/package-publishing.md)), and
+each new version is uploaded the same way before its PKGBUILD changes.
+`proton-pass-bin` keeps Proton's Electron: on Arch's Electron, Proton Pass
+takes its development path: developer tools on, no rewrite of the cookie
+and CORS headers its `file://` pages need for Proton's API, and the
+browser-extension host looked up in a build directory.
 
 `proton-mail-bin` runs on Arch's Electron, as the AUR package does.
 Electron then reports an unpackaged app, so Proton Mail takes its

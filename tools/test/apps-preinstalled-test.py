@@ -21,7 +21,6 @@ PENDING = {
     "disktree-bin",
     "tuxguitar",
     "claude-code",
-    "proton-pass-bin",
 }
 
 

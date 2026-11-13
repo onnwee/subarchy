@@ -66,7 +66,7 @@ public.
 
   | Package | Licence | Note |
   |---|---|---|
-  | `proton-mail-bin`, `proton-pass-cli`, `proton-authenticator-bin` | GPL-3.0-or-later |  |
+  | `proton-mail-bin`, `proton-pass-bin`, `proton-pass-cli`, `proton-authenticator-bin` | GPL-3.0-or-later | `proton-pass-bin` also bundles Electron (MIT) |
   | `proton-drive-cli-bin`, `cliamp`, `ttfx`, `voxtype-bin` | MIT | `voxtype-bin` ships no models; the user downloads one |
   | `localsend-bin` | Apache-2.0 |  |
 

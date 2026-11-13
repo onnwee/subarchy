@@ -84,6 +84,7 @@ keyring release.
   and `proton-drive-cli-bin`. The install lists name them, so new installs
   get them. `claude-code` and `proton-pass-bin` are over the registry's
   100 MB upload limit and are added after their files are uploaded through
-  the origin ([[package-publishing|Package publishing]]).
+  the origin ([[package-publishing|Package publishing]]); `proton-pass-bin`
+  followed once its file was in both channels.
 
 Related: [[decision-map|Decision map]] · [[0026-update-model|ADR 0026]] · [[0027-third-party-software|ADR 0027]]

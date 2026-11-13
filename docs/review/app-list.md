@@ -178,17 +178,17 @@ Installed automatically with Chromium ([[0042-browser|ADR 0042]]).
 ### Rebuilt AUR apps on new installs (2026-11-13)
 
 `cliamp`, `ttfx`, `voxtype-bin`, `localsend-bin` and the Proton apps
-(`proton-mail-bin`, `proton-pass-cli`, `proton-authenticator-bin`,
+(`proton-mail-bin`, `proton-pass-bin`, `proton-pass-cli`, `proton-authenticator-bin`,
 `proton-drive-cli-bin`, with Proton VPN from `extra`) are pinned rebuilds
 in `packaging/aur/` and are in `install/packages/cli.txt` and
 `desktop.txt`, so every new install has them. The installer opens
 LocalSend's port 53317 in ufw. Proton Mail Bridge (`protonmail-bridge`, in
 `extra`) stays out: the Proton Mail desktop app replaces it.
 
-`claude-code` and the Proton Pass desktop app (`proton-pass-bin`) follow
-in their own pull requests: both packages are over the registry's 100 MB
-upload limit, and preinstalling Claude Code needs the owner's decision on
-Anthropic's Commercial Terms of Service ([[0053-licence|ADR 0053]]).
+`claude-code` follows in its own pull request: the package is over the
+registry's 100 MB upload limit, and preinstalling Claude Code needs the
+owner's decision on Anthropic's Commercial Terms of Service
+([[0053-licence|ADR 0053]]).
 
 ### Repository apps on new installs (2026-11-13)
 

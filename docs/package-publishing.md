@@ -65,9 +65,9 @@ one of them: `nvidia-580xx-utils` carries `-2` against the lib32 package's
 
 **The public route refuses uploads over 100 MB.** Cloudflare in front of
 `git.subcult.tv` answers HTTP 413, and `nvidia-580xx-utils` is about
-360 MB; each new version of it needs the upload below. `claude-code`
-(154 MB) and `proton-pass-bin` (145 MB) wait outside `packaging/aur`
-until their files are uploaded this way. The uploader stops with a message naming the file, and it
+360 MB, and `proton-pass-bin` (145 MB); each new version of them needs
+the upload below before its PKGBUILD changes. `claude-code` (154 MB)
+waits outside `packaging/aur` until its file is uploaded this way. The uploader stops with a message naming the file, and it
 uploads in name order, so until such a file is in the registry the files
 after it, the core included, are not published either. Until CI has a
 route for such files, build that PKGBUILD in a clean Arch container
