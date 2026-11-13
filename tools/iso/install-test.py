@@ -787,8 +787,9 @@ def boot(disk: Path, vars_file: Path) -> bool:
             # The repository key is trusted (ADR 0025, subarchy-keyring).
             "keyring": serial.run(f"{sudo} pacman-key --list-keys CCE8B0F3BCDD601D909773E4466AA6E8241453D2 2>&1 | grep -c 'Arch Registry'"),
             # Hardware fixes (ADR 0050): the VM gets the ones every x86 machine
-            # gets; their files are in place; the regulatory domain follows the zone.
-            "fixes": serial.run("subcult hw fixes; echo ---; cat /etc/modprobe.d/hid_apple.conf; echo ---; grep '^WIRELESS_REGDOM=' /etc/conf.d/wireless-regdom"),
+            # gets; their files are in place; the regulatory domain follows the zone
+            # and wireless-regdb's database is there to apply it.
+            "fixes": serial.run("subcult hw fixes; echo ---; cat /etc/modprobe.d/hid_apple.conf; echo ---; grep '^WIRELESS_REGDOM=' /etc/conf.d/wireless-regdom; test -s /usr/lib/firmware/regulatory.db && echo regdb-ok"),
             # The system screens take the user's palette (ADR 0037): SDDM's
             # theme.conf, Limine's colours, a recoloured splash (one initramfs
             # rebuild), Chromium's colour policy (written though Chromium is not
@@ -1102,8 +1103,8 @@ finally:
         "subcult update authenticates before privileged work": "UNAUTH_STEP_EXIT=1" in r["update"]
         and "UNAUTH_UPDATE_EXIT=1" in r["update"],
         "subcult update reuses authorized sudo": "\nUPDATE_EXIT=0" in r["update"] and "eboot needed" in r["update"],
-        "hardware fixes applied (hid_apple fnmode, regulatory domain US)": "hid-apple-fkeys" in r["fixes"]
-        and "options hid_apple fnmode=2" in r["fixes"] and 'WIRELESS_REGDOM="US"' in r["fixes"],
+        "hardware fixes applied (hid_apple fnmode, regulatory domain US and its database)": "hid-apple-fkeys" in r["fixes"]
+        and "options hid_apple fnmode=2" in r["fixes"] and 'WIRELESS_REGDOM="US"' in r["fixes"] and "regdb-ok" in r["fixes"],
         "new install on the stable channel, switches to edge and back": channel_ok(r["channel"]),
         "repository key trusted (subarchy-keyring)": r["keyring"].strip().splitlines()[-1:] == ["1"],
         "daily update check timer and count": r["update_timer"].splitlines()[0:1] == ["1"]

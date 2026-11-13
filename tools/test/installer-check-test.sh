@@ -164,4 +164,31 @@ done
 printf '%064d\n' 0 >"$psk_file"
 (check_wifi) || fail "a 64-digit key was refused"
 rm -rf -- "$wifi"
+
+# A user name that is already a group or account is refused before the disk
+# is wiped: useradd would refuse it after pacstrap.
+cfg=$(mktemp)
+printf '%s\n' DISK=/dev/vda HOSTNAME=box USERNAME=video USER_PASSWORD_FILE=/x LUKS_PASSPHRASE_FILE=/x SUBARCHY_REPO=file:///r >"$cfg"
+getent() { [[ $1 == group && $2 == video ]]; }
+out=$( (read_config "$cfg") 2>&1) && fail "USERNAME=video was accepted"
+[[ $out == *"video is a system account or group"* ]] || fail "user name message: $out"
+unset -f getent
+# docker and realtime are groups only on the installed system, so the live
+# image's getent does not know them.
+getent() { return 2; }
+for name in docker realtime; do
+  sed -i "s/^USERNAME=.*/USERNAME=$name/" "$cfg"
+  out=$( (read_config "$cfg") 2>&1) && fail "USERNAME=$name was accepted"
+  [[ $out == *"$name is a system account or group"* ]] || fail "user name message: $out"
+done
+unset -f getent
+rm -f -- "$cfg"
+
+# --help lists every config key.
+help=$(bash "$root/install/subarchy-install" --help)
+# shellcheck disable=SC2154 # keys is the installer's list of config keys
+for key in ${keys}; do
+  [[ $help == *"$key "* ]] || fail "--help does not mention $key"
+done
+[[ $help != *"set -euo"* ]] || fail "--help printed the script body"
 echo "installer-check-test: ok"

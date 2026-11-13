@@ -28,10 +28,15 @@ var (
 )
 
 func init() {
+	// System accounts, then the groups every install has: useradd refuses
+	// a name that is already a group, after the disk is wiped.
 	for _, u := range strings.Fields(`root bin daemon mail ftp http nobody dbus systemd-coredump
 		systemd-network systemd-oom systemd-journal-remote systemd-resolve systemd-timesync tss
 		uuidd alpm git avahi cups cups-browsed lp _talkd polkitd rtkit qemu brltty gluster rpc
-		libvirt-qemu pcscd nvidia-persistenced sddm`) {
+		libvirt-qemu pcscd nvidia-persistenced sddm
+		sys mem log smmsp proc games lock network floppy scanner power adm wheel empower utmp
+		audio clock disk input kmem kvm optical render sgx storage tty uucp video users
+		systemd-journal rfkill docker realtime`) {
 		reservedUsers[u] = true
 	}
 }
@@ -42,7 +47,7 @@ func ValidUsername(name string) error {
 		return errors.New("use lowercase letters, digits, - and _, starting with a letter or _ (at most 32)")
 	}
 	if reservedUsers[name] {
-		return fmt.Errorf("%q is a system account", name)
+		return fmt.Errorf("%q is a system account or group", name)
 	}
 	return nil
 }

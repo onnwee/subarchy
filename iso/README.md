@@ -40,7 +40,7 @@ says Subarchy, the kernel is `linux-zen`, systemd reports `running` or
 shows on the screen, not the serial log, so the test no longer times it.
 The first passing run (2026-11-07, `sputnik` with KVM): systemd
 greeting after 12 s, shell after 34 s, state `running`, no failed units.
-The image is 1.6 GB.
+The image was 1.6 GB then.
 
 CI builds and boots the image in `.gitea/workflows/iso.yml` on the
 `subarchy-kvm` runner, whose job containers are privileged and have

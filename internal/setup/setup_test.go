@@ -10,7 +10,7 @@ import (
 func TestValidUsername(t *testing.T) {
 	for name, ok := range map[string]bool{
 		"pat": true, "_svc": true, "a-b_c9": true,
-		"": false, "Pat": false, "9lives": false, "root": false, "sddm": false,
+		"": false, "Pat": false, "9lives": false, "root": false, "sddm": false, "video": false, "docker": false,
 		strings.Repeat("a", 33): false, "a b": false,
 	} {
 		if err := ValidUsername(name); (err == nil) != ok {

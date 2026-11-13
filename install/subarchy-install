@@ -61,6 +61,13 @@ read_config() {
   done
   [[ ${conf[HOSTNAME]} =~ ^[a-z0-9][a-z0-9-]{0,62}$ ]] || die "HOSTNAME: lowercase letters, digits and dashes"
   [[ ${conf[USERNAME]} =~ ^[a-z_][a-z0-9_-]{0,31}$ ]] || die "USERNAME: not a valid user name"
+  # useradd refuses a name that is already a group (it would make a user
+  # group of that name); the live image shares the target's base groups.
+  # docker and realtime come only with the target's packages.
+  if [[ ${conf[USERNAME]} == @(docker|realtime) ]] ||
+    getent group "${conf[USERNAME]}" >/dev/null || getent passwd "${conf[USERNAME]}" >/dev/null; then
+    die "USERNAME: ${conf[USERNAME]} is a system account or group"
+  fi
   [[ -f /usr/share/zoneinfo/${conf[TIMEZONE]} ]] || die "TIMEZONE: unknown zone ${conf[TIMEZONE]}"
   check_locale "${conf[LOCALE]}"
   [[ -s ${conf[USER_PASSWORD_FILE]} ]] || die "USER_PASSWORD_FILE: missing or empty"
@@ -544,7 +551,7 @@ main() {
     case $1 in
       --config) config=${2:?--config needs a file}; shift 2 ;;
       --yes) yes=1; shift ;;
-      -h | --help) sed -n '2,28p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+      -h | --help) sed -n '2,/^set -euo pipefail/{/^set -euo/d;s/^# \{0,1\}//;p}' "$0"; exit 0 ;;
       *) die "unknown argument $1" ;;
     esac
   done

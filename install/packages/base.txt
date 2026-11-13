@@ -37,6 +37,9 @@ bluez-utils
 zram-generator
 networkmanager
 wpa_supplicant
+# The regulatory database and the udev rule that applies the domain the
+# installer sets from the time zone (ADR 0050).
+wireless-regdb
 sudo
 zsh
 man-db

@@ -114,7 +114,10 @@ packages come from the repository on the image, `/opt/subarchy/repo`.
 The scripted stage. It runs as root on the live ISO, reads a `KEY=value`
 config file (keys listed in the script's header) and needs `--yes`, because
 it wipes the disk named by `DISK`. It refuses a disk that has mounted
-partitions or that holds the install medium. Other disks are left alone.
+partitions or that holds the install medium, and a user name that is
+already an account or group on the live image, or one of the groups the
+installed system adds (`docker`, `realtime`), which `useradd` would refuse
+after the wipe. Other disks are left alone.
 
 What it builds:
 
@@ -127,6 +130,7 @@ What it builds:
 | Boot | Limine with its own firmware entry and the `EFI/BOOT` fallback; menu from `/etc/default/limine` | 0007 |
 | Snapshots | snapper config `root` for `@`, 5 numbered, no timeline; `limine-snapper-sync` adds a boot entry per snapshot | 0011 |
 | System | zram swap, NetworkManager, timesyncd, user in `wheel` with zsh, root locked | 0014, 0016 |
+| Hardware | `subcult-hw` picks firmware, microcode, GPU drivers, services and fixes; the wireless regulatory domain from the time zone, applied by `wireless-regdb` | 0005, 0006, 0050 |
 | Wi-Fi | with `WIFI_SSID` set, a NetworkManager connection for that network, mode 600, with the passphrase from `WIFI_PSK_FILE` (none for an open network); a name that is not plain letters, digits, `_ . -` and inner spaces is written as its bytes; the file name never starts with a dot, which NetworkManager would skip; `key-mgmt=wpa-psk`, which NetworkManager also uses for WPA3 (SAE) when the Wi-Fi card supports it | 0016 |
 | Containers | Docker with compose and buildx; `docker.socket` enabled so the daemon starts on demand; the user is not in the `docker` group (`sudo subcult docker sudoless` grants it behind a warning), and lazydocker (`subcult docker tui`, the launcher's lazydocker entry) reaches the daemon through a polkit prompt; `ufw-docker` rules added at first boot by `subcult-ufw-docker.service` | 0055, 0019 |
 | Tailscale | `tailscale` installed, `tailscaled` enabled; nobody is signed in until the user signs in from the bar's Tailscale panel (or `sudo tailscale up`). No account is tailscaled's operator: the panel goes through a root helper under the polkit action `tv.subcult.tailscale`. The installer enables `subcult-taildrop@<user>.service`, which saves files sent with Taildrop to the user's `~/Downloads` | 0058, 0062 |
@@ -137,9 +141,7 @@ What it builds:
 | Boot entries | firmware entries named Limine or Subarchy whose partition no longer exists (left by an earlier install on a disk since wiped) are removed; other systems' entries are not touched | 0007 |
 | Factory reset | read-only `@factory` snapshot of the fresh `@` | 0049, 0056 |
 
-Not yet: the
-Quickshell shell and themes, hardware detection, and a Limine entry that
-chainloads another disk's bootloader.
+Not yet: a Limine entry that chainloads another disk's bootloader.
 
 A new system is on the stable channel: Arch packages come from the Arch
 Linux Archive at the snapshot date the package ships; `subcult channel set
