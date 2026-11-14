@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Install · Subarchy docs</title>
-<meta name="description" content="Build the Subarchy ISO on Arch Linux, install it into a virtual machine, and what the guided installer asks.">
+<meta name="description" content="Download the Subarchy ISO, write it to a USB stick, run the guided installer, then turn on Secure Boot and TPM unlock.">
 <link rel="canonical" href="https://subarchy.subcult.tv/docs/install/">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Install · Subarchy docs">
-<meta property="og:description" content="Build the Subarchy ISO on Arch Linux, install it into a virtual machine, and what the guided installer asks.">
+<meta property="og:description" content="Download the Subarchy ISO, write it to a USB stick, run the guided installer, then turn on Secure Boot and TPM unlock.">
 <meta property="og:url" content="https://subarchy.subcult.tv/docs/install/">
 <meta property="og:image" content="https://subarchy.subcult.tv/assets/og.png">
 <meta property="og:image:width" content="1200">
@@ -24,8 +24,8 @@
 <link rel="preload" href="/fonts/victor-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/victor-mono-latin-500-italic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/victor-mono-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/style.css?v=e04e15c0c2">
-<script>try{var t=localStorage.getItem("subarchy-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="stylesheet" href="/style.css?v=a700f3f3f6">
+<script>try{var r=document.documentElement,t=localStorage.getItem("subarchy-theme");if(t==="light"||t==="dark")r.setAttribute("data-theme",t);if(localStorage.getItem("subarchy-side")==="hidden")r.setAttribute("data-side","hidden")}catch(e){}</script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -35,42 +35,47 @@
 <button type="button" data-theme-toggle hidden>paper</button>
 </div></header>
 <div class="wrap docs">
-<nav class="side" aria-label="Docs"><details class="toc"><summary>Docs pages</summary><ol><li><a href="/docs/">Overview</a></li><li><a href="/docs/install/" aria-current="page">Install</a><ol class="sections"><li><a href="#requirements">Requirements</a></li><li><a href="#build">Build the ISO</a></li><li><a href="#vm">Try it in a VM</a></li><li><a href="#installer">The installer</a></li><li><a href="#first-login">First login</a></li></ol></li><li><a href="/docs/keys/">Keys</a></li><li><a href="/docs/commands/">Commands</a></li><li><a href="/docs/shell/">Shell aliases</a></li><li><a href="/docs/look/">Theme and fonts</a></li><li><a href="/docs/updates/">Updates and recovery</a></li><li><a href="/docs/glossary/">Glossary</a></li><li><a href="/docs/developers/">Developers</a></li></ol></details></nav>
+<div class="rail"><button type="button" class="side-toggle" data-side-toggle aria-controls="docs-side" hidden>hide</button>
+<nav class="side" id="docs-side" aria-label="Docs"><details class="toc"><summary>Docs pages</summary><ol><li><a href="/docs/">Overview</a></li><li><a href="/docs/install/" aria-current="page">Install</a><ol class="sections"><li><a href="#requirements">Requirements</a></li><li><a href="#download">Download</a></li><li><a href="#usb">Write the USB stick</a></li><li><a href="#boot">Boot it</a></li><li><a href="#installer">The installer</a></li><li><a href="#first-login">First login</a></li><li><a href="#secure-boot">Secure Boot and TPM unlock</a></li></ol></li><li><a href="/docs/keys/">Keys</a></li><li><a href="/docs/commands/">Commands</a></li><li><a href="/docs/shell/">Shell aliases</a></li><li><a href="/docs/look/">Theme and fonts</a></li><li><a href="/docs/updates/">Updates and recovery</a></li><li><a href="/docs/glossary/">Glossary</a></li><li><a href="/docs/developers/">Developers</a></li></ol></details></nav></div>
 <main id="main">
 <p class="crumbs"><a href="/docs/">Docs</a> / Install</p>
 <h1>Install</h1>
-<p class="lede">There is no published image yet, so you build the ISO and install it into a virtual machine.</p>
+<p class="lede">Download the ISO, write it to a USB stick, boot it and answer the installer. The image carries its own packages, so <strong>the install needs no network</strong>.</p>
 
 <h2 id="requirements">Requirements</h2>
-<div class="scroll"><table><caption>What each step needs</caption>
-<thead><tr><th scope="col">Step</th><th scope="col">Needs</th></tr></thead><tbody>
-<tr><th scope="row">Build the ISO</th><td>Arch Linux, <code>archiso</code>, Go, Docker, sudo</td></tr>
-<tr><th scope="row">Boot it in a VM</th><td><code>qemu-base</code>, <code>edk2-ovmf</code></td></tr>
-<tr><th scope="row">Install into a VM</th><td>The above, plus <code>swtpm</code> and <code>imagemagick</code></td></tr>
-<tr><th scope="row">Run it</th><td>x86_64 with UEFI. The ISO does not boot in legacy BIOS mode.</td></tr>
+<div class="scroll"><table><caption class="sr">What you need</caption><tbody>
+<tr><th scope="row">Computer</th><td>x86_64 with UEFI. The ISO does not boot in legacy BIOS mode.</td></tr>
+<tr><th scope="row">USB stick</th><td>At least as large as the ISO. Writing the image erases it.</td></tr>
+<tr><th scope="row">Disk</th><td>A whole disk for Subarchy. <strong>The installer wipes it.</strong></td></tr>
+<tr><th scope="row">Network</th><td>Optional. With one, the installer can fetch newer packages from the <a class="wl" href="/docs/glossary/#channel">stable channel</a>.</td></tr>
 </tbody></table></div>
 
-<h2 id="build">Build the ISO</h2>
-<div class="cmd"><code>git clone https://github.com/subculture-collective/subarchy.git &amp;&amp; cd subarchy</code></div>
-<div class="cmd"><code>make iso</code></div>
-<p>The image lands in <code>build/iso/</code>.</p>
-<div class="callout tip"><p class="ct" data-mark="&#9650;">First build</p><p>On a fresh checkout <code>make iso</code> stops and names the packages Subarchy rebuilds itself. Build them, then run <code>make iso</code> again. How: <a class="wl" href="/docs/developers/#packages">Developers</a>.</p></div>
+<h2 id="download">Download</h2>
+<p>Get the newest <code>subarchy-<var>version</var>-x86_64.iso</code> and its <code>SHA256SUMS</code> file from the <a href="https://github.com/subculture-collective/subarchy/releases" target="_blank" rel="noopener">releases page<span class="sr"> (opens in a new tab)</span></a>. In the folder you saved them to, check the image:</p>
+<div class="cmd"><code>sha256sum -c SHA256SUMS --ignore-missing</code></div>
+<p>It should print the file name and <code>OK</code>. Anything else means a damaged download: fetch it again.</p>
 
-<h2 id="vm">Try it in a VM</h2>
-<div class="scroll"><table><caption>Test targets</caption>
-<thead><tr><th scope="col">Run</th><th scope="col">Does</th></tr></thead><tbody>
-<tr><th scope="row"><code>make iso-test</code></th><td>Boots the newest ISO in QEMU and checks it over the serial console</td></tr>
-<tr><th scope="row"><code>make install-test</code></th><td>Installs into a VM disk, then boots the result and checks it</td></tr>
-<tr><th scope="row"><code>make install-test-offline</code></th><td>The same through the guided installer, with the network off</td></tr>
-</tbody></table></div>
+<h2 id="usb">Write the USB stick</h2>
+<p>On Linux, find the stick with <code>lsblk</code>, then write the image to the whole device, not a partition:</p>
+<div class="cmd"><code>sudo dd if=subarchy-<var>version</var>-x86_64.iso of=/dev/<var>sdX</var> bs=4M oflag=sync status=progress</code></div>
+<div class="callout warning"><p class="ct" data-mark="&#9888;">Warning</p><p><strong><code>dd</code> erases whatever is at <code>of=</code>.</strong> Check the device name twice.</p></div>
+<p>On Windows or macOS, any USB image writer works. In Rufus, choose <strong>DD image</strong> mode when it asks.</p>
+
+<h2 id="boot">Boot it</h2>
+<ol class="steps">
+<li><p><strong>Turn Secure Boot off</strong> in the firmware settings, often under <span class="keys"><kbd>F2</kbd></span> or <span class="keys"><kbd>Del</kbd></span> at power-on. You can turn it on again after the install, with keys made on your machine: see <a class="wl" href="#secure-boot">Secure Boot and TPM unlock</a>.</p></li>
+<li><p><strong>Pick the USB stick</strong> from the firmware's boot menu, often <span class="keys"><kbd>F12</kbd></span>, <span class="keys"><kbd>F11</kbd></span> or <span class="keys"><kbd>Esc</kbd></span>.</p></li>
+<li><p><strong>Wait for the installer.</strong> It starts by itself on the first console.</p></li>
+</ol>
+<p class="muted">In a virtual machine, choose UEFI firmware: OVMF in QEMU, <q>Enable EFI</q> in VirtualBox.</p>
 
 <h2 id="installer">The installer</h2>
-<p><a class="wl" href="/docs/glossary/#subarchy-setup">subarchy-setup</a> starts by itself on the live ISO's first console. On a serial console or over SSH, run <code>subarchy-setup</code>.</p>
-<div class="scroll"><table><caption>The installer's screens, in order</caption>
+<p><a class="wl" href="/docs/glossary/#subarchy-setup">subarchy-setup</a> asks its questions first and touches no disk until the last one. On a serial console or over SSH, start it with <code>subarchy-setup</code>.</p>
+<div class="scroll"><table><caption class="sr">The installer's screens, in order</caption>
 <thead><tr><th scope="col">Screen</th><th scope="col">Notes</th></tr></thead><tbody>
 <tr><th scope="row">Language</th><td></td></tr>
 <tr><th scope="row">Keyboard layout</th><td></td></tr>
-<tr><th scope="row">Wi-Fi</th><td>Only without a wired connection and with a Wi-Fi card. Skipping it is safe: the install uses the package repository on the image.</td></tr>
+<tr><th scope="row">Wi-Fi</th><td>Only without a wired connection and with a Wi-Fi card. Skipping it is safe: the install uses the packages on the image.</td></tr>
 <tr><th scope="row">Disk</th><td>Shows what is on each disk. You can open one read-only before choosing.</td></tr>
 <tr><th scope="row">Computer name, user, password</th><td></td></tr>
 <tr><th scope="row">Disk passphrase</th><td>Unlocks the <a class="wl" href="/docs/glossary/#luks2">LUKS2</a> disk at boot. <a class="wl" href="/docs/glossary/#tpm">TPM</a> unlock can replace it later.</td></tr>
@@ -79,18 +84,30 @@
 <tr><th scope="row">Erase</th><td>Asked last. The default is <strong>no</strong>.</td></tr>
 </tbody></table></div>
 <div class="callout warning"><p class="ct" data-mark="&#9888;">Warning</p><p><strong>The installer wipes the disk you choose.</strong> Do not point it at a disk you need.</p></div>
-<div class="scroll"><table><caption>Installer keys</caption><tbody>
+<div class="scroll"><table><caption class="sr">Installer keys</caption><tbody>
 <tr><th scope="row"><span class="keys"><kbd>Esc</kbd></span></th><td>Back one step, on every screen</td></tr>
 <tr><th scope="row"><span class="keys"><kbd>L</kbd></span></th><td>Show or hide the end of the log while it installs. The full log is <code>/var/log/subarchy-install.log</code>.</td></tr>
 </tbody></table></div>
+<p>While it installs, the installer detects the machine and applies its hardware fixes: firmware, drivers and settings for known laptops and parts. <code>subcult hw fixes</code> lists the ones your machine got.</p>
 
 <h2 id="first-login">First login</h2>
-<p>Log in at the <a class="wl" href="/docs/glossary/#sddm">SDDM</a> screen. The session is <a class="wl" href="/docs/glossary/#hyprland">Hyprland</a>. Then:</p>
+<p>Remove the USB stick and reboot. Type the disk passphrase, then log in at the <a class="wl" href="/docs/glossary/#sddm">SDDM</a> screen. The session is <a class="wl" href="/docs/glossary/#hyprland">Hyprland</a>.</p>
 <ul class="plain">
 <li><span class="keys"><kbd>Super</kbd> + <kbd>Return</kbd></span> opens a terminal, <span class="keys"><kbd>Super</kbd> + <kbd>Space</kbd></span> the <a class="wl" href="/docs/glossary/#launcher">launcher</a>. All keys: <a class="wl" href="/docs/keys/">Keys</a>.</li>
 <li><code>subcult update</code> brings the system up to date. See <a class="wl" href="/docs/updates/">Updates and recovery</a>.</li>
-<li><code>sudo subcult disk tpm enable</code> unlocks the disk with the <a class="wl" href="/docs/glossary/#tpm">TPM</a> instead of the passphrase.</li>
+<li><code>subcult setup fingerprint</code> lets the lock screen take a touch, on supported readers.</li>
 </ul>
+
+<h2 id="secure-boot">Secure Boot and TPM unlock</h2>
+<p>Both are optional. <a class="wl" href="/docs/glossary/#secure-boot">Secure Boot</a> uses keys made on your machine; <a class="wl" href="/docs/glossary/#tpm">TPM</a> unlock then replaces the typed disk passphrase. TPM unlock needs Secure Boot on, because it trusts the boot only while the Secure Boot keys are unchanged.</p>
+<ol class="steps">
+<li><p><strong>Put the firmware in setup mode.</strong> In its Secure Boot settings, choose <q>Reset to setup mode</q> or <q>Clear keys</q>, and leave Secure Boot itself off.</p></li>
+<li><p><strong>Boot Subarchy and run <code>sudo subcult secureboot setup</code>.</strong> It makes the keys, signs the boot loader and kernels, and enrolls the keys alongside Microsoft's, which some graphics and network cards need.</p></li>
+<li><p><strong>Reboot</strong>, turn Secure Boot on if the firmware did not, and check with <code>subcult secureboot status</code>.</p></li>
+<li><p><strong>Run <code>sudo subcult disk tpm enable</code>.</strong> The next boot unlocks without the passphrase.</p></li>
+</ol>
+<p>Kernel and boot loader updates are signed automatically after this.</p>
+<div class="callout note"><p class="ct" data-mark="&#9632;">Keep the passphrase</p><p>It stays the recovery key. A firmware update or reset can change or drop the Secure Boot keys; the disk then asks for the passphrase again. Run <code>sudo subcult secureboot setup</code> once more, or turn Secure Boot off to boot at all.</p></div>
 <p class="muted">To install without questions, from a file, see <a class="wl" href="/docs/developers/#unattended">Developers</a>.</p>
 <nav class="pager" aria-label="Previous and next page"><a class="prev" href="/docs/" rel="prev"><span>Previous</span>Overview</a><a class="next" href="/docs/keys/" rel="next"><span>Next</span>Keys</a></nav>
 <p class="edit"><a href="https://github.com/subculture-collective/subarchy/blob/main/tools/site/pages/docs/install.html" target="_blank" rel="noopener">Edit this page<span class="sr"> (opens in a new tab)</span></a></p>
@@ -100,6 +117,6 @@
 <div class="row"><a href="/docs/">Docs</a><a href="/docs/glossary/">Glossary</a><a href="https://github.com/subculture-collective/subarchy" target="_blank" rel="noopener">Source<span class="sr"> (opens in a new tab)</span></a><a href="https://github.com/subculture-collective/subarchy/issues" target="_blank" rel="noopener">Issues<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv/support" target="_blank" rel="noopener">Support SUBCULT<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv" target="_blank" rel="noopener">subcult.tv<span class="sr"> (opens in a new tab)</span></a></div>
 <p>Subarchy is free software under GPL-3.0-or-later. Set in Departure Mono (OFL); the docs text in Victor Mono (OFL).</p>
 </div></footer>
-<script src="/app.js?v=f554f0fcb8" defer></script>
+<script src="/app.js?v=591a83a99d" defer></script>
 </body>
 </html>

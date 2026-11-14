@@ -24,8 +24,8 @@
 <link rel="preload" href="/fonts/victor-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/victor-mono-latin-500-italic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/victor-mono-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/style.css?v=e04e15c0c2">
-<script>try{var t=localStorage.getItem("subarchy-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="stylesheet" href="/style.css?v=a700f3f3f6">
+<script>try{var r=document.documentElement,t=localStorage.getItem("subarchy-theme");if(t==="light"||t==="dark")r.setAttribute("data-theme",t);if(localStorage.getItem("subarchy-side")==="hidden")r.setAttribute("data-side","hidden")}catch(e){}</script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -35,7 +35,8 @@
 <button type="button" data-theme-toggle hidden>paper</button>
 </div></header>
 <div class="wrap docs">
-<nav class="side" aria-label="Docs"><details class="toc"><summary>Docs pages</summary><ol><li><a href="/docs/">Overview</a></li><li><a href="/docs/install/">Install</a></li><li><a href="/docs/keys/">Keys</a></li><li><a href="/docs/commands/">Commands</a></li><li><a href="/docs/shell/">Shell aliases</a></li><li><a href="/docs/look/">Theme and fonts</a></li><li><a href="/docs/updates/">Updates and recovery</a></li><li><a href="/docs/glossary/">Glossary</a></li><li><a href="/docs/developers/" aria-current="page">Developers</a><ol class="sections"><li><a href="#layout">Repository</a></li><li><a href="#build">Build and test</a></li><li><a href="#packages">Pinned packages</a></li><li><a href="#unattended">Unattended install</a></li><li><a href="#shell">Shell keys and IPC</a></li><li><a href="#launcher">Extend the launcher</a></li><li><a href="#contributing">Contributing</a></li></ol></li></ol></details></nav>
+<div class="rail"><button type="button" class="side-toggle" data-side-toggle aria-controls="docs-side" hidden>hide</button>
+<nav class="side" id="docs-side" aria-label="Docs"><details class="toc"><summary>Docs pages</summary><ol><li><a href="/docs/">Overview</a></li><li><a href="/docs/install/">Install</a></li><li><a href="/docs/keys/">Keys</a></li><li><a href="/docs/commands/">Commands</a></li><li><a href="/docs/shell/">Shell aliases</a></li><li><a href="/docs/look/">Theme and fonts</a></li><li><a href="/docs/updates/">Updates and recovery</a></li><li><a href="/docs/glossary/">Glossary</a></li><li><a href="/docs/developers/" aria-current="page">Developers</a><ol class="sections"><li><a href="#layout">Repository</a></li><li><a href="#build">Build and test</a></li><li><a href="#iso">Build the ISO yourself</a></li><li><a href="#packages">Pinned packages</a></li><li><a href="#unattended">Unattended install</a></li><li><a href="#shell">Shell keys and IPC</a></li><li><a href="#launcher">Extend the launcher</a></li><li><a href="#contributing">Contributing</a></li></ol></li></ol></details></nav></div>
 <main id="main">
 <p class="crumbs"><a href="/docs/">Docs</a> / Developers</p>
 <h1>Developers</h1>
@@ -67,6 +68,19 @@
 <tr><th scope="row"><code>make iso</code></th><td><code>archiso</code>, sudo</td><td>The live ISO, into <code>build/iso/</code></td></tr>
 <tr><th scope="row"><code>make iso-test</code></th><td><code>qemu-base</code>, <code>edk2-ovmf</code></td><td>Boots the ISO and checks it over the serial console</td></tr>
 <tr><th scope="row"><code>make install-test</code></th><td>also <code>swtpm</code>, <code>imagemagick</code></td><td>Installs into a VM disk, boots it and checks it</td></tr>
+<tr><th scope="row"><code>make install-test-offline</code></th><td>the same</td><td>The same through the guided installer, network off</td></tr>
+</tbody></table></div>
+
+<h2 id="iso">Build the ISO yourself</h2>
+<p>On Arch Linux, with <code>archiso</code>, Go and Docker installed:</p>
+<div class="cmd"><code>git clone https://github.com/subculture-collective/subarchy.git &amp;&amp; cd subarchy</code></div>
+<div class="cmd"><code>make iso</code></div>
+<p>The image lands in <code>build/iso/</code>. A fresh checkout first stops and names the packages Subarchy rebuilds itself; see <a class="wl" href="#packages">Pinned packages</a>. Then test it without a spare machine:</p>
+<div class="scroll"><table><caption class="sr">VM test targets</caption>
+<thead><tr><th scope="col">Run</th><th scope="col">Does</th></tr></thead><tbody>
+<tr><th scope="row"><code>make iso-test</code></th><td>Boots the newest ISO in QEMU and checks it over the serial console</td></tr>
+<tr><th scope="row"><code>make install-test</code></th><td>Installs into a VM disk, then boots the result and checks it</td></tr>
+<tr><th scope="row"><code>make install-test-offline</code></th><td>The same through the guided installer, with the network off</td></tr>
 </tbody></table></div>
 
 <h2 id="packages">Pinned packages</h2>
@@ -126,6 +140,6 @@
 <div class="row"><a href="/docs/">Docs</a><a href="/docs/glossary/">Glossary</a><a href="https://github.com/subculture-collective/subarchy" target="_blank" rel="noopener">Source<span class="sr"> (opens in a new tab)</span></a><a href="https://github.com/subculture-collective/subarchy/issues" target="_blank" rel="noopener">Issues<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv/support" target="_blank" rel="noopener">Support SUBCULT<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv" target="_blank" rel="noopener">subcult.tv<span class="sr"> (opens in a new tab)</span></a></div>
 <p>Subarchy is free software under GPL-3.0-or-later. Set in Departure Mono (OFL); the docs text in Victor Mono (OFL).</p>
 </div></footer>
-<script src="/app.js?v=f554f0fcb8" defer></script>
+<script src="/app.js?v=591a83a99d" defer></script>
 </body>
 </html>

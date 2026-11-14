@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Subarchy docs</title>
-<meta name="description" content="Reference for Subarchy: install it in a virtual machine, the default keys, the subcult commands, shell aliases, themes, updates and recovery.">
+<meta name="description" content="Reference for Subarchy: download and install it, the default keys, the subcult commands, shell aliases, themes, updates and recovery.">
 <link rel="canonical" href="https://subarchy.subcult.tv/docs/">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Subarchy docs">
-<meta property="og:description" content="Reference for Subarchy: install it in a virtual machine, the default keys, the subcult commands, shell aliases, themes, updates and recovery.">
+<meta property="og:description" content="Reference for Subarchy: download and install it, the default keys, the subcult commands, shell aliases, themes, updates and recovery.">
 <meta property="og:url" content="https://subarchy.subcult.tv/docs/">
 <meta property="og:image" content="https://subarchy.subcult.tv/assets/og.png">
 <meta property="og:image:width" content="1200">
@@ -24,8 +24,8 @@
 <link rel="preload" href="/fonts/victor-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/victor-mono-latin-500-italic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/victor-mono-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/style.css?v=e04e15c0c2">
-<script>try{var t=localStorage.getItem("subarchy-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="stylesheet" href="/style.css?v=a700f3f3f6">
+<script>try{var r=document.documentElement,t=localStorage.getItem("subarchy-theme");if(t==="light"||t==="dark")r.setAttribute("data-theme",t);if(localStorage.getItem("subarchy-side")==="hidden")r.setAttribute("data-side","hidden")}catch(e){}</script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -35,30 +35,32 @@
 <button type="button" data-theme-toggle hidden>paper</button>
 </div></header>
 <div class="wrap docs">
-<nav class="side" aria-label="Docs"><details class="toc"><summary>Docs pages</summary><ol><li><a href="/docs/" aria-current="page">Overview</a><ol class="sections"><li><a href="#quick-start">Quick start</a></li><li><a href="#pages">Pages</a></li><li><a href="#at-a-glance">At a glance</a></li></ol></li><li><a href="/docs/install/">Install</a></li><li><a href="/docs/keys/">Keys</a></li><li><a href="/docs/commands/">Commands</a></li><li><a href="/docs/shell/">Shell aliases</a></li><li><a href="/docs/look/">Theme and fonts</a></li><li><a href="/docs/updates/">Updates and recovery</a></li><li><a href="/docs/glossary/">Glossary</a></li><li><a href="/docs/developers/">Developers</a></li></ol></details></nav>
+<div class="rail"><button type="button" class="side-toggle" data-side-toggle aria-controls="docs-side" hidden>hide</button>
+<nav class="side" id="docs-side" aria-label="Docs"><details class="toc"><summary>Docs pages</summary><ol><li><a href="/docs/" aria-current="page">Overview</a><ol class="sections"><li><a href="#quick-start">Quick start</a></li><li><a href="#pages">Pages</a></li><li><a href="#at-a-glance">At a glance</a></li></ol></li><li><a href="/docs/install/">Install</a></li><li><a href="/docs/keys/">Keys</a></li><li><a href="/docs/commands/">Commands</a></li><li><a href="/docs/shell/">Shell aliases</a></li><li><a href="/docs/look/">Theme and fonts</a></li><li><a href="/docs/updates/">Updates and recovery</a></li><li><a href="/docs/glossary/">Glossary</a></li><li><a href="/docs/developers/">Developers</a></li></ol></details></nav></div>
 <main id="main">
 <h1>Subarchy docs</h1>
 <p class="lede">Subarchy is an Arch Linux desktop: <a class="wl" href="/docs/glossary/#hyprland">Hyprland</a> with its own shell, lock screen and theme, managed with one command, <code>subcult</code>. These pages are a reference. <em>Look a thing up, then get back to work.</em></p>
-<div class="callout note"><p class="ct" data-mark="&#9632;">In development</p><p>There is <strong>no release</strong> and no downloadable image. The ISO builds in CI, installs in a virtual machine, and runs on one laptop. Everything here describes the source as it is today.</p></div>
+<p>The same pages are on every install and work offline: run <code>subcult help</code>, or open <strong>Learn</strong> in the menu.</p>
 
 <h2 id="quick-start">Quick start</h2>
 <ol class="steps">
-<li><p><strong>Build the ISO</strong> on Arch Linux. See <a class="wl" href="/docs/install/#build">Install</a>.</p></li>
-<li><p><strong>Install it into a VM</strong> with <code>make install-test</code>, or boot the ISO and let <a class="wl" href="/docs/glossary/#subarchy-setup">subarchy-setup</a> walk you through it.</p></li>
+<li><p><strong>Download the ISO</strong> and check it. See <a class="wl" href="/docs/install/#download">Download</a>.</p></li>
+<li><p><strong>Write it to a USB stick</strong> and boot from it, with Secure Boot off. See <a class="wl" href="/docs/install/#usb">Write the USB stick</a>.</p></li>
+<li><p><strong>Answer the installer.</strong> <a class="wl" href="/docs/glossary/#subarchy-setup">subarchy-setup</a> asks a few questions, then installs. See <a class="wl" href="/docs/install/#installer">The installer</a>.</p></li>
 <li><p><strong>Log in.</strong> <span class="keys"><kbd>Super</kbd> + <kbd>Return</kbd></span> opens a terminal, <span class="keys"><kbd>Super</kbd> + <kbd>Space</kbd></span> opens the <a class="wl" href="/docs/glossary/#launcher">launcher</a>.</p></li>
 <li><p><strong>Run <code>subcult commands</code></strong> to see everything the system can do.</p></li>
 </ol>
 
 <h2 id="pages">Pages</h2>
 <ul class="cards">
-<li><a href="/docs/install/"><strong>Install</strong><span>Build the ISO, try it in a VM, what the installer asks.</span></a></li>
+<li><a href="/docs/install/"><strong>Install</strong><span>Download, USB stick, the installer, Secure Boot and TPM unlock.</span></a></li>
 <li><a href="/docs/keys/"><strong>Keys</strong><span>Every default binding, and the launcher's prefixes.</span></a></li>
 <li><a href="/docs/commands/"><strong>Commands</strong><span>All <code>subcult</code> commands, grouped.</span></a></li>
 <li><a href="/docs/shell/"><strong>Shell aliases</strong><span>Short names and functions in zsh and bash.</span></a></li>
 <li><a href="/docs/look/"><strong>Theme and fonts</strong><span>Palette, Pult, fonts, cursor, where settings live.</span></a></li>
-<li><a href="/docs/updates/"><strong>Updates and recovery</strong><span>Updating, channels, snapshots.</span></a></li>
+<li><a href="/docs/updates/"><strong>Updates and recovery</strong><span>Updating, channels, snapshots, factory reset.</span></a></li>
 <li><a href="/docs/glossary/"><strong>Glossary</strong><span>The terms these pages use.</span></a></li>
-<li><a href="/docs/developers/"><strong>Developers</strong><span>Repository, builds, tests, unattended install.</span></a></li>
+<li><a href="/docs/developers/"><strong>Developers</strong><span>Repository, building the ISO, tests, unattended install.</span></a></li>
 </ul>
 
 <h2 id="at-a-glance">At a glance</h2>
@@ -67,7 +69,9 @@
 <tr><th scope="row">Lock screen</th><td>A separate program, so a shell crash cannot unlock the session</td></tr>
 <tr><th scope="row">Disk</th><td><a class="wl" href="/docs/glossary/#luks2">LUKS2</a> encryption, <a class="wl" href="/docs/glossary/#btrfs">btrfs</a> with zstd compression, <a class="wl" href="/docs/glossary/#snapper">snapper</a> snapshots</td></tr>
 <tr><th scope="row">Boot</th><td><a class="wl" href="/docs/glossary/#limine">Limine</a>, one entry per snapshot, one <a class="wl" href="/docs/glossary/#uki">UKI</a> per kernel</td></tr>
-<tr><th scope="row">Updates</th><td>The <a class="wl" href="/docs/glossary/#channel">stable channel</a>, a dated Arch Linux Archive snapshot</td></tr>
+<tr><th scope="row">Hardware</th><td>Fixes for known laptops and parts, applied at install. <code>subcult hw fixes</code> lists yours.</td></tr>
+<tr><th scope="row">Updates</th><td>The <a class="wl" href="/docs/glossary/#channel">stable channel</a>, a tested Arch snapshot</td></tr>
+<tr><th scope="row">Power</th><td>Quiet on battery: no avoidable polling, animation or GPU use. Nothing held back on mains.</td></tr>
 <tr><th scope="row">Platform</th><td>x86_64 with UEFI</td></tr>
 </tbody></table></div>
 <nav class="pager" aria-label="Previous and next page"><a class="next" href="/docs/install/" rel="next"><span>Next</span>Install</a></nav>
@@ -78,6 +82,6 @@
 <div class="row"><a href="/docs/">Docs</a><a href="/docs/glossary/">Glossary</a><a href="https://github.com/subculture-collective/subarchy" target="_blank" rel="noopener">Source<span class="sr"> (opens in a new tab)</span></a><a href="https://github.com/subculture-collective/subarchy/issues" target="_blank" rel="noopener">Issues<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv/support" target="_blank" rel="noopener">Support SUBCULT<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv" target="_blank" rel="noopener">subcult.tv<span class="sr"> (opens in a new tab)</span></a></div>
 <p>Subarchy is free software under GPL-3.0-or-later. Set in Departure Mono (OFL); the docs text in Victor Mono (OFL).</p>
 </div></footer>
-<script src="/app.js?v=f554f0fcb8" defer></script>
+<script src="/app.js?v=591a83a99d" defer></script>
 </body>
 </html>

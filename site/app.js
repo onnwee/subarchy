@@ -1,4 +1,5 @@
-// Theme switch, copy buttons and the docs contents marker. The pages read fully without this file.
+// Theme switch, copy buttons, the docs sidebar, its contents marker and the scroll marks.
+// The pages read fully without this file.
 (function () {
   var root = document.documentElement;
   var colours = { dark: "#100B19", light: "#F0ECE4" };
@@ -77,4 +78,80 @@
     window.addEventListener("scroll", function () { if (!queued) { queued = true; requestAnimationFrame(update); } }, { passive: true });
     update();
   }
+
+  // Docs sidebar: hide it to give the text the width; hovering the toggle, or tabbing to it, floats it back.
+  var docs = document.querySelector(".docs");
+  var tog = document.querySelector("[data-side-toggle]");
+  if (docs && tog) {
+    var rail = tog.parentNode;
+    var hidden = function () { return root.getAttribute("data-side") === "hidden"; };
+    var paintToggle = function () {
+      tog.textContent = hidden() ? "\u00bb" : "\u00ab hide";
+      tog.setAttribute("aria-label", hidden() ? "Show the docs pages" : "Hide the docs pages");
+      tog.setAttribute("aria-expanded", hidden() ? "false" : "true");
+    };
+    tog.hidden = false;
+    paintToggle();
+    tog.addEventListener("click", function () {
+      var hide = !hidden();
+      if (hide) { root.setAttribute("data-side", "hidden"); docs.classList.add("peek-off"); }
+      else root.removeAttribute("data-side");
+      try { localStorage.setItem("subarchy-side", hide ? "hidden" : "shown"); } catch (e) {}
+      paintToggle();
+      say(hide ? "Docs pages hidden" : "Docs pages shown");
+    });
+    // After a click or Escape the floating pages stay away until the pointer or focus leaves.
+    rail.addEventListener("mouseleave", function () { docs.classList.remove("peek-off"); });
+    rail.addEventListener("focusout", function (e) { if (!rail.contains(e.relatedTarget)) docs.classList.remove("peek-off"); });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && hidden() && rail.matches(":hover, :focus-within")) {
+        docs.classList.add("peek-off");
+        if (rail.contains(document.activeElement)) tog.focus();
+      }
+    });
+  }
+
+  // Scroll marks: the native bars are hidden in style.css. A 2px stroke on the right edge follows the page,
+  // and one along the bottom (or right) edge of each scrolling box follows that box.
+  var bar = document.createElement("div");
+  bar.className = "sbar"; bar.setAttribute("aria-hidden", "true");
+  var thumb = document.createElement("i");
+  bar.appendChild(thumb);
+  document.body.appendChild(bar);
+  var boxes = Array.prototype.slice.call(document.querySelectorAll(".scroll, pre, .cmd code, .docs .side"));
+  function markPage() {
+    var full = document.documentElement.scrollHeight, view = bar.clientHeight || window.innerHeight;
+    bar.hidden = full <= view + 1;
+    if (bar.hidden) return;
+    var size = Math.max(24, view * view / full);
+    thumb.style.height = size + "px";
+    thumb.style.transform = "translateY(" + (window.scrollY / (full - view)) * (view - size) + "px)";
+  }
+  function markBox(el) {
+    var x = el.scrollWidth > el.clientWidth + 1, y = !x && el.scrollHeight > el.clientHeight + 1;
+    el.classList.toggle("sbx", x);
+    el.classList.toggle("sby", y);
+    if (x) {
+      el.style.setProperty("--sb-size", el.clientWidth / el.scrollWidth);
+      el.style.setProperty("--sb-pos", el.scrollLeft / (el.scrollWidth - el.clientWidth));
+    } else if (y) {
+      el.style.setProperty("--sb-size", el.clientHeight / el.scrollHeight);
+      el.style.setProperty("--sb-pos", el.scrollTop / (el.scrollHeight - el.clientHeight));
+    }
+  }
+  var pending = false;
+  function markAll() {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(function () { pending = false; markPage(); boxes.forEach(markBox); });
+  }
+  window.addEventListener("scroll", markAll, { passive: true });
+  window.addEventListener("resize", markAll);
+  boxes.forEach(function (el) { el.addEventListener("scroll", function () { requestAnimationFrame(function () { markBox(el); }); }, { passive: true }); });
+  if (window.ResizeObserver) {
+    var ro = new ResizeObserver(markAll);
+    ro.observe(document.body);
+    boxes.forEach(function (el) { ro.observe(el); });
+  }
+  markAll();
 })();

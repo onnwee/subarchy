@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Updates and recovery · Subarchy docs</title>
-<meta name="description" content="How subcult update works, the stable and edge channels, and undoing a bad update by booting a snapshot.">
+<meta name="description" content="How subcult update works, the stable and edge channels, undoing a bad update from a snapshot, factory reset, and what happens when the shell or lock screen crashes.">
 <link rel="canonical" href="https://subarchy.subcult.tv/docs/updates/">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Updates and recovery · Subarchy docs">
-<meta property="og:description" content="How subcult update works, the stable and edge channels, and undoing a bad update by booting a snapshot.">
+<meta property="og:description" content="How subcult update works, the stable and edge channels, undoing a bad update from a snapshot, factory reset, and what happens when the shell or lock screen crashes.">
 <meta property="og:url" content="https://subarchy.subcult.tv/docs/updates/">
 <meta property="og:image" content="https://subarchy.subcult.tv/assets/og.png">
 <meta property="og:image:width" content="1200">
@@ -24,8 +24,8 @@
 <link rel="preload" href="/fonts/victor-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/victor-mono-latin-500-italic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/victor-mono-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/style.css?v=e04e15c0c2">
-<script>try{var t=localStorage.getItem("subarchy-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="stylesheet" href="/style.css?v=a700f3f3f6">
+<script>try{var r=document.documentElement,t=localStorage.getItem("subarchy-theme");if(t==="light"||t==="dark")r.setAttribute("data-theme",t);if(localStorage.getItem("subarchy-side")==="hidden")r.setAttribute("data-side","hidden")}catch(e){}</script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -35,28 +35,37 @@
 <button type="button" data-theme-toggle hidden>paper</button>
 </div></header>
 <div class="wrap docs">
-<nav class="side" aria-label="Docs"><details class="toc"><summary>Docs pages</summary><ol><li><a href="/docs/">Overview</a></li><li><a href="/docs/install/">Install</a></li><li><a href="/docs/keys/">Keys</a></li><li><a href="/docs/commands/">Commands</a></li><li><a href="/docs/shell/">Shell aliases</a></li><li><a href="/docs/look/">Theme and fonts</a></li><li><a href="/docs/updates/" aria-current="page">Updates and recovery</a><ol class="sections"><li><a href="#update">Update</a></li><li><a href="#channels">Channels</a></li><li><a href="#rollback">Undo a bad update</a></li><li><a href="#lock">If the shell crashes</a></li></ol></li><li><a href="/docs/glossary/">Glossary</a></li><li><a href="/docs/developers/">Developers</a></li></ol></details></nav>
+<div class="rail"><button type="button" class="side-toggle" data-side-toggle aria-controls="docs-side" hidden>hide</button>
+<nav class="side" id="docs-side" aria-label="Docs"><details class="toc"><summary>Docs pages</summary><ol><li><a href="/docs/">Overview</a></li><li><a href="/docs/install/">Install</a></li><li><a href="/docs/keys/">Keys</a></li><li><a href="/docs/commands/">Commands</a></li><li><a href="/docs/shell/">Shell aliases</a></li><li><a href="/docs/look/">Theme and fonts</a></li><li><a href="/docs/updates/" aria-current="page">Updates and recovery</a><ol class="sections"><li><a href="#update">Update</a></li><li><a href="#channels">Channels</a></li><li><a href="#rollback">Undo a bad update</a></li><li><a href="#factory-reset">Factory reset</a></li><li><a href="#lock">If the shell or lock screen crashes</a></li></ol></li><li><a href="/docs/glossary/">Glossary</a></li><li><a href="/docs/developers/">Developers</a></li></ol></details></nav></div>
 <main id="main">
 <p class="crumbs"><a href="/docs/">Docs</a> / Updates and recovery</p>
 <h1>Updates and recovery</h1>
-<p class="lede">One command updates everything, and it takes a snapshot first.</p>
+<p class="lede">One command updates everything, and it takes a snapshot first. <em>Nothing installs on its own.</em></p>
 
 <h2 id="update">Update</h2>
 <div class="cmd"><code>subcult update</code></div>
-<p>In order: <strong>takes a <a class="wl" href="/docs/glossary/#snapshot">snapshot</a></strong>, upgrades packages, runs <a class="wl" href="/docs/glossary/#migrations">migrations</a>, cleans up.</p>
+<p>In order, it:</p>
+<ol class="steps">
+<li><p><strong>Takes a <a class="wl" href="/docs/glossary/#snapshot">snapshot</a></strong>, so you can boot back to this moment.</p></li>
+<li><p><strong>Upgrades every package</strong>, then checks that kernel modules built for both kernels. If one did not, it says so and keeps the previous kernel bootable.</p></li>
+<li><p><strong>Runs pending <a class="wl" href="/docs/glossary/#migrations">migrations</a>.</strong></p></li>
+<li><p><strong>Updates firmware</strong>, <a class="wl" href="/docs/glossary/#aur">AUR</a> packages and mise tools.</p></li>
+<li><p><strong>Offers to remove</strong> orphaned packages and old package files.</p></li>
+<li><p><strong>Reports</strong> what changed, which services need a restart and whether to reboot.</p></li>
+</ol>
 <div class="scroll"><table><caption class="sr">Update commands</caption><tbody>
 <tr><th scope="row"><code>subcult update check</code></th><td>Count available updates without installing them</td></tr>
 <tr><th scope="row"><code>subcult update --dry-run</code></th><td>Show what an update would do</td></tr>
 <tr><th scope="row"><code>subcult update migrate --pending</code></th><td>List migrations not yet run</td></tr>
 </tbody></table></div>
-<p class="muted">The bar's updates widget shows the count too.</p>
+<p class="muted">A daily check counts available updates, and the bar's updates widget shows the number.</p>
 
 <h2 id="channels">Channels</h2>
 <p>A <a class="wl" href="/docs/glossary/#channel">channel</a> decides where packages come from.</p>
 <div class="scroll"><table><caption class="sr">Update channels</caption>
 <thead><tr><th scope="col">Channel</th><th scope="col">Packages from</th><th scope="col">Pick it when</th></tr></thead><tbody>
-<tr><th scope="row"><strong>stable</strong></th><td>A dated <a class="wl" href="/docs/glossary/#arch-linux-archive">Arch Linux Archive</a> snapshot</td><td>You want every machine on the same, tested package set. <em>New installs start here.</em></td></tr>
-<tr><th scope="row"><strong>edge</strong></th><td>The Arch mirrors, directly</td><td>You want packages the day Arch ships them</td></tr>
+<tr><th scope="row"><strong>stable</strong></th><td>A dated <a class="wl" href="/docs/glossary/#arch-linux-archive">Arch Linux Archive</a> snapshot, moved forward once Subarchy's tests install and boot it</td><td>You want a tested package set, the same on every machine. <em>New installs start here.</em></td></tr>
+<tr><th scope="row"><strong>edge</strong></th><td>The Arch mirrors, directly</td><td>You want packages the day Arch ships them, and can live with the odd breakage</td></tr>
 </tbody></table></div>
 <div class="cmd"><code>subcult channel set edge</code></div>
 <p><code>subcult channel</code> shows the current one.</p>
@@ -66,11 +75,21 @@
 <li><p><strong>Reboot.</strong> The <a class="wl" href="/docs/glossary/#limine">Limine</a> boot menu lists one entry per <a class="wl" href="/docs/glossary/#snapper">snapper</a> snapshot.</p></li>
 <li><p><strong>Boot the snapshot</strong> taken just before the update. <code>subcult update</code> made it for you.</p></li>
 </ol>
-<div class="callout note"><p class="ct" data-mark="&#9632;">Factory reset</p><p>The installer also leaves a read-only <strong>factory-reset snapshot</strong> of the fresh system.</p></div>
 
-<h2 id="lock">If the shell crashes</h2>
-<blockquote><p>The lock screen is a separate program from the shell. <em>If the shell crashes it restarts, and the session stays locked.</em></p></blockquote>
-<p>Restart the shell yourself with <code>systemctl --user restart subcult-shell</code>.</p>
+<h2 id="factory-reset">Factory reset</h2>
+<p>The installer keeps a read-only <strong>factory snapshot</strong> of the fresh system, outside the snapshot rotation. <strong>Factory reset</strong>, in the menu, swaps it in as the system on the next boot and starts first-boot setup again.</p>
+<div class="scroll"><table><caption class="sr">Factory reset modes</caption><tbody>
+<tr><th scope="row">Keep my files</th><td>The system goes back to new; your user and home folder stay</td></tr>
+<tr><th scope="row">Remove everything</th><td>The user and home folder go too, for handing the machine on</td></tr>
+</tbody></table></div>
+
+<h2 id="lock">If the shell or lock screen crashes</h2>
+<blockquote><p>The lock screen is a separate program from the shell. <em>A shell crash cannot unlock the session.</em></p></blockquote>
+<p>If the shell crashes, it restarts by itself. Restart it yourself with <code>systemctl --user restart subcult-shell</code>.</p>
+<p>If the lock screen crashes, the session <strong>stays locked</strong>: Hyprland shows a notice and a new lock screen starts within a second. If that keeps failing, switch to a text console with <span class="keys"><kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>F3</kbd></span>, sign in as the same user and run:</p>
+<pre>systemctl --user reset-failed subcult-lock.service
+systemctl --user start subcult-lock.service</pre>
+<p>Then go back with <span class="keys"><kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>F1</kbd></span> and type your password. <code>journalctl --user -b -u subcult-lock.service</code> says why it failed.</p>
 <nav class="pager" aria-label="Previous and next page"><a class="prev" href="/docs/look/" rel="prev"><span>Previous</span>Theme and fonts</a><a class="next" href="/docs/glossary/" rel="next"><span>Next</span>Glossary</a></nav>
 <p class="edit"><a href="https://github.com/subculture-collective/subarchy/blob/main/tools/site/pages/docs/updates.html" target="_blank" rel="noopener">Edit this page<span class="sr"> (opens in a new tab)</span></a></p>
 </main>
@@ -79,6 +98,6 @@
 <div class="row"><a href="/docs/">Docs</a><a href="/docs/glossary/">Glossary</a><a href="https://github.com/subculture-collective/subarchy" target="_blank" rel="noopener">Source<span class="sr"> (opens in a new tab)</span></a><a href="https://github.com/subculture-collective/subarchy/issues" target="_blank" rel="noopener">Issues<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv/support" target="_blank" rel="noopener">Support SUBCULT<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv" target="_blank" rel="noopener">subcult.tv<span class="sr"> (opens in a new tab)</span></a></div>
 <p>Subarchy is free software under GPL-3.0-or-later. Set in Departure Mono (OFL); the docs text in Victor Mono (OFL).</p>
 </div></footer>
-<script src="/app.js?v=f554f0fcb8" defer></script>
+<script src="/app.js?v=591a83a99d" defer></script>
 </body>
 </html>

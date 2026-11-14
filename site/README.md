@@ -28,11 +28,22 @@ paper and remembers the choice.
 Every fact on these pages comes from the repository. Change the page when
 the source changes.
 
+The docs describe Subarchy as released: a downloaded ISO installed on a
+real machine, with the behaviour the accepted decision records set out. They
+do not track what is still unfinished. The landing page's "Where it stands"
+table and the [roadmap](../docs/roadmap.md) say what is checked today; how
+to build the ISO before there is a download is on the Developers page.
+
 | On the page | Source |
 |---|---|
 | What the installer puts on the disk, the status table, the make targets | [README.md](../README.md) |
 | The packages `make iso` needs in `build/repo` first | [tools/iso/build.sh](../tools/iso/build.sh), [packaging/aur/build.sh](../packaging/aur/build.sh) |
 | What the installer asks, the time zone guess, the log path | [install/README.md](../install/README.md) |
+| Download, USB stick, Secure Boot off to boot | the release plan in [marketing-packet](../docs/marketing/marketing-packet.md), [ADR 0012](../docs/decisions/0012-secure-boot.md) |
+| Secure Boot and TPM unlock steps | `bin/subcult-secureboot-setup`, `bin/subcult-disk-tpm`, [ADR 0010](../docs/decisions/0010-disk-encryption.md) |
+| What `subcult update` does, factory reset | [ADR 0026](../docs/decisions/0026-update-model.md), [ADR 0056](../docs/decisions/0056-quality-of-life.md) |
+| Lock screen crash recovery | [ADR 0070](../docs/decisions/0070-lock-crash-recovery.md) |
+| What Pult themes, the offline manual | issues #77 and #78, [ADR 0067](../docs/decisions/0067-user-manual.md) |
 | Unattended install keys | the header of [install/subarchy-install](../install/subarchy-install) |
 | Default keys | [default/hypr/bindings.lua](../default/hypr/bindings.lua) |
 | Launcher prefixes and files | the Launcher section of [shell/README.md](../shell/README.md) |
@@ -86,6 +97,14 @@ Docs prose uses the classes in `style.css`:
   with a first `<p class="ct" data-mark="...">` title.
 - `<ol class="steps">` for numbered steps, `<kbd>` for keys, `<blockquote>`
   for a sentence that should stand out.
+
+On wide screens the docs sidebar can be hidden with its `« hide` button; the
+choice is kept in `localStorage` (`subarchy-side`) and applied by the inline
+script before the first paint, so changing that script means a new CSP hash
+in [deploy/nginx.conf](../deploy/nginx.conf) (`site-check.py` checks it).
+While hidden, hovering or tabbing to the `»` button floats the pages over the
+text, and Escape puts them away. Native scroll bars are hidden everywhere;
+`app.js` draws a 2px accent stroke for the page and for each scrolling box.
 
 ## Checks
 

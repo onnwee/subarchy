@@ -57,7 +57,7 @@ description: The terms used in Subarchy's docs, from Arch Linux Archive to zram,
 <dt id="sddm">SDDM</dt>
 <dd>The login screen.</dd>
 <dt id="secure-boot">Secure Boot</dt>
-<dd>Firmware that boots only signed files. <code>sudo subcult secureboot setup</code> turns it on with keys made on your machine.</dd>
+<dd>Firmware that boots only signed files. <code>sudo subcult secureboot setup</code> turns it on with keys made on your machine. See [[install#secure-boot|Secure Boot and TPM unlock]].</dd>
 <dt id="snapper">snapper</dt>
 <dd>Takes and manages <a class="wl" href="#btrfs">btrfs</a> snapshots.</dd>
 <dt id="snapshot">Snapshot</dt>
@@ -69,7 +69,7 @@ description: The terms used in Subarchy's docs, from Arch Linux Archive to zram,
 <dt id="tailnet">Tailnet</dt>
 <dd>Your private Tailscale network. <code>subcult tailscale send</code> sends files to its machines.</dd>
 <dt id="tpm">TPM</dt>
-<dd>A security chip on the mainboard. It can unlock the disk at boot instead of a typed passphrase: <code>sudo subcult disk tpm enable</code>.</dd>
+<dd>A security chip on the mainboard. Once <a class="wl" href="#secure-boot">Secure Boot</a> is on, it can unlock the disk at boot instead of a typed passphrase: <code>sudo subcult disk tpm enable</code>.</dd>
 <dt id="uki">UKI</dt>
 <dd>Unified kernel image: the kernel, its initramfs and command line in one file. Subarchy makes one per kernel.</dd>
 <dt id="uwsm">uwsm</dt>

@@ -31,6 +31,19 @@ description: Working on Subarchy: repository layout, make targets, rebuilding pi
 <tr><th scope="row"><code>make iso</code></th><td><code>archiso</code>, sudo</td><td>The live ISO, into <code>build/iso/</code></td></tr>
 <tr><th scope="row"><code>make iso-test</code></th><td><code>qemu-base</code>, <code>edk2-ovmf</code></td><td>Boots the ISO and checks it over the serial console</td></tr>
 <tr><th scope="row"><code>make install-test</code></th><td>also <code>swtpm</code>, <code>imagemagick</code></td><td>Installs into a VM disk, boots it and checks it</td></tr>
+<tr><th scope="row"><code>make install-test-offline</code></th><td>the same</td><td>The same through the guided installer, network off</td></tr>
+</tbody></table></div>
+
+<h2 id="iso">Build the ISO yourself</h2>
+<p>On Arch Linux, with <code>archiso</code>, Go and Docker installed:</p>
+<div class="cmd"><code>git clone https://github.com/subculture-collective/subarchy.git &amp;&amp; cd subarchy</code></div>
+<div class="cmd"><code>make iso</code></div>
+<p>The image lands in <code>build/iso/</code>. A fresh checkout first stops and names the packages Subarchy rebuilds itself; see [[#packages|Pinned packages]]. Then test it without a spare machine:</p>
+<div class="scroll"><table><caption class="sr">VM test targets</caption>
+<thead><tr><th scope="col">Run</th><th scope="col">Does</th></tr></thead><tbody>
+<tr><th scope="row"><code>make iso-test</code></th><td>Boots the newest ISO in QEMU and checks it over the serial console</td></tr>
+<tr><th scope="row"><code>make install-test</code></th><td>Installs into a VM disk, then boots the result and checks it</td></tr>
+<tr><th scope="row"><code>make install-test-offline</code></th><td>The same through the guided installer, with the network off</td></tr>
 </tbody></table></div>
 
 <h2 id="packages">Pinned packages</h2>

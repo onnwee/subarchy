@@ -64,8 +64,10 @@ SUMMARY_OVERRIDES = {
     "subcult display scale": "Set the focused display's scale, or step up or down through the preset scales",
 }
 
-THEME_SCRIPT = ('try{var t=localStorage.getItem("subarchy-theme");'
-                'if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}')
+# Runs before the first paint, so a saved theme or a hidden docs sidebar does not flash.
+THEME_SCRIPT = ('try{var r=document.documentElement,t=localStorage.getItem("subarchy-theme");'
+                'if(t==="light"||t==="dark")r.setAttribute("data-theme",t);'
+                'if(localStorage.getItem("subarchy-side")==="hidden")r.setAttribute("data-side","hidden")}catch(e){}')
 OG_ALT = ("SUBARCHY in dripping green block letters above the line: "
           "An Arch Linux desktop from SUBCULT. In development.")
 NEW_TAB = '<span class="sr"> (opens in a new tab)</span>'
@@ -262,8 +264,9 @@ def docs_layout(slug, meta, body):
     source = f"tools/site/pages/docs/{slug or 'index'}.html"
     return (
         '<div class="wrap docs">\n'
-        '<nav class="side" aria-label="Docs"><details class="toc"><summary>Docs pages</summary>'
-        f'<ol>{"".join(items)}</ol></details></nav>\n'
+        '<div class="rail"><button type="button" class="side-toggle" data-side-toggle aria-controls="docs-side" hidden>hide</button>\n'
+        '<nav class="side" id="docs-side" aria-label="Docs"><details class="toc"><summary>Docs pages</summary>'
+        f'<ol>{"".join(items)}</ol></details></nav></div>\n'
         f'<main id="main">\n{crumbs}<h1>{meta["h1"]}</h1>\n{body.strip()}\n'
         f'<nav class="pager" aria-label="Previous and next page">{"".join(pager)}</nav>\n'
         f'<p class="edit"><a href="{REPO}/blob/main/{source}">Edit this page</a></p>\n'

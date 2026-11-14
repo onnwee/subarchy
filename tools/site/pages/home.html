@@ -38,7 +38,7 @@ description: Subarchy is an Arch Linux desktop distribution from SUBCULT: Hyprla
 <section id="install"><div class="wrap sec"><header><div class="n">04</div><h2>Try it</h2></header><div class="body"><p>There is no published image. To try Subarchy, build the ISO and install it into a virtual machine. On Arch Linux, with <code>archiso</code>, Go and Docker installed:</p>
 <div class="cmd"><code>git clone https://github.com/subculture-collective/subarchy.git &amp;&amp; cd subarchy</code></div>
 <div class="cmd"><code>make iso</code></div>
-<p class="muted small">The first run stops and names the packages Subarchy rebuilds itself. Build them with <code>packaging/aur/build.sh</code> and the names it printed, then run <code>make iso</code> again. [[install#build|Details in the docs.]]</p>
+<p class="muted small">The first run stops and names the packages Subarchy rebuilds itself. Build them with <code>packaging/aur/build.sh</code> and the names it printed, then run <code>make iso</code> again. [[developers#iso|Details in the docs.]]</p>
 <p>Or let the test harness build a VM disk, install into it and boot the result. This needs <code>qemu-base</code>, <code>edk2-ovmf</code>, <code>swtpm</code> and <code>imagemagick</code>:</p>
 <div class="cmd"><code>make install-test</code></div>
 <div class="callout warning"><p class="ct" data-mark="&#9888;">Warning</p><p><strong>The installer wipes the disk you choose.</strong> It asks last and the default answer is no. Do not point it at a disk you need.</p></div>

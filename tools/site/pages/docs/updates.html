@@ -1,26 +1,34 @@
 <!--
 title: Updates and recovery · Subarchy docs
 h1: Updates and recovery
-description: How subcult update works, the stable and edge channels, and undoing a bad update by booting a snapshot.
+description: How subcult update works, the stable and edge channels, undoing a bad update from a snapshot, factory reset, and what happens when the shell or lock screen crashes.
 -->
-<p class="lede">One command updates everything, and it takes a snapshot first.</p>
+<p class="lede">One command updates everything, and it takes a snapshot first. <em>Nothing installs on its own.</em></p>
 
 <h2 id="update">Update</h2>
 <div class="cmd"><code>subcult update</code></div>
-<p>In order: <strong>takes a [[snapshot]]</strong>, upgrades packages, runs [[migrations]], cleans up.</p>
+<p>In order, it:</p>
+<ol class="steps">
+<li><p><strong>Takes a [[snapshot]]</strong>, so you can boot back to this moment.</p></li>
+<li><p><strong>Upgrades every package</strong>, then checks that kernel modules built for both kernels. If one did not, it says so and keeps the previous kernel bootable.</p></li>
+<li><p><strong>Runs pending [[migrations]].</strong></p></li>
+<li><p><strong>Updates firmware</strong>, [[AUR]] packages and mise tools.</p></li>
+<li><p><strong>Offers to remove</strong> orphaned packages and old package files.</p></li>
+<li><p><strong>Reports</strong> what changed, which services need a restart and whether to reboot.</p></li>
+</ol>
 <div class="scroll"><table><caption class="sr">Update commands</caption><tbody>
 <tr><th scope="row"><code>subcult update check</code></th><td>Count available updates without installing them</td></tr>
 <tr><th scope="row"><code>subcult update --dry-run</code></th><td>Show what an update would do</td></tr>
 <tr><th scope="row"><code>subcult update migrate --pending</code></th><td>List migrations not yet run</td></tr>
 </tbody></table></div>
-<p class="muted">The bar's updates widget shows the count too.</p>
+<p class="muted">A daily check counts available updates, and the bar's updates widget shows the number.</p>
 
 <h2 id="channels">Channels</h2>
 <p>A [[channel]] decides where packages come from.</p>
 <div class="scroll"><table><caption class="sr">Update channels</caption>
 <thead><tr><th scope="col">Channel</th><th scope="col">Packages from</th><th scope="col">Pick it when</th></tr></thead><tbody>
-<tr><th scope="row"><strong>stable</strong></th><td>A dated [[Arch Linux Archive]] snapshot</td><td>You want every machine on the same, tested package set. <em>New installs start here.</em></td></tr>
-<tr><th scope="row"><strong>edge</strong></th><td>The Arch mirrors, directly</td><td>You want packages the day Arch ships them</td></tr>
+<tr><th scope="row"><strong>stable</strong></th><td>A dated [[Arch Linux Archive]] snapshot, moved forward once Subarchy's tests install and boot it</td><td>You want a tested package set, the same on every machine. <em>New installs start here.</em></td></tr>
+<tr><th scope="row"><strong>edge</strong></th><td>The Arch mirrors, directly</td><td>You want packages the day Arch ships them, and can live with the odd breakage</td></tr>
 </tbody></table></div>
 <div class="cmd"><code>subcult channel set edge</code></div>
 <p><code>subcult channel</code> shows the current one.</p>
@@ -30,8 +38,18 @@ description: How subcult update works, the stable and edge channels, and undoing
 <li><p><strong>Reboot.</strong> The [[Limine]] boot menu lists one entry per [[snapper]] snapshot.</p></li>
 <li><p><strong>Boot the snapshot</strong> taken just before the update. <code>subcult update</code> made it for you.</p></li>
 </ol>
-<div class="callout note"><p class="ct" data-mark="&#9632;">Factory reset</p><p>The installer also leaves a read-only <strong>factory-reset snapshot</strong> of the fresh system.</p></div>
 
-<h2 id="lock">If the shell crashes</h2>
-<blockquote><p>The lock screen is a separate program from the shell. <em>If the shell crashes it restarts, and the session stays locked.</em></p></blockquote>
-<p>Restart the shell yourself with <code>systemctl --user restart subcult-shell</code>.</p>
+<h2 id="factory-reset">Factory reset</h2>
+<p>The installer keeps a read-only <strong>factory snapshot</strong> of the fresh system, outside the snapshot rotation. <strong>Factory reset</strong>, in the menu, swaps it in as the system on the next boot and starts first-boot setup again.</p>
+<div class="scroll"><table><caption class="sr">Factory reset modes</caption><tbody>
+<tr><th scope="row">Keep my files</th><td>The system goes back to new; your user and home folder stay</td></tr>
+<tr><th scope="row">Remove everything</th><td>The user and home folder go too, for handing the machine on</td></tr>
+</tbody></table></div>
+
+<h2 id="lock">If the shell or lock screen crashes</h2>
+<blockquote><p>The lock screen is a separate program from the shell. <em>A shell crash cannot unlock the session.</em></p></blockquote>
+<p>If the shell crashes, it restarts by itself. Restart it yourself with <code>systemctl --user restart subcult-shell</code>.</p>
+<p>If the lock screen crashes, the session <strong>stays locked</strong>: Hyprland shows a notice and a new lock screen starts within a second. If that keeps failing, switch to a text console with {{Ctrl+Alt+F3}}, sign in as the same user and run:</p>
+<pre>systemctl --user reset-failed subcult-lock.service
+systemctl --user start subcult-lock.service</pre>
+<p>Then go back with {{Ctrl+Alt+F1}} and type your password. <code>journalctl --user -b -u subcult-lock.service</code> says why it failed.</p>
