@@ -64,6 +64,17 @@ ShellRoot {
     onLoaded: root.user = root.colorsOf(text())
   }
 
+  // The logo's art set (ADR 0052): screens.json beside the palette, which
+  // `subcult theme screens set` or a theme writes. Read once, like the palette.
+  property string screensText: ""
+  readonly property var logos: Model.lockLogos(screensText, Quickshell.env("SUBCULT_PATH") || "/usr/share/subcult")
+  FileView {
+    path: Quickshell.env("HOME") + "/.config/subcult/theme/screens.json"
+    blockLoading: true
+    printErrors: false
+    onLoaded: root.screensText = text()
+  }
+
   readonly property string systemArt: (Quickshell.env("SUBCULT_PATH") || "/usr/share/subcult") + "/screensaver"
   readonly property string userArt: (Quickshell.env("XDG_CACHE_HOME") || Quickshell.env("HOME") + "/.cache") + "/subcult/screensaver"
   property var systemLoops: []
@@ -277,6 +288,7 @@ ShellRoot {
         lockState: root.lockState
         fingerprint: root.fingerprint
         theme: root.theme
+        logos: root.logos
         animate: root.animate
         video: root.effect ? "file://" + root.artDir + "/" + root.effect + ".webm" : ""
         still: root.effect ? "file://" + root.artDir + "/" + root.effect + ".png" : ""

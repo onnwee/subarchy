@@ -255,5 +255,15 @@ which Subarchy does not use.
   `/etc/chromium/policies/managed/color.json` for `subcult-minimal` (in
   `backup=`), so a Chromium installed later starts in the default theme,
   or in the user's palette once `apply-system` has run.
+- 2026-11-14: the system screens' logos are themeable too (ADR 0052).
+  `~/.config/subcult/theme/screens.json`, beside the palette, names an art
+  set for the boot, login and lock screens; `subcult theme screens set`
+  writes it. `apply-system` passes the boot and login set names to the
+  privileged half with the colours (`--screens boot=…,login=…`, each a
+  plain name), which copies the boot set's logo into the Plymouth user
+  theme, sets Limine's `interface_branding` from its `title.txt`, and
+  writes the greeter's `logo=` into `theme.conf`. The lock reads the file
+  at start like the palette. A Pult registry entry can own `screens.json`
+  so a theme carries its screens; that needs a Pult release.
 
 Related: [[decision-map|Decision map]] · [[0048-config-ownership|ADR 0048]] · [[brand-identity|Brand identity]] · [[0038-wallpaper|ADR 0038]] · [[0039-fonts-icons|ADR 0039]]

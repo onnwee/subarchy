@@ -69,6 +69,9 @@
 <div class="scroll"><table class="commands"><caption>Look commands</caption><thead><tr><th scope="col">Command</th><th scope="col">Does</th></tr></thead><tbody>
 <tr><th scope="row"><code>subcult theme apply-system</code> <span class="args">[--dry-run] [--elevate pkexec|sudo]</span></th><td>Apply the user&#x27;s palette to SDDM, Plymouth, Limine and Chromium&#x27;s policy (asks for the password) <span class="tag">sudo</span></td></tr>
 <tr><th scope="row"><code>subcult theme reload</code></th><td>Reload what reads the theme after Pult applied one</td></tr>
+<tr><th scope="row"><code>subcult theme screens</code></th><td>Show which art set the boot, login and lock screens use, and the sets there are</td></tr>
+<tr><th scope="row"><code>subcult theme screens add</code> <span class="args">&lt;name&gt; &lt;folder&gt;</span></th><td>Add an art set for this machine from a folder of boot.png, login.png, lock.png and title.txt <span class="tag">sudo</span></td></tr>
+<tr><th scope="row"><code>subcult theme screens set</code> <span class="args">[--boot SET] [--login SET] [--lock SET]</span></th><td>Choose the art set for the boot, login or lock screen</td></tr>
 <tr><th scope="row"><code>subcult font check</code> <span class="args">&lt;family&gt;</span></th><td>Check whether a font works in the terminal and shell</td></tr>
 <tr><th scope="row"><code>subcult font current</code></th><td>Show the family behind each font role</td></tr>
 <tr><th scope="row"><code>subcult font import</code> <span class="args">&lt;files...&gt;</span></th><td>Add font files you own for your user</td></tr>

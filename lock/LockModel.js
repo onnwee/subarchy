@@ -107,3 +107,19 @@ function clockText(date) {
   const d = date instanceof Date ? date : new Date(date)
   return isNaN(d.getTime()) ? "" : ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2)
 }
+
+// The lock screen's logo (ADR 0052): the art set screens.json names for
+// "lock", else subcult. Candidates in order: the machine's set, the
+// shipped set, then "" for the packaged lockup. A name that is not a set
+// name falls back to subcult, so a bad file cannot point outside the folders.
+function lockLogos(screensText, systemDir) {
+  let set = "subcult"
+  try {
+    const doc = JSON.parse(screensText)
+    if (doc && typeof doc.lock === "string" && /^[a-z0-9][a-z0-9-]{0,31}$/.test(doc.lock))
+      set = doc.lock
+  } catch (e) {
+    // No file or not JSON: the default.
+  }
+  return ["/etc/subcult/screens/" + set + "/lock.png", systemDir + "/screens/" + set + "/lock.png", ""]
+}

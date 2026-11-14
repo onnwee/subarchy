@@ -18,6 +18,11 @@ FocusScope {
   readonly property string fingerprintHint: Fingerprint.hint(fingerprint)
   // The shell's colour tokens (base, text, subtext, muted, surface, border, error).
   property var theme: ({})
+  // The logo's candidates from Model.lockLogos: tried in order, and an
+  // image that fails to load moves to the next; "" is the packaged lockup.
+  property var logos: []
+  property int logoIndex: 0
+  readonly property string logoPath: logoIndex < logos.length ? logos[logoIndex] : ""
 
   property bool animate: false
   property url video: ""
@@ -124,7 +129,8 @@ FocusScope {
       anchors.horizontalCenter: parent.horizontalCenter
       width: 360
       height: width * 0.26
-      source: Qt.resolvedUrl("lockup-dark.png")
+      source: view.logoPath !== "" ? "file://" + view.logoPath : Qt.resolvedUrl("lockup-dark.png")
+      onStatusChanged: if (status === Image.Error && view.logoPath !== "") view.logoIndex++
       sourceSize.width: width * 2
       fillMode: Image.PreserveAspectFit
       smooth: true

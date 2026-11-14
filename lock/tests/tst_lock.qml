@@ -149,4 +149,13 @@ TestCase {
     compare(Model.clockText(new Date(2026, 10, 8, 7, 5)), "07:05")
     compare(Model.clockText("nope"), "")
   }
+
+  function test_lockLogos() {
+    const sys = "/usr/share/subcult"
+    compare(Model.lockLogos("", sys), ["/etc/subcult/screens/subcult/lock.png", sys + "/screens/subcult/lock.png", ""])
+    compare(Model.lockLogos('{"lock": "subarchy"}', sys)[1], sys + "/screens/subarchy/lock.png")
+    compare(Model.lockLogos('{"lock": "../../etc"}', sys)[0], "/etc/subcult/screens/subcult/lock.png")
+    compare(Model.lockLogos('{"boot": "subarchy"}', sys)[0], "/etc/subcult/screens/subcult/lock.png")
+    compare(Model.lockLogos("not json", sys)[0], "/etc/subcult/screens/subcult/lock.png")
+  }
 }

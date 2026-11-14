@@ -2,7 +2,8 @@ import QtQuick
 import QtQuick.Controls
 
 // SDDM supplies config, userModel, sessionModel, keyboard and sddm. The
-// packaged artwork is rendered from the unchanged SUBCULT master (ADR 0052).
+// packaged artwork is rendered from the unchanged SUBCULT master (ADR 0052);
+// theme.conf's logo, from the chosen art set, replaces it.
 // The layout follows the lock screen (lock/LockView.qml): the lockup, the
 // clock and the date in one centred column, the fields under them in the
 // lock's style (a surface box with a violet edge, green round bullets).
@@ -181,12 +182,17 @@ Rectangle {
         anchors.horizontalCenter: parent.horizontalCenter
         width: parent.width
         height: width * 0.26
-        source: "lockup-dark.png"
+        // The login screen's art set (ADR 0052), written to theme.conf by
+        // `subcult theme apply-system`; the packaged lockup when there is
+        // none or it fails to load.
+        property bool chosenFailed: false
+        source: config.logo && !chosenFailed ? "file://" + config.logo : "lockup-dark.png"
+        onStatusChanged: if (status === Image.Error && source.toString().startsWith("file://")) chosenFailed = true
         sourceSize.width: width * 2
         fillMode: Image.PreserveAspectFit
         smooth: true
         Accessible.role: Accessible.Graphic
-        Accessible.name: "SUBCULT"
+        Accessible.name: config.logoName ? config.logoName : "SUBCULT"
       }
 
       Column {

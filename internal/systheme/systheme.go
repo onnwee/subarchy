@@ -115,22 +115,33 @@ func (p Palette) role(name string) string {
 
 func bare(c string) string { return strings.TrimPrefix(c, "#") }
 
-// SDDMConf is the greeter theme's theme.conf: the roles Main.qml reads.
-func SDDMConf(p Palette) string {
-	return "# Written by subcult theme apply-system from the user's palette (ADR 0037).\n[General]\n" +
+// SDDMConf is the greeter theme's theme.conf: the roles Main.qml reads,
+// and the logo from the login screen's art set when it has one (logo is an
+// absolute path, logoName its alt text).
+func SDDMConf(p Palette, logo, logoName string) string {
+	s := "# Written by subcult theme apply-system from the user's palette and screens (ADR 0037, 0052).\n[General]\n" +
 		"base=" + p.role("base") + "\nsurface=" + p.role("surface0") + "\nborder=" + p.role("mauve") +
 		"\nborderInactive=" + p.role("surface1") + "\ntext=" + p.role("text") + "\nmuted=" + p.role("overlay0") +
 		"\nsubtext=" + p.role("subtext0") + "\naccent=" + p.role("green") + "\nerror=" + p.role("red") + "\n"
+	if logo != "" {
+		s += "logo=" + logo + "\n"
+	}
+	if logoName != "" {
+		s += "logoName=" + logoName + "\n"
+	}
+	return s
 }
 
 // limineKeys are the preamble lines Apply owns, in the order they are added.
-var limineKeys = []string{"interface_branding_colour", "term_background", "term_foreground", "term_background_bright", "term_foreground_bright", "term_palette", "term_palette_bright"}
+var limineKeys = []string{"interface_branding", "interface_branding_colour", "term_background", "term_foreground", "term_background_bright", "term_foreground_bright", "term_palette", "term_palette_bright"}
 
 // LimineConf rewrites the colour lines of /boot/limine.conf's preamble (the
-// lines before the first entry, which the Limine tools own) and reports
-// whether anything changed. Entries and other preamble lines stay as they are.
-func LimineConf(existing []byte, p Palette) ([]byte, bool) {
+// lines before the first entry, which the Limine tools own), and the
+// branding text when branding is not empty, and reports whether anything
+// changed. Entries and other preamble lines stay as they are.
+func LimineConf(existing []byte, p Palette, branding string) ([]byte, bool) {
 	want := map[string]string{
+		"interface_branding":        branding,
 		"interface_branding_colour": bare(p.role("mauve")),
 		"term_background":           "00" + bare(p.role("base")),
 		"term_foreground":           bare(p.role("text")),
@@ -297,8 +308,14 @@ type Report struct {
 // Apply writes every target under root. A target whose program is not
 // installed (no Limine config, no Subarchy greeter or splash) is skipped
 // and said so; Chromium's policy is written whether or not Chromium is.
-func Apply(root string, p Palette) (Report, error) {
+// s chooses the art for the boot and login screens; its zero value is
+// DefaultScreens.
+func Apply(root string, p Palette, s Screens) (Report, error) {
 	var rep Report
+	s = s.WithDefaults()
+	if err := s.check(); err != nil {
+		return rep, err
+	}
 	write := func(rel string, content []byte, mode os.FileMode) (bool, error) {
 		full := filepath.Join(root, rel)
 		if old, err := os.ReadFile(full); err == nil && string(old) == string(content) {
@@ -316,7 +333,19 @@ func Apply(root string, p Palette) (Report, error) {
 
 	// SDDM: the greeter theme's configuration, read at the next greeter start.
 	if _, err := os.Stat(filepath.Join(root, SDDMThemeDir, "Main.qml")); err == nil {
-		if _, err := write(filepath.Join(SDDMThemeDir, "theme.conf"), []byte(SDDMConf(p)), 0o644); err != nil {
+		_, logo, ok, err := ScreenFile(root, s.Login, "login.png")
+		if err != nil {
+			return rep, fmt.Errorf("login art: %w", err)
+		}
+		if !ok {
+			logo = ""
+			rep.Skipped = append(rep.Skipped, "login: the art set "+s.Login+" has no login.png; the packaged logo stays")
+		}
+		name, err := screenTitle(root, s.Login)
+		if err != nil {
+			return rep, fmt.Errorf("login art: %w", err)
+		}
+		if _, err := write(filepath.Join(SDDMThemeDir, "theme.conf"), []byte(SDDMConf(p, logo, name)), 0o644); err != nil {
 			return rep, err
 		}
 	} else {
@@ -325,7 +354,11 @@ func Apply(root string, p Palette) (Report, error) {
 
 	// Limine: the preamble's colours; the entries are the Limine tools'.
 	if existing, err := os.ReadFile(filepath.Join(root, LimineConfPath)); err == nil {
-		if content, changed := LimineConf(existing, p); changed {
+		branding, err := screenTitle(root, s.Boot)
+		if err != nil {
+			return rep, fmt.Errorf("boot art: %w", err)
+		}
+		if content, changed := LimineConf(existing, p, branding); changed {
 			if _, err := write(LimineConfPath, content, 0o644); err != nil {
 				return rep, err
 			}
@@ -355,8 +388,30 @@ func Apply(root string, p Palette) (Report, error) {
 			return rep, err
 		}
 		rep.PlymouthChanged = rep.PlymouthChanged || changed
+		// The logo is the boot art set's, copied: the initramfs takes the
+		// theme folder, and a link out of it might not come along.
+		logo, _, ok, err := ScreenFile(root, s.Boot, "boot.png")
+		if err != nil {
+			return rep, fmt.Errorf("boot art: %w", err)
+		}
+		if ok {
+			full := filepath.Join(root, PlymouthUserDir, "logo.png")
+			if fi, err := os.Lstat(full); err == nil && fi.Mode()&os.ModeSymlink != 0 {
+				os.Remove(full)
+			}
+			changed, err := write(filepath.Join(PlymouthUserDir, "logo.png"), logo, 0o644)
+			if err != nil {
+				return rep, err
+			}
+			rep.PlymouthChanged = rep.PlymouthChanged || changed
+		} else {
+			rep.Skipped = append(rep.Skipped, "boot: the art set "+s.Boot+" has no boot.png; the packaged logo stays")
+		}
 		images, _ := filepath.Glob(filepath.Join(root, PlymouthThemeDir, "*.png"))
 		for _, img := range images {
+			if ok && filepath.Base(img) == "logo.png" {
+				continue
+			}
 			link := filepath.Join(root, PlymouthUserDir, filepath.Base(img))
 			target := "../subarchy/" + filepath.Base(img)
 			if cur, err := os.Readlink(link); err == nil && cur == target {

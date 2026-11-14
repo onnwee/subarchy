@@ -754,6 +754,40 @@
    "dangerous": false
   },
   {
+   "route": "subcult theme screens",
+   "group": "theme",
+   "args": "",
+   "summary": "Show which art set the boot, login and lock screens use, and the sets there are",
+   "examples": [
+    "subcult theme screens"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult theme screens add",
+   "group": "theme",
+   "args": "<name> <folder>",
+   "summary": "Add an art set for this machine from a folder of boot.png, login.png, lock.png and title.txt",
+   "examples": [
+    "sudo subcult theme screens add mine ~/art"
+   ],
+   "requires_sudo": true,
+   "dangerous": false
+  },
+  {
+   "route": "subcult theme screens set",
+   "group": "theme",
+   "args": "[--boot SET] [--login SET] [--lock SET]",
+   "summary": "Choose the art set for the boot, login or lock screen",
+   "examples": [
+    "subcult theme screens set --boot subarchy --login subcult",
+    "subcult theme screens set --lock subarchy"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
    "route": "subcult thermal watch",
    "group": "thermal",
    "args": "[--timeout <duration>]",

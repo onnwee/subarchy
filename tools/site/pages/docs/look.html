@@ -1,7 +1,7 @@
 <!--
 title: Theme and fonts · Subarchy docs
 h1: Theme and fonts
-description: Switch Subarchy's theme with Pult, carry it to the login screen and boot menu, set fonts and the cursor, and where your settings live.
+description: Switch Subarchy's theme with Pult, carry it to the login screen and boot menu, choose the logos on the boot, login and lock screens, set fonts and the cursor.
 -->
 <p class="lede">One [[palette]] colours the shell, lock screen, terminal, Neovim, cursor, login screen, boot splash and boot menu.</p>
 
@@ -34,6 +34,17 @@ description: Switch Subarchy's theme with Pult, carry it to the login screen and
 <div class="cmd"><code>subcult cursor set --role lavender --size 24</code></div>
 <p>Sizes are 24, 32 and 48. The colour is a [[palette role]]. Run <code>subcult cursor apply</code> after a theme change.</p>
 
+<h2 id="screens">Boot, login and lock screens</h2>
+<p>Each of these screens shows the logo from an [[art set]]. <strong>By default the boot splash and boot menu show SUBARCHY, and the login and lock screens show SUBCULT.</strong></p>
+<div class="scroll"><table><caption class="sr">Screen commands</caption><tbody>
+<tr><th scope="row"><code>subcult theme screens</code></th><td>Which set each screen uses, and the sets there are</td></tr>
+<tr><th scope="row"><code>subcult theme screens set --boot <var>set</var></code></th><td>Choose a set; <code>--login</code> and <code>--lock</code> work the same way</td></tr>
+<tr><th scope="row"><code>sudo subcult theme screens add <var>name</var> <var>folder</var></code></th><td>Add your own set from a folder</td></tr>
+</tbody></table></div>
+<div class="cmd"><code>subcult theme screens set --boot subcult</code></div>
+<p>Then run <code>subcult theme apply-system</code> for the boot and login screens. The lock screen picks up the change the next time it locks.</p>
+<div class="callout tip"><p class="ct" data-mark="&#9650;">Your own art</p><p>Put any of these in a folder and add it with <code>screens add</code>: <code>boot.png</code> for the boot splash, <code>login.png</code> and <code>lock.png</code> (shown about 360 pixels wide; 2000 by 520 looks sharp), and <code>title.txt</code>, one line for the boot menu. A screen whose file is missing keeps the default.</p></div>
+
 <h2 id="display">Display</h2>
 <div class="scroll"><table><caption class="sr">Display commands</caption><tbody>
 <tr><th scope="row"><code>subcult display scale up</code></th><td>Also {{Super+/}}; <code>down</code> is {{Super+Alt+/}}</td></tr>
@@ -48,5 +59,6 @@ description: Switch Subarchy's theme with Pult, carry it to the login screen and
 <tr><th scope="row">Palette</th><td><code>~/.config/subcult/theme/palette.json</code>, written by Pult</td></tr>
 <tr><th scope="row">Bar layout</th><td><code>~/.config/subcult/shell/bar.json</code>, merged key by key over <code>/usr/share/subcult/default/shell/bar.json</code></td></tr>
 <tr><th scope="row">Keys and windows</th><td><code>~/.config/hypr/hyprland.lua</code>, on top of the defaults</td></tr>
+<tr><th scope="row">Screens</th><td><code>~/.config/subcult/theme/screens.json</code>, written by <code>subcult theme screens set</code></td></tr>
 <tr><th scope="row">Shell</th><td><code>~/.zshrc</code> or <code>~/.bashrc</code>, after the first line</td></tr>
 </tbody></table></div>

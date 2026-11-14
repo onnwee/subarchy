@@ -18,7 +18,7 @@ func newApp(t *testing.T) (*app, *bytes.Buffer, *bytes.Buffer, *[][]string) {
 	home := t.TempDir()
 	var out, errOut bytes.Buffer
 	var calls [][]string
-	a := &app{stdout: &out, stderr: &errOut, home: home, subcultPath: filepath.Join(home, "system"),
+	a := &app{stdout: &out, stderr: &errOut, home: home, subcultPath: filepath.Join(home, "system"), root: filepath.Join(home, "fsroot"),
 		elevate: func(tool string, args ...string) error {
 			calls = append(calls, append([]string{tool}, args...))
 			return nil

@@ -300,7 +300,7 @@ EOF
 timeout: 3
 default_entry: 2
 serial: yes
-interface_branding: SUBCULT // Subarchy
+interface_branding: SUBARCHY
 interface_branding_colour: 8b5cf6
 EOF
 }

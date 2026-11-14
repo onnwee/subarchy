@@ -45,7 +45,7 @@ func TestParsePaletteAndArgs(t *testing.T) {
 
 func TestSDDMConfAndFallback(t *testing.T) {
 	p, _ := ParsePalette([]byte(sample))
-	conf := SDDMConf(p)
+	conf := SDDMConf(p, "", "")
 	if !strings.Contains(conf, "base=#282a36\n") || !strings.Contains(conf, "border=#bd93f9\n") {
 		t.Errorf("sddm conf: %s", conf)
 	}
@@ -60,7 +60,7 @@ func TestSDDMConfAndFallback(t *testing.T) {
 func TestLimineConf(t *testing.T) {
 	p, _ := ParsePalette([]byte(sample))
 	existing := "timeout: 3\ndefault_entry: 2\nserial: yes\ninterface_branding: SUBCULT // Subarchy\ninterface_branding_colour: 8b5cf6\n\n/+Subarchy\n    //linux-zen\n        protocol: linux\n"
-	got, changed := LimineConf([]byte(existing), p)
+	got, changed := LimineConf([]byte(existing), p, "")
 	s := string(got)
 	if !changed {
 		t.Fatal("no change reported")
@@ -77,13 +77,13 @@ func TestLimineConf(t *testing.T) {
 	if strings.Index(s, "term_palette") > strings.Index(s, "/+Subarchy") {
 		t.Error("colour lines landed below the first entry")
 	}
-	again, changed := LimineConf(got, p)
+	again, changed := LimineConf(got, p, "")
 	if changed || string(again) != s {
 		t.Error("a second pass must change nothing")
 	}
 	// No ANSI roles: the palettes are left out; an empty file gets a preamble.
 	small, _ := ParsePalette([]byte(`{"colors": {"base": "#101010"}}`))
-	got, _ = LimineConf(nil, small)
+	got, _ = LimineConf(nil, small, "")
 	if strings.Contains(string(got), "term_palette") || !strings.Contains(string(got), "term_background: 00101010\n") {
 		t.Errorf("small palette: %s", got)
 	}
@@ -93,11 +93,17 @@ func fixtureRoot(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()
 	files := map[string]string{
-		filepath.Join(SDDMThemeDir, "Main.qml"):              "Rectangle {}\n",
-		LimineConfPath:                                       "timeout: 3\ninterface_branding_colour: 8b5cf6\n/+Subarchy\n",
-		filepath.Join(PlymouthThemeDir, "subarchy.script"):   "Window.SetBackgroundTopColor(0.063, 0.043, 0.098);\nWindow.SetBackgroundBottomColor(0.063, 0.043, 0.098);\nfun message_callback(text) {\n  local.image = Image.Text(text, 0.941, 0.925, 0.894);\n}\n",
-		filepath.Join(PlymouthThemeDir, "subarchy.plymouth"): "[Plymouth Theme]\nName=Subarchy\nModuleName=script\n\n[script]\nImageDir=/usr/share/plymouth/themes/subarchy\nScriptFile=/usr/share/plymouth/themes/subarchy/subarchy.script\nConsoleLogBackgroundColor=0x100B19\n",
-		filepath.Join(PlymouthThemeDir, "logo.png"):          "png",
+		filepath.Join(SDDMThemeDir, "Main.qml"):               "Rectangle {}\n",
+		LimineConfPath:                                        "timeout: 3\ninterface_branding_colour: 8b5cf6\n/+Subarchy\n",
+		filepath.Join(PlymouthThemeDir, "subarchy.script"):    "Window.SetBackgroundTopColor(0.063, 0.043, 0.098);\nWindow.SetBackgroundBottomColor(0.063, 0.043, 0.098);\nfun message_callback(text) {\n  local.image = Image.Text(text, 0.941, 0.925, 0.894);\n}\n",
+		filepath.Join(PlymouthThemeDir, "subarchy.plymouth"):  "[Plymouth Theme]\nName=Subarchy\nModuleName=script\n\n[script]\nImageDir=/usr/share/plymouth/themes/subarchy\nScriptFile=/usr/share/plymouth/themes/subarchy/subarchy.script\nConsoleLogBackgroundColor=0x100B19\n",
+		filepath.Join(PlymouthThemeDir, "logo.png"):           "png",
+		filepath.Join(PlymouthThemeDir, "entry.png"):          "png",
+		filepath.Join(ScreensSystemDir, "subarchy/boot.png"):  tinyPNG(t, 1),
+		filepath.Join(ScreensSystemDir, "subarchy/title.txt"): "SUBARCHY\n",
+		filepath.Join(ScreensSystemDir, "subcult/login.png"):  tinyPNG(t, 2),
+		filepath.Join(ScreensSystemDir, "subcult/lock.png"):   tinyPNG(t, 2),
+		filepath.Join(ScreensSystemDir, "subcult/title.txt"):  "SUBCULT // Subarchy\n",
 		PlymouthDaemon: "[Daemon]\nTheme=subarchy\nShowDelay=0\n",
 	}
 	for rel, c := range files {
@@ -115,7 +121,7 @@ func fixtureRoot(t *testing.T) string {
 func TestApply(t *testing.T) {
 	root := fixtureRoot(t)
 	p, _ := ParsePalette([]byte(sample))
-	rep, err := Apply(root, p)
+	rep, err := Apply(root, p, Screens{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -143,8 +149,19 @@ func TestApply(t *testing.T) {
 	if !strings.Contains(theme, "ScriptFile=/usr/share/plymouth/themes/subarchy-user/subarchy-user.script") || !strings.Contains(theme, "ConsoleLogBackgroundColor=0x282A36") || !strings.Contains(theme, "ImageDir=/usr/share/plymouth/themes/subarchy-user\n") {
 		t.Errorf("plymouth theme: %s", theme)
 	}
-	if link, err := os.Readlink(filepath.Join(root, PlymouthUserDir, "logo.png")); err != nil || link != "../subarchy/logo.png" {
+	if link, err := os.Readlink(filepath.Join(root, PlymouthUserDir, "entry.png")); err != nil || link != "../subarchy/entry.png" {
 		t.Errorf("image link: %q %v", link, err)
+	}
+	// The logo is the boot art set's (subarchy by default), copied.
+	if fi, err := os.Lstat(filepath.Join(root, PlymouthUserDir, "logo.png")); err != nil || !fi.Mode().IsRegular() || read(filepath.Join(PlymouthUserDir, "logo.png")) != tinyPNG(t, 1) {
+		t.Errorf("splash logo: %v %v", fi, err)
+	}
+	if !strings.Contains(read(LimineConfPath), "interface_branding: SUBARCHY\n") {
+		t.Errorf("limine branding: %s", read(LimineConfPath))
+	}
+	conf := read(filepath.Join(SDDMThemeDir, "theme.conf"))
+	if !strings.Contains(conf, "logo=/usr/share/subcult/screens/subcult/login.png\n") || !strings.Contains(conf, "logoName=SUBCULT // Subarchy\n") {
+		t.Errorf("sddm logo: %s", conf)
 	}
 	if read(PlymouthDaemon) != "[Daemon]\nTheme=subarchy-user\nShowDelay=0\n" {
 		t.Errorf("plymouthd.conf: %q", read(PlymouthDaemon))
@@ -153,7 +170,7 @@ func TestApply(t *testing.T) {
 		t.Errorf("chromium: %s", read(filepath.Join(ChromiumPolicyDir, "color.json")))
 	}
 	// The same palette again: nothing written, no initramfs.
-	rep, err = Apply(root, p)
+	rep, err = Apply(root, p, Screens{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -162,7 +179,7 @@ func TestApply(t *testing.T) {
 	}
 	// Another theme's base changes the splash; the images stay links.
 	other, _ := ParsePalette([]byte(`{"colors": {"base": "#000000"}}`))
-	rep, _ = Apply(root, other)
+	rep, _ = Apply(root, other, Screens{})
 	if !rep.PlymouthChanged || !strings.Contains(read(filepath.Join(PlymouthUserDir, "subarchy-user.script")), "SetBackgroundTopColor(0.000, 0.000, 0.000)") {
 		t.Errorf("third apply: %+v", rep)
 	}
@@ -171,7 +188,7 @@ func TestApply(t *testing.T) {
 func TestApplySkipsAbsentTargets(t *testing.T) {
 	root := t.TempDir()
 	p, _ := ParsePalette([]byte(sample))
-	rep, err := Apply(root, p)
+	rep, err := Apply(root, p, Screens{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -226,7 +243,7 @@ func TestLimineConfKeepsEntryTrailingWhitespace(t *testing.T) {
 	for _, ending := range []string{"", "\n", "\n\n", "\n\n\n"} {
 		t.Run(fmt.Sprintf("trailing-newlines-%d", len(ending)), func(t *testing.T) {
 			existing := preamble + "/+Subarchy\n    //linux-zen\n        protocol: linux" + ending
-			got, changed := LimineConf([]byte(existing), p)
+			got, changed := LimineConf([]byte(existing), p, "")
 			if changed || string(got) != existing {
 				t.Fatalf("an already themed config was rewritten: got %q, want %q", got, existing)
 			}

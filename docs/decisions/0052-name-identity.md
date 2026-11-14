@@ -84,5 +84,20 @@ This was not a formal trademark search.
   `subarchy.subcult.tv` since the same day. The table
   above is unchanged: the installer, boot, login and lock screens still show
   the SUBCULT mark until the owner decides whether they switch.
+- 2026-11-14: the owner decided: the boot screens show **SUBARCHY**, the
+  screens after them stay **SUBCULT**, and a theme can change either. Each
+  system screen now shows an *art set*, a folder of `boot.png`, `login.png`,
+  `lock.png` and `title.txt` under `/usr/share/subcult/screens/` (shipped:
+  `subarchy`, the wordmark, and `subcult`, the mark and master lockup) or
+  `/etc/subcult/screens/` (added with `sudo subcult theme screens add`). The
+  choice is `~/.config/subcult/theme/screens.json` beside the palette;
+  without it the boot splash and the boot menu's branding are `subarchy`
+  and the login and lock screens `subcult`. `subcult theme screens set`
+  writes the choice and `subcult theme apply-system` carries it to the
+  splash, Limine's `interface_branding` and the greeter, which root reads
+  only from those two folders, as regular PNG files within 8 MiB and 8192
+  pixels a side. The lock screen reads the file itself. The table above
+  holds for every row except the boot menu and splash, which now carry
+  SUBARCHY by default; the installer's own console screens stay SUBCULT.
 
 Related: [[decision-map|Decision map]] · [[brand-identity|Brand identity]] · [[0046-distribution-cli|ADR 0046]] · [[0053-licence|ADR 0053]]

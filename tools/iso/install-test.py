@@ -849,6 +849,9 @@ def boot(disk: Path, vars_file: Path) -> bool:
                 f" {sudo} find /boot/EFI/Linux -name '*.efi' -newer /tmp/theme-stamp | wc -l;"
                 f" {sudo} find /boot/EFI/Linux -name '*.efi' ! -newer /tmp/theme-stamp | wc -l; echo ---;"
                 f" grep -c '^base=#1a1b26' /usr/share/sddm/themes/subarchy/theme.conf; {sudo} grep -c '^interface_branding_colour: bb9af7' /boot/limine.conf;"
+                # The default screens (ADR 0052): SUBARCHY at boot, SUBCULT at login.
+                f" {sudo} grep -c '^interface_branding: SUBARCHY$' /boot/limine.conf;"
+                " grep -c '^logo=/usr/share/subcult/screens/subcult/login.png$' /usr/share/sddm/themes/subarchy/theme.conf;"
                 " plymouth-set-default-theme; grep -c 'SetBackgroundTopColor(0.102, 0.106, 0.149)' /usr/share/plymouth/themes/subarchy-user/subarchy-user.script",
                 timeout=600,
             ),
@@ -1547,7 +1550,7 @@ def theme_system_ok(out: str) -> bool:
         and "wrote /etc/chromium/policies/managed/color.json" in first and "SYSTEM_APPLY_EXIT=0" in first
         and fresh.isdigit() and int(fresh) >= 2 and stale == "0"
         and "no initramfs rebuild" in second and "wrote" not in second
-        and files.splitlines()[-4:-1] == ["1", "1", "subarchy-user"] and files.splitlines()[-1] == "1"
+        and files.splitlines()[-6:-1] == ["1", "1", "1", "1", "subarchy-user"] and files.splitlines()[-1] == "1"
     )
 
 

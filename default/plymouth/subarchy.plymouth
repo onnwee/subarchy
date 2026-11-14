@@ -1,6 +1,6 @@
 [Plymouth Theme]
 Name=Subarchy
-Description=SUBCULT // Subarchy boot splash: the mark on ink, a progress track and the passphrase prompt
+Description=Subarchy boot splash: the boot art set's logo on ink, a progress track and the passphrase prompt
 ModuleName=script
 
 [script]

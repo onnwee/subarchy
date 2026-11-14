@@ -250,12 +250,17 @@ def theme_probe(ukis: str, exit_code: int = 0) -> str:
     return ("wrote /usr/share/sddm/themes/subarchy/theme.conf\nwrote /etc/chromium/policies/managed/color.json\n"
             f"the splash changed; rebuilding the initramfs (limine-mkinitcpio)\nSYSTEM_APPLY_EXIT={exit_code}\n---\n"
             "palette: x\nunchanged /boot/limine.conf\nthe splash is unchanged; no initramfs rebuild\n---\n"
-            f"{ukis}\n---\n1\n1\nsubarchy-user\n1\n")
+            f"{ukis}\n---\n1\n1\n1\n1\nsubarchy-user\n1\n")
 
 
 class ThemeSystem(unittest.TestCase):
     def test_every_uki_rebuilt_passes(self):
         self.assertTrue(install_test.theme_system_ok(theme_probe("2\n0")))
+
+    def test_default_screens_missing_fails(self):
+        # The boot menu without SUBARCHY, or the greeter without the subcult logo.
+        self.assertFalse(install_test.theme_system_ok(theme_probe("2\n0").replace("1\n1\n1\n1\nsubarchy", "1\n1\n0\n1\nsubarchy")))
+        self.assertFalse(install_test.theme_system_ok(theme_probe("2\n0").replace("1\n1\n1\n1\nsubarchy", "1\n1\n1\n0\nsubarchy")))
 
     def test_a_uki_left_over_or_none_rebuilt_fails(self):
         self.assertFalse(install_test.theme_system_ok(theme_probe("1\n1")))

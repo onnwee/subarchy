@@ -25,9 +25,17 @@ The marks, logos and backgrounds are SUBCULT's own work. The fonts are
 redistributed under the OFL files beside them. Check the backgrounds with
 `cd branding/backgrounds && sha256sum --check backgrounds.sha256`.
 
-The boot splash (`default/plymouth/`) renders `marks/mark-dark.svg`; the
-greeter (`default/sddm/theme/`) and lock use a PNG rendered from
-`studio/logos/lockup-dark.svg` during packaging. Qt's SVG renderer omits the
+`marks/subarchy-wordmark-dark.svg` is the SUBARCHY wordmark from the
+Subarchy brand pack (`subcult-tv` `studio/brands/subarchy/logos/wordmark-dark.svg`
+at `e9a9edf`, SHA-256 `07f37478…a955`), drawn from the owner's ANSI art.
+
+The system screens show art sets (ADR 0052) that
+`tools/branding/screens.sh` builds during packaging into
+`/usr/share/subcult/screens/`: `subarchy` (the wordmark, at whole-pixel
+sizes) and `subcult` (`marks/mark-dark.svg` at boot, the master lockup on
+the login and lock screens). By default the boot splash uses `subarchy`;
+the greeter (`default/sddm/theme/`) and lock use `subcult`, a PNG rendered
+from `studio/logos/lockup-dark.svg`. Qt's SVG renderer omits the
 master's embedded SVG mark; the librsvg export keeps the complete artwork.
 `tools/branding/lockup-png.sh` makes that PNG and centres the ink on its
 canvas, since the master leaves its right part empty and both screens

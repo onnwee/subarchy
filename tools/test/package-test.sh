@@ -97,6 +97,11 @@ grep -qx usr/share/fontconfig/conf.avail/44-subarchy-roles.conf <<<"$list" || fa
 for path in usr/share/sddm/themes/subarchy/lockup-dark.png usr/share/subcult/lock/lockup-dark.png; do
   grep -qx "$path" <<<"$list" || fail "missing rendered lockup $path"
 done
+for set in subcult subarchy; do
+  for f in boot.png login.png lock.png title.txt; do
+    grep -qx "usr/share/subcult/screens/$set/$f" <<<"$list" || fail "missing art set file $set/$f"
+  done
+done
 [[ $(bsdtar -tvf "$pkg" etc/fonts/conf.d/44-subarchy-roles.conf 2>/dev/null) == *"-> /usr/share/fontconfig/conf.avail/44-subarchy-roles.conf" ]] ||
   fail "font roles conf is not linked from /etc/fonts/conf.d"
 # Files other Arch packages own must not be in this package (neovim owns
@@ -127,6 +132,11 @@ mkdir "$work/root"
 bsdtar -xf "$pkg" -C "$work/root" usr
 cmp "$work/root/usr/share/sddm/themes/subarchy/lockup-dark.png" \
   "$work/root/usr/share/subcult/lock/lockup-dark.png" || fail "greeter and lock artwork differ"
+# The defaults (ADR 0052): Subarchy's wordmark at boot, SUBCULT after it.
+cmp "$work/root/usr/share/plymouth/themes/subarchy/logo.png" \
+  "$work/root/usr/share/subcult/screens/subarchy/boot.png" || fail "the splash logo is not the subarchy set's"
+cmp "$work/root/usr/share/subcult/lock/lockup-dark.png" \
+  "$work/root/usr/share/subcult/screens/subcult/lock.png" || fail "the lock lockup is not the subcult set's"
 # The lockup's ink is centred, so it lines up with the caption and the clock.
 read -r ink_left ink_width canvas < <(magick "$work/root/usr/share/subcult/lock/lockup-dark.png" -trim -format '%X %w %W\n' info:)
 ink_right=$((canvas - ink_left - ink_width))

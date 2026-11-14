@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Theme and fonts · Subarchy docs</title>
-<meta name="description" content="Switch Subarchy's theme with Pult, carry it to the login screen and boot menu, set fonts and the cursor, and where your settings live.">
+<meta name="description" content="Switch Subarchy's theme with Pult, carry it to the login screen and boot menu, choose the logos on the boot, login and lock screens, set fonts and the cursor.">
 <link rel="canonical" href="https://subarchy.subcult.tv/docs/look/">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Theme and fonts · Subarchy docs">
-<meta property="og:description" content="Switch Subarchy's theme with Pult, carry it to the login screen and boot menu, set fonts and the cursor, and where your settings live.">
+<meta property="og:description" content="Switch Subarchy's theme with Pult, carry it to the login screen and boot menu, choose the logos on the boot, login and lock screens, set fonts and the cursor.">
 <meta property="og:url" content="https://subarchy.subcult.tv/docs/look/">
 <meta property="og:image" content="https://subarchy.subcult.tv/assets/og.png">
 <meta property="og:image:width" content="1200">
@@ -35,7 +35,7 @@
 <button type="button" data-theme-toggle hidden>paper</button>
 </div></header>
 <div class="wrap docs">
-<nav class="side" aria-label="Docs"><details class="toc"><summary>Docs pages</summary><ol><li><a href="/docs/">Overview</a></li><li><a href="/docs/install/">Install</a></li><li><a href="/docs/keys/">Keys</a></li><li><a href="/docs/commands/">Commands</a></li><li><a href="/docs/shell/">Shell aliases</a></li><li><a href="/docs/look/" aria-current="page">Theme and fonts</a><ol class="sections"><li><a href="#theme">Theme</a></li><li><a href="#fonts">Fonts</a></li><li><a href="#cursor">Cursor</a></li><li><a href="#display">Display</a></li><li><a href="#files">Where settings live</a></li></ol></li><li><a href="/docs/updates/">Updates and recovery</a></li><li><a href="/docs/glossary/">Glossary</a></li><li><a href="/docs/developers/">Developers</a></li></ol></details></nav>
+<nav class="side" aria-label="Docs"><details class="toc"><summary>Docs pages</summary><ol><li><a href="/docs/">Overview</a></li><li><a href="/docs/install/">Install</a></li><li><a href="/docs/keys/">Keys</a></li><li><a href="/docs/commands/">Commands</a></li><li><a href="/docs/shell/">Shell aliases</a></li><li><a href="/docs/look/" aria-current="page">Theme and fonts</a><ol class="sections"><li><a href="#theme">Theme</a></li><li><a href="#fonts">Fonts</a></li><li><a href="#cursor">Cursor</a></li><li><a href="#screens">Boot, login and lock screens</a></li><li><a href="#display">Display</a></li><li><a href="#files">Where settings live</a></li></ol></li><li><a href="/docs/updates/">Updates and recovery</a></li><li><a href="/docs/glossary/">Glossary</a></li><li><a href="/docs/developers/">Developers</a></li></ol></details></nav>
 <main id="main">
 <p class="crumbs"><a href="/docs/">Docs</a> / Theme and fonts</p>
 <h1>Theme and fonts</h1>
@@ -70,6 +70,17 @@
 <div class="cmd"><code>subcult cursor set --role lavender --size 24</code></div>
 <p>Sizes are 24, 32 and 48. The colour is a <a class="wl" href="/docs/glossary/#palette-role">palette role</a>. Run <code>subcult cursor apply</code> after a theme change.</p>
 
+<h2 id="screens">Boot, login and lock screens</h2>
+<p>Each of these screens shows the logo from an <a class="wl" href="/docs/glossary/#art-set">art set</a>. <strong>By default the boot splash and boot menu show SUBARCHY, and the login and lock screens show SUBCULT.</strong></p>
+<div class="scroll"><table><caption class="sr">Screen commands</caption><tbody>
+<tr><th scope="row"><code>subcult theme screens</code></th><td>Which set each screen uses, and the sets there are</td></tr>
+<tr><th scope="row"><code>subcult theme screens set --boot <var>set</var></code></th><td>Choose a set; <code>--login</code> and <code>--lock</code> work the same way</td></tr>
+<tr><th scope="row"><code>sudo subcult theme screens add <var>name</var> <var>folder</var></code></th><td>Add your own set from a folder</td></tr>
+</tbody></table></div>
+<div class="cmd"><code>subcult theme screens set --boot subcult</code></div>
+<p>Then run <code>subcult theme apply-system</code> for the boot and login screens. The lock screen picks up the change the next time it locks.</p>
+<div class="callout tip"><p class="ct" data-mark="&#9650;">Your own art</p><p>Put any of these in a folder and add it with <code>screens add</code>: <code>boot.png</code> for the boot splash, <code>login.png</code> and <code>lock.png</code> (shown about 360 pixels wide; 2000 by 520 looks sharp), and <code>title.txt</code>, one line for the boot menu. A screen whose file is missing keeps the default.</p></div>
+
 <h2 id="display">Display</h2>
 <div class="scroll"><table><caption class="sr">Display commands</caption><tbody>
 <tr><th scope="row"><code>subcult display scale up</code></th><td>Also <span class="keys"><kbd>Super</kbd> + <kbd>/</kbd></span>; <code>down</code> is <span class="keys"><kbd>Super</kbd> + <kbd>Alt</kbd> + <kbd>/</kbd></span></td></tr>
@@ -84,6 +95,7 @@
 <tr><th scope="row">Palette</th><td><code>~/.config/subcult/theme/palette.json</code>, written by Pult</td></tr>
 <tr><th scope="row">Bar layout</th><td><code>~/.config/subcult/shell/bar.json</code>, merged key by key over <code>/usr/share/subcult/default/shell/bar.json</code></td></tr>
 <tr><th scope="row">Keys and windows</th><td><code>~/.config/hypr/hyprland.lua</code>, on top of the defaults</td></tr>
+<tr><th scope="row">Screens</th><td><code>~/.config/subcult/theme/screens.json</code>, written by <code>subcult theme screens set</code></td></tr>
 <tr><th scope="row">Shell</th><td><code>~/.zshrc</code> or <code>~/.bashrc</code>, after the first line</td></tr>
 </tbody></table></div>
 <nav class="pager" aria-label="Previous and next page"><a class="prev" href="/docs/shell/" rel="prev"><span>Previous</span>Shell aliases</a><a class="next" href="/docs/updates/" rel="next"><span>Next</span>Updates and recovery</a></nav>

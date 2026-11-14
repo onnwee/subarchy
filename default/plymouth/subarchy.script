@@ -1,5 +1,5 @@
 # Subarchy boot splash (ADR 0013), written for Subarchy against Plymouth's
-# script module. Ink background, the SUBCULT mark in the middle, a thin
+# script module. Ink background, the boot art set's logo (SUBARCHY by default) in the middle, a thin
 # surface-coloured track under it that fills with acid green as boot
 # progresses, the passphrase prompt as a field with a lock and bullets under
 # a "Disk passphrase" label, and messages in paper. Colours are the SUBCULT roles:
