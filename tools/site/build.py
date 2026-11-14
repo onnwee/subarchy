@@ -24,6 +24,7 @@ Links to other sites open in a new tab and say so to screen readers.
     tools/site/build.py --commands FILE   replace commands.json with the
         output of `subcult commands --json` (FILE, or - for stdin)
 """
+import hashlib
 import html
 import json
 import pathlib
@@ -72,6 +73,13 @@ NEW_TAB = '<span class="sr"> (opens in a new tab)</span>'
 
 class BuildError(Exception):
     pass
+
+
+def asset_url(name):
+    """/name?v=<content hash>: Cloudflare keeps CSS and JS in browsers for
+    hours whatever the origin says, so a changed file needs a new URL."""
+    digest = hashlib.sha256((SITE / name).read_bytes()).hexdigest()[:10]
+    return f"/{name}?v={digest}"
 
 
 def slugify(text):
@@ -199,7 +207,7 @@ def head(meta, path, docs):
     if docs:
         for face in ("500-normal", "500-italic", "700-normal"):
             lines.append(f'<link rel="preload" href="/fonts/victor-mono-latin-{face}.woff2" as="font" type="font/woff2" crossorigin>')
-    lines += ['<link rel="stylesheet" href="/style.css">', f"<script>{THEME_SCRIPT}</script>", "</head>"]
+    lines += [f'<link rel="stylesheet" href="{asset_url("style.css")}">', f"<script>{THEME_SCRIPT}</script>", "</head>"]
     return "\n".join(lines)
 
 
@@ -229,7 +237,7 @@ def footer(support=True):
             f'<div class="row">{"".join(row)}</div>\n'
             "<p>Subarchy is free software under GPL-3.0-or-later. Set in Departure Mono (OFL); "
             "the docs text in Victor Mono (OFL).</p>\n"
-            '</div></footer>\n<script src="/app.js" defer></script>\n</body>\n</html>\n')
+            f'</div></footer>\n<script src="{asset_url("app.js")}" defer></script>\n</body>\n</html>\n')
 
 
 def docs_layout(slug, meta, body):

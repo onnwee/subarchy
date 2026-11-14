@@ -7,7 +7,10 @@ The canonical address is <https://subarchy.subcult.tv>; the files in
 The HTML pages are generated. Edit the sources in
 [tools/site/pages/](../tools/site/pages/), then run
 `python3 tools/site/build.py`, which writes the pages and `sitemap.xml` here.
-`style.css`, `app.js`, `assets/` and `fonts/` are edited in place.
+`style.css`, `app.js`, `assets/` and `fonts/` are edited in place. The
+pages link `style.css` and `app.js` with a hash of their contents
+(`?v=…`), because Cloudflare keeps those two in browsers for hours: run the
+build after editing either, and `make verify` fails until you do.
 
 ## Preview
 

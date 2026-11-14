@@ -132,6 +132,7 @@ for name, p in parsed.items():
         if re.match(r"^[a-z]+:", href) or href.startswith("//"):
             continue
         path, _, frag = href.partition("#")
+        path = path.split("?", 1)[0]
         if not path:
             target = name
         else:
