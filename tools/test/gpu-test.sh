@@ -79,6 +79,33 @@ grep -q "on the NVIDIA card" "$work/tower/stderr" || fail "no message for the NV
 echo connected >"$work/tower/sys/class/drm/card0-HDMI-A-1/status"
 [[ $(genv tower) == *"SUBCULT_GPU_MODE=intel"* ]] || fail "a monitor on the integrated GPU keeps Intel mode"
 
+# gpu.rules: udev matches a rule's ATTRS keys all on one parent device. Walk a
+# fake parent chain the same way and list the links each card gets.
+links() { # PARENT... each "vendor class boot_vga", nearest first
+  local line keys parent got=() ok k v
+  local -A have
+  while IFS= read -r line; do
+    [[ $line == SUBSYSTEM* ]] || continue
+    keys=$(grep -o 'ATTRS{[a-z_]*}=="[^"]*"' <<<"$line")
+    for parent in "$@"; do
+      read -r "have[vendor]" "have[class]" "have[boot_vga]" <<<"$parent"
+      ok=1
+      while IFS= read -r k; do
+        v=${k#*==\"} v=${v%\"} k=${k#ATTRS\{} k=${k%%\}*}
+        # shellcheck disable=SC2053 # udev values are glob patterns
+        [[ ${have[$k]:-} == $v ]] || ok=
+      done <<<"$keys"
+      [[ -n $ok ]] && { got+=("${line##*SYMLINK+=\"dri/}"); break; }
+    done
+  done <"$root/default/system/gpu.rules"
+  echo "${got[*]//\"/}"
+}
+[[ $(links "0x10de 0x030200 -" "0x8086 0x060400 -") == subcult-dgpu ]] ||
+  fail "an NVIDIA card behind an Intel root port also matched the Intel rule (#194)"
+[[ $(links "0x8086 0x030000 1" "0x8086 0x060000 -") == subcult-igpu ]] || fail "intel igpu"
+[[ $(links "0x1002 0x030000 1" "0x1022 0x060400 -") == subcult-igpu ]] || fail "amd boot igpu"
+[[ -z $(links "0x1002 0x030000 0" "0x1022 0x060400 -") ]] || fail "non-boot amd card got a link"
+
 out=$(__EGL_VENDOR_LIBRARY_FILENAMES=x VK_DRIVER_FILES=y "$root/bin/subcult-gpu-run" env)
 [[ $out == *"__NV_PRIME_RENDER_OFFLOAD=1"* && $out != *"VK_DRIVER_FILES="* && $out != *"__EGL_VENDOR_LIBRARY_FILENAMES="* ]] ||
   fail "gpu run environment"

@@ -1,7 +1,11 @@
 # Subarchy (ADR 0006): stable names for the integrated and discrete GPUs.
 # AQ_DRM_DEVICES separates devices with colons, so the colon-laden
 # /dev/dri/by-path names cannot be used, and cardN numbers can change.
+# All ATTRS keys in a rule must match on the same parent, so the class key
+# pins the vendor to the display controller itself: on sputnik the NVIDIA
+# card sits behind an Intel PCIe root port (class 0x0604), which would
+# otherwise match the Intel rule too (#194).
 # Installed to /usr/lib/udev/rules.d/70-subarchy-gpu.rules.
-SUBSYSTEM=="drm", ENV{DEVTYPE}=="drm_minor", KERNEL=="card[0-9]*", ATTRS{vendor}=="0x10de", SYMLINK+="dri/subcult-dgpu"
-SUBSYSTEM=="drm", ENV{DEVTYPE}=="drm_minor", KERNEL=="card[0-9]*", ATTRS{vendor}=="0x8086", SYMLINK+="dri/subcult-igpu"
-SUBSYSTEM=="drm", ENV{DEVTYPE}=="drm_minor", KERNEL=="card[0-9]*", ATTRS{vendor}=="0x1002", ATTRS{boot_vga}=="1", SYMLINK+="dri/subcult-igpu"
+SUBSYSTEM=="drm", ENV{DEVTYPE}=="drm_minor", KERNEL=="card[0-9]*", ATTRS{vendor}=="0x10de", ATTRS{class}=="0x03*", SYMLINK+="dri/subcult-dgpu"
+SUBSYSTEM=="drm", ENV{DEVTYPE}=="drm_minor", KERNEL=="card[0-9]*", ATTRS{vendor}=="0x8086", ATTRS{class}=="0x03*", SYMLINK+="dri/subcult-igpu"
+SUBSYSTEM=="drm", ENV{DEVTYPE}=="drm_minor", KERNEL=="card[0-9]*", ATTRS{vendor}=="0x1002", ATTRS{class}=="0x03*", ATTRS{boot_vga}=="1", SYMLINK+="dri/subcult-igpu"
