@@ -45,7 +45,7 @@ that install. Items that need hardware other than sputnik are in
 
 ## 0 Before you start
 
-- [ ] **B1** Get the ISO: download `subarchy-iso` from a Gitea `iso` run on main, run `make iso`, or take the lead's stick. Run `sha256sum` on the file. *Expect:* one `subarchy-YYYY.MM.DD-x86_64.iso` of about 4.3–4.6 GB; write its hash down. (iso/README.md)
+- [ ] **B1** Get the ISO: download `subarchy-iso` from a Gitea `iso` run on main, run `make iso`, or take the lead's stick. Run `sha256sum` on the file. *Expect:* one `subarchy-YYYY.MM.DD-x86_64.iso` of about 7 GB (6.95 GB on 2026-11-14, with the full app list in its offline repository); write its hash down. (iso/README.md)
 - [ ] **B2** Write it to the stick by `/dev/disk/by-id/...` with `dd bs=4M oflag=direct conv=fsync`, then read back exactly the ISO's size and hash it. *Expect:* the hashes match; `blkid` shows the label `SUBARCHY_YYYYMM`.
 - [ ] **B3** Back up your home on the current Subarchy install. A guided install erases the disk you choose. Install only onto the SPCC disk (serial `AA231221NV01KG05237`), never the Crucial CT1000P5 disk (Omarchy).
 - [ ] **B4** On the current install, before reinstalling, run **C3** and **C4**. Both need a system installed before 2026-11-13.
