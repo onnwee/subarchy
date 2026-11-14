@@ -4,7 +4,7 @@ type: review
 status: draft
 review: pending
 created: 2026-11-13
-updated: 2026-11-13
+updated: 2026-11-14
 tags: [review, testing, hardware]
 aliases: [Test checklist, Owner test checklist]
 ---
@@ -134,7 +134,7 @@ Run the installer on tty1 with the dock unplugged, so Ethernet is off.
 - [ ] **D3** Press Super+Shift+Escape. *Expect:* the session ends cleanly and SDDM returns.
 - [ ] **D4** Add `sub.bind("SUPER + ALT + U", "Update", sub.alias("up"))` to `~/.config/hypr/hyprland.lua` with a launcher alias `up`, and run `hyprctl reload`. Then toggle motion off and on in settings and unplug AC. *Expect:* the bind works on top of the defaults, and your own look-and-feel settings survive the reloads. (#115)
 - [ ] **D5** Press the volume, mute, mic-mute and brightness keys, also at the lock screen; press Caps Lock both ways. *Expect:* 5% volume steps and brightness steps with the OSD; the OSD shows "Caps Lock on" / "off" and the key still toggles. (#117)
-- [ ] **D6** Look for a screenshot key, then run `grim -g "$(slurp)" - | satty -f -`. *Expect:* no key is bound (Q9); the command captures a region into satty.
+- [ ] **D6** Press Print and drag a region, press Print and click a window, then Shift+Print and Ctrl+Print. Click one notification and press Enter in satty. Press Alt+Print, click the display, wait 5 s and press Alt+Print again; repeat with Alt+Shift+Print and speak. *Expect:* each screenshot lands in `~/Pictures` and pastes into an app; satty saves over the file and copies it. The screen mark lights while recording; the MP4 in `~/Videos` plays when the notification is clicked, with your voice on the audio one. (ADR 0056)
 
 ### Bar
 
@@ -306,7 +306,7 @@ stable: Q17, Q23 and Q24 were settled by #185, #184 and #183.
 - [ ] **Q6** (decision) The 1.5 s of black before the shutdown splash, and whether to hide its progress bar; a sign once the lock's password passes 16 characters.
 - [ ] **Q7** (decision) HT3 panel controls: noise mode, HT3-only volume, EQ. #181 added the first two; EQ is left. (#153)
 - [ ] **Q8** (decision) Confirm or change the Tailscale policy (active session connects, signs in, picks exit nodes and sends files without a password) and the starting list of actions that skip sudo or polkit. (ADR 0062)
-- [ ] **Q9** (decision) Ship a screenshot key; bind or autostart voxtype dictation. (ADR 0056)
+- [ ] **Q9** (decision) Bind or autostart voxtype dictation. The screenshot and recording keys now ship (D6). (ADR 0056)
 - [ ] **Q10** (decision) Default apps: ship `/etc/xdg/mimeapps.list` or run `subcult app default` at install; vendor or unmark the six missing "preinstalled" apps; add CUPS per ADR 0022 or change the ADR; the 1010-package budget. (#168, #172, ADR 0054)
 - [ ] **Q11** (decision) Finish the app list review: overlaps (Bitwarden CLI and Proton Pass, browsers, PDF, archive), sputnik apps left out, more web apps, chatgpt-desktop. Then set [[app-list]] to `review: done`. (ADR 0044)
 - [ ] **Q12** (decision) Cursor colour: kitty's Subcult Ink cursor now uses the palette's #FFFFFF (#173). Confirm it or ask for #00FF88, and say whether Subcult Ink stays a separate scheme. (#4)

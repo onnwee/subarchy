@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# subcult:summary=Pick a part of the screen and print it as slurp does (X,Y WxH)
+# subcult:args=[region|window|output]
+# subcult:examples=subcult capture region | subcult capture region output
+# subcult:hidden=true
+#
+# The picker behind `subcult capture screenshot` and `capture recording`,
+# from Omarchy's omarchy-capture-screenshot (MIT). region (the default):
+# drag a region, or click a window or display to take it whole; window:
+# click a window; output: the focused display, no picking. Every display
+# takes part, with the windows on its workspace, or on its special
+# workspace (the scratchpad) while that is open over it. Coordinates are
+# Hyprland's logical ones, which grim and gpu-screen-recorder take. Exits 1
+# when the pick is cancelled.
+set -euo pipefail
+
+mode=${1:-region}
+
+# A display's logical size, turned for portrait transforms.
+# shellcheck disable=SC2016 # jq's variables, not the shell's
+jq_geo='def geo: (.width / .scale | floor) as $w | (.height / .scale | floor) as $h |
+  if .transform % 2 == 1 then "\(.x),\(.y) \($h)x\($w)" else "\(.x),\(.y) \($w)x\($h)" end;'
+
+focused_output() {
+  hyprctl monitors -j | jq -r "$jq_geo"' .[] | select(.focused) | geo'
+}
+
+outputs() {
+  hyprctl monitors -j | jq -r "$jq_geo"' .[] | geo'
+}
+
+# The windows each display shows: its special workspace's while one is
+# open (it covers the workspace under it), else its workspace's.
+windows() {
+  local shown
+  shown=$(hyprctl monitors -j | jq -c '[.[] | (.specialWorkspace.name // "") as $s |
+    if $s != "" then {name: $s} else {id: .activeWorkspace.id} end]')
+  hyprctl clients -j | jq -r --argjson shown "$shown" \
+    '.[] | select(.hidden != true) | .workspace as $ws |
+     select(any($shown[]; if .name then .name == $ws.name else .id == $ws.id end)) |
+     "\(.at[0]),\(.at[1]) \(.size[0])x\(.size[1])"'
+}
+
+case $mode in
+output)
+  sel=$(focused_output)
+  ;;
+window)
+  sel=$(windows | slurp -r 2>/dev/null) || true
+  ;;
+region)
+  rects=$(outputs; windows)
+  sel=$(slurp 2>/dev/null <<<"$rects") || true
+  # A click, not a drag (under 20 px²), takes the window or display under it.
+  if [[ $sel =~ ^(-?[0-9]+),(-?[0-9]+)\ ([0-9]+)x([0-9]+)$ ]] && ((BASH_REMATCH[3] * BASH_REMATCH[4] < 20)); then
+    cx=${BASH_REMATCH[1]} cy=${BASH_REMATCH[2]}
+    # The last match wins: windows are listed after the display.
+    while read -r rect; do
+      [[ $rect =~ ^(-?[0-9]+),(-?[0-9]+)\ ([0-9]+)x([0-9]+)$ ]] || continue
+      x=${BASH_REMATCH[1]} y=${BASH_REMATCH[2]} w=${BASH_REMATCH[3]} h=${BASH_REMATCH[4]}
+      ((cx >= x && cx < x + w && cy >= y && cy < y + h)) && sel=$rect
+    done <<<"$rects"
+  fi
+  ;;
+*)
+  echo "usage: subcult capture region [region|window|output]" >&2
+  exit 2
+  ;;
+esac
+
+[[ -n ${sel:-} ]] || exit 1
+echo "$sel"

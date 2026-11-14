@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# subcult:summary=Take a screenshot to the Pictures folder and the clipboard
+# subcult:args=[region|window|output]
+# subcult:examples=subcult capture screenshot | subcult capture screenshot output
+# subcult:silent=true
+#
+# From Omarchy's omarchy-capture-screenshot (MIT). region (the default)
+# drags a region or clicks a window or display; window picks a window;
+# output takes the focused display (`subcult capture region`). The PNG goes
+# to the XDG pictures folder (~/Pictures unless user-dirs.dirs says
+# otherwise) and to the clipboard; clicking the notification opens it in
+# satty, where Enter saves over the file and copies it again. Pressing the
+# key again while picking cancels.
+set -euo pipefail
+
+pkill -x slurp && exit 0
+
+dirs=${XDG_CONFIG_HOME:-$HOME/.config}/user-dirs.dirs
+# shellcheck source=/dev/null
+[[ -f $dirs ]] && source "$dirs"
+out=${XDG_PICTURES_DIR:-$HOME/Pictures}
+mkdir -p -- "$out"
+
+sel=$(subcult-capture-region "${1:-region}") || exit 0
+file=$out/screenshot-$(date +%Y-%m-%d_%H-%M-%S-%3N).png
+grim -g "$sel" "$file"
+wl-copy --type image/png <"$file"
+echo "$file"
+
+# The notification waits for a click; the key's command returns now.
+(
+  action=$(notify-send -a Screenshot -i "$file" -t 10000 -A default=Edit \
+    "Screenshot saved and copied" "Click to edit ${file##*/}") || true
+  [[ $action == default ]] && exec satty --filename "$file" --output-filename "$file" \
+    --actions-on-enter save-to-clipboard --save-after-copy --copy-command wl-copy
+) >/dev/null 2>&1 &

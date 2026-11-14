@@ -11,7 +11,8 @@ import "../../Commons/Glyphs.js" as Glyphs
 // (click to toggle). All are driven by events. Only the PipeWire nodes that
 // could be a video stream are tracked (see Model.js), not every stream. A
 // recorder using the compositor's own capture protocol shows through
-// Hyprland's screencast events, counted shell-wide in Screencasts.
+// Hyprland's screencast events, counted shell-wide in Screencasts, and
+// `subcult capture recording` tells Screencasts while it records.
 BarWidget {
   id: root
 
@@ -60,7 +61,7 @@ BarWidget {
     }
 
     IconButton {
-      visible: root.marks.screen || Screencasts.count > 0
+      visible: root.marks.screen || Screencasts.count > 0 || Screencasts.recording
       glyph: Glyphs.screenShare
       color: Theme.error
       tooltip: "Screen shared or recorded"

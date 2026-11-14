@@ -4,7 +4,7 @@ type: decision
 status: accepted
 adr: 56
 created: 2026-11-07
-updated: 2026-11-07
+updated: 2026-11-14
 tags: [decision, adr, shell, apps]
 aliases: [ADR 0056, Quality of life, QoL, Keybindings]
 ---
@@ -97,6 +97,19 @@ as the root on the next boot and returns to first-boot setup. Omarchy's
 version removes the user account (for handing a machine on); Subarchy also
 offers a mode that keeps `@home` and the user. Needs the installer changes in
 [[0049-installer|ADR 0049]].
+
+## Progress
+
+- 2026-11-14: the capture keys. Print takes a screenshot (drag a region, or
+  click a window or the display), Shift+Print a window and Ctrl+Print the
+  display, Omarchy 3's variants. The PNG goes to the XDG pictures folder and
+  the clipboard, and its notification opens satty to annotate.
+  Alt+Print starts or stops a gpu-screen-recorder recording to the videos
+  folder, Alt+Shift+Print with desktop and microphone audio; current
+  Omarchy opens a recording menu there instead. The commands are `subcult capture
+  screenshot` and `subcult capture recording`. Not ported: Omarchy's
+  frozen screen while picking (needs `hyprpicker`, not installed), the
+  recording's first-frame trim and loudness pass, and the webcam overlay.
 
 ## Consequences
 

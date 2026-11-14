@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+# subcult:summary=Start or stop a screen recording to the Videos folder
+# subcult:args=[--audio]
+# subcult:examples=subcult capture recording | subcult capture recording --audio
+# subcult:silent=true
+#
+# From Omarchy's omarchy-capture-screenrecording (MIT). The first run picks
+# what to record as a screenshot does (`subcult capture region`: drag a
+# region, or click a window or display) and starts gpu-screen-recorder; the
+# next run stops it. --audio records the desktop and the microphone in one
+# track. The MP4 goes to the XDG videos folder (~/Videos unless
+# user-dirs.dirs says otherwise); a notification says where, and a click
+# plays it. gpu-screen-recorder reads the screen through KMS, which neither
+# Hyprland nor PipeWire sees, so this tells the shell to show the screen
+# mark while it runs.
+set -euo pipefail
+
+recorder='^gpu-screen-recorder'
+log=${XDG_RUNTIME_DIR:-/tmp}/subcult-recording.log
+
+# The shell's screen mark; nothing happens when the shell is not running.
+mark() {
+  quickshell ipc -p /usr/share/subcult/shell call subcult.screencasts setRecording "$1" >/dev/null 2>&1 || true
+}
+
+if pgrep -f "$recorder" >/dev/null; then
+  # SIGINT lets it finish the file; the run that started it reports.
+  pkill -INT -f "$recorder"
+  for _ in {1..50}; do
+    pgrep -f "$recorder" >/dev/null || exit 0
+    sleep 0.1
+  done
+  pkill -KILL -f "$recorder" || true
+  exit 0
+fi
+
+pkill -x slurp && exit 0
+
+audio=()
+for arg in "$@"; do
+  case $arg in
+  --audio) audio=(-a 'default_output|default_input' -ac aac) ;;
+  *) echo "usage: subcult capture recording [--audio]" >&2; exit 2 ;;
+  esac
+done
+
+dirs=${XDG_CONFIG_HOME:-$HOME/.config}/user-dirs.dirs
+# shellcheck source=/dev/null
+[[ -f $dirs ]] && source "$dirs"
+out=${XDG_VIDEOS_DIR:-$HOME/Videos}
+mkdir -p -- "$out"
+
+sel=$(subcult-capture-region region) || exit 0
+[[ $sel =~ ^(-?[0-9]+),(-?[0-9]+)\ ([0-9]+)x([0-9]+)$ ]] || exit 1
+x=${BASH_REMATCH[1]} y=${BASH_REMATCH[2]} w=${BASH_REMATCH[3]} h=${BASH_REMATCH[4]}
+# A whole display records by name, at its full resolution. Its logical
+# size is turned for portrait transforms, as the picker offers it.
+monitor=$(hyprctl monitors -j | jq -r --argjson x "$x" --argjson y "$y" --argjson w "$w" --argjson h "$h" \
+  '.[] | (.width / .scale | floor) as $mw | (.height / .scale | floor) as $mh |
+   (if .transform % 2 == 1 then [$mh, $mw] else [$mw, $mh] end) as $size |
+   select(.x == $x and .y == $y and $size == [$w, $h]) | .name' | head -n1)
+if [[ -n $monitor ]]; then
+  target=(-w "$monitor")
+else
+  target=(-w region -region "${w}x${h}+${x}+${y}")
+fi
+
+file=$out/screenrecording-$(date +%Y-%m-%d_%H-%M-%S-%3N).mp4
+# This background part outlives the key's command: it records, then clears
+# the mark and reports when the recorder exits, however it was stopped.
+(
+  status=0
+  gpu-screen-recorder "${target[@]}" -k auto -f 60 -fm cfr -fallback-cpu-encoding yes \
+    -o "$file" "${audio[@]}" 2>"$log" || status=$?
+  mark false
+  if ((status == 0)) && [[ -s $file ]]; then
+    action=$(notify-send -a "Screen recording" -t 10000 -A default=Play \
+      "Screen recording saved" "Click to play ${file##*/}") || true
+    [[ $action == default ]] && exec xdg-open "$file"
+  else
+    notify-send -a "Screen recording" -u critical "Screen recording failed" \
+      "gpu-screen-recorder exited with $status; see $log" || true
+  fi
+) >/dev/null 2>&1 &
+job=$!
+
+# The mark goes on once the recorder has opened its file, and off again if
+# it stopped in between.
+for _ in {1..100}; do
+  if [[ -f $file ]]; then
+    mark true
+    pgrep -f "$recorder" >/dev/null || mark false
+    break
+  fi
+  kill -0 "$job" 2>/dev/null || break
+  sleep 0.1
+done

@@ -63,8 +63,11 @@ no process. The names are `launcher-toggle`, `clipboard`, `alias.<name>`, `altsw
 IPC: `quickshell ipc -p /usr/share/subcult/shell show` lists the targets
 (`subcult.shell status`, `subcult.osd flash <volume|brightness|capslock|workspace>`,
 `subcult.altswitch next|prev|commit|cancel`,
-`subcult.launcher open|close|toggle|clearHistory|search <query>|type <query>|enter|hotkey <alias>|state`).
-Tests and scripts use it; the key bindings do not.
+`subcult.launcher open|close|toggle|clearHistory|search <query>|type <query>|enter|hotkey <alias>|state`,
+`subcult.screencasts setRecording true|false`).
+Tests and scripts use it. The key bindings do not, except through
+`subcult capture recording` (Alt+Print), which sets the screen mark with
+`subcult.screencasts setRecording`.
 
 ## Keep-awake
 
@@ -103,7 +106,10 @@ wlr-screencopy) makes no PipeWire stream; Hyprland's `screencast` events
 light the screen mark for it, from the first frames until half a second
 after the last. The count is kept for the whole shell, so a bar added
 later (a monitor plugged in, a reloaded widget) shows it too; a capture
-already running when the shell starts is missed.
+already running when the shell starts is missed. gpu-screen-recorder reads
+the screen through KMS, which neither PipeWire nor Hyprland sees, so
+`subcult capture recording` (Alt+Print) sets the mark over IPC
+(`subcult.screencasts setRecording`) while it records.
 ## Motion
 
 One setting, `~/.config/subcult/motion.json` with `{"mode": "auto"}`, `"on"`

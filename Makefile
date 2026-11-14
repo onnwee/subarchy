@@ -88,6 +88,7 @@ smoke: build
 	tools/test/migration-hostname-test.sh
 	tools/test/tailscale-helper-test.sh
 	tools/test/taildrop-test.sh
+	tools/test/capture-test.sh
 	tools/test/docker-tui-test.sh
 	tools/test/installer-check-test.sh
 	tools/test/gpu-test.sh

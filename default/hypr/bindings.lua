@@ -31,6 +31,15 @@ sub.bind("SUPER + ALT + code:61", "Decrease display scale", "subcult display sca
 sub.bind("switch:on:Lid Switch", nil, "subcult display lid closed", { locked = true })
 sub.bind("switch:off:Lid Switch", nil, "subcult display lid open", { locked = true })
 
+-- Captures, on Omarchy's keys (ADR 0056). A screenshot goes to Pictures and
+-- the clipboard; its notification opens satty to annotate. A second
+-- Alt+Print stops the recording.
+sub.bind("PRINT", "Screenshot of a region, window or display", "subcult capture screenshot")
+sub.bind("SHIFT + PRINT", "Screenshot of a window", "subcult capture screenshot window")
+sub.bind("CTRL + PRINT", "Screenshot of the display", "subcult capture screenshot output")
+sub.bind("ALT + PRINT", "Start or stop screen recording", "subcult capture recording")
+sub.bind("ALT + SHIFT + PRINT", "Start or stop screen recording with audio", "subcult capture recording --audio")
+
 sub.bind("SUPER + mouse:272", "Move window", hl.dsp.window.drag(), { mouse = true })
 sub.bind("SUPER + mouse:273", "Resize window", hl.dsp.window.resize(), { mouse = true })
 

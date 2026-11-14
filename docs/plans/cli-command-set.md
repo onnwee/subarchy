@@ -3,7 +3,7 @@ title: "Distribution CLI: the Bash command set"
 type: plan
 status: accepted
 created: 2026-11-08
-updated: 2026-11-13
+updated: 2026-11-14
 tags: [plan, cli]
 aliases: [CLI command set, E1]
 ---
@@ -80,6 +80,11 @@ apply tells each app itself, [[0037-theming|ADR 0037]]).
 | `capture recording [--webcam]` | Start or stop a screen recording, with the webcam overlay on request | `capture-screenrecording*` |
 | `capture text` | OCR of a screen region to the clipboard | `capture-text` |
 | `capture qr` | Decode a QR code from a screen region | `capture-qr` |
+
+Built (2026-11-14): `capture screenshot` and `capture recording`, bound to
+Print and Alt+Print ([[0056-quality-of-life|ADR 0056]]). `recording` takes
+`--audio` (desktop and microphone) instead of `--webcam`; the hidden
+`capture region` is the picker both use.
 
 ### `subcult system`
 
