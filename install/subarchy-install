@@ -505,22 +505,36 @@ install_limine() {
   grep -q '^/+Subarchy' "$target/boot/limine.conf" || die "no Subarchy entry in limine.conf"
 }
 
+# register_boot_entry: this install's firmware boot entry, labelled
+# Subarchy. limine-install, which pacstrap's hooks run, labels the entry it
+# registers "Limine", as on every other Limine system, so the boot menu
+# showed two entries of that name (#197). It registers none when an entry
+# for its loader on this ESP exists, so register that entry first. Not
+# fatal: without it limine-install registers its own.
+register_boot_entry() {
+  [[ -d /sys/firmware/efi/efivars ]] && command -v efibootmgr >/dev/null || return 0
+  efibootmgr --quiet --create --disk "$(readlink -f "${conf[DISK]}")" --part 1 \
+    --label Subarchy --loader '\EFI\limine\limine_x64.efi' ||
+    echo "could not register the Subarchy boot entry; Limine registers its own"
+}
+
 # stale_boot_entries: the numbers of firmware boot entries that an earlier
 # Limine or Subarchy install left behind. Each install makes a new EFI
 # partition with a new identifier and registers a new entry for it; the
 # entry of the install before points at a partition that no longer exists,
 # and the firmware's boot menu collects one per reinstall.
 #
-# Only entries named Limine or Subarchy, and only when no partition on any
-# attached disk has the identifier they name: another system's entry, the
-# firmware's own, and this install's are left alone.
+# Only entries named Limine or Subarchy, or whose loader is under
+# \EFI\subarchy (fwupd's "Linux Firmware Updater"), and only when no
+# partition on any attached disk has the identifier they name: another
+# system's entry, the firmware's own, and this install's are left alone.
 stale_boot_entries() {
-  local present line num label guid
+  local present line num label guid loader
   present=$(lsblk -rno PARTUUID | tr '[:upper:]' '[:lower:]')
   while IFS= read -r line; do
-    [[ $line =~ ^Boot([0-9A-Fa-f]{4})\*?[[:space:]]+(.*)HD\([0-9]+,GPT,([0-9A-Fa-f-]+), ]] || continue
-    num=${BASH_REMATCH[1]} label=${BASH_REMATCH[2]} guid=${BASH_REMATCH[3],,}
-    [[ ${label,,} =~ ^(limine|subarchy) ]] || continue
+    [[ $line =~ ^Boot([0-9A-Fa-f]{4})\*?[[:space:]]+(.*)HD\([0-9]+,GPT,([0-9A-Fa-f-]+),[^\)]*\)(.*) ]] || continue
+    num=${BASH_REMATCH[1]} label=${BASH_REMATCH[2]} guid=${BASH_REMATCH[3],,} loader=${BASH_REMATCH[4],,}
+    [[ ${label,,} =~ ^(limine|subarchy) || $loader == *"\\efi\\subarchy\\"* ]] || continue
     grep -qxF "$guid" <<<"$present" || echo "$num"
   done < <(efibootmgr -v 2>/dev/null)
 }
@@ -582,6 +596,7 @@ main() {
   partition
   encrypt
   make_filesystems
+  register_boot_entry
   write_boot_config
   pacstrap_packages
   configure_system

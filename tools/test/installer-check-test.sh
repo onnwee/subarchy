@@ -108,12 +108,32 @@ efibootmgr() {
       "Boot0004* Windows Boot Manager	HD(1,GPT,eeeeeeee-5555-4555-8555-555555555555,0x800,0x32000)/File(\\EFI\\Microsoft\\Boot\\bootmgfw.efi)" \
       "Boot0005* ubuntu	HD(1,GPT,bbbbbbbb-2222-4222-8222-222222222222,0x800,0x100000)/File(\\EFI\\ubuntu\\shimx64.efi)" \
       "Boot0006* UEFI: PXE IPv4	PciRoot(0x0)/Pci(0x1f,0x6)/MAC(001122334455,0)/IPv4(0.0.0.0)" \
-      "Boot0007* UEFI: USB DISK 3.0	PciRoot(0x0)/Pci(0x14,0x0)/USB(2,0)/HD(2,GPT,ffffffff-6666-4666-8666-666666666666,0x8d0000,0x87000)"
+      "Boot0007* UEFI: USB DISK 3.0	PciRoot(0x0)/Pci(0x14,0x0)/USB(2,0)/HD(2,GPT,ffffffff-6666-4666-8666-666666666666,0x8d0000,0x87000)" \
+      "Boot0008* Linux Firmware Updater	HD(1,GPT,cccccccc-3333-4333-8333-333333333333,0x800,0x800000)/File(\\EFI\\subarchy\\fwupdx64.efi)" \
+      "Boot0009* Linux Firmware Updater	HD(1,GPT,aaaaaaaa-1111-4111-8111-111111111111,0x800,0x800000)/File(\\EFI\\subarchy\\fwupdx64.efi)" \
+      "Boot000A* Linux Firmware Updater	HD(1,GPT,99999999-7777-4777-8777-777777777777,0x800,0x100000)/File(\\EFI\\ubuntu\\fwupdx64.efi)"
   else
     deleted+=("$*")
   fi
 }
-[[ $(stale_boot_entries | tr '\n' ' ') == "0002 0003 " ]] || fail "stale boot entries: $(stale_boot_entries | tr '\n' ' ')"
+# Also fwupd's entry for a gone Subarchy ESP (0008), not this install's
+# (0009) or another system's (000A).
+[[ $(stale_boot_entries | tr '\n' ' ') == "0002 0003 0008 " ]] || fail "stale boot entries: $(stale_boot_entries | tr '\n' ' ')"
+
+# This install's own entry is registered as Subarchy for limine-install to
+# find, on the ESP (partition 1) of the resolved disk (#197).
+registered=$(mktemp)
+efibootmgr() { echo "$*" >"$registered"; }
+command() { [[ $* == "-v efibootmgr" ]] || builtin command "$@"; }
+readlink() { echo /dev/nvme0n1; }
+if [[ -d /sys/firmware/efi/efivars ]]; then
+  conf[DISK]=/dev/disk/by-id/nvme-test
+  register_boot_entry >/dev/null
+  [[ $(<"$registered") == '--quiet --create --disk /dev/nvme0n1 --part 1 --label Subarchy --loader \EFI\limine\limine_x64.efi' ]] ||
+    fail "registered boot entry: $(<"$registered")"
+fi
+unset -f command readlink
+rm -f -- "$registered"
 
 # The Wi-Fi network used during the install becomes a NetworkManager
 # connection on the new system: mode 600, the passphrase escaped for the
