@@ -1,6 +1,7 @@
 .pragma library
-// The Tailscale widget's data (ADR 0058): `tailscale status --json`, read
-// by services/Tailscale.qml. Only the fields the bar and the panel show.
+// The Tailscale widget's data (ADR 0058): `tailscale status --json` and
+// `tailscale switch --list --json`, read by services/Tailscale.qml. Only the
+// fields the bar and the panel show.
 
 // TaildropTargetStatus 1: the peer takes files from this machine.
 const TAILDROP_AVAILABLE = 1
@@ -73,6 +74,35 @@ function parse(text) {
   }
 }
 
+// The saved accounts (tailscale's profiles) from `tailscale switch --list
+// --json`; [] when the text is not a list.
+function parseAccounts(text) {
+  let list
+  try {
+    list = JSON.parse(text)
+  } catch (e) {
+    return []
+  }
+  if (!Array.isArray(list))
+    return []
+  return list.filter(a => a && typeof a === "object" && String(a.id || "") !== "").map(a => ({
+    id: String(a.id),
+    tailnet: String(a.tailnet || ""),
+    account: String(a.account || ""),
+    nickname: String(a.nickname || ""),
+    selected: a.selected === true
+  }))
+}
+
+// An account as the panel names it: its tailnet, with the account name
+// when another saved account is in the same tailnet.
+function accountLabel(a, list) {
+  const name = a.account || a.nickname
+  const tailnet = a.tailnet || name || a.id
+  const shared = (list || []).some(o => o.id !== a.id && o.tailnet === a.tailnet)
+  return shared && name !== "" && name !== tailnet ? tailnet + " · " + name : tailnet
+}
+
 function online(status) {
   return status ? status.peers.filter(p => p.online) : []
 }
@@ -137,6 +167,15 @@ const HELPER = "/usr/lib/subcult/tailscale-helper"
 
 function helperCommand(verb, args) {
   return ["pkexec", HELPER, verb].concat(args || [])
+}
+
+function switchCommand(id) {
+  return helperCommand("switch", [String(id)])
+}
+
+// Signs in to another account; the one in use stays saved.
+function addAccountCommand() {
+  return helperCommand("add")
 }
 
 // The argv that makes a peer the exit node, or clears it (peer null). The

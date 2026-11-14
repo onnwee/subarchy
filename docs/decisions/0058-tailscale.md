@@ -4,7 +4,7 @@ type: decision
 status: accepted
 adr: 58
 created: 2026-11-07
-updated: 2026-11-13
+updated: 2026-11-14
 tags: [decision, adr, system, network]
 aliases: [ADR 0058, S12, Tailscale, Taildrop]
 ---
@@ -138,6 +138,29 @@ pause during captive portal sign-in.
   link to a folder in `~/Downloads` now also counts as a taken name
   (`ln -T`), and a send to an IPv6 address passes it to `tailscale file
   cp` in brackets, which tailscale requires. Found in review of PR #157.
+- 2026-11-14: Accounts. The panel can hold several Tailscale accounts
+  (tailnets) and switch between them, using tailscale's own profiles
+  ("fast user switching"); one is connected at a time, as in tailscale.
+  It reads `tailscale switch --list --json`, which needs no rights, with
+  every status read. The header names the account in use by its tailnet
+  (with the account name when two saved accounts share a tailnet), each
+  other saved account has a "Switch to" button, and "Add account" signs
+  in to another one. The helper has two more verbs: `switch ID` runs
+  `tailscale switch ID` and takes only a profile ID (letters and digits,
+  at most 32, not `remove`), and `add` runs `tailscale login` the way
+  `login` runs `tailscale up`: it prints the sign-in link and leaves, and
+  the panel waits for the browser as for a sign-in. `tailscale login`
+  first moves to a new, empty profile (checked in the 1.104.4 source), so
+  `add` repeats none of the current profile's settings, and the machine
+  leaves the account in use as soon as an add starts. Cancelling the add
+  in the panel, ten minutes without the browser, or an add that fails
+  switches back to that account. Signed out with no saved account the
+  panel shows only "Sign in", which does the same as "Add account".
+  `tailscale switch` waits for the new profile to start with no time
+  limit and exits 1 when it comes up stopped (checked in the 1.104.5
+  source), so the helper gives it 30 seconds and counts the switch as
+  done when the profile in use is the one asked for. Not yet tried with
+  real accounts.
 - Still open: the exit-node pause during captive portal sign-in
   ([[0020-dns|ADR 0020]]) and whether ufw needs a `tailscale0` rule.
 

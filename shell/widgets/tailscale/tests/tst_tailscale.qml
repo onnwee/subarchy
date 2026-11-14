@@ -70,6 +70,41 @@ TestCase {
     compare(withUrl.authUrl, "https://login.tailscale.com/a/abc")
   }
 
+  // From `tailscale switch --list --json` (1.104).
+  function test_accounts() {
+    compare(Model.parseAccounts("nope"), [])
+    compare(Model.parseAccounts(""), [])
+    compare(Model.parseAccounts("{}"), [])
+    compare(Model.parseAccounts("null"), [])
+    const list = Model.parseAccounts(JSON.stringify([
+      { id: "7921", nickname: "me@example.com", tailnet: "subcult", account: "me@example.com", selected: true },
+      { id: "a3f0", nickname: "", tailnet: "work.example", account: "me@work.example", selected: false },
+      { id: "", tailnet: "no id" },
+      null,
+      { id: "b1c2" }
+    ]))
+    compare(list.length, 3, "entries without an ID are dropped")
+    compare(list[0], { id: "7921", tailnet: "subcult", account: "me@example.com", nickname: "me@example.com", selected: true })
+    compare(list[2], { id: "b1c2", tailnet: "", account: "", nickname: "", selected: false }, "missing fields are empty")
+    verify(!list[1].selected)
+  }
+
+  function test_accountLabels() {
+    const list = Model.parseAccounts(JSON.stringify([
+      { id: "1", tailnet: "subcult", account: "me@example.com", selected: true },
+      { id: "2", tailnet: "work.example", account: "me@work.example" },
+      { id: "3", tailnet: "work.example", account: "other@work.example" },
+      { id: "4", nickname: "laptop" },
+      { id: "5" }
+    ]))
+    compare(Model.accountLabel(list[0], list), "subcult")
+    compare(Model.accountLabel(list[1], list), "work.example · me@work.example", "two accounts in one tailnet")
+    compare(Model.accountLabel(list[2], list), "work.example · other@work.example")
+    compare(Model.accountLabel(list[3], list), "laptop", "no tailnet: the nickname")
+    compare(Model.accountLabel(list[4], list), "5", "nothing else: the ID")
+    compare(Model.accountLabel(list[1], null), "work.example")
+  }
+
   function test_text() {
     const s = Model.parse(signedIn)
     compare(Model.stateText(s, false), "Connected")
@@ -98,6 +133,8 @@ TestCase {
     compare(Model.helperCommand("up"), ["pkexec", helper, "up"])
     compare(Model.helperCommand("login"), ["pkexec", helper, "login"])
     compare(Model.helperCommand("down"), ["pkexec", helper, "down"])
+    compare(Model.switchCommand("7921"), ["pkexec", helper, "switch", "7921"])
+    compare(Model.addAccountCommand(), ["pkexec", helper, "add"])
     compare(Model.exitNodeCommand(s.peers[1]), ["pkexec", helper, "exit-node", "100.64.0.2"])
     compare(Model.exitNodeCommand(null), ["pkexec", helper, "exit-node", ""])
     compare(Model.exitNodeCommand({ ip: "", ipv6: "fd7a:115c:a1e0::9", dnsName: "v6only.tail1234.ts.net" }),

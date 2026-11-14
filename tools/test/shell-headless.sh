@@ -173,7 +173,8 @@ exec /usr/bin/systemctl "$@"
 STUB
 chmod +x "$work/bin/systemctl"
 # A stand-in for tailscale: signed out until the test writes
-# $HOME/tailscale-up, then one peer online; up and down are recorded.
+# $HOME/tailscale-up, then one peer online and one saved account; up and
+# down are recorded.
 cat >"$work/bin/tailscale" <<'STUB'
 #!/bin/sh
 echo "$*" >>"$HOME/tailscale-log"
@@ -185,6 +186,9 @@ status)
  "Peer": {"k1": {"HostName": "kvant", "DNSName": "kvant.tail1.ts.net.", "TailscaleIPs": ["100.64.0.2"], "Online": true, "TaildropTarget": 1}}}
 JSON
   else echo '{"BackendState": "NeedsLogin", "AuthURL": "", "Self": {"HostName": "headless"}}'; fi;;
+switch)
+  if [ -f "$HOME/tailscale-up" ]; then echo '[{"id": "7921", "tailnet": "test.example", "account": "me@test.example", "selected": true}]'
+  else echo '[]'; fi;;
 up) printf '\nTo authenticate, visit:\n\n\thttps://login.tailscale.com/a/headless\n\n' >&2; exec sleep 30;;
 esac
 exit 0
@@ -976,9 +980,12 @@ for _ in $(seq 20); do [[ $(ts state) == *'"state":"Running"'* ]] && break; slee
 [[ $(ts state) == *'"self":{"name":"headless","dnsName":"headless.tail1.ts.net","ip":"100.64.0.1","ipv6":""},"peers":1'* ]] ||
   tsfail "tailscale signed in"
 [[ $(ts state) == *'"loginUrl":""'* ]] || tsfail "the sign-in link stayed after the sign-in"
+for _ in $(seq 20); do [[ $(ts state) == *'"accounts":1}' ]] && break; sleep 0.5; done
+[[ $(ts state) == *'"accounts":1}' ]] || tsfail "the saved account not read"
 # Nothing asked tailscaled for a change directly: that needs operator rights.
-# The helper reads its settings (debug prefs) before up.
-if grep -qvxE 'status --json|debug prefs|up' "$home1/tailscale-log"; then tsfail "tailscale called directly"; fi
+# The helper reads its settings (debug prefs) before up; the saved accounts
+# are read without rights too.
+if grep -qvxE 'status --json|switch --list --json|debug prefs|up' "$home1/tailscale-log"; then tsfail "tailscale called directly"; fi
 # Weather: in the default layout; nothing is fetched until a location is
 # set (no Open-Meteo call in the curl log); the panel's search runs
 # linecast; a location set in the config fetches the conditions (stub curl)

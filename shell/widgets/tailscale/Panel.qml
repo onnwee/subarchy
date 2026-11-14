@@ -7,10 +7,11 @@ import qs.services
 import "Model.js" as Model
 import "../../Commons/Glyphs.js" as Glyphs
 
-// Tailscale (ADR 0058): on or off, sign-in, this machine's name and
-// address, the other machines with their addresses, the exit node, and
-// Taildrop. A click on a machine copies its address; the send arrow picks
-// files for it. Reads the status when it opens and after each action.
+// Tailscale (ADR 0058): on or off, sign-in, the account in use and a
+// switch to the other saved ones, this machine's name and address, the
+// other machines with their addresses, the exit node, and Taildrop. A
+// click on a machine copies its address; the send arrow picks files for
+// it. Reads the status when it opens and after each action.
 PanelBase {
   id: panel
 
@@ -19,8 +20,13 @@ PanelBase {
   readonly property bool signedOut: status !== null && status.needsLogin
   readonly property var peers: running ? status.peers : []
   readonly property int onlineCount: Model.online(status).length
+  readonly property var accounts: Tailscale.accounts
+  readonly property var account: accounts.find(a => a.selected) || null
+  readonly property var otherAccounts: accounts.filter(a => !a.selected)
+  // The account in use, else the tailnet the status names.
+  readonly property string tailnet: account !== null ? Model.accountLabel(account, accounts) : running ? status.tailnet : ""
   // A sign-in: asking the helper for the link, then waiting for the browser.
-  readonly property bool waitingForBrowser: Tailscale.signingIn && (signedOut || Tailscale.loginUrl !== "")
+  readonly property bool waitingForBrowser: Tailscale.signingIn && (signedOut || Tailscale.adding || Tailscale.loginUrl !== "")
 
   implicitWidth: 340
   implicitHeight: column.implicitHeight
@@ -36,6 +42,7 @@ PanelBase {
       text: control.text
       horizontalAlignment: Text.AlignHCenter
       verticalAlignment: Text.AlignVCenter
+      elide: Text.ElideRight
       color: control.enabled ? Theme.text : Theme.muted
       font: control.font
     }
@@ -66,15 +73,18 @@ PanelBase {
       height: 24
       Text {
         anchors.left: parent.left
+        anchors.right: toggle.left
         anchors.verticalCenter: parent.verticalCenter
         text: "Tailscale: " + Model.stateText(panel.status, Tailscale.daemonDown).replace(/^Tailscale$/, "…")
-          + (panel.running && panel.status.tailnet !== "" ? " · " + panel.status.tailnet : "")
+          + (panel.tailnet !== "" ? " · " + panel.tailnet : "")
         textFormat: Text.PlainText
+        elide: Text.ElideRight
         color: Theme.text
         font.family: Style.uiFontFamily
         font.pixelSize: Style.fontSize
       }
       IconButton {
+        id: toggle
         objectName: "toggle"
         visible: panel.status !== null && !panel.signedOut && !Tailscale.signingIn
         anchors.right: parent.right
@@ -170,6 +180,29 @@ PanelBase {
       visible: Tailscale.error !== ""
       text: Tailscale.error
       color: Theme.error
+    }
+
+    // Accounts: tailscale connects one at a time. Adding one signs in in
+    // the browser, as above; cancelling goes back to the account in use.
+    Repeater {
+      model: panel.otherAccounts
+      delegate: ActionButton {
+        id: accountButton
+        required property var modelData
+        width: column.width
+        enabled: !Tailscale.busy
+        text: "Switch to " + Model.accountLabel(accountButton.modelData, panel.accounts)
+        onClicked: Tailscale.switchAccount(accountButton.modelData.id)
+      }
+    }
+    ActionButton {
+      objectName: "addAccount"
+      // Signed out with no saved account, Sign in does the same.
+      visible: panel.status !== null && !Tailscale.signingIn && !(panel.signedOut && panel.accounts.length === 0)
+      width: parent.width
+      enabled: !Tailscale.busy
+      text: "Add account"
+      onClicked: Tailscale.addAccount()
     }
 
     Note {

@@ -4,7 +4,7 @@ type: decision
 status: accepted
 adr: 62
 created: 2026-11-07
-updated: 2026-11-13
+updated: 2026-11-14
 tags: [decision, adr, security]
 aliases: [ADR 0062, sudo, polkit]
 ---
@@ -108,5 +108,14 @@ the permanent toggle.
 - 2026-11-13: superseded for updates by
   [[0069-update-authentication|ADR 0069]]; the package no longer ships
   `50-subarchy-update`.
+- 2026-11-14: `tv.subcult.tailscale` gained two helper verbs
+  ([[0058-tailscale|ADR 0058]]): `switch ID` (`tailscale switch` to a
+  saved account, by profile ID only) and `add` (`tailscale login`, which
+  signs in to another account in a new profile and keeps the others). So
+  any program the user runs can now also switch between the saved
+  accounts, and can start a sign-in to any tailnet while signed in, not
+  only while signed out; that sign-in disconnects the account in use
+  until it completes or the panel switches back. It still cannot remove
+  an account or change other settings.
 
 Related: [[decision-map|Decision map]] · [[0023-authentication|ADR 0023]] · [[0063-security-hardening|ADR 0063]]

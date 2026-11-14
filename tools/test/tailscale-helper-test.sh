@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # The root helper behind the polkit action tv.subcult.tailscale (ADR 0058,
 # ADR 0062), with a stand-in for tailscale. It runs up, down, the sign-in,
-# the exit node and a Taildrop send with fixed flags, takes only Tailscale
-# addresses and plain file names, refuses everything else without calling
-# tailscale, and stops waiting at the sign-in link. Signed out after an
+# adding and switching accounts, the exit node and a Taildrop send with
+# fixed flags, takes only Tailscale addresses, profile IDs and plain file
+# names, refuses everything else without calling tailscale, and stops
+# waiting at the sign-in link. Signed out after an
 # earlier sign-in, up and the sign-in repeat the exit node it set, so
 # `tailscale up` does not refuse; clearing the exit node clears both of
 # its settings. The polkit action names
@@ -24,19 +25,33 @@ cat >"$work/bin/tailscale" <<'STUB'
 case "$1 ${2:-}" in
 "debug prefs") cat "$TS_TEST/prefs" 2>/dev/null || echo '{}'; exit 0;;
 "status --json") cat "$TS_TEST/status" 2>/dev/null || echo '{}'; exit 0;;
+"switch --list") cat "$TS_TEST/profiles" 2>/dev/null || echo '[]'; exit 0;;
 esac
 echo "$*" >>"$TS_TEST/calls"
 case "$1 ${2:-}" in
-"up "*)
+"up "* | "login "*)
   case $(cat "$TS_TEST/up-mode" 2>/dev/null) in
   signed-out) printf '\nTo authenticate, visit:\n\n\thttps://login.tailscale.com/a/abc123\n\n' >&2; sleep 30;;
   fails) echo "backend error: boom" >&2; exit 3;;
+  esac;;
+"switch "*)
+  # As 1.104.5: the switch happens, then the wait for the new profile.
+  case $(cat "$TS_TEST/switch-mode" 2>/dev/null) in
+  unknown) echo "No profile named \"$2\"" >&2; exit 1;;
+  esac
+  echo "[{\"id\":\"$2\",\"selected\":true}]" >"$TS_TEST/profiles"
+  case $(cat "$TS_TEST/switch-mode" 2>/dev/null) in
+  stopped) echo "Tailscale is stopped."; exit 1;;
+  starting) exec sleep 30;;
   esac;;
 "file cp") cat >"$TS_TEST/sent";;
 esac
 exit 0
 STUB
 chmod +x "$work/bin/tailscale"
+# The helper gives tailscale switch 30 seconds; the test, one.
+printf '#!/bin/sh\nshift\nexec /usr/bin/timeout 1 "$@"\n' >"$work/bin/timeout"
+chmod +x "$work/bin/timeout"
 
 calls() { cat "$work/calls" 2>/dev/null || true; }
 ok() {
@@ -60,6 +75,26 @@ ok exit-node fd7a:115c:a1e0::3
 ok exit-node ''
 [[ $(calls) == 'set --exit-node= --exit-node-allow-lan-access=false' ]] || fail "clearing the exit node: $(calls)"
 
+ok switch 7921
+[[ $(calls) == 'switch 7921' ]] || fail "switch: $(calls)"
+ok switch aB3
+ok switch "$(printf 'a%.0s' {1..32})"
+# The switch counts once the profile is in use, even when tailscale
+# reports it stopped or is still waiting for it to start.
+echo stopped >"$work/switch-mode"
+ok switch 7921
+echo starting >"$work/switch-mode"
+start=$SECONDS
+ok switch 7922
+((SECONDS - start < 10)) || fail "switch waited for the profile to start"
+echo unknown >"$work/switch-mode"
+echo '[{"id":"7921","selected":true}]' >"$work/profiles"
+status=0
+"$helper" switch 1234 >/dev/null 2>"$work/err" || status=$?
+[[ $status == 1 ]] || fail "switch to an unknown profile: status $status"
+grep -q 'No profile named' "$work/err" || fail "switch failure text: $(<"$work/err")"
+rm -f "$work/switch-mode" "$work/profiles"
+
 # Anything else is refused before tailscale runs.
 refused
 refused set --ssh
@@ -75,6 +110,14 @@ refused send --operator=alice 100.64.0.4 a.txt
 refused --operator=alice up
 refused exit-node
 refused exit-node 100.64.0.2 extra
+refused add --operator=alice
+refused add extra
+refused switch
+refused switch 7921 extra
+refused switch --list
+for id in '' ' ' 'a b' a-b -a ../x 79/21 remove REMOVE user@example.com $'7921\n' "$(printf 'a%.0s' {1..33})"; do
+  refused switch "$id"
+done
 for addr in 10.0.0.1 100.63.255.1 100.128.0.1 100.64.0.256 100.64.0 '100.64.0.2 --ssh' --ssh '100.64.0.2,' \
   kvant kvant.tail1.ts.net fd7a:115c:a1e1::3 'fd7a:115c:a1e0:::3' 'FD7A:115C:A1E0::3' $'100.64.0.2\n'; do
   refused exit-node "$addr"
@@ -112,6 +155,21 @@ out=$("$helper" up) || fail "up failed"
 [[ -z $out ]] || fail "up printed: $out"
 out=$("$helper" login) || fail "login failed while signed in"
 [[ -z $out ]] || fail "login printed while signed in: $out"
+# Adding an account: tailscale login, the link at once, and nothing left
+# behind; with no settings of the current profile, even signed out with an
+# exit node set (tailscale login starts an empty profile).
+echo signed-out >"$work/up-mode"
+printf '{"ControlURL":"https://controlplane.tailscale.com","ExitNodeIP":"100.64.0.9","ExitNodeAllowLANAccess":true}' >"$work/prefs"
+echo '{"BackendState":"NeedsLogin"}' >"$work/status"
+rm -f "$work/calls"
+start=$SECONDS
+out=$("$helper" add) || fail "add failed"
+[[ $out == https://login.tailscale.com/a/abc123 ]] || fail "add printed: $out"
+((SECONDS - start < 10)) || fail "add waited for the browser"
+[[ $(calls) == login ]] || fail "add: $(calls)"
+if pgrep -f "$work/bin/tailscale login" >/dev/null; then fail "tailscale login left running"; fi
+rm -f "$work/prefs" "$work/status"
+echo >"$work/up-mode"
 # A failure passes tailscale's words and status on.
 echo fails >"$work/up-mode"
 status=0
@@ -152,5 +210,6 @@ grep -q '<annotate key="org.freedesktop.policykit.exec.path">/usr/lib/subcult/ta
   fail "the polkit action does not name the helper"
 { grep -q '<allow_active>yes</allow_active>' "$policy" && grep -q '<allow_inactive>auth_admin</allow_inactive>' "$policy" &&
   grep -q '<allow_any>auth_admin</allow_any>' "$policy"; } || fail "polkit defaults"
+grep -q '<description>.*switch or add accounts' "$policy" || fail "the polkit action does not say it switches and adds accounts"
 if command -v xmllint >/dev/null; then xmllint --noout "$policy" || fail "the polkit action is not well-formed"; fi
 echo "tailscale-helper-test: ok"

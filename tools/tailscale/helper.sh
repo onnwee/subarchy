@@ -7,6 +7,10 @@
 #
 #   up                  connect with the saved settings
 #   login               sign in: print the sign-in link and leave
+#   add                 sign in to another account (tailscale login, a
+#                       new profile; the one in use stays saved): print
+#                       the sign-in link and leave
+#   switch ID           switch to the saved account (profile) with this ID
 #   down                disconnect
 #   exit-node ADDRESS   use the machine at this Tailscale address as the
 #                       exit node, keeping the local network reachable;
@@ -15,17 +19,25 @@
 #   send ADDRESS NAME   send standard input with Taildrop as NAME
 #
 # ADDRESS is a Tailscale IPv4 (100.64.0.0/10) or IPv6 (fd7a:115c:a1e0::/48)
-# address. The helper never opens a path the caller names: `send` reads the
-# file from standard input, which the caller opened.
+# address. ID is a profile ID from `tailscale switch --list`: letters and
+# digits only. The helper never opens a path the caller names: `send`
+# reads the file from standard input, which the caller opened.
 set -euo pipefail
 
 die() { echo "tailscale-helper: $*" >&2; exit 2; }
-usage="usage: tailscale-helper up | login | down | exit-node ADDRESS | send ADDRESS NAME"
+usage="usage: tailscale-helper up | login | add | switch ID | down | exit-node ADDRESS | send ADDRESS NAME"
 
 octet='(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])'
 tailscale_ip() {
   [[ $1 =~ ^100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\.$octet\.$octet$ ]] ||
     { [[ $1 =~ ^fd7a:115c:a1e0:[0-9a-f:]{1,24}$ && $1 != *:::* ]]; }
+}
+
+# A profile ID: tailscale makes short hex ones. `remove` would be read as
+# `tailscale switch remove`.
+profile_id() {
+  local LC_ALL=C
+  [[ $1 =~ ^[0-9A-Za-z]{1,32}$ && ${1,,} != remove ]]
 }
 
 # A file name Taildrop can take: no folder, no control characters.
@@ -76,11 +88,17 @@ restate() {
 # tailscaled after `tailscale up` stops (seen with 1.104.7), and the
 # browser completes it there, so this stops waiting at the link: the
 # caller's panel watches `tailscale status` instead. With an account, up
-# connects and exits.
+# connects and exits. `add` runs `tailscale login` the same way, which
+# starts an empty profile first, so the current profile's settings are
+# not repeated.
 up() {
-  local mode=$1 line text='' url='' status=0 pid out flags=()
-  restate
-  exec {out}< <(exec tailscale up "${flags[@]}" 2>&1)
+  local mode=$1 line text='' url='' status=0 pid out flags=() cmd=(tailscale up)
+  if [[ $mode == add ]]; then
+    cmd=(tailscale login)
+  else
+    restate
+  fi
+  exec {out}< <(exec "${cmd[@]}" "${flags[@]}" 2>&1)
   pid=$!
   while true; do
     IFS= read -r -t 60 -u "$out" line || { status=$?; break; }
@@ -92,7 +110,7 @@ up() {
   done
   if [[ -n $url ]]; then
     kill "$pid" 2>/dev/null || true
-    if [[ $mode == login ]]; then
+    if [[ $mode != up ]]; then
       printf '%s\n' "$url"
       exit 0
     fi
@@ -101,7 +119,7 @@ up() {
   fi
   if ((status > 128)); then
     kill "$pid" 2>/dev/null || true
-    echo "tailscale up did not answer within a minute" >&2
+    echo "${cmd[*]} did not answer within a minute" >&2
     exit 1
   fi
   wait "$pid" && exit 0
@@ -114,9 +132,21 @@ up() {
 verb=$1
 shift
 case $verb in
-up | login)
+up | login | add)
   (($# == 0)) || die "$usage"
   up "$verb"
+  ;;
+switch)
+  (($# == 1)) || die "$usage"
+  profile_id "$1" || die "not a profile ID: $1"
+  # tailscale switch then waits, with no time limit, for the profile to
+  # leave Starting, and exits 1 when it comes up stopped or waiting for
+  # approval (1.104.5, cli/switch.go). The switch has happened by then, so
+  # the profile in use decides.
+  status=0
+  timeout 30 tailscale switch "$1" || status=$?
+  ((status == 0)) || [[ $(tailscale switch --list --json | jq -r '.[] | select(.selected) | .id') == "$1" ]] ||
+    exit "$status"
   ;;
 down)
   (($# == 0)) || die "$usage"
