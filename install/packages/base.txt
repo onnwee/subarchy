@@ -14,6 +14,8 @@ systemd-ukify
 limine
 limine-mkinitcpio-hook
 limine-snapper-sync
+# inotifywait, which limine-snapper-sync's watcher needs to see new snapshots.
+inotify-tools
 efibootmgr
 sbctl
 cryptsetup
@@ -44,6 +46,8 @@ sudo
 # hostname, which scripts and people expect; systemd's hostnamectl
 # does not replace it.
 inetutils
+# lsusb, for hardware checks and the DisplayLink dock.
+usbutils
 zsh
 man-db
 neovim

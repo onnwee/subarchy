@@ -18,6 +18,8 @@ pipewire-pulse
 pipewire-alsa
 pipewire-jack
 realtime-privileges
+# RealtimeKit, which PipeWire and xdg-desktop-portal ask for realtime scheduling.
+rtkit
 
 # Terminal (ADR 0040)
 kitty
