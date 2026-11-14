@@ -14,6 +14,3 @@ build/
 
 # Locally built Go binaries
 /subarchy-setup
-
-# Dank Mono is licensed to the owner, not redistributable: copied in at deploy time.
-site/fonts/DankMono-*

@@ -197,8 +197,8 @@ def head(meta, path, docs):
         '<link rel="preload" href="/fonts/DepartureMono-Regular.woff2" as="font" type="font/woff2" crossorigin>',
     ]
     if docs:
-        for face in ("Regular", "Bold", "Italic"):
-            lines.append(f'<link rel="preload" href="/fonts/DankMono-{face}.woff2" as="font" type="font/woff2" crossorigin>')
+        for face in ("500-normal", "500-italic", "700-normal"):
+            lines.append(f'<link rel="preload" href="/fonts/victor-mono-latin-{face}.woff2" as="font" type="font/woff2" crossorigin>')
     lines += ['<link rel="stylesheet" href="/style.css">', f"<script>{THEME_SCRIPT}</script>", "</head>"]
     return "\n".join(lines)
 
@@ -228,7 +228,7 @@ def footer(support=True):
     return ('<footer><div class="wrap">\n'
             f'<div class="row">{"".join(row)}</div>\n'
             "<p>Subarchy is free software under GPL-3.0-or-later. Set in Departure Mono (OFL); "
-            "the docs text in Dank Mono.</p>\n"
+            "the docs text in Victor Mono (OFL).</p>\n"
             '</div></footer>\n<script src="/app.js" defer></script>\n</body>\n</html>\n')
 
 

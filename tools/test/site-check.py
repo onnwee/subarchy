@@ -131,8 +131,6 @@ for name, p in parsed.items():
     for href in p.links:
         if re.match(r"^[a-z]+:", href) or href.startswith("//"):
             continue
-        if "/fonts/DankMono-" in href:  # licensed font, copied in at deploy time
-            continue
         path, _, frag = href.partition("#")
         if not path:
             target = name

@@ -47,11 +47,10 @@ is the owner's ANSI art, drawn as SVG rectangles so it does not depend on a
 font. Departure Mono 1.500 is in `fonts/` with its SIL Open Font License
 text; it sets the headings, navigation, code and the landing page.
 
-The docs prose is set in Dank Mono, which the owner licenses from its
-author. Its licence forbids redistribution, so the three `.woff2` files are
-not in git (`.gitignore` excludes `site/fonts/DankMono-*`); the deploy copies
-them in from the owner's licensed copy. Without them the docs fall back to
-Departure Mono, so a local preview still works.
+The docs prose is set in Victor Mono 1.5.6, also under the OFL
+(`fonts/victormono-OFL.txt`), for its cursive italics. The files are the
+Latin subset from fontsource 5.3.0: medium (500) for text and italics, bold
+(700) for `<strong>`.
 
 ## Writing the docs
 
@@ -77,8 +76,8 @@ a new tab)".
 
 Docs prose uses the classes in `style.css`:
 
-- `<strong>` and `<em>` are coloured (acid and violet); Dank Mono also sets
-  them bold and italic. Departure Mono has no bold or italic, so on the
+- `<strong>` and `<em>` are coloured (acid and violet); Victor Mono also sets
+  them bold and in cursive italics. Departure Mono has no bold or italic, so on the
   landing page they are colour only.
 - Callouts, in the manner of Obsidian's: `<div class="callout note|tip|warning">`
   with a first `<p class="ct" data-mark="...">` title.
