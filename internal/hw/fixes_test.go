@@ -139,6 +139,45 @@ func TestFixesNvidiaDesktop(t *testing.T) {
 	}
 }
 
+// #195: runtime PM only on a hybrid laptop; a desktop keeps the default.
+func TestFixesNvidiaRuntimePM(t *testing.T) {
+	laptop := fixtureRoot(t, map[string]string{
+		"proc/cpuinfo":                            "vendor_id\t: GenuineIntel\nmodel\t\t: 154\n",
+		"sys/class/dmi/id/chassis_type":           "10\n",
+		"sys/bus/pci/devices/0000:00:02.0/vendor": "0x8086\n", "sys/bus/pci/devices/0000:00:02.0/device": "0x46a6\n", "sys/bus/pci/devices/0000:00:02.0/class": "0x030000\n",
+		"sys/bus/pci/devices/0000:01:00.0/vendor": "0x10de\n", "sys/bus/pci/devices/0000:01:00.0/device": "0x25a0\n", "sys/bus/pci/devices/0000:01:00.0/class": "0x030200\n",
+	})
+	m, err := Detect(laptop)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !contains(fixNames(Fixes(m)), "nvidia-runtime-pm") {
+		t.Fatalf("a hybrid NVIDIA laptop gets no runtime PM fix: %v", fixNames(Fixes(m)))
+	}
+	target := t.TempDir()
+	written, _, err := Apply(target, Fixes(m))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if b, _ := os.ReadFile(filepath.Join(target, "etc/modprobe.d/nvidia-pm.conf")); !strings.Contains(string(b), "NVreg_DynamicPowerManagement=0x02") {
+		t.Errorf("modprobe option: %q", b)
+	}
+	if b, _ := os.ReadFile(filepath.Join(target, "etc/udev/rules.d/80-subarchy-nvidia-pm.rules")); !strings.Contains(string(b), `ATTR{power/control}="auto"`) {
+		t.Errorf("udev rule: %q", b)
+	}
+	if !NeedsInitramfs(written) {
+		t.Error("the modprobe option must rebuild the initramfs, which loads nvidia")
+	}
+
+	desktop := fixtureRoot(t, map[string]string{
+		"proc/cpuinfo": "vendor_id\t: AuthenticAMD\nmodel\t\t: 97\n",
+		"sys/bus/pci/devices/0000:01:00.0/vendor": "0x10de\n", "sys/bus/pci/devices/0000:01:00.0/device": "0x2684\n", "sys/bus/pci/devices/0000:01:00.0/class": "0x030000\n",
+	})
+	if m, _ := Detect(desktop); contains(fixNames(Fixes(m)), "nvidia-runtime-pm") {
+		t.Error("a desktop got the runtime PM fix")
+	}
+}
+
 func TestFixesVM(t *testing.T) {
 	root := fixtureRoot(t, map[string]string{
 		"proc/cpuinfo":                            "vendor_id\t: GenuineIntel\nmodel\t\t: 85\nflags\t\t: fpu hypervisor\n",

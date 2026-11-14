@@ -135,5 +135,12 @@ Implementation notes:
   Intel mode. `subcult gpu run` offloads one app and drops the Intel pins
   for it. `tools/test/gpu-test.sh` covers the cases; on real hybrid hardware
   this is untested. The dock prompt waits for the shell's notifications.
+- 2026-11-14: on the reinstalled `sputnik` (driver 620.70.06, linux-zen
+  7.3.4) the card stayed `runtime_status=active` with `Runtime D3 status:
+  Disabled by default` under the default `NVreg_DynamicPowerManagement=3`,
+  so the Consequences note above no longer holds for that driver (#195).
+  The `nvidia-runtime-pm` hardware fix, for hybrid NVIDIA laptops, sets
+  `0x02` and NVIDIA's udev rules for `power/control=auto`. Untested on the
+  hardware: P9 decides.
 
 Related: [[decision-map|Decision map]] · [[0004-kernel|ADR 0004]] · [[0005-firmware|ADR 0005]]

@@ -141,6 +141,25 @@ var catalogue = []Fix{
 		},
 		applies: func(m Machine) bool { return m.nvidiaOpen() },
 	},
+	{
+		// #195: with driver 620 on sputnik the default (0x03) left the card
+		// "Runtime D3 status: Disabled by default" and power/control "on", so
+		// Intel mode never powered it off. 0x02 asks for fine-grained power
+		// control, and the udev rules from NVIDIA's README let the kernel
+		// suspend the card and its audio function while the driver is bound.
+		Name: "nvidia-runtime-pm", Summary: "Hybrid NVIDIA laptops: fine-grained runtime power management, so the card powers off in Intel mode",
+		Source: "install/hardware/nvidia.sh",
+		Files: map[string]string{
+			"etc/modprobe.d/nvidia-pm.conf": "# Subarchy hardware fix nvidia-runtime-pm (ADR 0006, #195)\noptions nvidia NVreg_DynamicPowerManagement=0x02\n",
+			"etc/udev/rules.d/80-subarchy-nvidia-pm.rules": "# Subarchy hardware fix nvidia-runtime-pm (ADR 0006, #195)\n" +
+				"# Runtime PM for the NVIDIA display and audio functions. add as well as bind:\n# the driver binds in the initramfs, before this file is read.\n" +
+				`ACTION=="add|bind", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x030[02]00", TEST=="power/control", ATTR{power/control}="auto"` + "\n" +
+				`ACTION=="add|bind", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x040300", TEST=="power/control", ATTR{power/control}="auto"` + "\n" +
+				`ACTION=="unbind", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x030[02]00", TEST=="power/control", ATTR{power/control}="on"` + "\n",
+		},
+		Note:    "untested: on sputnik, check that /sys/bus/pci/devices/0000:01:00.0/power/runtime_status reaches suspended in Intel mode, and checklist P9 (#195)",
+		applies: func(m Machine) bool { return m.nvidiaOpen() && m.Hybrid() && matches(m, "laptop") },
+	},
 	// Vendors (issue #82): ASUS, Dell, Framework, Lenovo, Tuxedo.
 	{
 		Name: "asus-rog", Summary: "ASUS ROG laptops: asusctl and its daemon for fans, keyboard lights and profiles",
