@@ -826,6 +826,9 @@ def boot(disk: Path, vars_file: Path) -> bool:
             ),
             # The repository key is trusted (ADR 0025, subarchy-keyring).
             "keyring": serial.run(f"{sudo} pacman-key --list-keys CCE8B0F3BCDD601D909773E4466AA6E8241453D2 2>&1 | grep -c 'Arch Registry'"),
+            # The installer drops the image's unsigned [subarchy] database, so
+            # pacman does not refuse it before the first signed sync.
+            "pacman_db": serial.run("pacman -Q pacman 2>&1 >/dev/null | grep -c signature"),
             # Hardware fixes (ADR 0050): the VM gets the ones every x86 machine
             # gets; their files are in place; the regulatory domain follows the zone
             # and wireless-regdb's database is there to apply it.
@@ -1159,6 +1162,7 @@ finally:
         and "options hid_apple fnmode=2" in r["fixes"] and 'WIRELESS_REGDOM="US"' in r["fixes"] and "regdb-ok" in r["fixes"],
         "new install on the stable channel, switches to edge and back": channel_ok(r["channel"]),
         "repository key trusted (subarchy-keyring)": r["keyring"].strip().splitlines()[-1:] == ["1"],
+        "no unsigned repository database left behind": r["pacman_db"].strip().splitlines()[-1:] == ["0"],
         "daily update check timer and count": r["update_timer"].splitlines()[0:1] == ["1"]
         and r["update_timer"].strip().splitlines()[-1].isdigit(),
         "power profile service (no battery: unchanged)": r["power_auto"].splitlines()[0:1] == ["success"]

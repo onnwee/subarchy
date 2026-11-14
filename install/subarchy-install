@@ -403,6 +403,11 @@ EOF
   # New installs follow the stable channel (ADR 0026): Arch packages from the
   # Arch Linux Archive at the snapshot date the package ships.
   arch-chroot "$target" subcult-channel set stable --quiet
+  # pacstrap left the image's unsigned [subarchy] database in the new
+  # system's sync directory. The repository now requires a signed one, so
+  # every pacman command would fail with "missing required signature"
+  # until it is gone; the next sync fetches the signed database.
+  rm -f "$target"/var/lib/pacman/sync/subarchy.db "$target"/var/lib/pacman/sync/subarchy.db.sig
   # thermald comes with Intel CPUs from hardware detection (ADR 0021).
   if [[ -e $target/usr/lib/systemd/system/thermald.service ]]; then
     arch-chroot "$target" systemctl enable --quiet thermald
