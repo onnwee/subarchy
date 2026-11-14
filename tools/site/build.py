@@ -324,26 +324,47 @@ def plugin_mark(name):
     return html.escape(name[:2].capitalize())
 
 
-def plugin_card(p):
+def plugin_shot(p, layout):
+    """The plugin's picture: its screenshot when plugins.json names one, or a
+    placeholder of its mark over a small default bar with its own slot lit
+    (a dashed slot at the right end when it is off by default)."""
+    m = p["m"]
+    if p["w"].get("image"):
+        img = p["w"]["image"]
+        if not (SITE / img.lstrip("/")).exists():
+            raise BuildError(f"plugins.json: {p['dir']}: no file {img}")
+        return (f'<span class="pshot"><img src="{html.escape(img)}" alt="The {html.escape(m["name"])} plugin" '
+                'width="1200" height="600" loading="lazy" decoding="async"></span>')
+    zones = []
+    for s, _ in SECTIONS:
+        cells = "".join('<i class="me"></i>' if i == m["id"] else "<i></i>" for i in layout.get(s, []))
+        if s == "right" and not p["section"]:
+            cells += '<i class="add"></i>'
+        zones.append(f'<span class="z">{cells}</span>')
+    return (f'<span class="pshot" aria-hidden="true"><span class="pmark">{plugin_mark(m["name"])}</span>'
+            f'<span class="pstrip">{"".join(zones)}</span></span>')
+
+
+def plugin_card(p, layout):
     m, cost = p["m"], p["m"].get("cost") or {}
     timers, hosts = cost.get("timers") or [], cost.get("network") or []
     name = html.escape(m["name"])
-    tags = [p["cat"]] + (["panel"] if m.get("panel") else []) \
+    tags = (["panel"] if m.get("panel") else []) \
         + ([f"{len(hosts)} {'host' if len(hosts) == 1 else 'hosts'}"] if hosts else ["offline"]) \
         + (["timer" if len(timers) == 1 else "timers"] if timers else ["events only"])
-    state = (f'<span class="tag on">in the bar</span>' if p["section"] else '<span class="tag">off by default</span>')
+    state = ('<span class="pstate on">in the bar</span>' if p["section"] else '<span class="pstate">off by default</span>')
     text = " ".join([m["name"], m["id"], p["cat"], re.sub(r"<[^>]+>", "", p["w"]["summary"])]).lower()
     attrs = (f'data-cat="{p["w"]["category"]}" data-on="{1 if p["section"] else 0}" data-net="{1 if hosts else 0}" '
              f'data-timers="{1 if timers else 0}" data-order="{p["order"]}" data-text="{html.escape(text)}"')
-    return (f'<li class="pcard" {attrs}><a href="/plugins/{p["dir"]}/">'
-            f'<span class="pmark" aria-hidden="true">{plugin_mark(m["name"])}</span>'
-            f'<span class="pbody"><span class="ptitle"><strong>{name}</strong>{state}</span>'
+    return (f'<li class="pcard" {attrs}><a href="/plugins/{p["dir"]}/">{plugin_shot(p, layout)}{state}'
+            f'<span class="pbody"><span class="pcat">{html.escape(p["cat"])}</span>'
+            f'<strong class="pname">{name}</strong>'
             f'<span class="pid">{html.escape(m["id"])} &middot; v{html.escape(m["version"])}</span>'
             f'<span class="psum">{p["w"]["summary"]}</span>'
             f'<span class="ptags">{"".join(f"<span>{html.escape(x)}</span>" for x in tags)}</span></span></a></li>')
 
 
-def plugins_index(plugins, categories):
+def plugins_index(plugins, categories, layout):
     on = sum(1 for p in plugins if p["section"])
     cat_buttons = "".join(f'<button type="button" data-cat="{c}" aria-pressed="false">{html.escape(label)}</button>'
                           for c, label in categories)
@@ -363,7 +384,7 @@ def plugins_index(plugins, categories):
 <p class="pcount" id="pcount" aria-live="polite"></p>
 </div>
 <ul class="pgrid">
-{chr(10).join(plugin_card(p) for p in plugins)}
+{chr(10).join(plugin_card(p, layout) for p in plugins)}
 </ul>
 <div class="pnone" hidden><p>No plugin matches.</p><button type="button" data-pclear>Clear the search and filters</button></div>
 <section class="pmore" aria-labelledby="more"><h2 id="more">Make your own</h2>
@@ -427,9 +448,10 @@ def plugin_page(p, prev, nxt, layout):
     manifest = html.escape((WIDGET_INDEX.parent / p["dir"] / "manifest.json").read_text().rstrip())
     return f"""<main id="main" class="wrap plugin">
 <p class="crumbs"><a href="/plugins/">Plugins</a> / {name}</p>
-<div class="phero"><span class="pmark" aria-hidden="true">{plugin_mark(m["name"])}</span><div><h1>{name}</h1><p class="lede">{w["summary"]}</p></div></div>
+<div class="phero"><h1>{name}</h1><p class="lede">{w["summary"]}</p></div>
 <div class="pcols">
 <div class="pmain">
+{plugin_shot(p, layout)}
 {about}
 <h2 id="turn-on">{"In the bar" if p["section"] else "Turn it on"}</h2>
 {turn}
@@ -458,7 +480,7 @@ def build():
     sources[("plugins", "")] = ({
         "title": "Plugins · Subarchy",
         "description": f"Browse the {len(plugins)} plugins of Subarchy's bar: what each does, its battery and network cost, its settings and how to turn it on.",
-    }, plugins_index(plugins, categories))
+    }, plugins_index(plugins, categories, layout))
     for i, p in enumerate(plugins):
         sources[("plugins", p["dir"])] = ({
             "title": f'{p["m"]["name"]} · Subarchy plugins',

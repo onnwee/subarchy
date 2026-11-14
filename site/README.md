@@ -69,6 +69,14 @@ new or changed widget fails `make verify` until its page is written and the
 site rebuilt. `"hidden": true` leaves an entry out (`dell-power`, an alias
 of Battery).
 
+Each card and plugin page has a picture. Until a plugin has a screenshot,
+the build draws a placeholder in HTML and CSS: the plugin's mark over a
+small copy of the default bar, with its own slot lit, or a dashed slot at
+the right end when it is off by default. To use a screenshot, put a 2:1
+image (1200 by 600 looks sharp) in `assets/plugins/` and name it in the
+plugin's entry, such as `"image": "/assets/plugins/weather.png"`; the build
+stops if the file is missing.
+
 ## Brand
 
 The wordmark, the SA_ marks, the icons, `assets/og.png` and the tokens in

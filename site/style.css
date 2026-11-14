@@ -163,26 +163,39 @@ a[target="_blank"]::after{content:"\2197" / "";font-size:.8em;margin-left:2px;te
 .prow input[type="checkbox"]{accent-color:var(--accent);width:15px;height:15px;margin:0}
 .prow .psort{margin-left:auto}
 .pcount{margin:0;font-size:12px;color:var(--label)}
-.pgrid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px}
-.pcard>a{display:flex;gap:14px;height:100%;border:1px solid var(--seam);padding:14px;color:var(--text);text-decoration:none}
-.pcard>a:hover{border-color:var(--accent);background:var(--panel)}
-.pmark{flex:none;width:52px;height:52px;display:flex;align-items:center;justify-content:center;border:1px solid var(--accent);color:var(--accent);font-size:20px;background:color-mix(in srgb,var(--accent) 8%,var(--ground))}
-.pbody{display:flex;flex-direction:column;gap:4px;min-width:0}
-.ptitle{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap} .ptitle strong{color:var(--text);font-size:16px}
-.tag.on{border-color:var(--accent);color:var(--accent)}
-.pid{font-size:12px;color:var(--label);overflow-wrap:anywhere}
-.psum{font-size:13px;line-height:1.5}
-.ptags{display:flex;flex-wrap:wrap;gap:2px 6px;font-size:11px;color:var(--label);margin-top:auto;padding-top:6px}
-.ptags span:first-child{color:var(--violet)} .ptags span+span::before{content:"\00B7";margin-right:6px}
+.pgrid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr));gap:14px}
+/* Every card has the same parts at the same heights: picture, category, one-line name and id,
+   a three-line summary box and one line of tags; long text is cut, not wrapped. */
+.pcard>a{position:relative;display:flex;flex-direction:column;height:100%;border:1px solid var(--seam);color:var(--text);text-decoration:none}
+.pcard>a:hover{border-color:var(--accent)} .pcard>a:hover .pbody{background:var(--panel)}
+.pstate{position:absolute;top:8px;right:8px;font-size:10px;line-height:1;letter-spacing:.06em;text-transform:uppercase;padding:4px 6px;border:1px solid var(--seam);background:var(--ground);color:var(--label)}
+.pstate.on{border-color:var(--accent);color:var(--accent)}
+.pbody{flex:1;display:flex;flex-direction:column;gap:3px;padding:12px 14px 12px;min-width:0}
+.pcat,.pname,.pid,.ptags{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcat{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--violet)}
+.pname{font-weight:400;font-size:17px;line-height:1.35;color:var(--text)}
+.pid{font-size:12px;color:var(--label)}
+.psum{font-size:13px;line-height:1.5;height:4.5em;margin-top:4px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;line-clamp:3}
+.ptags{font-size:11px;color:var(--label);border-top:1px solid var(--seam);padding-top:8px;margin-top:6px}
+.ptags span+span::before{content:"\00B7";margin:0 6px}
+/* The picture: a screenshot, or the mark over a small default bar with this plugin's slot lit. */
+.pshot{position:relative;display:flex;align-items:center;justify-content:center;aspect-ratio:2/1;overflow:hidden;border-bottom:1px solid var(--seam);background-color:var(--panel);background-image:linear-gradient(color-mix(in srgb,var(--seam) 55%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--seam) 55%,transparent) 1px,transparent 1px);background-size:16px 16px;background-position:-1px -1px}
+.pshot img{width:100%;height:100%;object-fit:cover}
+.pshot .pmark{width:56px;height:56px;margin-bottom:22px;display:flex;align-items:center;justify-content:center;border:1px solid var(--accent);background:var(--ground);color:var(--accent);font-size:22px}
+.pstrip{position:absolute;left:12px;right:12px;bottom:12px;height:14px;display:flex;justify-content:space-between;align-items:center;padding:0 3px;border:1px solid var(--line);background:var(--ground)}
+.pstrip .z{display:flex;gap:2px} .pstrip i{width:6px;height:6px;background:var(--seam)}
+.pstrip i.me{background:var(--accent);width:10px;outline:1px solid var(--accent);outline-offset:1px} .pstrip i.add{width:10px;background:none;outline:1px dashed var(--accent);outline-offset:0}
 .pnone{border:1px dashed var(--seam);padding:24px;display:flex;flex-direction:column;align-items:flex-start;gap:10px} .pnone p{margin:0}
 .pmore{border-top:1px solid var(--line);padding:24px 0 0;margin-top:16px} .pmore h2{font-size:22px;font-weight:400;margin:0 0 10px} .pmore p{margin:0;max-width:66ch}
-.phero{display:flex;gap:18px;align-items:center} .phero .pmark{width:72px;height:72px;font-size:28px} .phero>div{display:flex;flex-direction:column;gap:6px;min-width:0}
+.phero{display:flex;flex-direction:column;gap:8px} .plugin h1{font-size:44px}
+.pmain>.pshot{max-width:100%;aspect-ratio:5/2;border:1px solid var(--seam)} .pmain>.pshot .pmark{width:80px;height:80px;font-size:32px;margin-bottom:30px}
+.pmain>.pshot .pstrip{left:20px;right:20px;bottom:20px;height:20px;padding:0 5px} .pmain>.pshot .pstrip .z{gap:3px} .pmain>.pshot .pstrip i{width:9px;height:9px} .pmain>.pshot .pstrip i.me,.pmain>.pshot .pstrip i.add{width:16px}
 .pcols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,260px);gap:24px 40px;align-items:start}
 @media (max-width:820px){.pcols{grid-template-columns:minmax(0,1fr)}.pfacts{order:-1}}
 .pmain{display:flex;flex-direction:column;gap:14px;min-width:0;font-family:var(--prose);font-size:16px;line-height:1.6}
 .pmain>*{margin:0;max-width:72ch} .pmain>.scroll,.pmain>pre{max-width:100%}
 .pmain strong{font-weight:700} .pmain table,.pmain pre{font-family:var(--mono)}
-.pmain h2{font-family:var(--mono);font-weight:400;font-size:20px;border-top:1px solid var(--line);padding-top:22px;margin-top:14px}
+.pmain h2{font-family:var(--mono);font-weight:400;font-size:28px;line-height:1.2;border-top:1px solid var(--line);padding-top:28px;margin-top:18px}
 .hosts{columns:2 14em;font-size:14px} .hosts li{break-inside:avoid}
 .pfacts{border:1px solid var(--seam);padding:6px 14px;font-size:13px;position:sticky;top:64px}
 .pfacts dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:0 14px}

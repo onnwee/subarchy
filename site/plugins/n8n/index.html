@@ -24,7 +24,7 @@
 <link rel="preload" href="/fonts/victor-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/victor-mono-latin-500-italic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/victor-mono-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/style.css?v=072807bc8c">
+<link rel="stylesheet" href="/style.css?v=1194dac711">
 <script>try{var r=document.documentElement,t=localStorage.getItem("subarchy-theme");if(t==="light"||t==="dark")r.setAttribute("data-theme",t);if(localStorage.getItem("subarchy-side")==="hidden")r.setAttribute("data-side","hidden")}catch(e){}</script>
 </head>
 <body>
@@ -36,9 +36,10 @@
 </div></header>
 <main id="main" class="wrap plugin">
 <p class="crumbs"><a href="/plugins/">Plugins</a> / n8n</p>
-<div class="phero"><span class="pmark" aria-hidden="true">N8</span><div><h1>n8n</h1><p class="lede">Active workflows and recent failures on an n8n server.</p></div></div>
+<div class="phero"><h1>n8n</h1><p class="lede">Active workflows and recent failures on an n8n server.</p></div>
 <div class="pcols">
 <div class="pmain">
+<span class="pshot" aria-hidden="true"><span class="pmark">N8</span><span class="pstrip"><span class="z"><i></i><i></i><i></i></span><span class="z"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="z"><i></i><i class="me"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></span></span>
 <p>Shows how many workflows are active and how many runs failed recently. It stays hidden until it knows a server, so set the first one in <code>~/.config/subcult/shell/bar.json</code> (below); after that, its panel changes it. Store the API key in the keyring with <code>secret-tool store --label='n8n API key' service subcult-n8n</code>.</p>
 <p>It checks every minute on mains power and every five on battery. The key never lands in a config file or on a command line.</p>
 <h2 id="turn-on">In the bar</h2>
