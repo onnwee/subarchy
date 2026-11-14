@@ -4,7 +4,7 @@ type: review
 status: draft
 review: pending
 created: 2026-11-07
-updated: 2026-11-13
+updated: 2026-11-14
 tags: [review, installer]
 aliases: [First install, Install runbook]
 ---
@@ -17,6 +17,10 @@ booted and accepted their separately trusted SSH connections.** The owner
 logged into both systems. The installer retained Omarchy as the firmware
 default; the owner later selected Subarchy first on November 9, as recorded
 below. Subarchy is running for owner testing.
+
+**Reinstall, November 14:** the owner reinstalled from an image built
+at main `e157cc3`. Its readback, gaps and open owner checks are in
+[[#Reinstall on November 14]].
 
 **Latest resume result, November 9 CST:** the owner completed a fresh lid
 close/open cycle with a visible lock, working password input and no Hyprland
@@ -465,5 +469,207 @@ with `Result=success` and no restarts; no failed system or user units. The
 17:48 lid cycle on the same boot is in the same journal. With the lid result
 above this meets #213's acceptance, and the issue is closed. The crash
 restart policy of the lock stays in #230.
+
+## Reinstall on November 14
+
+The owner reinstalled Subarchy on the SPCC disk on November 14, 2026 from an
+ISO built at main `e157cc3`, SHA-256
+`3107bd6a3ef5244592b3a6be4c8a1ee0504af422557a32c9e0022ff749cc0c4c`. The
+installer finished at 12:23 CST with core `0.0.0-588` and 1,038 packages
+(`/var/log/subarchy-install.log`). The owner then updated to core
+`0.0.0-590`. The Crucial disk still holds Omarchy's ESP and closed LUKS
+partition, and its firmware entry `0002` remains.
+
+The results below were read from Kvant over SSH at 13:37 CST, 69 minutes
+after boot, while the owner was using the laptop. Only read-only commands
+ran: no sudo, no setting changed, no process stopped. Anything that needs
+root (`ufw status`, LUKS tokens, the contents of `/boot`) was not read. The
+acceptance table above records the first install; this install's results
+are here until the owner retests.
+
+### What the readback shows
+
+**Boot.** Kernel `7.3.4-zen2-1-zen`; `linux-lts 6.18.63-2` and Hyprland
+`0.57.2` are installed (`uname -r`, `pacman -Q`). The command line carries
+`quiet splash` and the AppArmor LSM list (`/proc/cmdline`). `bootctl status`:
+Limine 12.9.6 started `/EFI/Linux/subarchy_linux-zen.efi`, entry
+`Subarchy.linux-zen`, from the new 4 GiB ESP (PARTUUID
+`32e6caf8-49b4-4355-9f55-1ce2a9f9f358`, 976 MiB used). `efibootmgr`:
+`BootCurrent: 0007`, order `0007,0002,0000,0006,0004,0001,0003`. The
+installer put `0007` first and removed `0005` "Limine", which pointed at
+ESP `ce2275ae-…` (the `efibootmgr` listing in
+`/var/log/subarchy-install.log`). That ESP is neither the November 9 one
+(`d5d15d48-…`, whose entry `0005` was labelled "Subarchy (SPCC)") nor
+today's, so at least one more install ran on the SPCC disk between November 9
+and today; how many is for the owner to say. The firmware fallback `0004`
+also pointed at `ce2275ae-…` before the install and now points at today's
+ESP. Both `0002` (Omarchy) and `0007`
+(Subarchy) are labelled `Limine`, so the F12 menu shows the same name twice.
+`0003` "Linux Firmware Updater" still points at the first install's ESP
+`d5d15d48-…`, which is gone; the installer only prunes entries named Limine
+or Subarchy.
+
+**Boot time (checklist F2).** `systemd-analyze`: firmware 6.411 s + loader
+10.036 s + kernel 0.900 s + initrd 15.349 s + userspace 5.036 s = 37.735 s;
+`graphical.target` after 4.350 s of userspace. In
+`journalctl -b -o short-monotonic`, Plymouth starts 1.06 s after the kernel.
+"Load Kernel Modules" runs from 0.98 to 2.70 s: NVIDIA module insertion
+starts at 1.04 s (`nvidia: loading out-of-tree module taints kernel`) and
+ends with `nvidia_drm` at 2.70 s. Root cryptsetup starts at 2.71 s, right
+after it finishes, and the passphrase request reaches Plymouth at 2.73 s. So
+about 1.7 s of the 2.73 s between kernel start and the prompt is the NVIDIA
+modules in the initrd. The disk unlocked at 13.9 s, so most of the initrd
+time is passphrase entry. The rest of the black gap falls in the 10 s loader
+phase, which also covers Limine's 3 s menu timeout. The NVIDIA modules make
+the UKI larger and may add to that phase too; `/boot/EFI/Linux/` is
+root-only and its sizes were not read. The gap itself needs a stopwatch, so F2 stays
+open. `systemd-analyze blame` is led by device units at 15.7 s (TPM, serial
+ports) that wait for the unlock; the slowest services were `fwupd` 2.213 s,
+`subcult-ufw-docker` 1.654 s, `ldconfig` 1.145 s (first boot after the
+install), `thermald` 0.858 s and `intel_lpmd` 0.780 s. The critical chain
+runs through `subcult-ufw-docker` and `power-profiles-daemon`.
+
+**Units and journal.** `systemctl --failed` and `systemctl --user --failed`
+list nothing; `hyprctl configerrors` is empty and 55 bindings are
+registered. Errors this boot (`journalctl -b -p err`), by unit:
+
+- kernel, 6: TDX not supported; `ucsi_acpi` `UCSI_GET_PDOS failed (-5)`
+  with "unknown error 0", twice each.
+- `wpa_supplicant`, 2: nl80211 does not support multicast RX registrations.
+- `intel_lpmd`, 1: cannot open `/proc/sys/kernel/sched_itmt_enabled`.
+- `sddm`, 1: `gkr-pam: unable to locate daemon control file`.
+
+Warnings: 152 from the kernel, 129 of them ufw blocking inbound multicast on
+Wi-Fi. The rest: the USB stick's GPT backup header (normal for a written
+ISO); a dirty FAT bit on Omarchy's ESP, logged when fwupd mounted it through
+udisks 34 minutes after boot; one `snd_hda_intel` stream DMA error; the
+NVIDIA taint and `nvidia-drm` "Cannot find any crtc" (the dGPU drives no
+output); a WMI firmware-bug note. The user manager logged 26, among them
+the Qt Wayland text-input "Trying to disable … but … is focused" 11 times
+(the message from the November 9 resume logs), a keyring item already registered
+4 times, xdg-desktop-portal finding no RealtimeKit 3 times (`rtkit` is not
+installed), and portal app-ID and parent-window warnings. Other units: the
+Bluetooth configuration directory mode differs from the unit's, D-Bus could
+not activate `org.freedesktop.home1`, and NetworkManager could not set IPv6
+forwarding on the P2P device. A T3 Code user unit the owner added failed
+three times while it was being set up and then ran.
+
+**NVIDIA.** `lspci -k`: Iris Xe on `i915`, RTX 3050 Ti Mobile on `nvidia`.
+Driver `620.70.06`, built by DKMS for both kernels (`dkms status`).
+`nvidia-smi` lists the GPU at P8. Over SSH, `subcult gpu mode` prints
+`chosen: intel` and `running: unknown (not a hybrid session)`, because SSH
+lacks the session environment. Hyprland's environment has
+`SUBCULT_GPU_MODE=intel` and `AQ_DRM_DEVICES=/dev/dri/subcult-igpu`, and
+Hyprland holds only `card1` and `renderD128`, the Intel nodes. Two faults:
+
+- `/dev/dri/subcult-igpu` points at `card0`, the NVIDIA card, as does
+  `subcult-dgpu`; `udevadm info` lists `subcult-igpu` on both cards. The rule
+  in `default/system/gpu.rules` matches `ATTRS{vendor}=="0x8086"` on any
+  parent, and the NVIDIA card sits behind an Intel PCIe root port
+  (`0000:00:01.0`). The link was rewritten at 13:02, when the udev reload hook
+  ran during the owner's `pacman -Syu`. The session started at 12:29 on the
+  Intel card; the next login may start Hyprland on the NVIDIA card in Intel
+  mode.
+- The dGPU never powers down. `power/runtime_status` reads `active`,
+  `power/control` reads `on`, and `/proc/driver/nvidia/gpus/…/power` says
+  `Runtime D3 status: Disabled by default`. [[0006-gpu-drivers|ADR 0006]]
+  records `Enabled (fine-grained)` for this GPU. This is checklist P9's
+  check, read on AC and undocked, not on battery; with `control` at `on` the
+  card cannot suspend at all.
+
+**Wi-Fi.** Intel AX211 on `iwlwifi`. `nmcli device` and `iw dev … link`:
+connected on 5 GHz at 160 MHz (HE), signal −41 dBm, transmit 2401.9 Mbit/s.
+No wired interface was present; the dock was not attached.
+
+**Audio.** One card, HDA Intel PCH. The kernel picked `snd_hda_intel` with
+the Realtek ALC289 codec, not SOF (`snd_intel_dspcfg` `dsp_driver=0`, auto),
+although `sof-firmware 2026.09.2-1` is installed and `subcult hw info`
+matches `intel-sof`. `wpctl status` shows one sink and one source, both
+"Built-in Audio Analog Stereo"; the source is the analog `front:0` device.
+
+**Bluetooth.** `bluetooth.service` active; `bluetoothctl show`: powered,
+not discoverable, not pairable; no paired devices. The reinstall dropped the
+November 9 pairings.
+
+**Battery.** On AC, `BAT0` at 86 % and "Not charging"; charge type Custom,
+start 50 %, stop 85 %. The Dell attributes `PrimaryBattChargeCfg`,
+`CustomChargeStart` and `CustomChargeStop` are mode 660, group `wheel`, and
+`subcult-dell-power-permissions` ended with `Result=success`.
+`powerprofilesctl get`: `balanced`.
+
+**Splash.** `/etc/plymouth/plymouthd.conf` sets `Theme=subarchy`, and the
+journal shows the initrd starting Plymouth and passing the passphrase request
+through it. Whether the splash was graphical and readable is for the owner's
+eyes.
+
+**Secure Boot and TPM.** `bootctl status`: Secure Boot disabled, TPM2
+support yes, measured UKI yes. `sbctl status`: setup mode disabled, Secure
+Boot disabled, no sbctl keys, Microsoft and built-in vendor keys.
+`/sys/class/tpm/tpm0` is TPM 2.0 and `systemd-analyze has-tpm2` says yes.
+Reading the LUKS tokens needs root, so TPM enrolment was not checked.
+
+**Disks.** `lsblk -o NAME,TYPE,FSTYPE,MOUNTPOINTS`: the SPCC disk is now
+`nvme1n1`, with a 4 GiB vfat ESP at `/boot` and a LUKS2 partition holding the
+btrfs root, mounted at `/`, `/home`, `/var/log` and `/var/cache/pacman/pkg`.
+The Crucial disk is `nvme0n1`, with its 2 GiB ESP and a LUKS partition that
+is not open. Swap is 15.5 GiB of zram.
+
+**DisplayLink.** The USB devices in sysfs are the webcam, fingerprint
+reader, Bluetooth and the root hubs; `lsusb` is not installed. No adapter was
+attached at install, so hardware detection skipped `evdi-dkms` and
+`displaylink`: `modinfo evdi` finds no module and `displaylink.service` does
+not exist. Both packages are in `[subarchy]` (`evdi-dkms 1.15.1-1`,
+`displaylink 6.4-1`). If the dock is a DisplayLink device (B5), its panels
+stay dark until they are installed.
+
+**Display.** `hyprctl monitors` in the owner's session: one monitor, `eDP-1`,
+3456×2160 at 60 Hz, scale 2. The shell has not been tried at 1.6.
+
+**Hardware detection.** `subcult hw info`: Dell XPS 15 9520, hybrid; matches
+`display fingerprint hybrid-gpu intel intel-sof laptop nvidia nvidia-gsp
+touchpad touchscreen vulkan webcam x86`. `subcult hw fixes` lists
+intel-lpmd, intel-video, nvidia-modeset and dell-power (untested) and
+hid-apple-fkeys (tested). Every package `subcult hw packages` names is
+installed; `subcult hw services` names `intel_lpmd`.
+
+**Packages.** `pacman -Q | wc -l`: 1,053, of which 176 explicit. The
+installer installed 1,038; the owner added 15: `base-devel` with 13
+dependencies, and T3 Code.
+
+### Gaps found on this install
+
+- No `hostname` command; fixed after this image by #189 (`inetutils`).
+- No screenshot binding: `hyprctl binds` has none for Print, grim or slurp,
+  although `grim` and `slurp` are installed.
+- T3 Code desktop is not preinstalled: `t3code-nightly-bin` is still in
+  `PENDING` in `tools/test/apps-preinstalled-test.py`. The owner built it
+  from the AUR with makepkg at 12:49.
+- Neither `yay` nor `base-devel` was installed. The owner added
+  `base-devel` at 12:47; `yay` is still absent.
+- The installer left an unsigned `[subarchy]` sync database; fixed after this
+  image by #187.
+- From the readback above: `subcult-igpu` can point at the NVIDIA card; the
+  dGPU never reaches runtime D3; DisplayLink drivers are missing when no dock
+  is attached at install; both Limine firmware entries share a label and a
+  stale "Linux Firmware Updater" entry remains; `lsusb` (checklist B5) is
+  not installed.
+
+### Still needs the owner
+
+Matching #51's list, with the [[test-checklist|checklist]] items:
+
+- NVIDIA modes and `subcult gpu run` (P8, P9 on battery, P10). Check where
+  `/dev/dri/subcult-igpu` points before the next login.
+- Wi-Fi reconnect after reboot and the network panel (F6, N1).
+- Speakers, headphones and microphone (A1).
+- Bluetooth pairing, use and reconnection (A2–A5).
+- Suspend, lid and unlock (section 5).
+- Battery unplug/replug and profile switching (P1).
+- The graphical splash and the length of the black gap (F2, F3).
+- Secure Boot (F12) and TPM unlock (F13, F14).
+- The DisplayLink dock (M2–M5), after its drivers are installed.
+- The shell, lock and greeter at scale 1.6 (M1, F10).
+- How many installs ran on the SPCC disk between November 9 and today (one
+  left ESP `ce2275ae-…`).
 
 Related: [[0049-installer|ADR 0049]] · [[0050-hardware-support|Hardware support]] · [[package-publishing|Package publishing]] · [[roadmap|Roadmap]] · [[review-index|Review index]]
