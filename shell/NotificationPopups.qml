@@ -10,7 +10,7 @@ import "services/NotificationsModel.js" as Model
 // Popups at the top right, under the bar, on the output that was focused
 // when the first of them appeared. Each goes after its app's timeout (the
 // service keeps the timers; hovering a card pauses its own); critical ones
-// stay until dismissed. The window exists only while there is something to
+// stay until dismissed. The window is mapped only while there is something to
 // show.
 PanelWindow { // qmllint disable uncreatable-type
   id: window

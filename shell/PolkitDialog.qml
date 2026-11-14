@@ -9,7 +9,7 @@ import "PolkitModel.js" as Model
 
 // The polkit authentication agent (ADR 0023): when an app asks for admin
 // rights, a centred dialog on the focused output asks for the password.
-// The window exists only while a request is open. The field is read-only,
+// The window is mapped only while a request is open. The field is read-only,
 // never disabled, while PAM checks, so it keeps the focus; Escape and
 // Enter work wherever the focus is; after a wrong password the field is
 // refocused and says so for two seconds.

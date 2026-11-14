@@ -24,7 +24,7 @@ import "LauncherModel.js" as Model
 // Hyprland bindings.
 // Quickshell keeps the app list and refreshes it when desktop entries
 // change, but only in folders that existed when it first read them, so the
-// user's applications folder is created first. The window exists only while
+// user's applications folder is created first. The window is mapped only while
 // open.
 PanelWindow { // qmllint disable uncreatable-type
   id: launcher

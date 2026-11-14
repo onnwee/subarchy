@@ -12,7 +12,7 @@ import "Commons/Glyphs.js" as Glyphs
 // bottom of the focused output. Volume shows on its own when PipeWire reports a change. The
 // brightness keys arrive as global shortcuts: brightnessctl sets the level,
 // then the OSD reads it back from sysfs. Hidden after 1.5 s; the window
-// exists only while shown, on the output that was focused when it opened.
+// is mapped only while shown, on the output that was focused when it opened.
 PanelWindow { // qmllint disable uncreatable-type
   id: osd
 

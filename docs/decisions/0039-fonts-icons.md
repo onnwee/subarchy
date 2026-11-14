@@ -13,6 +13,10 @@ aliases: [ADR 0039, D7, Fonts, Icons]
 
 Decision map item D7. Accepted 2026-11-06.
 
+Revised 2026-11-07: fonts are three switchable roles and the icons are
+Papirus-Dark. The table below is the decision as accepted; see
+[[#Revision, 2026-11-07]] for what ships.
+
 ## Decision
 
 | Use | Font |
