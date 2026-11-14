@@ -41,6 +41,9 @@ wpa_supplicant
 # installer sets from the time zone (ADR 0050).
 wireless-regdb
 sudo
+# hostname, which scripts and people expect; systemd's hostnamectl
+# does not replace it.
+inetutils
 zsh
 man-db
 neovim
