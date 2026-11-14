@@ -15,11 +15,15 @@
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="SUBARCHY in dripping green block letters above the line: An Arch Linux desktop from SUBCULT. In development.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#100B19">
+<meta name="theme-color" content="#100B19" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F0ECE4" media="(prefers-color-scheme: light)">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/assets/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="preload" href="/fonts/DepartureMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/DankMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/DankMono-Bold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/DankMono-Italic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style.css">
 <script>try{var t=localStorage.getItem("subarchy-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 </head>
@@ -31,57 +35,62 @@
 <button type="button" data-theme-toggle hidden>paper</button>
 </div></header>
 <div class="wrap docs">
-<nav aria-label="On this page"><b>ON THIS PAGE</b><ol><li><a href="#try">Try it</a></li><li><a href="#installer">The installer</a></li><li><a href="#unattended">Unattended install</a></li><li><a href="#keys">First login and keys</a></li><li><a href="#commands">Commands</a></li><li><a href="#updates">Updates and channels</a></li><li><a href="#look">Theme, fonts, cursor</a></li><li><a href="#config">Configuration</a></li><li><a href="#recovery">Snapshots and recovery</a></li><li><a href="#more">More</a></li></ol></nav>
+<nav aria-label="On this page"><p class="h">ON THIS PAGE</p><ol><li><a href="#try">Try it</a></li><li><a href="#installer">The installer</a></li><li><a href="#unattended">Unattended install</a></li><li><a href="#keys">First login and keys</a></li><li><a href="#commands">Commands</a></li><li><a href="#updates">Updates and channels</a></li><li><a href="#look">Theme, fonts, cursor</a></li><li><a href="#config">Configuration</a></li><li><a href="#recovery">Snapshots and recovery</a></li><li><a href="#more">More</a></li></ol></nav>
 <main id="main">
 <h1>Subarchy docs</h1>
-<p>Subarchy is in development and has no release. This page covers what works today, taken from the source at the time of writing. The design decisions are in the <a href="https://github.com/subculture-collective/subarchy/blob/main/docs/decisions/decisions-index.md">decision records</a>.</p>
+<p class="lede">How to build Subarchy, install it into a virtual machine and find your way around the desktop: <em>the installer, the keys, the <code>subcult</code> commands, themes and recovery.</em></p>
+<div class="callout note"><p class="ct" data-mark="&#9632;">In development</p><p>Subarchy has <strong>no release</strong>. This page covers what works today, taken from the source at the time of writing. The design decisions are in the <a href="https://github.com/subculture-collective/subarchy/blob/main/docs/decisions/decisions-index.md">decision records</a>.</p></div>
 
 <h2 id="try"><span class="n">01</span>Try it</h2>
-<p>There is no published image. Build the ISO on Arch Linux. You need <code>archiso</code>, Go, Docker and sudo; the image lands in <code>build/iso/</code>.</p>
-<div class="cmd"><code>git clone https://github.com/subculture-collective/subarchy.git && cd subarchy</code></div>
-<div class="cmd"><code>make iso</code></div>
-<p>The image carries a few packages that Subarchy rebuilds from pinned sources, among them the Limine packages, Neovim with its plugins and the keyring. On a fresh checkout they are not in <code>build/repo</code> yet, so the first <code>make iso</code> stops with a line that starts <code>build.sh: not in build/repo:</code> and lists them. Build the ones it lists in a clean container, then run <code>make iso</code> again:</p>
-<div class="cmd"><code>packaging/aur/build.sh &lt;package&gt;...</code></div>
-<p>CI does not rebuild them; it takes them from Subarchy's signed package registry (<code>tools/ci/build-iso.sh</code>).</p>
+<p>There is no published image, so you build the ISO yourself on Arch Linux. You need <code>archiso</code>, <strong>Go</strong>, <strong>Docker</strong> and sudo. The image lands in <code>build/iso/</code>.</p>
+<ol class="steps">
+<li><p><strong>Get the source.</strong></p><div class="cmd"><code>git clone https://github.com/subculture-collective/subarchy.git &amp;&amp; cd subarchy</code></div></li>
+<li><p><strong>Build the image.</strong></p><div class="cmd"><code>make iso</code></div></li>
+<li><p><strong>Build the packages it names.</strong> The image carries a few packages that Subarchy rebuilds from pinned sources, among them the Limine packages, Neovim with its plugins and the keyring. On a fresh checkout they are not in <code>build/repo</code> yet, so the first <code>make iso</code> stops with a line that starts <code>build.sh: not in build/repo:</code> and lists them. Build the ones it lists in a clean container, then run <code>make iso</code> again:</p><pre><span class="muted" aria-hidden="true">$ </span>packaging/aur/build.sh <var>package</var> &hellip;</pre></li>
+</ol>
+<div class="callout tip"><p class="ct" data-mark="&#9650;">Tip</p><p>CI does not rebuild these packages; it takes them from Subarchy's signed package registry (<code>tools/ci/build-iso.sh</code>).</p></div>
+<h3>Test it in a virtual machine</h3>
 <p>Boot it in QEMU and check it over the serial console (needs <code>qemu-base</code> and <code>edk2-ovmf</code>):</p>
 <div class="cmd"><code>make iso-test</code></div>
 <p>Install from the newest ISO into a VM disk, then boot and check the result (also needs <code>swtpm</code> and <code>imagemagick</code>):</p>
 <div class="cmd"><code>make install-test</code></div>
-<p>The same through the guided installer with the guest's network off:</p>
+<p>The same through the guided installer, with the guest's network <em>off</em>:</p>
 <div class="cmd"><code>make install-test-offline</code></div>
-<p>The live ISO is UEFI only and boots with systemd-boot and <code>linux-zen</code>.</p>
+<p class="muted">The live ISO is UEFI only and boots with systemd-boot and <code>linux-zen</code>.</p>
 
 <h2 id="installer"><span class="n">02</span>The installer</h2>
 <p><code>subarchy-setup</code> starts by itself on the first console of the live ISO. On a serial console or over SSH, run it by hand.</p>
-<p>It asks, in order, for a language, a keyboard layout, a Wi-Fi network (only when there is no wired route and a Wi-Fi card is present), a disk, a computer name, a user, a password, a disk passphrase and a time zone. Escape goes back one step on every screen.</p>
+<p>It asks, in order, for a <strong>language</strong>, a <strong>keyboard layout</strong>, a <strong>Wi-Fi network</strong> (only when there is no wired route and a Wi-Fi card is present), a <strong>disk</strong>, a <strong>computer name</strong>, a <strong>user</strong>, a <strong>password</strong>, a <strong>disk passphrase</strong> and a <strong>time zone</strong>.</p>
+<div class="callout tip"><p class="ct" data-mark="&#9650;">Tip</p><p><kbd>Esc</kbd> goes back one step on every screen.</p></div>
 <ul class="plain">
-<li>The disk list shows what is on each disk. You can open a disk read-only before deciding.</li>
-<li>The time zone opens on a guess. Online, that guess comes from ipapi.co or ipwho.is, whichever answers first within 4 seconds; the request sends them the network's public address. The page says where the guess came from.</li>
-<li>A summary of every answer asks "Does this look right?". The erase question comes last and its default is no.</li>
-<li>Skipping Wi-Fi is safe: the install runs from the package repository on the image.</li>
-<li>While it installs, <kbd>L</kbd> shows or hides the end of the log. The full log is <code>/var/log/subarchy-install.log</code>.</li>
+<li><strong>Disks.</strong> The list shows what is on each disk. You can open a disk read-only before deciding.</li>
+<li><strong>Time zone.</strong> The screen opens on a guess. Online, that guess comes from ipapi.co or ipwho.is, whichever answers first within 4 seconds; <em>the request sends them the network's public address.</em> The page says where the guess came from.</li>
+<li><strong>Summary.</strong> Every answer is shown once more under the question <q>Does this look right?</q> The erase question comes last and its default is <em>no</em>.</li>
+<li><strong>No network.</strong> Skipping Wi-Fi is safe: the install runs from the package repository on the image.</li>
+<li><strong>Log.</strong> While it installs, <kbd>L</kbd> shows or hides the end of the log. The full log is <code>/var/log/subarchy-install.log</code>.</li>
 </ul>
-<p class="warn"><b>The installer wipes the disk you choose.</b></p>
+<div class="callout warning"><p class="ct" data-mark="&#9888;">Warning</p><p><strong>The installer wipes the disk you choose.</strong> It asks last and the default answer is no. Do not point it at a disk you need.</p></div>
 
 <h2 id="unattended"><span class="n">03</span>Unattended install</h2>
-<p><code>subarchy-install</code> reads a <code>KEY=value</code> file and needs <code>--yes</code>, because it wipes <code>DISK</code>. The keys include:</p>
+<p><code>subarchy-install</code> reads a <code>KEY=value</code> file and needs <code>--yes</code>, because <strong>it wipes <code>DISK</code></strong>. The keys include:</p>
 <pre>DISK  HOSTNAME  USERNAME  USER_PASSWORD_FILE  LUKS_PASSPHRASE_FILE
 TIMEZONE  LOCALE  KEYMAP  XKB_LAYOUT  XKB_VARIANT  SUBARCHY_REPO</pre>
 <p>The rest are listed in the header of <a href="https://github.com/subculture-collective/subarchy/blob/main/install/subarchy-install"><code>install/subarchy-install</code></a>.</p>
 
 <h2 id="keys"><span class="n">04</span>First login and keys</h2>
 <p>Log in at the SDDM screen. The session is Hyprland. These are the default bindings, a small subset of Omarchy's so the habits carry over; they are defined in <code>default/hypr/bindings.lua</code>.</p>
-<div class="scroll"><table><thead><tr><th>Keys</th><th>Does</th></tr></thead><tr><th>SUPER + RETURN</th><td>Terminal</td></tr><tr><th>SUPER + SHIFT + B</th><td>Browser</td></tr><tr><th>SUPER + SHIFT + F</th><td>File manager</td></tr><tr><th>SUPER + W or SUPER + Q</th><td>Close window</td></tr><tr><th>SUPER + J</th><td>Toggle window split</td></tr><tr><th>SUPER + T</th><td>Toggle floating</td></tr><tr><th>SUPER + F</th><td>Full screen</td></tr><tr><th>SUPER + ALT + F</th><td>Full width</td></tr><tr><th>SUPER + arrow</th><td>Move focus</td></tr><tr><th>SUPER + number</th><td>Go to a workspace</td></tr><tr><th>SUPER + SHIFT + number</th><td>Move the window to a workspace</td></tr><tr><th>SUPER + S</th><td>Scratchpad</td></tr><tr><th>SUPER + SPACE</th><td>Launcher</td></tr><tr><th>SUPER + CTRL + V</th><td>Clipboard history</td></tr><tr><th>ALT + TAB, ALT + SHIFT + TAB</th><td>Next or previous window</td></tr><tr><th>SUPER + / or SUPER + ALT + /</th><td>Display scale up or down</td></tr><tr><th>Media keys</th><td>Volume, mute, microphone mute and brightness</td></tr><tr><th>SUPER + left mouse</th><td>Move window</td></tr><tr><th>SUPER + right mouse</th><td>Resize window</td></tr><tr><th>Power key</th><td>Lock</td></tr><tr><th>SUPER + SHIFT + ESCAPE</th><td>Log out</td></tr></table></div>
+<div class="scroll"><table><caption>Default bindings</caption><thead><tr><th scope="col">Keys</th><th scope="col">Does</th></tr></thead><tbody><tr><th scope="row"><kbd>SUPER</kbd> + <kbd>RETURN</kbd></th><td>Terminal</td></tr><tr><th scope="row"><kbd>SUPER</kbd> + <kbd>SHIFT</kbd> + <kbd>B</kbd></th><td>Browser</td></tr><tr><th scope="row"><kbd>SUPER</kbd> + <kbd>SHIFT</kbd> + <kbd>F</kbd></th><td>File manager</td></tr><tr><th scope="row"><kbd>SUPER</kbd> + <kbd>W</kbd> or <kbd>SUPER</kbd> + <kbd>Q</kbd></th><td>Close window</td></tr><tr><th scope="row"><kbd>SUPER</kbd> + <kbd>J</kbd></th><td>Toggle window split</td></tr><tr><th scope="row"><kbd>SUPER</kbd> + <kbd>T</kbd></th><td>Toggle floating</td></tr><tr><th scope="row"><kbd>SUPER</kbd> + <kbd>F</kbd></th><td>Full screen</td></tr><tr><th scope="row"><kbd>SUPER</kbd> + <kbd>ALT</kbd> + <kbd>F</kbd></th><td>Full width</td></tr><tr><th scope="row"><kbd>SUPER</kbd> + <em>arrow</em></th><td>Move focus</td></tr><tr><th scope="row"><kbd>SUPER</kbd> + <em>number</em></th><td>Go to a workspace</td></tr><tr><th scope="row"><kbd>SUPER</kbd> + <kbd>SHIFT</kbd> + <em>number</em></th><td>Move the window to a workspace</td></tr><tr><th scope="row"><kbd>SUPER</kbd> + <kbd>S</kbd></th><td>Scratchpad</td></tr><tr><th scope="row"><kbd>SUPER</kbd> + <kbd>SPACE</kbd></th><td>Launcher</td></tr><tr><th scope="row"><kbd>SUPER</kbd> + <kbd>CTRL</kbd> + <kbd>V</kbd></th><td>Clipboard history</td></tr><tr><th scope="row"><kbd>ALT</kbd> + <kbd>TAB</kbd>, <kbd>ALT</kbd> + <kbd>SHIFT</kbd> + <kbd>TAB</kbd></th><td>Next or previous window</td></tr><tr><th scope="row"><kbd>SUPER</kbd> + <kbd>/</kbd> or <kbd>SUPER</kbd> + <kbd>ALT</kbd> + <kbd>/</kbd></th><td>Display scale up or down</td></tr><tr><th scope="row">Media keys</th><td>Volume, mute, microphone mute and brightness</td></tr><tr><th scope="row"><kbd>SUPER</kbd> + <em>left mouse</em></th><td>Move window</td></tr><tr><th scope="row"><kbd>SUPER</kbd> + <em>right mouse</em></th><td>Resize window</td></tr><tr><th scope="row">Power key</th><td>Lock</td></tr><tr><th scope="row"><kbd>SUPER</kbd> + <kbd>SHIFT</kbd> + <kbd>ESCAPE</kbd></th><td>Log out</td></tr></tbody></table></div>
 <p>Add your own in <code>~/.config/hypr/hyprland.lua</code>, which Hyprland reads on top of the shipped defaults.</p>
 
 <h2 id="commands"><span class="n">05</span>Commands</h2>
 <p><code>subcult</code> finds every <code>subcult-*</code> program on the path. <code>subcult commands</code> lists them, and <code>sub</code> is a short alias.</p>
-<div class="scroll"><table><thead><tr><th>Group</th><th>Does</th><th>Example</th></tr></thead><tr><th>update</th><td>Snapshot, package upgrade, migrations and cleanup</td><td><code>subcult update</code></td></tr><tr><th>channel</th><td>Choose between the stable channel and the Arch mirrors</td><td><code>subcult channel set edge</code></td></tr><tr><th>theme</th><td>Carry the palette Pult applied to the login screen, boot splash and boot menu; reload what reads the theme</td><td><code>subcult theme apply-system</code></td></tr><tr><th>font</th><td>List, install and import fonts for the three font roles</td><td><code>subcult font</code></td></tr><tr><th>cursor</th><td>Build and apply Subarchy's cursor in a palette colour</td><td><code>subcult cursor apply</code></td></tr><tr><th>display</th><td>Scale, and saved monitor layouts</td><td><code>subcult display scale up</code></td></tr><tr><th>app</th><td>Install and remove apps from the catalogue; set default apps</td><td><code>subcult app validate</code></td></tr><tr><th>clipboard</th><td>Clipboard history</td><td></td></tr><tr><th>calendar</th><td>CalDAV and iCal sync</td><td></td></tr><tr><th>idle</th><td>Idle behaviour</td><td></td></tr><tr><th>hw</th><td>Hardware detection and fixes</td><td></td></tr><tr><th>thermal</th><td>Thermal zones and their trip points</td><td><code>subcult thermal zones</code></td></tr><tr><th>gpu</th><td>Pick the desktop GPU on hybrid laptops; run one app on the NVIDIA GPU</td><td><code>subcult gpu mode</code></td></tr><tr><th>power</th><td>Set the power profile for the current power source</td><td><code>subcult power auto</code></td></tr><tr><th>secureboot</th><td>Turn on Secure Boot with this machine's own keys; show its state</td><td><code>subcult secureboot status</code></td></tr><tr><th>disk tpm</th><td>Unlock the disk with the TPM</td><td><code>sudo subcult disk tpm status</code></td></tr><tr><th>setup fingerprint</th><td>Enroll a fingerprint for the lock screen, or remove yours</td><td><code>subcult setup fingerprint</code></td></tr><tr><th>shell</th><td>Make zsh or bash your login shell</td><td><code>subcult shell set zsh</code></td></tr><tr><th>lock</th><td>Lock the session</td><td><code>subcult lock</code></td></tr><tr><th>system</th><td>Log out, suspend, reboot, shut down</td><td><code>subcult system suspend</code></td></tr><tr><th>docker</th><td>Open lazydocker; let your user run docker without sudo</td><td><code>subcult docker tui</code></td></tr><tr><th>tailscale</th><td>Send files to a machine on your tailnet with Taildrop</td><td><code>subcult tailscale send kvant ~/notes.pdf</code></td></tr><tr><th>screensaver</th><td>Render the screensaver loops in the palette</td><td><code>subcult screensaver render --user</code></td></tr></table></div>
+<div class="callout tip"><p class="ct" data-mark="&#9650;">Tip</p><p>Type <code>sub</code> instead of <code>subcult</code>: <code>sub update</code> does the same thing.</p></div>
+<div class="scroll"><table><caption>Command groups</caption><thead><tr><th scope="col">Group</th><th scope="col">Does</th><th scope="col">Example</th></tr></thead><tbody><tr><th scope="row">update</th><td>Snapshot, package upgrade, migrations and cleanup</td><td><code>subcult update</code></td></tr><tr><th scope="row">channel</th><td>Choose between the stable channel and the Arch mirrors</td><td><code>subcult channel set edge</code></td></tr><tr><th scope="row">theme</th><td>Carry the palette Pult applied to the login screen, boot splash and boot menu; reload what reads the theme</td><td><code>subcult theme apply-system</code></td></tr><tr><th scope="row">font</th><td>List, install and import fonts for the three font roles</td><td><code>subcult font</code></td></tr><tr><th scope="row">cursor</th><td>Build and apply Subarchy's cursor in a palette colour</td><td><code>subcult cursor apply</code></td></tr><tr><th scope="row">display</th><td>Scale, and saved monitor layouts</td><td><code>subcult display scale up</code></td></tr><tr><th scope="row">app</th><td>Install and remove apps from the catalogue; set default apps</td><td><code>subcult app validate</code></td></tr><tr><th scope="row">clipboard</th><td>Clipboard history</td><td></td></tr><tr><th scope="row">calendar</th><td>CalDAV and iCal sync</td><td></td></tr><tr><th scope="row">idle</th><td>Idle behaviour</td><td></td></tr><tr><th scope="row">hw</th><td>Hardware detection and fixes</td><td></td></tr><tr><th scope="row">thermal</th><td>Thermal zones and their trip points</td><td><code>subcult thermal zones</code></td></tr><tr><th scope="row">gpu</th><td>Pick the desktop GPU on hybrid laptops; run one app on the NVIDIA GPU</td><td><code>subcult gpu mode</code></td></tr><tr><th scope="row">power</th><td>Set the power profile for the current power source</td><td><code>subcult power auto</code></td></tr><tr><th scope="row">secureboot</th><td>Turn on Secure Boot with this machine's own keys; show its state</td><td><code>subcult secureboot status</code></td></tr><tr><th scope="row">disk tpm</th><td>Unlock the disk with the TPM</td><td><code>sudo subcult disk tpm status</code></td></tr><tr><th scope="row">setup fingerprint</th><td>Enroll a fingerprint for the lock screen, or remove yours</td><td><code>subcult setup fingerprint</code></td></tr><tr><th scope="row">shell</th><td>Make zsh or bash your login shell</td><td><code>subcult shell set zsh</code></td></tr><tr><th scope="row">lock</th><td>Lock the session</td><td><code>subcult lock</code></td></tr><tr><th scope="row">system</th><td>Log out, suspend, reboot, shut down</td><td><code>subcult system suspend</code></td></tr><tr><th scope="row">docker</th><td>Open lazydocker; let your user run docker without sudo</td><td><code>subcult docker tui</code></td></tr><tr><th scope="row">tailscale</th><td>Send files to a machine on your tailnet with Taildrop</td><td><code>subcult tailscale send kvant ~/notes.pdf</code></td></tr><tr><th scope="row">screensaver</th><td>Render the screensaver loops in the palette</td><td><code>subcult screensaver render --user</code></td></tr></tbody></table></div>
 
 <h2 id="updates"><span class="n">06</span>Updates and channels</h2>
 <div class="cmd"><code>subcult update</code></div>
-<p>An update takes a snapshot, upgrades packages, runs migrations and cleans up, in that order.</p>
-<p>A new system follows the <b>stable</b> channel: a dated Arch Linux Archive snapshot, so every machine on stable gets the same package set. To follow the Arch mirrors directly:</p>
+<p>An update <strong>takes a snapshot</strong>, upgrades packages, runs migrations and cleans up, <em>in that order</em>.</p>
+<p>A new system follows the <strong>stable</strong> channel: a dated Arch Linux Archive snapshot, so every machine on stable gets the same package set. To follow the Arch mirrors directly, switch to <strong>edge</strong>:</p>
 <div class="cmd"><code>subcult channel set edge</code></div>
 
 <h2 id="look"><span class="n">07</span>Theme, fonts, cursor</h2>
@@ -89,26 +98,26 @@ TIMEZONE  LOCALE  KEYMAP  XKB_LAYOUT  XKB_VARIANT  SUBARCHY_REPO</pre>
 <div class="cmd"><code>pult apply catppuccin-mocha</code></div>
 <p>To go back to the default:</p>
 <div class="cmd"><code>pult apply -profile /usr/share/subcult/default/theme/subarchy.toml</code></div>
-<p>The login screen, boot splash and boot menu are system files, so they take the new palette only when you ask, with your password:</p>
-<div class="cmd"><code>subcult theme apply-system</code></div>
-<p>Fonts are three roles that GTK, Qt, the shell and the terminal all follow: monospace, sans-serif and serif. <code>subcult font</code> lists and installs fonts and can import ones you own.</p>
+<div class="callout note"><p class="ct" data-mark="&#9632;">Note</p><p>The login screen, boot splash and boot menu are <em>system files</em>, so they take the new palette only when you ask, with your password:</p><div class="cmd"><code>subcult theme apply-system</code></div></div>
+<p>Fonts are three roles that GTK, Qt, the shell and the terminal all follow: <strong>monospace</strong>, <strong>sans-serif</strong> and <strong>serif</strong>. <code>subcult font</code> lists and installs fonts and can import ones you own.</p>
 <p>The cursor is Subarchy's own, drawn in a palette colour. Choose the colour and size, or redraw it in the current palette after a theme change:</p>
 <div class="cmd"><code>subcult cursor set --role lavender --size 24</code></div>
 <div class="cmd"><code>subcult cursor apply</code></div>
 
 <h2 id="config"><span class="n">08</span>Configuration</h2>
 <ul class="plain">
-<li>Your settings live under <code>~/.config/subcult/</code>.</li>
-<li>The palette Pult writes is <code>~/.config/subcult/theme/palette.json</code>.</li>
-<li>Bar layout: defaults in <code>/usr/share/subcult/default/shell/bar.json</code>, your overrides in <code>~/.config/subcult/shell/bar.json</code>, merged key by key.</li>
-<li>Hyprland: <code>~/.config/hypr/hyprland.lua</code>, on top of the shipped defaults.</li>
-<li>The app catalogue is <code>default/apps.toml</code>; <code>subcult app validate</code> checks it and any catalogue of your own.</li>
+<li><strong>Your settings</strong> live under <code>~/.config/subcult/</code>.</li>
+<li><strong>Palette.</strong> The one Pult writes is <code>~/.config/subcult/theme/palette.json</code>.</li>
+<li><strong>Bar layout.</strong> Defaults in <code>/usr/share/subcult/default/shell/bar.json</code>, your overrides in <code>~/.config/subcult/shell/bar.json</code>, merged key by key.</li>
+<li><strong>Hyprland.</strong> <code>~/.config/hypr/hyprland.lua</code>, on top of the shipped defaults.</li>
+<li><strong>Apps.</strong> The catalogue is <code>default/apps.toml</code>; <code>subcult app validate</code> checks it and any catalogue of your own.</li>
 </ul>
 
 <h2 id="recovery"><span class="n">09</span>Snapshots and recovery</h2>
-<p>The root filesystem is btrfs with snapper. Limine shows a boot entry for each snapshot, so a bad update can be undone by booting the snapshot taken before it. <code>subcult update</code> takes that snapshot for you.</p>
-<p>The installer also leaves a read-only factory-reset snapshot.</p>
-<p>The lock screen is a separate program from the shell. If the shell crashes it restarts, and the session stays locked.</p>
+<p>The root filesystem is btrfs with snapper. Limine shows a boot entry for each snapshot, so a bad update can be undone by booting the snapshot taken before it.</p>
+<div class="callout tip"><p class="ct" data-mark="&#9650;">Tip</p><p><strong>You do not have to remember to take one.</strong> <code>subcult update</code> takes that snapshot for you.</p></div>
+<p>The installer also leaves a <strong>read-only factory-reset snapshot</strong>.</p>
+<blockquote><p>The lock screen is a separate program from the shell. <em>If the shell crashes it restarts, and the session stays locked.</em></p></blockquote>
 
 <h2 id="more"><span class="n">10</span>More</h2>
 <ul class="plain">
@@ -123,7 +132,7 @@ TIMEZONE  LOCALE  KEYMAP  XKB_LAYOUT  XKB_VARIANT  SUBARCHY_REPO</pre>
 </div>
 <footer><div class="wrap">
 <div class="row"><a href="/docs/">Docs</a><a href="https://github.com/subculture-collective/subarchy">Source</a><a href="https://github.com/subculture-collective/subarchy/issues">Issues</a><a href="https://subcult.tv/support">Support SUBCULT</a><a href="https://subcult.tv">subcult.tv</a></div>
-<p>Subarchy is free software under GPL-3.0-or-later. It borrows from <a href="https://omarchy.org/">Omarchy</a> (MIT) and is not an Omarchy edition. Set in Departure Mono (OFL).</p>
+<p>Subarchy is free software under GPL-3.0-or-later. It borrows from <a href="https://omarchy.org/">Omarchy</a> (MIT) and is not an Omarchy edition. Set in Departure Mono (OFL); the docs text in Dank Mono.</p>
 </div></footer>
 <script src="/app.js" defer></script>
 </body>

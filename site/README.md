@@ -37,7 +37,33 @@ The wordmark, the SA_ marks, the icons, `assets/og.png` and the tokens in
 `style.css` come from `studio/brands/subarchy` in `subcult-tv`. The wordmark
 is the owner's ANSI art, drawn as SVG rectangles so it does not depend on a
 font. Departure Mono 1.500 is in `fonts/` with its SIL Open Font License
-text.
+text; it sets the headings, navigation, code and the landing page.
+
+The docs prose is set in Dank Mono, which the owner licenses from its
+author. Its licence forbids redistribution, so the three `.woff2` files are
+not in git (`.gitignore` excludes `site/fonts/DankMono-*`); the deploy copies
+them in from the owner's licensed copy. Without them the docs fall back to
+Departure Mono, so a local preview still works.
+
+## Formatting
+
+Docs prose uses the classes in `style.css`:
+
+- `<strong>` and `<em>` are coloured (acid and violet); Dank Mono also sets
+  them bold and italic. Departure Mono has no bold or italic, so on the
+  landing page they are colour only.
+- Callouts, in the manner of Obsidian's: `<div class="callout note|tip|warning">`
+  with a first `<p class="ct" data-mark="...">` title.
+- `<ol class="steps">` for numbered steps, `<kbd>` for keys, `<blockquote>`
+  for a sentence that should stand out.
+
+## Checks
+
+`make verify` runs `tools/test/site-check.py`: links and anchors, alt text,
+button names, one `h1` per page, no inline styles, the CSP hash of the inline
+theme script, and WCAG AA contrast for both themes. Lighthouse and the
+keyboard and mouse tests need a browser; run them against the container
+described in [deploy/](../deploy/).
 
 The support block follows SUBCULT's site guidelines: one block on the
 landing page and a quiet footer link, both to `https://subcult.tv/support`,
