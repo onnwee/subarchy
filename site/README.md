@@ -53,6 +53,22 @@ to build the ISO before there is a download is on the Developers page.
 | Widget names and the count of 27 | the folders in [shell/widgets/](../shell/widgets/) |
 | Bar and palette paths | [shell-and-look-design](../docs/plans/shell-and-look-design.md) |
 
+## Plugins pages
+
+`/plugins/` and one page per shell widget are generated too. The facts come
+from the code: name, id, version, kind, panel, timers, servers and default
+settings from each `shell/widgets/*/manifest.json` (through
+`shell/widgets/index.json`), and whether and where the widget is in the bar
+from `default/shell/bar.json`. Only the wording is the site's own, in
+[tools/site/plugins.json](../tools/site/plugins.json): a category, a
+one-line summary, a paragraph or two, one line per setting, and an optional
+`example` for the settings snippet, for a plugin that stays hidden until a
+setting is filled in. The build
+stops when a widget has no entry there or a setting is not described, so a
+new or changed widget fails `make verify` until its page is written and the
+site rebuilt. `"hidden": true` leaves an entry out (`dell-power`, an alias
+of Battery).
+
 ## Brand
 
 The wordmark, the SA_ marks, the icons, `assets/og.png` and the tokens in

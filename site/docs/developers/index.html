@@ -24,19 +24,19 @@
 <link rel="preload" href="/fonts/victor-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/victor-mono-latin-500-italic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/victor-mono-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/style.css?v=a700f3f3f6">
+<link rel="stylesheet" href="/style.css?v=072807bc8c">
 <script>try{var r=document.documentElement,t=localStorage.getItem("subarchy-theme");if(t==="light"||t==="dark")r.setAttribute("data-theme",t);if(localStorage.getItem("subarchy-side")==="hidden")r.setAttribute("data-side","hidden")}catch(e){}</script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
 <header class="top"><div class="wrap nav">
 <a class="home" href="/" aria-label="Subarchy home"><img class="dark-only" src="/assets/mark-clean-dark.svg" alt="" width="200" height="140"><img class="light-only" src="/assets/mark-clean-light.svg" alt="" width="200" height="140"><span>subarchy</span></a>
-<nav class="links" aria-label="Main"><a href="/docs/" aria-current="page">docs</a><a href="/docs/keys/">keys</a><a href="/docs/commands/">commands</a><a href="https://github.com/subculture-collective/subarchy" target="_blank" rel="noopener">git<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv/support" target="_blank" rel="noopener">support<span class="sr"> (opens in a new tab)</span></a></nav>
+<nav class="links" aria-label="Main"><a href="/docs/" aria-current="page">docs</a><a href="/docs/keys/">keys</a><a href="/docs/commands/">commands</a><a href="/plugins/">plugins</a><a href="https://github.com/subculture-collective/subarchy" target="_blank" rel="noopener">git<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv/support" target="_blank" rel="noopener">support<span class="sr"> (opens in a new tab)</span></a></nav>
 <button type="button" data-theme-toggle hidden>paper</button>
 </div></header>
 <div class="wrap docs">
 <div class="rail"><button type="button" class="side-toggle" data-side-toggle aria-controls="docs-side" hidden>hide</button>
-<nav class="side" id="docs-side" aria-label="Docs"><details class="toc"><summary>Docs pages</summary><ol><li><a href="/docs/">Overview</a></li><li><a href="/docs/install/">Install</a></li><li><a href="/docs/keys/">Keys</a></li><li><a href="/docs/commands/">Commands</a></li><li><a href="/docs/shell/">Shell aliases</a></li><li><a href="/docs/look/">Theme and fonts</a></li><li><a href="/docs/updates/">Updates and recovery</a></li><li><a href="/docs/glossary/">Glossary</a></li><li><a href="/docs/developers/" aria-current="page">Developers</a><ol class="sections"><li><a href="#layout">Repository</a></li><li><a href="#build">Build and test</a></li><li><a href="#iso">Build the ISO yourself</a></li><li><a href="#packages">Pinned packages</a></li><li><a href="#unattended">Unattended install</a></li><li><a href="#shell">Shell keys and IPC</a></li><li><a href="#launcher">Extend the launcher</a></li><li><a href="#contributing">Contributing</a></li></ol></li></ol></details></nav></div>
+<nav class="side" id="docs-side" aria-label="Docs"><details class="toc"><summary>Docs pages</summary><ol><li><a href="/docs/">Overview</a></li><li><a href="/docs/install/">Install</a></li><li><a href="/docs/keys/">Keys</a></li><li><a href="/docs/commands/">Commands</a></li><li><a href="/docs/shell/">Shell aliases</a></li><li><a href="/docs/look/">Theme and fonts</a></li><li><a href="/docs/updates/">Updates and recovery</a></li><li><a href="/docs/glossary/">Glossary</a></li><li><a href="/docs/developers/" aria-current="page">Developers</a><ol class="sections"><li><a href="#layout">Repository</a></li><li><a href="#build">Build and test</a></li><li><a href="#iso">Build the ISO yourself</a></li><li><a href="#packages">Pinned packages</a></li><li><a href="#unattended">Unattended install</a></li><li><a href="#plugins">Writing a plugin</a></li><li><a href="#shell">Shell keys and IPC</a></li><li><a href="#launcher">Extend the launcher</a></li><li><a href="#contributing">Contributing</a></li></ol></li></ol></details></nav></div>
 <main id="main">
 <p class="crumbs"><a href="/docs/">Docs</a> / Developers</p>
 <h1>Developers</h1>
@@ -107,6 +107,18 @@
 </tbody></table></div>
 <p>It makes a GPT disk with a 4 GiB <a class="wl" href="/docs/glossary/#esp">ESP</a> and a <a class="wl" href="/docs/glossary/#luks2">LUKS2</a> root, <a class="wl" href="/docs/glossary/#btrfs">btrfs</a> subvolumes <code>@</code>, <code>@home</code>, <code>@log</code> and <code>@pkg</code>, <code>linux-zen</code> and <code>linux-lts</code> as <a class="wl" href="/docs/glossary/#uki">UKIs</a>, <a class="wl" href="/docs/glossary/#limine">Limine</a>, <a class="wl" href="/docs/glossary/#snapper">snapper</a> for <code>@</code>, and <a class="wl" href="/docs/glossary/#zram">zram</a> swap. Read next: the header of <code>install/subarchy-install</code>.</p>
 
+<h2 id="plugins">Writing a plugin</h2>
+<p>Each part of the bar is a plugin in <code>shell/widgets/<var>name</var>/</code>, listed on the <a href="/plugins/">plugins page</a>. A plugin is a folder:</p>
+<div class="scroll"><table><caption class="sr">Plugin files</caption><tbody>
+<tr><th scope="row"><code>manifest.json</code></th><td>Id (<code>subcult.<var>name</var></code>), name, version, <code>"api": 0</code>, kind (<code>bar-widget</code> or <code>service</code>), <code>panel</code>, <code>cost</code> and default <code>settings</code></td></tr>
+<tr><th scope="row"><code>Widget.qml</code></th><td>The bar item: a <code>BarWidget</code> from <code>shell/Ui/</code></td></tr>
+<tr><th scope="row"><code>Panel.qml</code></th><td>Optional. The popup a click opens; loaded only while it is open</td></tr>
+<tr><th scope="row"><code>tests/</code></th><td>Optional <code>qmltestrunner</code> tests</td></tr>
+</tbody></table></div>
+<p><code>cost</code> lists every repeating timer with its seconds on mains and on battery, and every host the plugin contacts. A plugin with no timers follows events only. <strong>Timers go through <code>WidgetTimer</code></strong>, which reads the interval for the current power source from the manifest; nothing hard-codes one.</p>
+<div class="cmd"><code>python3 tools/shell/gen-index.py</code></div>
+<p>That rewrites <code>shell/widgets/index.json</code>, which the shell reads at start, and <code>make verify</code> fails until it is current. Add the plugin's wording to <code>tools/site/plugins.json</code> so it gets a page. Read next: <code>shell/README.md</code> and the plugin API decision record, ADR 0068.</p>
+
 <h2 id="shell">Shell keys and IPC</h2>
 <p>Keys reach the shell as Hyprland global shortcuts with the app id <code>subcult</code>, so a key press starts no process. The names: <code>launcher-toggle</code>, <code>clipboard</code>, <code>alias.<var>name</var></code>, <code>altswitch-next</code>, <code>altswitch-prev</code>, <code>altswitch-commit</code>, <code>brightness-up</code>, <code>brightness-down</code>, <code>capslock</code>.</p>
 <div class="cmd"><code>quickshell ipc -p /usr/share/subcult/shell show</code></div>
@@ -137,9 +149,9 @@
 </main>
 </div>
 <footer><div class="wrap">
-<div class="row"><a href="/docs/">Docs</a><a href="/docs/glossary/">Glossary</a><a href="https://github.com/subculture-collective/subarchy" target="_blank" rel="noopener">Source<span class="sr"> (opens in a new tab)</span></a><a href="https://github.com/subculture-collective/subarchy/issues" target="_blank" rel="noopener">Issues<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv/support" target="_blank" rel="noopener">Support SUBCULT<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv" target="_blank" rel="noopener">subcult.tv<span class="sr"> (opens in a new tab)</span></a></div>
+<div class="row"><a href="/docs/">Docs</a><a href="/plugins/">Plugins</a><a href="/docs/glossary/">Glossary</a><a href="https://github.com/subculture-collective/subarchy" target="_blank" rel="noopener">Source<span class="sr"> (opens in a new tab)</span></a><a href="https://github.com/subculture-collective/subarchy/issues" target="_blank" rel="noopener">Issues<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv/support" target="_blank" rel="noopener">Support SUBCULT<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv" target="_blank" rel="noopener">subcult.tv<span class="sr"> (opens in a new tab)</span></a></div>
 <p>Subarchy is free software under GPL-3.0-or-later. Set in Departure Mono (OFL); the docs text in Victor Mono (OFL).</p>
 </div></footer>
-<script src="/app.js?v=591a83a99d" defer></script>
+<script src="/app.js?v=56e98e47cc" defer></script>
 </body>
 </html>

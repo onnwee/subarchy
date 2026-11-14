@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Bluetooth · Subarchy plugins</title>
+<meta name="description" content="Bluetooth, a Subarchy bar plugin: Bluetooth on, off or connected, with a devices panel.">
+<link rel="canonical" href="https://subarchy.subcult.tv/plugins/bluetooth/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Bluetooth · Subarchy plugins">
+<meta property="og:description" content="Bluetooth, a Subarchy bar plugin: Bluetooth on, off or connected, with a devices panel.">
+<meta property="og:url" content="https://subarchy.subcult.tv/plugins/bluetooth/">
+<meta property="og:image" content="https://subarchy.subcult.tv/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="SUBARCHY in dripping green block letters above the line: An Arch Linux desktop from SUBCULT. In development.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#100B19" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F0ECE4" media="(prefers-color-scheme: light)">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="preload" href="/fonts/DepartureMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/victor-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/victor-mono-latin-500-italic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/victor-mono-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style.css?v=072807bc8c">
+<script>try{var r=document.documentElement,t=localStorage.getItem("subarchy-theme");if(t==="light"||t==="dark")r.setAttribute("data-theme",t);if(localStorage.getItem("subarchy-side")==="hidden")r.setAttribute("data-side","hidden")}catch(e){}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><div class="wrap nav">
+<a class="home" href="/" aria-label="Subarchy home"><img class="dark-only" src="/assets/mark-clean-dark.svg" alt="" width="200" height="140"><img class="light-only" src="/assets/mark-clean-light.svg" alt="" width="200" height="140"><span>subarchy</span></a>
+<nav class="links" aria-label="Main"><a href="/docs/">docs</a><a href="/docs/keys/">keys</a><a href="/docs/commands/">commands</a><a href="/plugins/" aria-current="page">plugins</a><a href="https://github.com/subculture-collective/subarchy" target="_blank" rel="noopener">git<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv/support" target="_blank" rel="noopener">support<span class="sr"> (opens in a new tab)</span></a></nav>
+<button type="button" data-theme-toggle hidden>paper</button>
+</div></header>
+<main id="main" class="wrap plugin">
+<p class="crumbs"><a href="/plugins/">Plugins</a> / Bluetooth</p>
+<div class="phero"><span class="pmark" aria-hidden="true">Bl</span><div><h1>Bluetooth</h1><p class="lede">Bluetooth on, off or connected, with a devices panel.</p></div></div>
+<div class="pcols">
+<div class="pmain">
+<p>Click for the devices panel, where you pair, connect and forget devices. Right-click turns the adapter on or off. It hides on machines without Bluetooth.</p>
+<h2 id="turn-on">In the bar</h2>
+<p>It is in the bar from the start, in the <strong>right</strong> section. To move or remove it, click the SUBCULT mark at the left of the bar, open <strong>Bar layout</strong> in Settings, edit the list and apply.</p>
+<h2 id="settings">Settings</h2>
+<p>None. It works as it is.</p>
+<h2 id="cost">Cost</h2>
+<p><strong>No timers.</strong> It wakes only when something it follows changes.</p>
+<p><strong>No network.</strong> It contacts no servers.</p>
+<h2 id="manifest">Manifest</h2>
+<pre>{
+  &quot;id&quot;: &quot;subcult.bluetooth&quot;,
+  &quot;name&quot;: &quot;Bluetooth&quot;,
+  &quot;version&quot;: &quot;1.0.0&quot;,
+  &quot;api&quot;: 0,
+  &quot;kind&quot;: &quot;bar-widget&quot;,
+  &quot;panel&quot;: true
+}</pre>
+</div>
+<aside class="pfacts" aria-label="About this plugin"><dl><dt>Id</dt><dd><code>subcult.bluetooth</code></dd><dt>Version</dt><dd>1.0.0</dd><dt>Plugin API</dt><dd>0</dd><dt>Kind</dt><dd>bar-widget</dd><dt>Category</dt><dd>Network</dd><dt>Default</dt><dd>in the bar, right</dd><dt>Panel</dt><dd>yes</dd><dt>Timers</dt><dd>none</dd><dt>Network</dt><dd>none</dd><dt>Source</dt><dd><a href="https://github.com/subculture-collective/subarchy/tree/main/shell/widgets/bluetooth" target="_blank" rel="noopener">shell/widgets/bluetooth<span class="sr"> (opens in a new tab)</span></a></dd></dl></aside>
+</div>
+<nav class="pager" aria-label="Previous and next plugin"><a class="prev" href="/plugins/battery/" rel="prev"><span>Previous</span>Battery and power profile</a><a class="next" href="/plugins/calendar/" rel="next"><span>Next</span>Calendar</a></nav>
+</main>
+<footer><div class="wrap">
+<div class="row"><a href="/docs/">Docs</a><a href="/plugins/">Plugins</a><a href="/docs/glossary/">Glossary</a><a href="https://github.com/subculture-collective/subarchy" target="_blank" rel="noopener">Source<span class="sr"> (opens in a new tab)</span></a><a href="https://github.com/subculture-collective/subarchy/issues" target="_blank" rel="noopener">Issues<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv/support" target="_blank" rel="noopener">Support SUBCULT<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv" target="_blank" rel="noopener">subcult.tv<span class="sr"> (opens in a new tab)</span></a></div>
+<p>Subarchy is free software under GPL-3.0-or-later. Set in Departure Mono (OFL); the docs text in Victor Mono (OFL).</p>
+</div></footer>
+<script src="/app.js?v=56e98e47cc" defer></script>
+</body>
+</html>

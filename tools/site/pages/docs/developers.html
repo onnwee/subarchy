@@ -70,6 +70,18 @@ description: Working on Subarchy: repository layout, make targets, rebuilding pi
 </tbody></table></div>
 <p>It makes a GPT disk with a 4 GiB [[ESP]] and a [[LUKS2]] root, [[btrfs]] subvolumes <code>@</code>, <code>@home</code>, <code>@log</code> and <code>@pkg</code>, <code>linux-zen</code> and <code>linux-lts</code> as [[UKI|UKIs]], [[Limine]], [[snapper]] for <code>@</code>, and [[zram]] swap. Read next: the header of <code>install/subarchy-install</code>.</p>
 
+<h2 id="plugins">Writing a plugin</h2>
+<p>Each part of the bar is a plugin in <code>shell/widgets/<var>name</var>/</code>, listed on the <a href="/plugins/">plugins page</a>. A plugin is a folder:</p>
+<div class="scroll"><table><caption class="sr">Plugin files</caption><tbody>
+<tr><th scope="row"><code>manifest.json</code></th><td>Id (<code>subcult.<var>name</var></code>), name, version, <code>"api": 0</code>, kind (<code>bar-widget</code> or <code>service</code>), <code>panel</code>, <code>cost</code> and default <code>settings</code></td></tr>
+<tr><th scope="row"><code>Widget.qml</code></th><td>The bar item: a <code>BarWidget</code> from <code>shell/Ui/</code></td></tr>
+<tr><th scope="row"><code>Panel.qml</code></th><td>Optional. The popup a click opens; loaded only while it is open</td></tr>
+<tr><th scope="row"><code>tests/</code></th><td>Optional <code>qmltestrunner</code> tests</td></tr>
+</tbody></table></div>
+<p><code>cost</code> lists every repeating timer with its seconds on mains and on battery, and every host the plugin contacts. A plugin with no timers follows events only. <strong>Timers go through <code>WidgetTimer</code></strong>, which reads the interval for the current power source from the manifest; nothing hard-codes one.</p>
+<div class="cmd"><code>python3 tools/shell/gen-index.py</code></div>
+<p>That rewrites <code>shell/widgets/index.json</code>, which the shell reads at start, and <code>make verify</code> fails until it is current. Add the plugin's wording to <code>tools/site/plugins.json</code> so it gets a page. Read next: <code>shell/README.md</code> and the plugin API decision record, ADR 0068.</p>
+
 <h2 id="shell">Shell keys and IPC</h2>
 <p>Keys reach the shell as Hyprland global shortcuts with the app id <code>subcult</code>, so a key press starts no process. The names: <code>launcher-toggle</code>, <code>clipboard</code>, <code>alias.<var>name</var></code>, <code>altswitch-next</code>, <code>altswitch-prev</code>, <code>altswitch-commit</code>, <code>brightness-up</code>, <code>brightness-down</code>, <code>capslock</code>.</p>
 <div class="cmd"><code>quickshell ipc -p /usr/share/subcult/shell show</code></div>

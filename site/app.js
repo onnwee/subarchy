@@ -111,6 +111,59 @@
     });
   }
 
+  // Plugins catalogue: search, category, state and cost filters, and sort. Without this file every card shows.
+  var tools = document.querySelector(".ptools");
+  var grid = document.querySelector(".pgrid");
+  if (tools && grid) {
+    tools.hidden = false;
+    var cards = Array.prototype.slice.call(grid.children);
+    var byName = cards.slice();
+    var search = document.getElementById("psearch"), stateSel = document.getElementById("pstate");
+    var offline = document.getElementById("poffline"), events = document.getElementById("pevents");
+    var sortSel = document.getElementById("psort"), count = document.getElementById("pcount");
+    var none = document.querySelector(".pnone"), chips = tools.querySelectorAll(".pchips button");
+    var cat = "";
+    var apply = function () {
+      var words = search.value.toLowerCase().split(/\s+/).filter(Boolean);
+      var shown = 0;
+      cards.forEach(function (c) {
+        var d = c.dataset;
+        var ok = (!cat || d.cat === cat) && (!stateSel.value || d.on === stateSel.value) &&
+          (!offline.checked || d.net === "0") && (!events.checked || d.timers === "0") &&
+          words.every(function (w) { return d.text.indexOf(w) >= 0; });
+        c.hidden = !ok;
+        if (ok) shown++;
+      });
+      var order = byName.slice();
+      if (sortSel.value === "bar") order.sort(function (a, b) { return a.dataset.order - b.dataset.order; });
+      else if (sortSel.value === "cat") order.sort(function (a, b) { return a.dataset.cat < b.dataset.cat ? -1 : a.dataset.cat > b.dataset.cat ? 1 : 0; });
+      order.forEach(function (c) { grid.appendChild(c); });
+      count.textContent = shown === cards.length ? cards.length + " plugins" : shown + " of " + cards.length + " plugins";
+      none.hidden = shown > 0;
+      markAll();
+    };
+    chips.forEach(function (b) {
+      b.addEventListener("click", function () {
+        cat = b.dataset.cat;
+        chips.forEach(function (o) { o.setAttribute("aria-pressed", o === b ? "true" : "false"); });
+        apply();
+      });
+    });
+    [search, stateSel, offline, events, sortSel].forEach(function (el) { el.addEventListener("input", apply); el.addEventListener("change", apply); });
+    document.querySelector("[data-pclear]").addEventListener("click", function () {
+      search.value = ""; stateSel.value = ""; offline.checked = false; events.checked = false;
+      chips[0].click(); search.focus();
+    });
+    // "/" jumps to the search box unless you are already typing somewhere.
+    document.addEventListener("keydown", function (e) {
+      var t = e.target.tagName;
+      if (e.key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey && t !== "INPUT" && t !== "SELECT" && t !== "TEXTAREA") {
+        e.preventDefault(); search.focus();
+      }
+    });
+    apply();
+  }
+
   // Scroll marks: the native bars are hidden in style.css. A 2px stroke on the right edge follows the page,
   // and one along the bottom (or right) edge of each scrolling box follows that box.
   var bar = document.createElement("div");

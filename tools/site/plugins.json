@@ -1,0 +1,173 @@
+{
+ "_source": "Site wording for the plugins pages. Names, versions, costs, settings defaults and bar positions come from shell/widgets/*/manifest.json and default/shell/bar.json; the build fails when a widget or setting has no entry here.",
+ "categories": [
+  ["system", "System"],
+  ["sound", "Sound and media"],
+  ["network", "Network"],
+  ["time", "Time and weather"],
+  ["tools", "Tools"]
+ ],
+ "plugins": {
+  "active-window": {
+   "category": "system",
+   "summary": "The focused window's title.",
+   "about": ["Shows the title of the window you are working in, cut short when it is long. It hides when nothing has focus."],
+   "settings": {}
+  },
+  "agents": {
+   "category": "tools",
+   "summary": "How much of their limits your coding agents have used.",
+   "about": ["Reads the local usage files of Claude Code and Codex through <code>subcult agent usage --json</code>. The bar shows each agent's tightest limit, or its tokens today when it keeps no limits on disk; the panel has the rest.", "Nothing goes over the network. It runs only while it is in the bar, and stays hidden until an agent has written files."],
+   "settings": {"agents": "The agents to show, from <code>claude</code> and <code>codex</code>."}
+  },
+  "audio": {
+   "category": "sound",
+   "summary": "Volume of the default output, with a panel for devices.",
+   "about": ["Scroll to change the volume by 5 %, middle-click to mute, click for the panel: output and input devices, their volumes and mute.", "PipeWire reports every change, so nothing polls."],
+   "settings": {}
+  },
+  "auto-wallpaper": {
+   "category": "tools",
+   "summary": "Changes the wallpaper on a schedule.",
+   "about": ["Moves to the next image in a folder every 30 minutes on mains power and every hour on battery. On battery it waits unless you allow it. Click to change the image now.", "However many bars show it, the wallpaper changes once."],
+   "settings": {"directory": "The folder of images.", "mode": "<code>sequential</code> or <code>shuffle</code>.", "onBattery": "<code>true</code> to keep changing on battery."}
+  },
+  "battery": {
+   "category": "system",
+   "summary": "Charge, power profile and, on Dell laptops, charging controls.",
+   "about": ["Shows the battery's charge and the power profile. Click either for the panel; right-click to step through the profiles.", "On Dell laptops the panel adds the firmware's Quiet and Cool profiles and its charging modes, including your own start and stop levels. It shows only on machines with a laptop battery."],
+   "settings": {"chargeDisplay": "<code>icon</code> or <code>icon-percentage</code>.", "profileDisplay": "<code>off</code>, <code>icon</code> or <code>icon-text</code>."}
+  },
+  "bluetooth": {
+   "category": "network",
+   "summary": "Bluetooth on, off or connected, with a devices panel.",
+   "about": ["Click for the devices panel, where you pair, connect and forget devices. Right-click turns the adapter on or off. It hides on machines without Bluetooth."],
+   "settings": {}
+  },
+  "calendar": {
+   "category": "time",
+   "summary": "Your next event, and a month panel.",
+   "about": ["Shows the next event from your synced calendars: <q>Standup 14:00</q>, <q>Standup now</q>, <q>Tomorrow Dentist 09:00</q>. Click for the month.", "It reads the cache that <code>subcult calendar</code> keeps from CalDAV and iCal feeds, and updates when a sync writes it; nothing polls."],
+   "settings": {}
+  },
+  "clock": {
+   "category": "time",
+   "summary": "The date and time.",
+   "about": ["Shows the day, date and time: <q>Sat 7 Nov 10:56 AM</q>. Every clock in the shell shares one minute tick."],
+   "settings": {}
+  },
+  "dell-power": {
+   "hidden": true
+  },
+  "display": {
+   "category": "system",
+   "summary": "Names the monitor each bar is on.",
+   "about": ["A monitor mark whose tooltip names the output, so you can tell bars apart with several screens. It also shows on minimal bars."],
+   "settings": {}
+  },
+  "downloads": {
+   "category": "tools",
+   "summary": "Download video and audio with yt-dlp from the bar.",
+   "about": ["Paste a link in its panel and it downloads with yt-dlp, one at a time, showing the running download's progress and the queue. Scripts can queue a link with <code>subcult.downloads add <var>url</var></code> over the shell's IPC.", "Nothing runs while the queue is empty."],
+   "settings": {"directory": "Where downloads go.", "audioOnly": "<code>true</code> to keep only the audio."}
+  },
+  "ht3": {
+   "category": "sound",
+   "summary": "Battery and noise mode for TOZO HT3 headphones.",
+   "about": ["Appears only while a pair of TOZO HT3 headphones is connected. The panel reads the headset's battery and noise mode, switches between Normal, noise cancelling and Transparency, and sets the headset's own volume without touching your default output.", "It reads the headset only while the panel is open."],
+   "settings": {}
+  },
+  "indicators": {
+   "category": "system",
+   "summary": "Small marks for do-not-disturb, privacy and keep-awake.",
+   "about": ["Shows when do-not-disturb is on, when the microphone, camera or screen is in use, and when keep-awake stops the screen from locking. Click the keep-awake mark to turn it on or off.", "All of it follows events from PipeWire and Hyprland; nothing polls."],
+   "settings": {}
+  },
+  "keyboard-layout": {
+   "category": "system",
+   "summary": "The active keyboard layout.",
+   "about": ["Shows the code of the layout in use, such as <code>us</code> or <code>de</code>, for the keyboard you last typed on. It updates when the layout changes."],
+   "settings": {}
+  },
+  "media": {
+   "category": "sound",
+   "summary": "What is playing, with player controls.",
+   "about": ["Shows the active player's track. Click to play or pause, scroll for the next or previous track, middle-click for the panel with every player, its controls and artwork.", "It hides while no player is open."],
+   "settings": {}
+  },
+  "menu": {
+   "category": "system",
+   "summary": "The SUBCULT mark, which opens Settings.",
+   "about": ["The mark at the left of the bar. Click it for Settings: bar layout, fonts, cursor, idle and motion. Settings previews a change before applying it and can undo the last one."],
+   "settings": {}
+  },
+  "microphone": {
+   "category": "sound",
+   "summary": "Mute the microphone, and see at a glance that it is muted.",
+   "about": ["Click to mute or unmute the default input. A muted microphone shows in the warning colour."],
+   "settings": {}
+  },
+  "n8n": {
+   "category": "tools",
+   "summary": "Active workflows and recent failures on an n8n server.",
+   "about": ["Shows how many workflows are active and how many runs failed recently. It stays hidden until it knows a server, so set the first one in <code>~/.config/subcult/shell/bar.json</code> (below); after that, its panel changes it. Store the API key in the keyring with <code>secret-tool store --label='n8n API key' service subcult-n8n</code>.", "It checks every minute on mains power and every five on battery. The key never lands in a config file or on a command line."],
+   "settings": {"server": "The n8n server's address."},
+   "example": {"server": "https://n8n.example.com"}
+  },
+  "network": {
+   "category": "network",
+   "summary": "The connection in use, with a network panel.",
+   "about": ["Shows the wired connection, or the Wi-Fi network and its signal. Click for the panel to pick a network or turn Wi-Fi off. NetworkManager reports changes, so nothing polls."],
+   "settings": {}
+  },
+  "notifications": {
+   "category": "system",
+   "summary": "Unread notifications, history and do-not-disturb.",
+   "about": ["Shows the unread count. Click for the history, which marks everything read; right-click turns do-not-disturb on or off."],
+   "settings": {}
+  },
+  "soma": {
+   "category": "sound",
+   "summary": "SomaFM internet radio in the bar.",
+   "about": ["Pick a SomaFM channel in the panel and it plays through mpv, with the channel and song in the bar. Middle-click to stop or start again.", "It fetches the channel list when the panel opens, at most every ten minutes, and nothing runs while it is stopped."],
+   "settings": {"format": "The stream format: <code>aac</code> or <code>mp3</code>."}
+  },
+  "tailscale": {
+   "category": "network",
+   "summary": "Tailscale status, accounts and machines.",
+   "about": ["Shows whether Tailscale is connected, with this machine's name and address. The panel turns it on and off, signs in, switches accounts and lists the machines on your tailnet.", "It checks every minute on mains power and every five on battery, and hides when Tailscale is not installed."],
+   "settings": {}
+  },
+  "tray": {
+   "category": "system",
+   "summary": "Status icons from apps.",
+   "about": ["Icons that apps put in the tray. Click to activate, right-click for the app's menu. Idle icons hide until the app needs you."],
+   "settings": {}
+  },
+  "updates": {
+   "category": "system",
+   "summary": "How many updates are waiting; click to update.",
+   "about": ["Shows the count of available updates from the daily check, and hides at zero. Click to run <code>subcult update</code> in a terminal."],
+   "settings": {}
+  },
+  "weather": {
+   "category": "time",
+   "summary": "Conditions in the bar; forecast, sun, moon and tides in the panel.",
+   "about": ["Shows a mark for the conditions and the temperature. The panel has the forecast, sunrise and sunset, the moon and, near the coast, tides.", "Current conditions come from Open-Meteo every 15 minutes on mains power and every 30 on battery; the forecast every 2 hours, or 6 on battery. Nothing is fetched until you set a location in the panel."],
+   "settings": {"location": "The place, set from the panel's search.", "name": "The place name shown.", "units": "<code>metric</code> or <code>imperial</code>."}
+  },
+  "workspaces": {
+   "category": "system",
+   "summary": "Workspaces 1 to 10 on this monitor.",
+   "about": ["The workspace you are on is a filled square, workspaces with windows are bright and empty ones are dim. Named workspaces show their short name. Click one to go there."],
+   "settings": {}
+  },
+  "world-clock": {
+   "category": "time",
+   "summary": "The time in other time zones.",
+   "about": ["One line per time zone you list in <code>~/.config/subcult/shell/bar.json</code> (below). It is in the bar from the start but stays hidden until you list a zone. Daylight saving is checked at the top of each hour."],
+   "settings": {"zones": "Time zones such as <code>Asia/Tokyo</code>."},
+   "example": {"zones": ["Asia/Tokyo", "Europe/Berlin"]}
+  }
+ }
+}
