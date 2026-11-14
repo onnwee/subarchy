@@ -110,6 +110,11 @@ PanelWindow { // qmllint disable uncreatable-type
     function prev(): void { sw.step(-1) }
     function commit(): void { sw.commit() }
     function cancel(): void { sw.cancel() }
+    // Whether the switcher is open and the window the shell last saw
+    // focused, so a test can wait for the shell instead of sleeping.
+    function state(): string {
+      return JSON.stringify({ open: sw.index >= 0, recent: sw.history.length > 0 ? sw.history[0] : "" })
+    }
   }
 
   Rectangle {

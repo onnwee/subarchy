@@ -504,6 +504,8 @@ for call in next prev cancel; do
   HOME=$home1 quickshell ipc -p "$shell" call subcult.altswitch "$call" >/dev/null 2>&1 ||
     fail "Alt-Tab IPC call $call failed"
 done
+st=$(HOME=$home1 quickshell ipc -p "$shell" call subcult.altswitch state 2>&1)
+[[ $st == '{"open":false,'* ]] || fail "Alt-Tab state is not closed after cancel: $st"
 
 # The launcher: a desktop entry written after start is found without a
 # restart (the shell creates the user's applications folder, which did not
