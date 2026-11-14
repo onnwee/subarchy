@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# subcult:summary=Install the DisplayLink dock drivers (evdi and the DisplayLink manager)
+# subcult:examples=subcult setup displaylink
+# subcult:requires-sudo=true
+#
+# #196. The installer adds evdi-dkms and displaylink only when a DisplayLink
+# adapter is plugged in during the install, so a dock plugged in later stays
+# dark. This installs them, with the kernel headers DKMS builds evdi
+# against, and enables displaylink.service.
+#
+# --offer is what plugging in a DisplayLink adapter starts (udev rule
+# 90-subarchy-displaylink.rules, user unit subcult-displaylink-offer): when
+# the drivers are missing, a notification whose button opens a terminal
+# running this command.
+set -euo pipefail
+
+die() { echo "subcult setup displaylink: $*" >&2; exit 1; }
+pkgs=(evdi-dkms displaylink linux-zen-headers linux-lts-headers)
+
+if [[ ${1:-} == --offer ]]; then
+  pacman -T "${pkgs[@]:0:2}" >/dev/null && exit 0
+  action=$(notify-send -a Displays -i video-display -t 30000 -A install="Install drivers" -- \
+    "DisplayLink dock plugged in" "Its screens need the evdi and DisplayLink drivers.") || exit 0
+  [[ $action != install ]] || exec xdg-terminal-exec subcult setup displaylink
+  exit 0
+fi
+[[ $# -eq 0 ]] || die "unknown argument '$1'"
+[[ $EUID -ne 0 ]] || die "run it as yourself, not with sudo; it asks for sudo when it needs it"
+
+# pacman -T prints the missing packages and exits 0 if none are.
+if missing=$(pacman -T "${pkgs[@]}"); then
+  echo "The DisplayLink drivers are installed."
+else
+  echo "Installing ${missing//$'\n'/ }..."
+  sudo pacman -S --needed --noconfirm "${pkgs[@]}"
+fi
+sudo systemctl enable --now displaylink.service
+echo "Done. If the dock's screens stay dark, unplug it and plug it in again."

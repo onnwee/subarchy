@@ -83,6 +83,7 @@ smoke: build
 	tools/test/dell-power-test.sh
 	tools/test/migration-faillock-test.sh
 	tools/test/fingerprint-setup-test.sh
+	tools/test/displaylink-setup-test.sh
 	tools/test/migration-taildrop-test.sh
 	tools/test/migration-linecast-test.sh
 	tools/test/migration-hostname-test.sh

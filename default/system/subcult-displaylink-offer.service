@@ -1,0 +1,10 @@
+[Unit]
+Description=Offer the DisplayLink drivers when a DisplayLink adapter is plugged in (#196)
+Documentation=https://git.subcult.tv/subculture-collective/subarchy
+After=graphical-session.target
+# Not for system users: the greeter runs a session as sddm.
+ConditionUser=!@system
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/subcult-setup-displaylink --offer

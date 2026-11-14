@@ -1,0 +1,6 @@
+# Subarchy (#196): a DisplayLink USB graphics adapter (vendor 17e9), such as
+# sputnik's dock, plugged in. The user's session runs
+# `subcult setup displaylink --offer`, which offers to install the drivers
+# when they are missing and does nothing when they are there.
+# Installed to /usr/lib/udev/rules.d/90-subarchy-displaylink.rules.
+ACTION=="add", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTR{idVendor}=="17e9", TAG+="systemd", ENV{SYSTEMD_USER_WANTS}+="subcult-displaylink-offer.service"

@@ -43,6 +43,7 @@ for path in usr/bin/subcult usr/bin/sub usr/bin/tea usr/bin/subcult-docker-sudol
   usr/lib/systemd/user/timers.target.wants/subcult-update-check.timer \
   usr/lib/udev/rules.d/90-subarchy-power.rules usr/bin/subcult-power-auto \
   usr/lib/udev/rules.d/70-subarchy-gpu.rules usr/share/uwsm/env-hyprland.d/50-subarchy-gpu \
+  usr/lib/udev/rules.d/90-subarchy-displaylink.rules usr/lib/systemd/user/subcult-displaylink-offer.service usr/bin/subcult-setup-displaylink \
   usr/bin/subcult-gpu-env usr/bin/subcult-gpu-run usr/bin/subcult-gpu-mode \
   usr/bin/subcult-secureboot-setup usr/bin/subcult-secureboot-status usr/bin/subcult-disk-tpm; do
   grep -qx "$path" <<<"$list" || fail "missing $path"

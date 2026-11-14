@@ -154,6 +154,10 @@ package() {
   # GPU modes on hybrid laptops (ADR 0006).
   install -Dm644 "$sys/gpu.rules" "$pkgdir/usr/lib/udev/rules.d/70-subarchy-gpu.rules"
   install -Dm644 "$sys/uwsm-gpu-env" "$pkgdir/usr/share/uwsm/env-hyprland.d/50-subarchy-gpu"
+  # A DisplayLink dock plugged in without its drivers: the session offers
+  # `subcult setup displaylink` (#196).
+  install -Dm644 "$sys/displaylink.rules" "$pkgdir/usr/lib/udev/rules.d/90-subarchy-displaylink.rules"
+  install -Dm644 "$sys/subcult-displaylink-offer.service" "$pkgdir/usr/lib/systemd/user/subcult-displaylink-offer.service"
 
   # Web apps (ADR 0042, app list): Discord's entry and the Vencord Web
   # extension, installed through Chromium's external extension files.

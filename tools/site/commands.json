@@ -652,6 +652,17 @@
    "dangerous": false
   },
   {
+   "route": "subcult setup displaylink",
+   "group": "setup",
+   "args": "",
+   "summary": "Install the DisplayLink dock drivers (evdi and the DisplayLink manager)",
+   "examples": [
+    "subcult setup displaylink"
+   ],
+   "requires_sudo": true,
+   "dangerous": false
+  },
+  {
    "route": "subcult setup fingerprint",
    "group": "setup",
    "args": "[remove]",
