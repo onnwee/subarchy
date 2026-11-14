@@ -1,0 +1,37 @@
+<!--
+title: Updates and recovery · Subarchy docs
+h1: Updates and recovery
+description: How subcult update works, the stable and edge channels, and undoing a bad update by booting a snapshot.
+-->
+<p class="lede">One command updates everything, and it takes a snapshot first.</p>
+
+<h2 id="update">Update</h2>
+<div class="cmd"><code>subcult update</code></div>
+<p>In order: <strong>takes a [[snapshot]]</strong>, upgrades packages, runs [[migrations]], cleans up.</p>
+<div class="scroll"><table><caption class="sr">Update commands</caption><tbody>
+<tr><th scope="row"><code>subcult update check</code></th><td>Count available updates without installing them</td></tr>
+<tr><th scope="row"><code>subcult update --dry-run</code></th><td>Show what an update would do</td></tr>
+<tr><th scope="row"><code>subcult update migrate --pending</code></th><td>List migrations not yet run</td></tr>
+</tbody></table></div>
+<p class="muted">The bar's updates widget shows the count too.</p>
+
+<h2 id="channels">Channels</h2>
+<p>A [[channel]] decides where packages come from.</p>
+<div class="scroll"><table><caption class="sr">Update channels</caption>
+<thead><tr><th scope="col">Channel</th><th scope="col">Packages from</th><th scope="col">Pick it when</th></tr></thead><tbody>
+<tr><th scope="row"><strong>stable</strong></th><td>A dated [[Arch Linux Archive]] snapshot</td><td>You want every machine on the same, tested package set. <em>New installs start here.</em></td></tr>
+<tr><th scope="row"><strong>edge</strong></th><td>The Arch mirrors, directly</td><td>You want packages the day Arch ships them</td></tr>
+</tbody></table></div>
+<div class="cmd"><code>subcult channel set edge</code></div>
+<p><code>subcult channel</code> shows the current one.</p>
+
+<h2 id="rollback">Undo a bad update</h2>
+<ol class="steps">
+<li><p><strong>Reboot.</strong> The [[Limine]] boot menu lists one entry per [[snapper]] snapshot.</p></li>
+<li><p><strong>Boot the snapshot</strong> taken just before the update. <code>subcult update</code> made it for you.</p></li>
+</ol>
+<div class="callout note"><p class="ct" data-mark="&#9632;">Factory reset</p><p>The installer also leaves a read-only <strong>factory-reset snapshot</strong> of the fresh system.</p></div>
+
+<h2 id="lock">If the shell crashes</h2>
+<blockquote><p>The lock screen is a separate program from the shell. <em>If the shell crashes it restarts, and the session stays locked.</em></p></blockquote>
+<p>Restart the shell yourself with <code>systemctl --user restart subcult-shell</code>.</p>

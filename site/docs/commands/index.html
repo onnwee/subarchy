@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Commands · Subarchy docs</title>
+<meta name="description" content="Every subcult command in Subarchy, grouped: updates, look, apps, hardware and services, with their arguments.">
+<link rel="canonical" href="https://subarchy.subcult.tv/docs/commands/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Commands · Subarchy docs">
+<meta property="og:description" content="Every subcult command in Subarchy, grouped: updates, look, apps, hardware and services, with their arguments.">
+<meta property="og:url" content="https://subarchy.subcult.tv/docs/commands/">
+<meta property="og:image" content="https://subarchy.subcult.tv/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="SUBARCHY in dripping green block letters above the line: An Arch Linux desktop from SUBCULT. In development.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#100B19" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F0ECE4" media="(prefers-color-scheme: light)">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="preload" href="/fonts/DepartureMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/DankMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/DankMono-Bold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/DankMono-Italic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style.css">
+<script>try{var t=localStorage.getItem("subarchy-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><div class="wrap nav">
+<a class="home" href="/" aria-label="Subarchy home"><img class="dark-only" src="/assets/mark-clean-dark.svg" alt="" width="200" height="140"><img class="light-only" src="/assets/mark-clean-light.svg" alt="" width="200" height="140"><span>subarchy</span></a>
+<nav class="links" aria-label="Main"><a href="/docs/">docs</a><a href="/docs/keys/">keys</a><a href="/docs/commands/" aria-current="page">commands</a><a href="https://github.com/subculture-collective/subarchy" target="_blank" rel="noopener">git<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv/support" target="_blank" rel="noopener">support<span class="sr"> (opens in a new tab)</span></a></nav>
+<button type="button" data-theme-toggle hidden>paper</button>
+</div></header>
+<div class="wrap docs">
+<nav class="side" aria-label="Docs"><details class="toc"><summary>Docs pages</summary><ol><li><a href="/docs/">Overview</a></li><li><a href="/docs/install/">Install</a></li><li><a href="/docs/keys/">Keys</a></li><li><a href="/docs/commands/" aria-current="page">Commands</a><ol class="sections"><li><a href="#system">System and updates</a></li><li><a href="#look">Look</a></li><li><a href="#apps">Apps</a></li><li><a href="#hardware">Hardware</a></li><li><a href="#services">Services</a></li></ol></li><li><a href="/docs/shell/">Shell aliases</a></li><li><a href="/docs/look/">Theme and fonts</a></li><li><a href="/docs/updates/">Updates and recovery</a></li><li><a href="/docs/glossary/">Glossary</a></li><li><a href="/docs/developers/">Developers</a></li></ol></details></nav>
+<main id="main">
+<p class="crumbs"><a href="/docs/">Docs</a> / Commands</p>
+<h1>Commands</h1>
+<p class="lede"><code>subcult</code> runs every <code>subcult-*</code> program on the path. <code>sub</code> is the same command, shorter.</p>
+<div class="scroll"><table><caption>Getting around</caption><tbody>
+<tr><th scope="row"><code>subcult commands</code></th><td>List every command, with its arguments</td></tr>
+<tr><th scope="row"><code>sub update</code></th><td>The same as <code>subcult update</code></td></tr>
+<tr><th scope="row"><span class="keys"><kbd>Tab</kbd></span></th><td>Completes commands and arguments in zsh and bash</td></tr>
+<tr><th scope="row"><span class="keys"><kbd>Super</kbd> + <kbd>Space</kbd></span></th><td>The <a class="wl" href="/docs/glossary/#launcher">launcher</a> runs commands too: type one and press <span class="keys"><kbd>Enter</kbd></span></td></tr>
+</tbody></table></div>
+<p>In the tables, <span class="tag">sudo</span> means the command needs <code>sudo</code>, and <span class="tag">asks first</span> means it confirms before it changes anything. <span class="args">[--json]</span> and the like are arguments; square brackets mean optional.</p>
+
+<h2 id="system">System and updates</h2>
+<div class="scroll"><table class="commands"><caption>System and updates commands</caption><thead><tr><th scope="col">Command</th><th scope="col">Does</th></tr></thead><tbody>
+<tr><th scope="row"><code>subcult update</code> <span class="args">[--yes] [--no-snapshot] [--dry-run]</span></th><td>Update the system: snapshot, packages, migrations, cleanup <span class="tag">sudo</span></td></tr>
+<tr><th scope="row"><code>subcult update check</code> <span class="args">[--quiet]</span></th><td>Count available package updates without installing them</td></tr>
+<tr><th scope="row"><code>subcult update migrate</code> <span class="args">[--pending | --mark-all]</span></th><td>Run pending migrations, or list them with --pending</td></tr>
+<tr><th scope="row"><code>subcult channel</code></th><td>Show the update channel: stable (an Arch snapshot) or edge (the mirrors)</td></tr>
+<tr><th scope="row"><code>subcult channel set</code> <span class="args">stable | edge</span></th><td>Switch the update channel <span class="tag">sudo</span></td></tr>
+<tr><th scope="row"><code>subcult system logout</code></th><td>Log out of the session <span class="tag">asks first</span></td></tr>
+<tr><th scope="row"><code>subcult system reboot</code></th><td>Restart the machine <span class="tag">asks first</span></td></tr>
+<tr><th scope="row"><code>subcult system shutdown</code></th><td>Turn the machine off <span class="tag">asks first</span></td></tr>
+<tr><th scope="row"><code>subcult system suspend</code></th><td>Suspend the machine; the session locks first</td></tr>
+<tr><th scope="row"><code>subcult lock</code></th><td>Lock the session with Subarchy&#x27;s lock screen</td></tr>
+<tr><th scope="row"><code>subcult idle</code></th><td>Show when the session locks, the display goes off and the machine suspends</td></tr>
+<tr><th scope="row"><code>subcult idle apply</code></th><td>Apply changed idle settings (restarts the idle service)</td></tr>
+<tr><th scope="row"><code>subcult idle config</code></th><td>Print the hypridle configuration made from the idle settings</td></tr>
+<tr><th scope="row"><code>subcult power auto</code> <span class="args">[--dry-run]</span></th><td>Set the power profile for the current power source</td></tr>
+</tbody></table></div>
+<h2 id="look">Look</h2>
+<div class="scroll"><table class="commands"><caption>Look commands</caption><thead><tr><th scope="col">Command</th><th scope="col">Does</th></tr></thead><tbody>
+<tr><th scope="row"><code>subcult theme apply-system</code> <span class="args">[--dry-run] [--elevate pkexec|sudo]</span></th><td>Apply the user&#x27;s palette to SDDM, Plymouth, Limine and Chromium&#x27;s policy (asks for the password) <span class="tag">sudo</span></td></tr>
+<tr><th scope="row"><code>subcult theme reload</code></th><td>Reload what reads the theme after Pult applied one</td></tr>
+<tr><th scope="row"><code>subcult font check</code> <span class="args">&lt;family&gt;</span></th><td>Check whether a font works in the terminal and shell</td></tr>
+<tr><th scope="row"><code>subcult font current</code></th><td>Show the family behind each font role</td></tr>
+<tr><th scope="row"><code>subcult font import</code> <span class="args">&lt;files...&gt;</span></th><td>Add font files you own for your user</td></tr>
+<tr><th scope="row"><code>subcult font install</code> <span class="args">&lt;name&gt;</span></th><td>Install a curated font or any Nerd Font <span class="tag">sudo</span></td></tr>
+<tr><th scope="row"><code>subcult font list</code> <span class="args">[--all]</span></th><td>List the curated fonts, what is installed and what each role uses</td></tr>
+<tr><th scope="row"><code>subcult font patch</code> <span class="args">&lt;family&gt;</span></th><td>Make a copy of a font with Nerd Font icons <span class="tag">sudo</span></td></tr>
+<tr><th scope="row"><code>subcult font set</code> <span class="args">&lt;family&gt; [--ui|--serif] [--force]</span></th><td>Use a font for the terminal and shell (or --ui, --serif) <span class="tag">sudo</span></td></tr>
+<tr><th scope="row"><code>subcult cursor apply</code></th><td>Rebuild the cursor in the chosen theme colour and apply it</td></tr>
+<tr><th scope="row"><code>subcult cursor set</code> <span class="args">[--role &lt;role&gt;] [--size 24|32|48]</span></th><td>Choose the cursor colour (a palette role) and size</td></tr>
+<tr><th scope="row"><code>subcult display profile apply</code> <span class="args">[&lt;name&gt;] [--dry-run]</span></th><td>Apply a saved layout (the matching one when no name is given)</td></tr>
+<tr><th scope="row"><code>subcult display profile list</code></th><td>List the saved layouts and which one matches the connected monitors</td></tr>
+<tr><th scope="row"><code>subcult display profile remove</code> <span class="args">&lt;name&gt;</span></th><td>Forget a saved layout</td></tr>
+<tr><th scope="row"><code>subcult display profile save</code> <span class="args">&lt;name&gt;</span></th><td>Save the connected monitors&#x27; layout and workspaces under a name</td></tr>
+<tr><th scope="row"><code>subcult display scale</code> <span class="args">&lt;up|down|1..4&gt;</span></th><td>Set the focused display&#x27;s scale, or step up or down through the preset scales</td></tr>
+<tr><th scope="row"><code>subcult screensaver render</code> <span class="args">[--user] [--out DIR] [--palette FILE] [--captures DIR] [--size WxH] [--fps N] [--force]</span></th><td>Render the screensaver loops from the recorded effects in the palette</td></tr>
+</tbody></table></div>
+<h2 id="apps">Apps</h2>
+<div class="scroll"><table class="commands"><caption>Apps commands</caption><thead><tr><th scope="col">Command</th><th scope="col">Does</th></tr></thead><tbody>
+<tr><th scope="row"><code>subcult app ask</code> <span class="args">&lt;question&gt;... | --json</span></th><td>Ask the default agent one question and print its answer; --json names the agent</td></tr>
+<tr><th scope="row"><code>subcult app default</code> <span class="args">[&lt;role&gt; [&lt;id&gt;]] [--dry-run]</span></th><td>Show or set the default app per role</td></tr>
+<tr><th scope="row"><code>subcult app install</code> <span class="args">&lt;id&gt;... [--dry-run]</span></th><td>Install apps from the catalogue <span class="tag">sudo</span></td></tr>
+<tr><th scope="row"><code>subcult app list</code> <span class="args">[--role ROLE] [--json]</span></th><td>List the app catalogue</td></tr>
+<tr><th scope="row"><code>subcult app remove</code> <span class="args">&lt;id&gt;... [--dry-run]</span></th><td>Remove apps installed from the catalogue <span class="tag">sudo</span> <span class="tag">asks first</span></td></tr>
+<tr><th scope="row"><code>subcult app show</code> <span class="args">&lt;id&gt; [--json]</span></th><td>Show one app</td></tr>
+<tr><th scope="row"><code>subcult app validate</code> <span class="args">[file]</span></th><td>Check the system and user catalogue files</td></tr>
+<tr><th scope="row"><code>subcult app webapp</code> <span class="args">install &lt;name&gt; &lt;url&gt; [--icon FILE] | remove &lt;name&gt;</span></th><td>Open a site as an app (a Chromium app window with its own desktop entry)</td></tr>
+<tr><th scope="row"><code>subcult capture recording</code> <span class="args">[--audio]</span></th><td>Start or stop a screen recording to the Videos folder</td></tr>
+<tr><th scope="row"><code>subcult capture screenshot</code> <span class="args">[region|window|output]</span></th><td>Take a screenshot to the Pictures folder and the clipboard</td></tr>
+<tr><th scope="row"><code>subcult clipboard clear</code></th><td>Drop the whole clipboard history</td></tr>
+<tr><th scope="row"><code>subcult clipboard copy</code> <span class="args">&lt;id&gt;</span></th><td>Put a history entry back on the clipboard</td></tr>
+<tr><th scope="row"><code>subcult clipboard list</code> <span class="args">[--json]</span></th><td>List the clipboard history, newest first</td></tr>
+<tr><th scope="row"><code>subcult clipboard remove</code> <span class="args">&lt;id&gt;</span></th><td>Drop one entry from the history</td></tr>
+<tr><th scope="row"><code>subcult clipboard show</code> <span class="args">&lt;id&gt;</span></th><td>Print a text entry, or the file holding an image entry</td></tr>
+<tr><th scope="row"><code>subcult calendar list</code> <span class="args">[--json]</span></th><td>Show the cached events</td></tr>
+<tr><th scope="row"><code>subcult calendar status</code></th><td>Show when the calendars last synced and how each source fared</td></tr>
+<tr><th scope="row"><code>subcult calendar sync</code> <span class="args">[--force]</span></th><td>Sync the configured CalDAV and iCal calendars into the cache</td></tr>
+<tr><th scope="row"><code>subcult agent usage</code> <span class="args">[--json]</span></th><td>Show the coding agents&#x27; token use today and this week, their pace and rate limits</td></tr>
+</tbody></table></div>
+<h2 id="hardware">Hardware</h2>
+<div class="scroll"><table class="commands"><caption>Hardware commands</caption><thead><tr><th scope="col">Command</th><th scope="col">Does</th></tr></thead><tbody>
+<tr><th scope="row"><code>subcult hw apply</code> <span class="args">[--target DIR]</span></th><td>Write the hardware fixes&#x27; files (modprobe, initramfs, kernel command line); the installer runs it on the target <span class="tag">sudo</span></td></tr>
+<tr><th scope="row"><code>subcult hw fixes</code> <span class="args">[--all] [--json]</span></th><td>List the hardware fixes this machine gets (--all: the whole catalogue)</td></tr>
+<tr><th scope="row"><code>subcult hw info</code> <span class="args">[--json]</span></th><td>Show the detected CPU, GPUs, radios, notes and matches</td></tr>
+<tr><th scope="row"><code>subcult hw match</code> <span class="args">&lt;text&gt;</span></th><td>Exit 0 when the product name or family contains the text</td></tr>
+<tr><th scope="row"><code>subcult hw matches</code> <span class="args">[--json]</span></th><td>Answer every hardware question (yes or no)</td></tr>
+<tr><th scope="row"><code>subcult hw packages</code> <span class="args">[--all]</span></th><td>List the firmware, microcode and GPU driver packages this machine needs (--all: every package it could pick)</td></tr>
+<tr><th scope="row"><code>subcult hw services</code></th><td>List the system services the installer enables for this hardware</td></tr>
+<tr><th scope="row"><code>subcult gpu mode</code> <span class="args">[intel|nvidia]</span></th><td>Show or choose the desktop GPU for the next login (hybrid laptops)</td></tr>
+<tr><th scope="row"><code>subcult gpu run</code> <span class="args">&lt;command&gt; [args...]</span></th><td>Run one app on the NVIDIA GPU (PRIME render offload)</td></tr>
+<tr><th scope="row"><code>subcult thermal watch</code> <span class="args">[--timeout &lt;duration&gt;]</span></th><td>Print a JSON line for every trip point crossed, from the kernel&#x27;s events</td></tr>
+<tr><th scope="row"><code>subcult thermal zones</code> <span class="args">[--json]</span></th><td>List the thermal zones and their trip points</td></tr>
+<tr><th scope="row"><code>subcult disk tpm</code> <span class="args">enable | disable | status</span></th><td>Unlock the disk with the TPM instead of typing the passphrase <span class="tag">sudo</span></td></tr>
+<tr><th scope="row"><code>subcult secureboot setup</code></th><td>Turn on Secure Boot with this machine&#x27;s own keys <span class="tag">sudo</span> <span class="tag">asks first</span></td></tr>
+<tr><th scope="row"><code>subcult secureboot status</code></th><td>Show whether Secure Boot is on and boot files are signed</td></tr>
+<tr><th scope="row"><code>subcult setup fingerprint</code> <span class="args">[remove]</span></th><td>Enroll a fingerprint so the lock screen takes a touch, or remove yours <span class="tag">sudo</span></td></tr>
+<tr><th scope="row"><code>subcult dell power</code> <span class="args">probe | state [--json] | set &lt;quiet|cool|balanced|performance&gt; | charging set &lt;adaptive|standard|express|primarily-ac|custom [START STOP]&gt;</span></th><td>Dell firmware power and charging profiles</td></tr>
+<tr><th scope="row"><code>subcult ht3 status</code> <span class="args">&lt;address&gt; [--json]</span></th><td>Show a connected TOZO HT3&#x27;s battery and noise mode</td></tr>
+</tbody></table></div>
+<h2 id="services">Services</h2>
+<div class="scroll"><table class="commands"><caption>Services commands</caption><thead><tr><th scope="col">Command</th><th scope="col">Does</th></tr></thead><tbody>
+<tr><th scope="row"><code>subcult docker sudoless</code></th><td>Let your user run docker without sudo (equal to passwordless root) <span class="tag">sudo</span> <span class="tag">asks first</span></td></tr>
+<tr><th scope="row"><code>subcult docker tui</code></th><td>Open lazydocker with access to the Docker daemon</td></tr>
+<tr><th scope="row"><code>subcult tailscale send</code> <span class="args">[--name NAME] &lt;machine&gt; [file...]</span></th><td>Send files to a machine on your tailnet with Taildrop</td></tr>
+<tr><th scope="row"><code>subcult shell set</code></th><td>Make zsh or bash your login shell</td></tr>
+</tbody></table></div>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="/docs/keys/" rel="prev"><span>Previous</span>Keys</a><a class="next" href="/docs/shell/" rel="next"><span>Next</span>Shell aliases</a></nav>
+<p class="edit"><a href="https://github.com/subculture-collective/subarchy/blob/main/tools/site/pages/docs/commands.html" target="_blank" rel="noopener">Edit this page<span class="sr"> (opens in a new tab)</span></a></p>
+</main>
+</div>
+<footer><div class="wrap">
+<div class="row"><a href="/docs/">Docs</a><a href="/docs/glossary/">Glossary</a><a href="https://github.com/subculture-collective/subarchy" target="_blank" rel="noopener">Source<span class="sr"> (opens in a new tab)</span></a><a href="https://github.com/subculture-collective/subarchy/issues" target="_blank" rel="noopener">Issues<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv/support" target="_blank" rel="noopener">Support SUBCULT<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv" target="_blank" rel="noopener">subcult.tv<span class="sr"> (opens in a new tab)</span></a></div>
+<p>Subarchy is free software under GPL-3.0-or-later. Set in Departure Mono (OFL); the docs text in Dank Mono.</p>
+</div></footer>
+<script src="/app.js" defer></script>
+</body>
+</html>

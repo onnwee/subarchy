@@ -1,0 +1,88 @@
+<!--
+title: Shell aliases · Subarchy docs
+h1: Shell aliases
+description: The aliases, functions and keys Subarchy sets up in zsh and bash: files, folders, git, tmux, coding agents and SSH port forwards.
+-->
+<p class="lede">zsh and bash load the same aliases and functions. <strong>An alias exists only when its tool is installed.</strong> Make zsh or bash your login shell with <code>subcult shell set zsh</code>.</p>
+<div class="callout tip"><p class="ct" data-mark="&#9650;">Your own</p><p>Your <code>~/.zshrc</code> or <code>~/.bashrc</code> loads Subarchy's setup on its first line. Add aliases after it; a later alias with the same name wins.</p></div>
+
+<h2 id="keys">Shell keys</h2>
+<div class="scroll"><table><caption class="sr">Keys in the shell</caption><tbody>
+<tr><th scope="row">{{Ctrl+R}}</th><td>Search history with [[atuin]]</td></tr>
+<tr><th scope="row">{{Up}}</th><td>The shell's own history, one line at a time</td></tr>
+<tr><th scope="row">{{Ctrl+T}}</th><td>Pick a file with [[fzf]] and paste its path</td></tr>
+<tr><th scope="row">{{Alt+C}}</th><td>Pick a folder with fzf and go there</td></tr>
+</tbody></table></div>
+
+<h2 id="files">Files</h2>
+<div class="scroll"><table class="alias"><caption class="sr">File aliases</caption>
+<thead><tr><th scope="col">Type</th><th scope="col">Runs</th><th scope="col">Does</th></tr></thead><tbody>
+<tr><th scope="row"><code>ls</code></th><td><code>eza -lh --group-directories-first --icons=auto</code></td><td>Long list, folders first</td></tr>
+<tr><th scope="row"><code>lsa</code></th><td><code>ls -a</code></td><td>The same with hidden files</td></tr>
+<tr><th scope="row"><code>lt</code></th><td><code>eza --tree --level=2 --long --icons --git</code></td><td>Two levels as a tree, with git status</td></tr>
+<tr><th scope="row"><code>lta</code></th><td><code>lt -a</code></td><td>The tree with hidden files</td></tr>
+<tr><th scope="row"><code>ff</code></th><td><code>fzf</code> with a <code>bat</code> preview</td><td>Pick a file</td></tr>
+<tr><th scope="row"><code>eff</code></th><td><code>$EDITOR "$(ff)"</code></td><td>Pick a file and edit it</td></tr>
+<tr><th scope="row"><code>compress <var>dir</var></code></th><td>function</td><td>Make <code><var>dir</var>.tar.gz</code> beside it</td></tr>
+<tr><th scope="row"><code>decompress</code></th><td><code>tar -xzf</code></td><td>Unpack a <code>.tar.gz</code></td></tr>
+<tr><th scope="row"><code>open <var>file</var></code></th><td>function</td><td>Open with the default app, without tying up the shell</td></tr>
+<tr><th scope="row"><code>n</code></th><td>function</td><td>Neovim on the arguments, or on this folder</td></tr>
+<tr><th scope="row"><code>y</code></th><td>function</td><td>The yazi file manager; the shell follows it to the folder you left in</td></tr>
+<tr><th scope="row"><code>grep</code>, <code>diff</code>, <code>ip</code></th><td><code>--color=auto</code></td><td>The same commands, in colour</td></tr>
+</tbody></table></div>
+
+<h2 id="folders">Folders</h2>
+<div class="scroll"><table class="alias"><caption class="sr">Folder aliases</caption>
+<thead><tr><th scope="col">Type</th><th scope="col">Runs</th><th scope="col">Does</th></tr></thead><tbody>
+<tr><th scope="row"><code>..</code>, <code>...</code>, <code>....</code></th><td><code>cd ..</code> and so on</td><td>Up one, two or three folders</td></tr>
+<tr><th scope="row"><code>cd <var>part</var></code></th><td><code>zd</code> (function)</td><td>A folder here, or else [[zoxide]]'s best match for the name</td></tr>
+</tbody></table></div>
+
+<h2 id="git">Git</h2>
+<div class="scroll"><table class="alias"><caption class="sr">Git aliases</caption>
+<thead><tr><th scope="col">Type</th><th scope="col">Runs</th></tr></thead><tbody>
+<tr><th scope="row"><code>g</code></th><td><code>git</code></td></tr>
+<tr><th scope="row"><code>gst</code></th><td><code>git status -sb</code></td></tr>
+<tr><th scope="row"><code>gdf</code></th><td><code>git diff</code></td></tr>
+<tr><th scope="row"><code>glog</code></th><td><code>git log --oneline --graph --decorate -20</code></td></tr>
+<tr><th scope="row"><code>gco</code></th><td><code>git checkout</code></td></tr>
+<tr><th scope="row"><code>gsw</code></th><td><code>git switch</code></td></tr>
+<tr><th scope="row"><code>gpl</code></th><td><code>git pull</code></td></tr>
+<tr><th scope="row"><code>gps</code></th><td><code>git push</code></td></tr>
+<tr><th scope="row"><code>gcm</code></th><td><code>git commit -m</code></td></tr>
+<tr><th scope="row"><code>gcam</code></th><td><code>git commit -a -m</code></td></tr>
+<tr><th scope="row"><code>gcad</code></th><td><code>git commit -a --amend</code></td></tr>
+<tr><th scope="row"><code>lg</code></th><td><code>lazygit</code></td></tr>
+<tr><th scope="row"><code>ga <var>branch</var></code></th><td>New branch in its own [[worktree]] at <code>../<var>repo</var>--<var>branch</var></code>, and go there</td></tr>
+<tr><th scope="row"><code>gd</code></th><td>From inside a <code>ga</code> worktree: remove it and its branch (asks first)</td></tr>
+</tbody></table></div>
+
+<h2 id="tools">Tools and agents</h2>
+<div class="scroll"><table class="alias"><caption class="sr">Tool aliases</caption>
+<thead><tr><th scope="col">Type</th><th scope="col">Runs</th></tr></thead><tbody>
+<tr><th scope="row"><code>t</code></th><td>Attach to tmux, or start the session <code>Work</code></td></tr>
+<tr><th scope="row"><code>d</code></th><td><code>docker</code></td></tr>
+<tr><th scope="row"><code>lzd</code></th><td>lazydocker, through <code>subcult docker tui</code></td></tr>
+<tr><th scope="row"><code>mup</code></th><td><code>mise up</code></td></tr>
+<tr><th scope="row"><code>c</code></th><td><code>opencode</code></td></tr>
+<tr><th scope="row"><code>cx</code></th><td><code>claude</code></td></tr>
+<tr><th scope="row"><code>cy</code></th><td><code>codex</code></td></tr>
+</tbody></table></div>
+
+<h2 id="tmux">tmux layouts</h2>
+<p>Run these inside tmux.</p>
+<div class="scroll"><table class="alias"><caption class="sr">tmux layout functions</caption>
+<thead><tr><th scope="col">Type</th><th scope="col">Does</th></tr></thead><tbody>
+<tr><th scope="row"><code>tdl <var>agent</var> [<var>agent2</var>]</code></th><td>Editor on the left, the agent (<code>c</code>, <code>cx</code>, <code>cy</code> or any command) on the right, a terminal along the bottom</td></tr>
+<tr><th scope="row"><code>tdlm <var>agent</var> [<var>agent2</var>]</code></th><td>A <code>tdl</code> window for every folder in this one</td></tr>
+<tr><th scope="row"><code>tsl <var>count</var> <var>command</var></code></th><td><var>count</var> tiled panes, each running the command</td></tr>
+</tbody></table></div>
+
+<h2 id="ssh">SSH</h2>
+<div class="scroll"><table class="alias"><caption class="sr">SSH functions</caption>
+<thead><tr><th scope="col">Type</th><th scope="col">Does</th></tr></thead><tbody>
+<tr><th scope="row"><code>fip <var>host</var> <var>port</var>…</code></th><td>Forward local ports to the same ports on the host</td></tr>
+<tr><th scope="row"><code>dip <var>port</var>…</code></th><td>Stop those forwards</td></tr>
+<tr><th scope="row"><code>lip</code></th><td>List the forwards</td></tr>
+<tr><th scope="row"><code>sff <var>destination</var></code></th><td>Pick a file, newest first, and <code>scp</code> it: <code>sff host:/tmp/</code></td></tr>
+</tbody></table></div>

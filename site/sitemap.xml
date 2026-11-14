@@ -2,4 +2,12 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://subarchy.subcult.tv/</loc></url>
   <url><loc>https://subarchy.subcult.tv/docs/</loc></url>
+  <url><loc>https://subarchy.subcult.tv/docs/install/</loc></url>
+  <url><loc>https://subarchy.subcult.tv/docs/keys/</loc></url>
+  <url><loc>https://subarchy.subcult.tv/docs/commands/</loc></url>
+  <url><loc>https://subarchy.subcult.tv/docs/shell/</loc></url>
+  <url><loc>https://subarchy.subcult.tv/docs/look/</loc></url>
+  <url><loc>https://subarchy.subcult.tv/docs/updates/</loc></url>
+  <url><loc>https://subarchy.subcult.tv/docs/glossary/</loc></url>
+  <url><loc>https://subarchy.subcult.tv/docs/developers/</loc></url>
 </urlset>

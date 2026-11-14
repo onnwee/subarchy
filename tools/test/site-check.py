@@ -18,7 +18,7 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 SITE = ROOT / "site"
-PAGES = ["index.html", "docs/index.html", "404.html"]
+PAGES = sorted(str(p.relative_to(SITE)) for p in SITE.rglob("*.html"))
 errors = []
 
 
@@ -113,6 +113,18 @@ for name in PAGES:
         h = base64.b64encode(hashlib.sha256(s.encode()).digest()).decode()
         if h not in csp_hashes:
             errors.append(f"{name}: inline script hash {h} is not in the nginx CSP")
+
+# Omarchy is named once, as the inspiration, on the landing page.
+omarchy = {n: (SITE / n).read_text().count("Omarchy") for n in PAGES}
+if sum(omarchy.values()) > 1 or omarchy.get("index.html", 0) > 1:
+    errors.append(f"Omarchy is named more than once: {omarchy}")
+for name in PAGES:
+    for tag in re.findall(r'<a [^>]*target="_blank"[^>]*>', (SITE / name).read_text()):
+        if 'rel="noopener"' not in tag:
+            errors.append(f"{name}: new-tab link without rel=noopener: {tag}")
+    for tag in re.findall(r'<a href="https?://(?!subarchy\.subcult\.tv)[^"]*"[^>]*>', (SITE / name).read_text()):
+        if 'target="_blank"' not in tag:
+            errors.append(f"{name}: outside link does not open a new tab: {tag}")
 
 for name, p in parsed.items():
     base = (SITE / name).parent

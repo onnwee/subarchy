@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Theme and fonts · Subarchy docs</title>
+<meta name="description" content="Switch Subarchy's theme with Pult, carry it to the login screen and boot menu, set fonts and the cursor, and where your settings live.">
+<link rel="canonical" href="https://subarchy.subcult.tv/docs/look/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Theme and fonts · Subarchy docs">
+<meta property="og:description" content="Switch Subarchy's theme with Pult, carry it to the login screen and boot menu, set fonts and the cursor, and where your settings live.">
+<meta property="og:url" content="https://subarchy.subcult.tv/docs/look/">
+<meta property="og:image" content="https://subarchy.subcult.tv/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="SUBARCHY in dripping green block letters above the line: An Arch Linux desktop from SUBCULT. In development.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#100B19" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F0ECE4" media="(prefers-color-scheme: light)">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="preload" href="/fonts/DepartureMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/DankMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/DankMono-Bold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/DankMono-Italic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style.css">
+<script>try{var t=localStorage.getItem("subarchy-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><div class="wrap nav">
+<a class="home" href="/" aria-label="Subarchy home"><img class="dark-only" src="/assets/mark-clean-dark.svg" alt="" width="200" height="140"><img class="light-only" src="/assets/mark-clean-light.svg" alt="" width="200" height="140"><span>subarchy</span></a>
+<nav class="links" aria-label="Main"><a href="/docs/" aria-current="page">docs</a><a href="/docs/keys/">keys</a><a href="/docs/commands/">commands</a><a href="https://github.com/subculture-collective/subarchy" target="_blank" rel="noopener">git<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv/support" target="_blank" rel="noopener">support<span class="sr"> (opens in a new tab)</span></a></nav>
+<button type="button" data-theme-toggle hidden>paper</button>
+</div></header>
+<div class="wrap docs">
+<nav class="side" aria-label="Docs"><details class="toc"><summary>Docs pages</summary><ol><li><a href="/docs/">Overview</a></li><li><a href="/docs/install/">Install</a></li><li><a href="/docs/keys/">Keys</a></li><li><a href="/docs/commands/">Commands</a></li><li><a href="/docs/shell/">Shell aliases</a></li><li><a href="/docs/look/" aria-current="page">Theme and fonts</a><ol class="sections"><li><a href="#theme">Theme</a></li><li><a href="#fonts">Fonts</a></li><li><a href="#cursor">Cursor</a></li><li><a href="#display">Display</a></li><li><a href="#files">Where settings live</a></li></ol></li><li><a href="/docs/updates/">Updates and recovery</a></li><li><a href="/docs/glossary/">Glossary</a></li><li><a href="/docs/developers/">Developers</a></li></ol></details></nav>
+<main id="main">
+<p class="crumbs"><a href="/docs/">Docs</a> / Theme and fonts</p>
+<h1>Theme and fonts</h1>
+<p class="lede">One <a class="wl" href="/docs/glossary/#palette">palette</a> colours the shell, lock screen, terminal, Neovim, cursor, login screen, boot splash and boot menu.</p>
+
+<h2 id="theme">Theme</h2>
+<p><a class="wl" href="/docs/glossary/#pult">Pult</a> switches themes. It applies the palette to the shell, lock screen, terminal and Neovim straight away. The default theme is <code>subcult-minimal</code>.</p>
+<div class="scroll"><table><caption class="sr">Theme commands</caption><tbody>
+<tr><th scope="row"><code>pult apply <var>name</var></code></th><td>Apply a theme from Pult's catalogue</td></tr>
+<tr><th scope="row"><code>pult tui</code></th><td>Browse and preview themes</td></tr>
+<tr><th scope="row"><code>pult doctor</code></th><td>Name the active theme</td></tr>
+<tr><th scope="row"><code>subcult cursor apply</code></th><td>Redraw the cursor in the new palette</td></tr>
+<tr><th scope="row"><code>subcult theme apply-system</code></th><td>Carry the palette to the login screen, boot splash and boot menu. Asks for your password.</td></tr>
+</tbody></table></div>
+<div class="cmd"><code>pult apply catppuccin-mocha</code></div>
+<p>Back to the default:</p>
+<div class="cmd"><code>pult apply -profile /usr/share/subcult/default/theme/subarchy.toml</code></div>
+<div class="callout note"><p class="ct" data-mark="&#9632;">Why a second command</p><p>The login screen (<a class="wl" href="/docs/glossary/#sddm">SDDM</a>), boot splash (<a class="wl" href="/docs/glossary/#plymouth">Plymouth</a>) and boot menu (<a class="wl" href="/docs/glossary/#limine">Limine</a>) are system files. They change only when you run <code>subcult theme apply-system</code>.</p></div>
+
+<h2 id="fonts">Fonts</h2>
+<p>Three <a class="wl" href="/docs/glossary/#font-roles">font roles</a>: <strong>monospace</strong>, <strong>sans-serif</strong> and <strong>serif</strong>. GTK, Qt, the shell and the terminal all follow them.</p>
+<div class="scroll"><table><caption class="sr">Font commands</caption><tbody>
+<tr><th scope="row"><code>subcult font list</code></th><td>The curated fonts, what is installed, what each role uses</td></tr>
+<tr><th scope="row"><code>subcult font install <var>name</var></code></th><td>Install a curated font or any <a class="wl" href="/docs/glossary/#nerd-font">Nerd Font</a></td></tr>
+<tr><th scope="row"><code>subcult font set <var>family</var></code></th><td>Use it for the terminal and shell; <code>--ui</code> or <code>--serif</code> for the other roles</td></tr>
+<tr><th scope="row"><code>subcult font import <var>files</var></code></th><td>Add font files you own, for your user</td></tr>
+<tr><th scope="row"><code>subcult font current</code></th><td>Show the family behind each role</td></tr>
+</tbody></table></div>
+
+<h2 id="cursor">Cursor</h2>
+<p>Subarchy draws its own cursor in a palette colour.</p>
+<div class="cmd"><code>subcult cursor set --role lavender --size 24</code></div>
+<p>Sizes are 24, 32 and 48. The colour is a <a class="wl" href="/docs/glossary/#palette-role">palette role</a>. Run <code>subcult cursor apply</code> after a theme change.</p>
+
+<h2 id="display">Display</h2>
+<div class="scroll"><table><caption class="sr">Display commands</caption><tbody>
+<tr><th scope="row"><code>subcult display scale up</code></th><td>Also <span class="keys"><kbd>Super</kbd> + <kbd>/</kbd></span>; <code>down</code> is <span class="keys"><kbd>Super</kbd> + <kbd>Alt</kbd> + <kbd>/</kbd></span></td></tr>
+<tr><th scope="row"><code>subcult display profile save <var>name</var></code></th><td>Save the connected monitors' layout and workspaces</td></tr>
+<tr><th scope="row"><code>subcult display profile apply</code></th><td>Apply the saved layout that matches the connected monitors</td></tr>
+</tbody></table></div>
+
+<h2 id="files">Where settings live</h2>
+<div class="scroll"><table><caption class="sr">Settings files</caption>
+<thead><tr><th scope="col">What</th><th scope="col">File</th></tr></thead><tbody>
+<tr><th scope="row">Your settings</th><td><code>~/.config/subcult/</code></td></tr>
+<tr><th scope="row">Palette</th><td><code>~/.config/subcult/theme/palette.json</code>, written by Pult</td></tr>
+<tr><th scope="row">Bar layout</th><td><code>~/.config/subcult/shell/bar.json</code>, merged key by key over <code>/usr/share/subcult/default/shell/bar.json</code></td></tr>
+<tr><th scope="row">Keys and windows</th><td><code>~/.config/hypr/hyprland.lua</code>, on top of the defaults</td></tr>
+<tr><th scope="row">Shell</th><td><code>~/.zshrc</code> or <code>~/.bashrc</code>, after the first line</td></tr>
+</tbody></table></div>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="/docs/shell/" rel="prev"><span>Previous</span>Shell aliases</a><a class="next" href="/docs/updates/" rel="next"><span>Next</span>Updates and recovery</a></nav>
+<p class="edit"><a href="https://github.com/subculture-collective/subarchy/blob/main/tools/site/pages/docs/look.html" target="_blank" rel="noopener">Edit this page<span class="sr"> (opens in a new tab)</span></a></p>
+</main>
+</div>
+<footer><div class="wrap">
+<div class="row"><a href="/docs/">Docs</a><a href="/docs/glossary/">Glossary</a><a href="https://github.com/subculture-collective/subarchy" target="_blank" rel="noopener">Source<span class="sr"> (opens in a new tab)</span></a><a href="https://github.com/subculture-collective/subarchy/issues" target="_blank" rel="noopener">Issues<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv/support" target="_blank" rel="noopener">Support SUBCULT<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv" target="_blank" rel="noopener">subcult.tv<span class="sr"> (opens in a new tab)</span></a></div>
+<p>Subarchy is free software under GPL-3.0-or-later. Set in Departure Mono (OFL); the docs text in Dank Mono.</p>
+</div></footer>
+<script src="/app.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!--
+title: Developers · Subarchy docs
+h1: Developers
+description: Working on Subarchy: repository layout, make targets, rebuilding pinned packages, unattended installs, the shell's keys and IPC, launcher extensions, and contributing.
+-->
+<p class="lede">The depth the other pages leave out. Each section ends at the file to read next; the repository is the full reference.</p>
+
+<h2 id="layout">Repository</h2>
+<p>The top-level folders match the packaged tree in <code>/usr/share</code>, and each has a README.</p>
+<div class="scroll"><table><caption class="sr">Repository folders</caption><tbody>
+<tr><th scope="row"><code>cmd/</code>, <code>internal/</code></th><td>Go commands (<code>subcult</code>, <code>subarchy-setup</code>, <code>subcult-*</code>) and the packages behind them</td></tr>
+<tr><th scope="row"><code>bin/</code></th><td><code>subcult-*</code> shell commands</td></tr>
+<tr><th scope="row"><code>shell/</code>, <code>lock/</code></th><td>The desktop shell and the lock screen, in [[Quickshell]]</td></tr>
+<tr><th scope="row"><code>default/</code></th><td>System defaults: Hyprland, SDDM, Plymouth, theme, shell setup, app catalogue</td></tr>
+<tr><th scope="row"><code>install/</code>, <code>iso/</code></th><td>The installer, package lists and the [[archiso]] profile</td></tr>
+<tr><th scope="row"><code>migrations/</code></th><td>Upgrade [[migrations]]</td></tr>
+<tr><th scope="row"><code>packaging/</code></th><td>PKGBUILDs: <code>subarchy</code>, the keyring, Neovim, pinned [[AUR]] rebuilds</td></tr>
+<tr><th scope="row"><code>tools/</code></th><td>Build, test, ISO, theme and site scripts</td></tr>
+<tr><th scope="row"><code>docs/</code></th><td>Decision records, roadmap and plans, as an Obsidian vault</td></tr>
+</tbody></table></div>
+
+<h2 id="build">Build and test</h2>
+<p>Go (version in <code>go.mod</code>), <code>shellcheck</code> and Python 3:</p>
+<div class="cmd"><code>make verify</code></div>
+<div class="scroll"><table><caption class="sr">Make targets</caption>
+<thead><tr><th scope="col">Target</th><th scope="col">Needs</th><th scope="col">Does</th></tr></thead><tbody>
+<tr><th scope="row"><code>make verify</code></th><td></td><td>gofmt, vet, race tests, build, smoke tests, shellcheck, docs and site checks</td></tr>
+<tr><th scope="row"><code>make build</code></th><td></td><td>Binaries in <code>build/</code></td></tr>
+<tr><th scope="row"><code>make package</code></th><td>Arch Linux</td><td>Builds the <code>subarchy</code> pacman package and checks its contents</td></tr>
+<tr><th scope="row"><code>make shell-test shell-lint</code></th><td><code>quickshell</code>, <code>qt6-declarative</code></td><td>Tests and lints the shell and lock screen</td></tr>
+<tr><th scope="row"><code>make iso</code></th><td><code>archiso</code>, sudo</td><td>The live ISO, into <code>build/iso/</code></td></tr>
+<tr><th scope="row"><code>make iso-test</code></th><td><code>qemu-base</code>, <code>edk2-ovmf</code></td><td>Boots the ISO and checks it over the serial console</td></tr>
+<tr><th scope="row"><code>make install-test</code></th><td>also <code>swtpm</code>, <code>imagemagick</code></td><td>Installs into a VM disk, boots it and checks it</td></tr>
+</tbody></table></div>
+
+<h2 id="packages">Pinned packages</h2>
+<p>The image carries packages Subarchy rebuilds from pinned sources: the Limine packages, Neovim with its plugins, the keyring. On a fresh checkout <code>make iso</code> stops with a line that starts <code>build.sh: not in build/repo:</code> and lists them. Build those in a clean container, then run <code>make iso</code> again:</p>
+<pre><span class="muted" aria-hidden="true">$ </span>packaging/aur/build.sh <var>package</var> &hellip;</pre>
+<p>CI does not rebuild them; it takes them from Subarchy's signed package registry. Read next: <code>tools/iso/build.sh</code>, <code>packaging/aur/build.sh</code>.</p>
+
+<h2 id="unattended">Unattended install</h2>
+<p><code>subarchy-install --config <var>file</var> --yes</code> installs without questions. <strong>It wipes <code>DISK</code></strong>, hence <code>--yes</code>. The config is <code>KEY=value</code> lines:</p>
+<div class="scroll"><table><caption class="sr">Install config keys</caption>
+<thead><tr><th scope="col">Key</th><th scope="col">Value</th></tr></thead><tbody>
+<tr><th scope="row"><code>DISK</code></th><td>Whole disk to wipe, such as <code>/dev/vda</code>. Required.</td></tr>
+<tr><th scope="row"><code>HOSTNAME</code>, <code>USERNAME</code></th><td>Required</td></tr>
+<tr><th scope="row"><code>USER_PASSWORD_FILE</code></th><td>File holding the user's password. Required.</td></tr>
+<tr><th scope="row"><code>LUKS_PASSPHRASE_FILE</code></th><td>File holding the disk passphrase. Required.</td></tr>
+<tr><th scope="row"><code>SUBARCHY_REPO</code></th><td>pacman <code>Server</code> URL for the <code>[subarchy]</code> repository. Required.</td></tr>
+<tr><th scope="row"><code>TIMEZONE</code></th><td>Such as <code>America/Chicago</code>. Default UTC.</td></tr>
+<tr><th scope="row"><code>LOCALE</code>, <code>KEYMAP</code></th><td>Defaults <code>en_US.UTF-8</code> and <code>us</code></td></tr>
+<tr><th scope="row"><code>XKB_LAYOUT</code>, <code>XKB_VARIANT</code></th><td>Desktop keyboard layout and variant. Default <code>us</code>, no variant.</td></tr>
+<tr><th scope="row"><code>OFFLINE</code></th><td><code>1</code> to install from <code>SUBARCHY_REPO</code> alone</td></tr>
+<tr><th scope="row"><code>PACKAGE_CACHE</code></th><td>A pacman cache folder to reuse</td></tr>
+<tr><th scope="row"><code>KERNEL_CMDLINE_EXTRA</code></th><td>Appended to the kernel command line</td></tr>
+<tr><th scope="row"><code>WIFI_SSID</code>, <code>WIFI_PSK_FILE</code></th><td>Wi-Fi the installed system joins; no file for an open network</td></tr>
+</tbody></table></div>
+<p>It makes a GPT disk with a 4 GiB [[ESP]] and a [[LUKS2]] root, [[btrfs]] subvolumes <code>@</code>, <code>@home</code>, <code>@log</code> and <code>@pkg</code>, <code>linux-zen</code> and <code>linux-lts</code> as [[UKI|UKIs]], [[Limine]], [[snapper]] for <code>@</code>, and [[zram]] swap. Read next: the header of <code>install/subarchy-install</code>.</p>
+
+<h2 id="shell">Shell keys and IPC</h2>
+<p>Keys reach the shell as Hyprland global shortcuts with the app id <code>subcult</code>, so a key press starts no process. The names: <code>launcher-toggle</code>, <code>clipboard</code>, <code>alias.<var>name</var></code>, <code>altswitch-next</code>, <code>altswitch-prev</code>, <code>altswitch-commit</code>, <code>brightness-up</code>, <code>brightness-down</code>, <code>capslock</code>.</p>
+<div class="cmd"><code>quickshell ipc -p /usr/share/subcult/shell show</code></div>
+<p>That lists the IPC targets, such as <code>subcult.launcher</code> and <code>subcult.osd</code>. Tests and scripts use them; the key bindings do not. Read next: <code>shell/README.md</code>.</p>
+
+<h2 id="launcher">Extend the launcher</h2>
+<div class="scroll"><table><caption class="sr">Launcher files</caption>
+<thead><tr><th scope="col">File in <code>~/.config/subcult/</code></th><th scope="col">Holds</th></tr></thead><tbody>
+<tr><th scope="row"><code>launcher/favorites.json</code></th><td>The favorites shown for an empty query: <code>{"favorites": [<var>desktop ids</var>]}</code></td></tr>
+<tr><th scope="row"><code>launcher/aliases.json</code></th><td>Short names for any item: <code>{"aliases": {"up": "subcult update"}}</code></td></tr>
+<tr><th scope="row"><code>launcher/quicklinks.json</code></th><td>Web links and searches by keyword; <code>{query}</code> in the URL makes a search</td></tr>
+<tr><th scope="row"><code>launcher/snippets.json</code></th><td>Text the launcher types for you, with <code>{date}</code>, <code>{time}</code>, <code>{clipboard}</code></td></tr>
+<tr><th scope="row"><code>commands/</code></th><td>Executable scripts with a <code>@raycast.title</code> comment. Raycast script commands run unchanged.</td></tr>
+</tbody></table></div>
+<p>Each alias is also a global shortcut. In <code>~/.config/hypr/hyprland.lua</code>:</p>
+<pre>sub.bind("SUPER + ALT + U", "Update", sub.alias("up"))</pre>
+
+<h2 id="contributing">Contributing</h2>
+<ul class="plain">
+<li><strong>Bugs and ideas:</strong> <a href="https://github.com/subculture-collective/subarchy/issues">GitHub issues</a>.</li>
+<li><strong>Code:</strong> a pull request on GitHub against <code>main</code>. CI runs <code>make verify</code>, the package build and the shell tests; all must pass.</li>
+<li><strong>Design choices:</strong> the <a href="https://github.com/subculture-collective/subarchy/blob/main/docs/decisions/decisions-index.md">decision records</a>. Read the relevant one before changing behaviour.</li>
+<li><strong>Security problems:</strong> report them privately through the repository's <a href="https://github.com/subculture-collective/subarchy/security">security tab</a>.</li>
+<li><strong>These pages:</strong> sources in <code>tools/site/pages/</code>; <code>tools/site/build.py</code> writes <code>site/</code>.</li>
+</ul>

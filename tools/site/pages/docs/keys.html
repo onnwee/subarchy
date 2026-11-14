@@ -1,0 +1,92 @@
+<!--
+title: Keys · Subarchy docs
+h1: Keys
+nav: keys
+description: Every default Subarchy key binding in one chart: apps, windows, workspaces, mouse, capture, media and system keys, and the launcher's prefixes.
+-->
+<p class="lede">{{Super}} is the Windows or Command key. The bindings live in <code>default/hypr/bindings.lua</code>; add your own in <code>~/.config/hypr/hyprland.lua</code>.</p>
+
+<div class="charts">
+<section class="chart" aria-labelledby="apps"><h2 id="apps">Apps</h2>
+<table><caption class="sr">App keys</caption><tbody>
+<tr><th scope="row">{{Super+Return}}</th><td>Terminal</td></tr>
+<tr><th scope="row">{{Super+Space}}</th><td>[[Launcher]]</td></tr>
+<tr><th scope="row">{{Super+Shift+B}}</th><td>Browser</td></tr>
+<tr><th scope="row">{{Super+Shift+F}}</th><td>File manager</td></tr>
+<tr><th scope="row">{{Super+Ctrl+V}}</th><td>Clipboard history</td></tr>
+</tbody></table></section>
+
+<section class="chart" aria-labelledby="windows"><h2 id="windows">Windows</h2>
+<table><caption class="sr">Window keys</caption><tbody>
+<tr><th scope="row">{{Super+W}} or {{Super+Q}}</th><td>Close</td></tr>
+<tr><th scope="row">{{Super+F}}</th><td>Full screen</td></tr>
+<tr><th scope="row">{{Super+Alt+F}}</th><td>Full width</td></tr>
+<tr><th scope="row">{{Super+T}}</th><td>Float or tile</td></tr>
+<tr><th scope="row">{{Super+J}}</th><td>Turn the split</td></tr>
+<tr><th scope="row">{{Super+_arrow_}}</th><td>Move focus</td></tr>
+<tr><th scope="row">{{Alt+Tab}}</th><td>Next window, most recent first</td></tr>
+<tr><th scope="row">{{Alt+Shift+Tab}}</th><td>Previous window</td></tr>
+</tbody></table></section>
+
+<section class="chart" aria-labelledby="workspaces"><h2 id="workspaces">Workspaces</h2>
+<table><caption class="sr">Workspace keys</caption><tbody>
+<tr><th scope="row">{{Super+1}} to {{Super+0}}</th><td>Go to workspace 1 to 10</td></tr>
+<tr><th scope="row">{{Super+Shift+1}} to {{Super+Shift+0}}</th><td>Move the window there</td></tr>
+<tr><th scope="row">{{Super+S}}</th><td>Show or hide the [[scratchpad]]</td></tr>
+</tbody></table></section>
+
+<section class="chart" aria-labelledby="mouse"><h2 id="mouse">Mouse</h2>
+<table><caption class="sr">Mouse bindings</caption><tbody>
+<tr><th scope="row">{{Super+_left drag_}}</th><td>Move a window</td></tr>
+<tr><th scope="row">{{Super+_right drag_}}</th><td>Resize a window</td></tr>
+</tbody></table></section>
+
+<section class="chart" aria-labelledby="capture"><h2 id="capture">Capture</h2>
+<table><caption class="sr">Screenshot and recording keys</caption><tbody>
+<tr><th scope="row">{{Print}}</th><td>Screenshot: drag a region, or click a window or display</td></tr>
+<tr><th scope="row">{{Shift+Print}}</th><td>Screenshot of a window</td></tr>
+<tr><th scope="row">{{Ctrl+Print}}</th><td>Screenshot of the display</td></tr>
+<tr><th scope="row">{{Alt+Print}}</th><td>Start or stop a screen recording</td></tr>
+<tr><th scope="row">{{Alt+Shift+Print}}</th><td>The same, with desktop and microphone audio</td></tr>
+</tbody></table>
+<p class="muted small">Screenshots go to Pictures and the clipboard; click the notification to annotate. Recordings go to Videos.</p></section>
+
+<section class="chart" aria-labelledby="system"><h2 id="system">System</h2>
+<table><caption class="sr">System keys</caption><tbody>
+<tr><th scope="row">{{Power}}</th><td>Lock. Holding it still powers off.</td></tr>
+<tr><th scope="row">{{Super+Shift+Esc}}</th><td>Log out</td></tr>
+<tr><th scope="row">{{Super+/}}</th><td>Display scale up</td></tr>
+<tr><th scope="row">{{Super+Alt+/}}</th><td>Display scale down</td></tr>
+<tr><th scope="row">Closing the lid</th><td>Handled by <code>subcult display</code></td></tr>
+</tbody></table></section>
+
+<section class="chart" aria-labelledby="media"><h2 id="media">Media</h2>
+<table><caption class="sr">Media keys</caption><tbody>
+<tr><th scope="row">Volume keys</th><td>Up and down 5 %, with the [[OSD]]</td></tr>
+<tr><th scope="row">Mute keys</th><td>Speaker or microphone</td></tr>
+<tr><th scope="row">Brightness keys</th><td>Up and down, with the OSD</td></tr>
+<tr><th scope="row">{{Caps Lock}}</th><td>Shows its new state in the OSD</td></tr>
+</tbody></table>
+<p class="muted small">These work at the lock screen too.</p></section>
+</div>
+
+<h2 id="launcher">Launcher prefixes</h2>
+<p>Open the [[launcher]] with {{Super+Space}} and start the query with one of these. A plain query searches apps and <code>subcult</code> commands.</p>
+<div class="scroll"><table><caption class="sr">Launcher prefixes</caption>
+<thead><tr><th scope="col">Type</th><th scope="col">Finds</th><th scope="col">{{Enter}}</th></tr></thead><tbody>
+<tr><th scope="row"><code>=</code></th><td>Calculator. Math in a plain query is answered too.</td><td>Copies the answer</td></tr>
+<tr><th scope="row"><code>@</code></th><td>Web search and quicklinks: <code>@yt cats</code>, <code>@gh subarchy</code></td><td>Opens the browser</td></tr>
+<tr><th scope="row"><code>.</code></th><td>Files and folders under your home folder</td><td>Opens the pick</td></tr>
+<tr><th scope="row"><code>:</code></th><td>Emoji and symbols</td><td>Copies the pick</td></tr>
+<tr><th scope="row"><code>$</code></th><td>Clipboard history, also {{Super+Ctrl+V}}</td><td>Puts it back on the clipboard</td></tr>
+</tbody></table></div>
+<ul class="plain">
+<li>A command with words after it passes them on: <code>font set Iosevka</code>.</li>
+<li>Commands that change something important ask first: {{Enter}} runs, {{Esc}} goes back.</li>
+<li>The last row of a search asks the default AI agent. <em>That row sends your text off the machine</em>, and says so.</li>
+</ul>
+
+<h2 id="custom">Add your own</h2>
+<p>Bind keys in <code>~/.config/hypr/hyprland.lua</code>, which [[Hyprland]] reads on top of the defaults:</p>
+<pre>sub.bind("SUPER + ALT + U", "Update", "subcult update")</pre>
+<p>Launcher aliases can have keys too. See [[developers#launcher]].</p>

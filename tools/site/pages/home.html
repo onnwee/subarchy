@@ -1,0 +1,61 @@
+<!--
+title: Subarchy: an Arch Linux desktop from SUBCULT
+description: Subarchy is an Arch Linux desktop distribution from SUBCULT: Hyprland, its own shell and lock screen, one palette, and one command to run it. In development, no release yet.
+-->
+<main id="main">
+<div class="wrap hero">
+<a class="note" href="#status">No release yet. The ISO builds in CI and it runs on one laptop &rarr;</a>
+<div class="word"><img class="dark-only" src="/assets/wordmark-dark.svg" alt="SUBARCHY" width="780" height="200"><img class="light-only" src="/assets/wordmark-light.svg" alt="SUBARCHY" width="780" height="200"></div>
+<h1>An Arch Linux desktop where the whole system answers to one command.</h1>
+<p>Subarchy runs Hyprland with <strong>its own shell, lock screen and theme</strong>. Built from scratch by SUBCULT, <em>inspired by Omarchy</em>.</p>
+<div class="acts"><a class="btn pri" href="#install">Try it in a VM</a><a class="btn" href="/docs/">Read the docs</a></div>
+</div>
+<section><div class="wrap sec"><header><div class="n">01</div><h2>What it is</h2></header><div class="body"><p>A desktop distribution on Arch Linux. You install it from a live ISO with a guided installer, and from then on you manage it with <strong>one command</strong>, <code>subcult</code>: updates, themes, fonts, displays, hardware fixes.</p>
+<p>The look is deliberate and <em>cheap to run</em>: no gaps, one-pixel borders, square corners, and <strong>no blur, shadows or animations</strong>. On battery the shell slows its own polling; on mains nothing is held back.</p>
+<div class="scroll"><table><caption>Fig. 1. What the installer puts on the disk</caption>
+<tbody>
+<tr><th scope="row">Compositor</th><td>Hyprland, started under uwsm</td></tr>
+<tr><th scope="row">Shell</th><td>Subarchy's own, written in Quickshell</td></tr>
+<tr><th scope="row">Lock screen</th><td>A separate program, so a shell crash cannot unlock the session</td></tr>
+<tr><th scope="row">Disk</th><td>GPT, a FAT32 ESP and a LUKS2 root; btrfs subvolumes with zstd compression</td></tr>
+<tr><th scope="row">Boot</th><td>Limine, with one entry per snapper snapshot and a read-only factory-reset snapshot</td></tr>
+<tr><th scope="row">Kernel</th><td>One unified kernel image per kernel</td></tr>
+<tr><th scope="row">Also</th><td>zram swap, ufw, AppArmor, systemd-resolved with DNS over TLS, PipeWire, SDDM</td></tr>
+</tbody></table></div></div></div></section>
+<section><div class="wrap sec"><header><div class="n">02</div><h2>The desktop</h2></header><div class="body"><p>The bar, notifications, on-screen display, polkit dialog, Alt-Tab switcher and launcher are one Quickshell program. Widgets update <strong>on events</strong>, not on a timer where they can avoid it.</p>
+<ul class="tags" aria-label="Some of the 27 widgets in the source"><li>workspaces</li><li>audio</li><li>network</li><li>bluetooth</li><li>battery</li><li>calendar</li><li>weather</li><li>media</li><li>tray</li><li>updates</li><li>clock</li><li>notifications</li><li>tailscale</li><li>downloads</li></ul>
+<p class="muted small">Fourteen of the 27 widget folders in <code>shell/widgets</code>. Some panels and launcher features are still open on the roadmap.</p>
+<p><strong>One palette colours eight places</strong>: the shell, the lock screen, the terminal, Neovim, the cursor, the login screen, the boot splash and the boot menu. <a href="https://pult.subcult.tv">Pult</a> applies it to the first four. The cursor follows with <code>subcult cursor apply</code>, and the last three, which are system files, with <code>subcult theme apply-system</code>.</p></div></div></section>
+<section><div class="wrap sec"><header><div class="n">03</div><h2>One command</h2></header><div class="body"><p>Every tool is a <code>subcult-*</code> program on the path, and <code>subcult</code> finds them. <code>sub</code> is the short form. These lines come from the summaries in the source.</p>
+<div class="cmds">
+<div><div class="cmd"><code>subcult update</code></div><p>Takes a snapshot, upgrades packages, runs migrations and cleans up.</p></div>
+<div><div class="cmd"><code>subcult theme apply-system</code></div><p>Carries the palette to the login screen, boot splash and boot menu. Themes themselves are switched with <code>pult apply</code>.</p></div>
+<div><div class="cmd"><code>subcult channel set edge</code></div><p>Follows the Arch mirrors directly. A new system follows the stable channel, a dated Arch Linux Archive snapshot.</p></div>
+<div><div class="cmd"><code>sudo subcult disk tpm enable</code></div><p>Unlocks the disk with the TPM instead of a typed passphrase.</p></div>
+<div><div class="cmd"><code>subcult gpu run steam</code></div><p>Runs one app on the NVIDIA GPU of a hybrid laptop.</p></div>
+<div><div class="cmd"><code>subcult commands</code></div><p>Lists every command.</p></div>
+</div></div></div></section>
+<section id="install"><div class="wrap sec"><header><div class="n">04</div><h2>Try it</h2></header><div class="body"><p>There is no published image. To try Subarchy, build the ISO and install it into a virtual machine. On Arch Linux, with <code>archiso</code>, Go and Docker installed:</p>
+<div class="cmd"><code>git clone https://github.com/subculture-collective/subarchy.git &amp;&amp; cd subarchy</code></div>
+<div class="cmd"><code>make iso</code></div>
+<p class="muted small">The first run stops and names the packages Subarchy rebuilds itself. Build them with <code>packaging/aur/build.sh</code> and the names it printed, then run <code>make iso</code> again. [[install#build|Details in the docs.]]</p>
+<p>Or let the test harness build a VM disk, install into it and boot the result. This needs <code>qemu-base</code>, <code>edk2-ovmf</code>, <code>swtpm</code> and <code>imagemagick</code>:</p>
+<div class="cmd"><code>make install-test</code></div>
+<div class="callout warning"><p class="ct" data-mark="&#9888;">Warning</p><p><strong>The installer wipes the disk you choose.</strong> It asks last and the default answer is no. Do not point it at a disk you need.</p></div>
+<p>The installer asks for a language, keyboard layout, Wi-Fi network, disk, computer name, user, password, disk passphrase and time zone. It can install <strong>with no network</strong>, from the package repository on the image. [[install#installer|More in the docs.]]</p></div></div></section>
+<section id="status"><div class="wrap sec"><header><div class="n">05</div><h2>Where it stands</h2></header><div class="body"><div class="scroll"><table><caption>Fig. 2. Checked and not checked</caption>
+<thead><tr><th scope="col">Claim</th><th scope="col">State</th></tr></thead>
+<tbody>
+<tr><td>The live ISO builds</td><td>In CI</td></tr>
+<tr><td>The ISO boots</td><td>In a virtual machine</td></tr>
+<tr><td>It installs to an encrypted disk</td><td>In a virtual machine, from that image</td></tr>
+<tr><td>It runs on real hardware</td><td>One laptop</td></tr>
+<tr><td>Hardware fixes for other machines</td><td>Mostly untested on real machines</td></tr>
+<tr><td>A release or a downloadable image</td><td><strong>None yet</strong></td></tr>
+</tbody></table></div>
+<p>Platform: x86_64 with UEFI. The <a href="https://github.com/subculture-collective/subarchy/blob/main/docs/roadmap.md">roadmap</a> lists what is open.</p></div></div></section>
+<section><div class="wrap"><div class="support">
+<p>Subarchy is built by SUBCULT, a small studio. If you want to put money toward its work, the studio has a support page. Support goes to SUBCULT, not to this project alone.</p>
+<a class="btn" href="https://subcult.tv/support">Support SUBCULT</a>
+</div></div></section>
+</main>

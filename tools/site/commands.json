@@ -1,0 +1,814 @@
+{
+ "_source": "subcult commands --json; refresh with make site-commands",
+ "commands": [
+  {
+   "route": "subcult agent usage",
+   "group": "agent",
+   "args": "[--json]",
+   "summary": "Show the coding agents' token use today and this week, their pace and rate limits",
+   "examples": [
+    "subcult agent usage",
+    "subcult agent usage --json"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult app ask",
+   "group": "app",
+   "args": "<question>... | --json",
+   "summary": "Ask the default agent one question and print its answer; --json names the agent",
+   "examples": [
+    "subcult app ask what does zram do",
+    "subcult app ask --json"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult app default",
+   "group": "app",
+   "args": "[<role> [<id>]] [--dry-run]",
+   "summary": "Show or set the default app per role",
+   "examples": [
+    "subcult app default",
+    "subcult app default browser",
+    "subcult app default browser chromium"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult app install",
+   "group": "app",
+   "args": "<id>... [--dry-run]",
+   "summary": "Install apps from the catalogue",
+   "examples": [
+    "subcult app install steam lutris",
+    "subcult app install freecad --dry-run"
+   ],
+   "requires_sudo": true,
+   "dangerous": false
+  },
+  {
+   "route": "subcult app list",
+   "group": "app",
+   "args": "[--role ROLE] [--json]",
+   "summary": "List the app catalogue",
+   "examples": [
+    "subcult app list",
+    "subcult app list --role browser"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult app remove",
+   "group": "app",
+   "args": "<id>... [--dry-run]",
+   "summary": "Remove apps installed from the catalogue",
+   "examples": [
+    "subcult app remove steam"
+   ],
+   "requires_sudo": true,
+   "dangerous": true
+  },
+  {
+   "route": "subcult app show",
+   "group": "app",
+   "args": "<id> [--json]",
+   "summary": "Show one app",
+   "examples": [
+    "subcult app show vlc"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult app validate",
+   "group": "app",
+   "args": "[file]",
+   "summary": "Check the system and user catalogue files",
+   "examples": null,
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult app webapp",
+   "group": "app",
+   "args": "install <name> <url> [--icon FILE] | remove <name>",
+   "summary": "Open a site as an app (a Chromium app window with its own desktop entry)",
+   "examples": [
+    "subcult app webapp install \"Google Maps\" maps.google.com",
+    "subcult app webapp remove \"Google Maps\""
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult calendar list",
+   "group": "calendar",
+   "args": "[--json]",
+   "summary": "Show the cached events",
+   "examples": [
+    "subcult calendar list"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult calendar status",
+   "group": "calendar",
+   "args": "",
+   "summary": "Show when the calendars last synced and how each source fared",
+   "examples": [
+    "subcult calendar status"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult calendar sync",
+   "group": "calendar",
+   "args": "[--force]",
+   "summary": "Sync the configured CalDAV and iCal calendars into the cache",
+   "examples": [
+    "subcult calendar sync",
+    "subcult calendar sync --force"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult capture recording",
+   "group": "capture",
+   "args": "[--audio]",
+   "summary": "Start or stop a screen recording to the Videos folder",
+   "examples": [
+    "subcult capture recording",
+    "subcult capture recording --audio"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult capture screenshot",
+   "group": "capture",
+   "args": "[region|window|output]",
+   "summary": "Take a screenshot to the Pictures folder and the clipboard",
+   "examples": [
+    "subcult capture screenshot",
+    "subcult capture screenshot output"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult channel",
+   "group": "channel",
+   "args": "",
+   "summary": "Show the update channel: stable (an Arch snapshot) or edge (the mirrors)",
+   "examples": [
+    "subcult channel"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult channel set",
+   "group": "channel",
+   "args": "stable | edge",
+   "summary": "Switch the update channel",
+   "examples": [
+    "subcult channel set edge",
+    "subcult channel set stable"
+   ],
+   "requires_sudo": true,
+   "dangerous": false
+  },
+  {
+   "route": "subcult clipboard clear",
+   "group": "clipboard",
+   "args": "",
+   "summary": "Drop the whole clipboard history",
+   "examples": [
+    "subcult clipboard clear"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult clipboard copy",
+   "group": "clipboard",
+   "args": "<id>",
+   "summary": "Put a history entry back on the clipboard",
+   "examples": [
+    "subcult clipboard copy 3f2a9c1e5b7d0a4c"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult clipboard list",
+   "group": "clipboard",
+   "args": "[--json]",
+   "summary": "List the clipboard history, newest first",
+   "examples": [
+    "subcult clipboard list",
+    "subcult clipboard list --json"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult clipboard remove",
+   "group": "clipboard",
+   "args": "<id>",
+   "summary": "Drop one entry from the history",
+   "examples": null,
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult clipboard show",
+   "group": "clipboard",
+   "args": "<id>",
+   "summary": "Print a text entry, or the file holding an image entry",
+   "examples": null,
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult cursor apply",
+   "group": "cursor",
+   "args": "",
+   "summary": "Rebuild the cursor in the chosen theme colour and apply it",
+   "examples": [
+    "subcult cursor apply"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult cursor set",
+   "group": "cursor",
+   "args": "[--role <role>] [--size 24|32|48]",
+   "summary": "Choose the cursor colour (a palette role) and size",
+   "examples": [
+    "subcult cursor set --role green",
+    "subcult cursor set --size 32"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult dell power",
+   "group": "dell",
+   "args": "probe | state [--json] | set <quiet|cool|balanced|performance> | charging set <adaptive|standard|express|primarily-ac|custom [START STOP]>",
+   "summary": "Dell firmware power and charging profiles",
+   "examples": [
+    "subcult dell power state",
+    "subcult dell power set quiet",
+    "subcult dell power charging set custom 60 80"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult disk tpm",
+   "group": "disk",
+   "args": "enable | disable | status",
+   "summary": "Unlock the disk with the TPM instead of typing the passphrase",
+   "examples": [
+    "sudo subcult disk tpm enable",
+    "sudo subcult disk tpm status"
+   ],
+   "requires_sudo": true,
+   "dangerous": false
+  },
+  {
+   "route": "subcult display profile apply",
+   "group": "display",
+   "args": "[<name>] [--dry-run]",
+   "summary": "Apply a saved layout (the matching one when no name is given)",
+   "examples": [
+    "subcult display profile apply home-dock",
+    "subcult display profile apply --dry-run"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult display profile list",
+   "group": "display",
+   "args": "",
+   "summary": "List the saved layouts and which one matches the connected monitors",
+   "examples": [
+    "subcult display profile list"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult display profile remove",
+   "group": "display",
+   "args": "<name>",
+   "summary": "Forget a saved layout",
+   "examples": [
+    "subcult display profile remove home-dock"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult display profile save",
+   "group": "display",
+   "args": "<name>",
+   "summary": "Save the connected monitors' layout and workspaces under a name",
+   "examples": [
+    "subcult display profile save home-dock"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult display scale",
+   "group": "display",
+   "args": "<up|down|1..4>",
+   "summary": "Set the focused display's scale, or step through Omarchy's presets",
+   "examples": [
+    "subcult display scale up",
+    "subcult display scale 1.6"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult docker sudoless",
+   "group": "docker",
+   "args": "",
+   "summary": "Let your user run docker without sudo (equal to passwordless root)",
+   "examples": [
+    "sudo subcult docker sudoless"
+   ],
+   "requires_sudo": true,
+   "dangerous": true
+  },
+  {
+   "route": "subcult docker tui",
+   "group": "docker",
+   "args": "",
+   "summary": "Open lazydocker with access to the Docker daemon",
+   "examples": [
+    "subcult docker tui"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult font check",
+   "group": "font",
+   "args": "<family>",
+   "summary": "Check whether a font works in the terminal and shell",
+   "examples": [
+    "subcult font check \"Dank Mono\""
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult font current",
+   "group": "font",
+   "args": "",
+   "summary": "Show the family behind each font role",
+   "examples": [
+    "subcult font current"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult font import",
+   "group": "font",
+   "args": "<files...>",
+   "summary": "Add font files you own for your user",
+   "examples": [
+    "subcult font import ~/Downloads/DankMono/*.otf"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult font install",
+   "group": "font",
+   "args": "<name>",
+   "summary": "Install a curated font or any Nerd Font",
+   "examples": [
+    "subcult font install FiraCode",
+    "subcult font install UbuntuSans"
+   ],
+   "requires_sudo": true,
+   "dangerous": false
+  },
+  {
+   "route": "subcult font list",
+   "group": "font",
+   "args": "[--all]",
+   "summary": "List the curated fonts, what is installed and what each role uses",
+   "examples": [
+    "subcult font list",
+    "subcult font list --all"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult font patch",
+   "group": "font",
+   "args": "<family>",
+   "summary": "Make a copy of a font with Nerd Font icons",
+   "examples": [
+    "subcult font patch \"Dank Mono\""
+   ],
+   "requires_sudo": true,
+   "dangerous": false
+  },
+  {
+   "route": "subcult font set",
+   "group": "font",
+   "args": "<family> [--ui|--serif] [--force]",
+   "summary": "Use a font for the terminal and shell (or --ui, --serif)",
+   "examples": [
+    "subcult font set \"SpaceMono Nerd Font\"",
+    "subcult font set --serif \"Source Serif 4\""
+   ],
+   "requires_sudo": true,
+   "dangerous": false
+  },
+  {
+   "route": "subcult gpu mode",
+   "group": "gpu",
+   "args": "[intel|nvidia]",
+   "summary": "Show or choose the desktop GPU for the next login (hybrid laptops)",
+   "examples": [
+    "subcult gpu mode",
+    "subcult gpu mode nvidia"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult gpu run",
+   "group": "gpu",
+   "args": "<command> [args...]",
+   "summary": "Run one app on the NVIDIA GPU (PRIME render offload)",
+   "examples": [
+    "subcult gpu run steam",
+    "subcult gpu run mpv --hwdec=nvdec video.mp4"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult ht3 status",
+   "group": "ht3",
+   "args": "<address> [--json]",
+   "summary": "Show a connected TOZO HT3's battery and noise mode",
+   "examples": [
+    "subcult ht3 status AA:BB:CC:DD:EE:FF"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult hw apply",
+   "group": "hw",
+   "args": "[--target DIR]",
+   "summary": "Write the hardware fixes' files (modprobe, initramfs, kernel command line); the installer runs it on the target",
+   "examples": [
+    "sudo subcult hw apply",
+    "subcult hw apply --target /mnt"
+   ],
+   "requires_sudo": true,
+   "dangerous": false
+  },
+  {
+   "route": "subcult hw fixes",
+   "group": "hw",
+   "args": "[--all] [--json]",
+   "summary": "List the hardware fixes this machine gets (--all: the whole catalogue)",
+   "examples": [
+    "subcult hw fixes",
+    "subcult hw fixes --all --json"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult hw info",
+   "group": "hw",
+   "args": "[--json]",
+   "summary": "Show the detected CPU, GPUs, radios, notes and matches",
+   "examples": [
+    "subcult hw info",
+    "subcult hw info --json"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult hw match",
+   "group": "hw",
+   "args": "<text>",
+   "summary": "Exit 0 when the product name or family contains the text",
+   "examples": [
+    "subcult hw match XPS"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult hw matches",
+   "group": "hw",
+   "args": "[--json]",
+   "summary": "Answer every hardware question (yes or no)",
+   "examples": [
+    "subcult hw matches"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult hw packages",
+   "group": "hw",
+   "args": "[--all]",
+   "summary": "List the firmware, microcode and GPU driver packages this machine needs (--all: every package it could pick)",
+   "examples": [
+    "subcult hw packages",
+    "subcult hw packages --all"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult hw services",
+   "group": "hw",
+   "args": "",
+   "summary": "List the system services the installer enables for this hardware",
+   "examples": [
+    "subcult hw services"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult idle",
+   "group": "idle",
+   "args": "",
+   "summary": "Show when the session locks, the display goes off and the machine suspends",
+   "examples": [
+    "subcult idle"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult idle apply",
+   "group": "idle",
+   "args": "",
+   "summary": "Apply changed idle settings (restarts the idle service)",
+   "examples": [
+    "subcult idle apply"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult idle config",
+   "group": "idle",
+   "args": "",
+   "summary": "Print the hypridle configuration made from the idle settings",
+   "examples": [
+    "subcult idle config"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult lock",
+   "group": "lock",
+   "args": "",
+   "summary": "Lock the session with Subarchy's lock screen",
+   "examples": [
+    "subcult lock"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult power auto",
+   "group": "power",
+   "args": "[--dry-run]",
+   "summary": "Set the power profile for the current power source",
+   "examples": [
+    "subcult power auto",
+    "subcult power auto --dry-run"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult screensaver render",
+   "group": "screensaver",
+   "args": "[--user] [--out DIR] [--palette FILE] [--captures DIR] [--size WxH] [--fps N] [--force]",
+   "summary": "Render the screensaver loops from the recorded effects in the palette",
+   "examples": [
+    "subcult screensaver render --user",
+    "subcult screensaver render --out build/screensaver --palette default/theme/palette.json"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult secureboot setup",
+   "group": "secureboot",
+   "args": "",
+   "summary": "Turn on Secure Boot with this machine's own keys",
+   "examples": [
+    "sudo subcult secureboot setup"
+   ],
+   "requires_sudo": true,
+   "dangerous": true
+  },
+  {
+   "route": "subcult secureboot status",
+   "group": "secureboot",
+   "args": "",
+   "summary": "Show whether Secure Boot is on and boot files are signed",
+   "examples": [
+    "subcult secureboot status"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult setup fingerprint",
+   "group": "setup",
+   "args": "[remove]",
+   "summary": "Enroll a fingerprint so the lock screen takes a touch, or remove yours",
+   "examples": [
+    "subcult setup fingerprint",
+    "subcult setup fingerprint remove"
+   ],
+   "requires_sudo": true,
+   "dangerous": false
+  },
+  {
+   "route": "subcult shell set",
+   "group": "shell",
+   "args": "",
+   "summary": "Make zsh or bash your login shell",
+   "examples": [
+    "subcult shell set zsh"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult system logout",
+   "group": "system",
+   "args": "",
+   "summary": "Log out of the session",
+   "examples": [
+    "subcult system logout"
+   ],
+   "requires_sudo": false,
+   "dangerous": true
+  },
+  {
+   "route": "subcult system reboot",
+   "group": "system",
+   "args": "",
+   "summary": "Restart the machine",
+   "examples": [
+    "subcult system reboot"
+   ],
+   "requires_sudo": false,
+   "dangerous": true
+  },
+  {
+   "route": "subcult system shutdown",
+   "group": "system",
+   "args": "",
+   "summary": "Turn the machine off",
+   "examples": [
+    "subcult system shutdown"
+   ],
+   "requires_sudo": false,
+   "dangerous": true
+  },
+  {
+   "route": "subcult system suspend",
+   "group": "system",
+   "args": "",
+   "summary": "Suspend the machine; the session locks first",
+   "examples": [
+    "subcult system suspend"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult tailscale send",
+   "group": "tailscale",
+   "args": "[--name NAME] <machine> [file...]",
+   "summary": "Send files to a machine on your tailnet with Taildrop",
+   "examples": [
+    "subcult tailscale send kvant",
+    "subcult tailscale send kvant ~/notes.pdf"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult theme apply-system",
+   "group": "theme",
+   "args": "[--dry-run] [--elevate pkexec|sudo]",
+   "summary": "Apply the user's palette to SDDM, Plymouth, Limine and Chromium's policy (asks for the password)",
+   "examples": [
+    "subcult theme apply-system",
+    "subcult theme apply-system --dry-run"
+   ],
+   "requires_sudo": true,
+   "dangerous": false
+  },
+  {
+   "route": "subcult theme reload",
+   "group": "theme",
+   "args": "",
+   "summary": "Reload what reads the theme after Pult applied one",
+   "examples": [
+    "subcult theme reload"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult thermal watch",
+   "group": "thermal",
+   "args": "[--timeout <duration>]",
+   "summary": "Print a JSON line for every trip point crossed, from the kernel's events",
+   "examples": [
+    "subcult thermal watch",
+    "subcult thermal watch --timeout 30s"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult thermal zones",
+   "group": "thermal",
+   "args": "[--json]",
+   "summary": "List the thermal zones and their trip points",
+   "examples": [
+    "subcult thermal zones"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult update",
+   "group": "update",
+   "args": "[--yes] [--no-snapshot] [--dry-run]",
+   "summary": "Update the system: snapshot, packages, migrations, cleanup",
+   "examples": [
+    "subcult update",
+    "subcult update --dry-run"
+   ],
+   "requires_sudo": true,
+   "dangerous": false
+  },
+  {
+   "route": "subcult update check",
+   "group": "update",
+   "args": "[--quiet]",
+   "summary": "Count available package updates without installing them",
+   "examples": [
+    "subcult update check"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult update migrate",
+   "group": "update",
+   "args": "[--pending | --mark-all]",
+   "summary": "Run pending migrations, or list them with --pending",
+   "examples": [
+    "subcult update migrate --pending"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  }
+ ]
+}

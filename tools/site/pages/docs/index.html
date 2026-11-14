@@ -1,0 +1,37 @@
+<!--
+title: Subarchy docs
+h1: Subarchy docs
+description: Reference for Subarchy: install it in a virtual machine, the default keys, the subcult commands, shell aliases, themes, updates and recovery.
+-->
+<p class="lede">Subarchy is an Arch Linux desktop: [[Hyprland]] with its own shell, lock screen and theme, managed with one command, <code>subcult</code>. These pages are a reference. <em>Look a thing up, then get back to work.</em></p>
+<div class="callout note"><p class="ct" data-mark="&#9632;">In development</p><p>There is <strong>no release</strong> and no downloadable image. The ISO builds in CI, installs in a virtual machine, and runs on one laptop. Everything here describes the source as it is today.</p></div>
+
+<h2 id="quick-start">Quick start</h2>
+<ol class="steps">
+<li><p><strong>Build the ISO</strong> on Arch Linux. See [[install#build]].</p></li>
+<li><p><strong>Install it into a VM</strong> with <code>make install-test</code>, or boot the ISO and let [[subarchy-setup]] walk you through it.</p></li>
+<li><p><strong>Log in.</strong> {{Super+Return}} opens a terminal, {{Super+Space}} opens the [[launcher]].</p></li>
+<li><p><strong>Run <code>subcult commands</code></strong> to see everything the system can do.</p></li>
+</ol>
+
+<h2 id="pages">Pages</h2>
+<ul class="cards">
+<li><a href="/docs/install/"><strong>Install</strong><span>Build the ISO, try it in a VM, what the installer asks.</span></a></li>
+<li><a href="/docs/keys/"><strong>Keys</strong><span>Every default binding, and the launcher's prefixes.</span></a></li>
+<li><a href="/docs/commands/"><strong>Commands</strong><span>All <code>subcult</code> commands, grouped.</span></a></li>
+<li><a href="/docs/shell/"><strong>Shell aliases</strong><span>Short names and functions in zsh and bash.</span></a></li>
+<li><a href="/docs/look/"><strong>Theme and fonts</strong><span>Palette, Pult, fonts, cursor, where settings live.</span></a></li>
+<li><a href="/docs/updates/"><strong>Updates and recovery</strong><span>Updating, channels, snapshots.</span></a></li>
+<li><a href="/docs/glossary/"><strong>Glossary</strong><span>The terms these pages use.</span></a></li>
+<li><a href="/docs/developers/"><strong>Developers</strong><span>Repository, builds, tests, unattended install.</span></a></li>
+</ul>
+
+<h2 id="at-a-glance">At a glance</h2>
+<div class="scroll"><table><caption>What a new install has</caption><tbody>
+<tr><th scope="row">Desktop</th><td>[[Hyprland]] under [[uwsm]], with Subarchy's shell in [[Quickshell]]</td></tr>
+<tr><th scope="row">Lock screen</th><td>A separate program, so a shell crash cannot unlock the session</td></tr>
+<tr><th scope="row">Disk</th><td>[[LUKS2]] encryption, [[btrfs]] with zstd compression, [[snapper]] snapshots</td></tr>
+<tr><th scope="row">Boot</th><td>[[Limine]], one entry per snapshot, one [[UKI]] per kernel</td></tr>
+<tr><th scope="row">Updates</th><td>The [[channel|stable channel]], a dated Arch Linux Archive snapshot</td></tr>
+<tr><th scope="row">Platform</th><td>x86_64 with UEFI</td></tr>
+</tbody></table></div>

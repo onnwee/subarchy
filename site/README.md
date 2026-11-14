@@ -1,8 +1,13 @@
 # site
 
-The Subarchy landing page and user docs, as static HTML with no build step
-and no backend. The canonical address is <https://subarchy.subcult.tv>; the
-files in [deploy/](../deploy/) serve it.
+The Subarchy landing page and user docs, as static HTML with no backend.
+The canonical address is <https://subarchy.subcult.tv>; the files in
+[deploy/](../deploy/) serve it.
+
+The HTML pages are generated. Edit the sources in
+[tools/site/pages/](../tools/site/pages/), then run
+`python3 tools/site/build.py`, which writes the pages and `sitemap.xml` here.
+`style.css`, `app.js`, `assets/` and `fonts/` are edited in place.
 
 ## Preview
 
@@ -10,7 +15,8 @@ files in [deploy/](../deploy/) serve it.
 python3 -m http.server 18791 --bind 127.0.0.1 --directory site
 ```
 
-Open `http://127.0.0.1:18791/` and `/docs/`. The pages follow the system's
+Open `http://127.0.0.1:18791/` and `/docs/`; the error page needs the
+container in [deploy/](../deploy/). The pages follow the system's
 light or dark setting; the button in the header switches between ink and
 paper and remembers the choice.
 
@@ -26,7 +32,9 @@ the source changes.
 | What the installer asks, the time zone guess, the log path | [install/README.md](../install/README.md) |
 | Unattended install keys | the header of [install/subarchy-install](../install/subarchy-install) |
 | Default keys | [default/hypr/bindings.lua](../default/hypr/bindings.lua) |
-| Command summaries and examples | the `subcult:summary` and `subcult:examples` headers in [bin/](../bin/) and the commands in [cmd/](../cmd/) |
+| Launcher prefixes and files | the Launcher section of [shell/README.md](../shell/README.md) |
+| The command tables | `tools/site/commands.json`, from `subcult commands --json`; refresh it with `make site-commands` |
+| Shell aliases, functions and keys | [default/shell/](../default/shell/) `aliases.sh`, `functions.sh` and `zshrc` |
 | Switching themes | `pult help`, and the Pult profile in [default/theme/subarchy.toml](../default/theme/subarchy.toml) |
 | Widget names and the count of 27 | the folders in [shell/widgets/](../shell/widgets/) |
 | Bar and palette paths | [shell-and-look-design](../docs/plans/shell-and-look-design.md) |
@@ -45,6 +53,26 @@ not in git (`.gitignore` excludes `site/fonts/DankMono-*`); the deploy copies
 them in from the owner's licensed copy. Without them the docs fall back to
 Departure Mono, so a local preview still works.
 
+## Writing the docs
+
+The docs are a reference: short pages, tables, one idea per line. Depth
+belongs on the Developers page or in the repository, not on the general
+pages. Name Omarchy only once, as the inspiration on the landing page;
+`site-check.py` enforces it.
+
+In a page source, the build expands:
+
+| Write | Becomes |
+|---|---|
+| `[[keys]]`, `[[keys#launcher\|label]]` | A link to a docs page or one of its sections |
+| `[[TPM]]` | A link to that glossary entry (`<dt id="tpm">`) |
+| `{{Super+Shift+B}}`, `{{Super+_arrow_}}` | Keyboard keys; `_word_` is a placeholder, not a key |
+| `<!-- commands -->` | The command tables |
+
+A wikilink that matches no page or glossary term stops the build. Links to
+other sites get `target="_blank"`, `rel="noopener"` and a hidden "(opens in
+a new tab)".
+
 ## Formatting
 
 Docs prose uses the classes in `style.css`:
@@ -59,9 +87,11 @@ Docs prose uses the classes in `style.css`:
 
 ## Checks
 
-`make verify` runs `tools/test/site-check.py`: links and anchors, alt text,
+`make verify` runs `tools/site/build.py --check` (the pages match their
+sources) and `tools/test/site-check.py`: links and anchors, alt text,
 button names, one `h1` per page, no inline styles, the CSP hash of the inline
-theme script, and WCAG AA contrast for both themes. Lighthouse and the
+theme script, new-tab links, the single Omarchy mention, and WCAG AA
+contrast for both themes. Lighthouse and the
 keyboard and mouse tests need a browser; run them against the container
 described in [deploy/](../deploy/).
 

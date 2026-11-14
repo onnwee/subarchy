@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Glossary · Subarchy docs</title>
+<meta name="description" content="The terms used in Subarchy's docs, from Arch Linux Archive to zram, each in a sentence or two.">
+<link rel="canonical" href="https://subarchy.subcult.tv/docs/glossary/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Glossary · Subarchy docs">
+<meta property="og:description" content="The terms used in Subarchy's docs, from Arch Linux Archive to zram, each in a sentence or two.">
+<meta property="og:url" content="https://subarchy.subcult.tv/docs/glossary/">
+<meta property="og:image" content="https://subarchy.subcult.tv/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="SUBARCHY in dripping green block letters above the line: An Arch Linux desktop from SUBCULT. In development.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#100B19" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F0ECE4" media="(prefers-color-scheme: light)">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="preload" href="/fonts/DepartureMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/DankMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/DankMono-Bold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/DankMono-Italic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style.css">
+<script>try{var t=localStorage.getItem("subarchy-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><div class="wrap nav">
+<a class="home" href="/" aria-label="Subarchy home"><img class="dark-only" src="/assets/mark-clean-dark.svg" alt="" width="200" height="140"><img class="light-only" src="/assets/mark-clean-light.svg" alt="" width="200" height="140"><span>subarchy</span></a>
+<nav class="links" aria-label="Main"><a href="/docs/" aria-current="page">docs</a><a href="/docs/keys/">keys</a><a href="/docs/commands/">commands</a><a href="https://github.com/subculture-collective/subarchy" target="_blank" rel="noopener">git<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv/support" target="_blank" rel="noopener">support<span class="sr"> (opens in a new tab)</span></a></nav>
+<button type="button" data-theme-toggle hidden>paper</button>
+</div></header>
+<div class="wrap docs">
+<nav class="side" aria-label="Docs"><details class="toc"><summary>Docs pages</summary><ol><li><a href="/docs/">Overview</a></li><li><a href="/docs/install/">Install</a></li><li><a href="/docs/keys/">Keys</a></li><li><a href="/docs/commands/">Commands</a></li><li><a href="/docs/shell/">Shell aliases</a></li><li><a href="/docs/look/">Theme and fonts</a></li><li><a href="/docs/updates/">Updates and recovery</a></li><li><a href="/docs/glossary/" aria-current="page">Glossary</a></li><li><a href="/docs/developers/">Developers</a></li></ol></details></nav>
+<main id="main">
+<p class="crumbs"><a href="/docs/">Docs</a> / Glossary</p>
+<h1>Glossary</h1>
+<p class="lede">Short definitions, so the other pages can stay short. Links in the docs that look like <a class="wl" href="#snapshot">this</a> come here.</p>
+<nav class="az" aria-label="Glossary letters"><a href="#arch-linux-archive">A</a><a href="#btrfs">B</a><a href="#channel">C</a><a href="#esp">E</a><a href="#font-roles">F</a><a href="#hyprland">H</a><a href="#launcher">L</a><a href="#migrations">M</a><a href="#nerd-font">N</a><a href="#osd">O</a><a href="#palette">P</a><a href="#quickshell">Q</a><a href="#scratchpad">S</a><a href="#tailnet">T</a><a href="#uki">U</a><a href="#worktree">W</a><a href="#zoxide">Z</a></nav>
+<dl class="glossary">
+<dt id="arch-linux-archive">Arch Linux Archive</dt>
+<dd>Dated copies of the Arch package repositories. The <a class="wl" href="#channel">stable channel</a> points at one date, so every machine on it gets the same packages.</dd>
+<dt id="archiso">archiso</dt>
+<dd>Arch's tool for building live ISO images. <code>make iso</code> uses it.</dd>
+<dt id="atuin">atuin</dt>
+<dd>Shell history search, on <span class="keys"><kbd>Ctrl</kbd> + <kbd>R</kbd></span>. Sync stays off unless you log in to a server.</dd>
+<dt id="aur">AUR</dt>
+<dd>The Arch User Repository: build recipes from users, not official packages. Subarchy rebuilds the few it needs from pinned sources.</dd>
+<dt id="btrfs">btrfs</dt>
+<dd>The root filesystem. It compresses with zstd and is split into subvolumes, which <a class="wl" href="#snapper">snapper</a> snapshots.</dd>
+<dt id="channel">Channel</dt>
+<dd>Where updates come from: <strong>stable</strong>, a dated <a class="wl" href="#arch-linux-archive">Arch Linux Archive</a> snapshot, or <strong>edge</strong>, the mirrors. See <a class="wl" href="/docs/updates/#channels">Updates and recovery</a>.</dd>
+<dt id="esp">ESP</dt>
+<dd>The EFI system partition: a small FAT32 partition the firmware boots from.</dd>
+<dt id="font-roles">Font roles</dt>
+<dd>Monospace, sans-serif and serif. Set one with <code>subcult font set</code> and every app that follows the role changes.</dd>
+<dt id="fzf">fzf</dt>
+<dd>A fuzzy picker for files, folders and history in the terminal. <span class="keys"><kbd>Ctrl</kbd> + <kbd>T</kbd></span> picks a file, <span class="keys"><kbd>Alt</kbd> + <kbd>C</kbd></span> a folder.</dd>
+<dt id="hyprland">Hyprland</dt>
+<dd>The Wayland compositor: it draws windows and handles keys. Subarchy configures it in Lua.</dd>
+<dt id="launcher">Launcher</dt>
+<dd><span class="keys"><kbd>Super</kbd> + <kbd>Space</kbd></span>. Finds apps and commands, and with a prefix also does maths, web search, files, emoji and clipboard history. See <a class="wl" href="/docs/keys/#launcher">Keys</a>.</dd>
+<dt id="limine">Limine</dt>
+<dd>The boot loader. It lists one boot entry per <a class="wl" href="#snapshot">snapshot</a>.</dd>
+<dt id="luks2">LUKS2</dt>
+<dd>Linux disk encryption. The root partition is encrypted; you unlock it with a passphrase or the <a class="wl" href="#tpm">TPM</a>.</dd>
+<dt id="migrations">Migrations</dt>
+<dd>Scripts that bring an existing install in line with a newer Subarchy. <code>subcult update</code> runs the ones not yet run.</dd>
+<dt id="nerd-font">Nerd Font</dt>
+<dd>A font patched with icon glyphs. <code>subcult font patch</code> makes a Nerd Font copy of a font you have.</dd>
+<dt id="osd">OSD</dt>
+<dd>On-screen display: the small box that shows volume, brightness or Caps Lock after a key press.</dd>
+<dt id="palette">Palette</dt>
+<dd>One set of named colours that the whole desktop reads. <a class="wl" href="#pult">Pult</a> writes it.</dd>
+<dt id="palette-role">Palette role</dt>
+<dd>One named colour in the palette, such as <code>lavender</code>. The cursor takes a role, not a hex value, so it follows theme changes.</dd>
+<dt id="plymouth">Plymouth</dt>
+<dd>The boot splash shown while the system starts.</dd>
+<dt id="polkit">polkit</dt>
+<dd>Decides which privileged actions a user may take. Subarchy's shell draws its password dialog.</dd>
+<dt id="pult">Pult</dt>
+<dd>SUBCULT's theme tool. <code>pult apply</code> switches the theme. <a href="https://pult.subcult.tv" target="_blank" rel="noopener">pult.subcult.tv<span class="sr"> (opens in a new tab)</span></a></dd>
+<dt id="quickshell">Quickshell</dt>
+<dd>The toolkit Subarchy's bar, notifications, launcher and lock screen are written in.</dd>
+<dt id="scratchpad">Scratchpad</dt>
+<dd>A hidden workspace you show and hide over the current one with <span class="keys"><kbd>Super</kbd> + <kbd>S</kbd></span>.</dd>
+<dt id="sddm">SDDM</dt>
+<dd>The login screen.</dd>
+<dt id="secure-boot">Secure Boot</dt>
+<dd>Firmware that boots only signed files. <code>sudo subcult secureboot setup</code> turns it on with keys made on your machine.</dd>
+<dt id="snapper">snapper</dt>
+<dd>Takes and manages <a class="wl" href="#btrfs">btrfs</a> snapshots.</dd>
+<dt id="snapshot">Snapshot</dt>
+<dd>A read-only copy of the system at one moment. Boot one from the boot menu to go back to it. See <a class="wl" href="/docs/updates/#rollback">Updates and recovery</a>.</dd>
+<dt id="subarchy-setup">subarchy-setup</dt>
+<dd>The guided installer on the live ISO. See <a class="wl" href="/docs/install/#installer">Install</a>.</dd>
+<dt id="subcult">subcult</dt>
+<dd>The command that runs every <code>subcult-*</code> tool; <code>sub</code> for short. See <a class="wl" href="/docs/commands/">Commands</a>.</dd>
+<dt id="tailnet">Tailnet</dt>
+<dd>Your private Tailscale network. <code>subcult tailscale send</code> sends files to its machines.</dd>
+<dt id="tpm">TPM</dt>
+<dd>A security chip on the mainboard. It can unlock the disk at boot instead of a typed passphrase: <code>sudo subcult disk tpm enable</code>.</dd>
+<dt id="uki">UKI</dt>
+<dd>Unified kernel image: the kernel, its initramfs and command line in one file. Subarchy makes one per kernel.</dd>
+<dt id="uwsm">uwsm</dt>
+<dd>Starts and stops the Hyprland session as systemd units, so logging out ends everything cleanly.</dd>
+<dt id="worktree">Worktree</dt>
+<dd>A second checkout of a git repository in its own folder, on its own branch. <code>ga</code> makes one, <code>gd</code> removes it.</dd>
+<dt id="zoxide">zoxide</dt>
+<dd>Remembers the folders you visit. <code>cd</code> with part of a name goes to the best match.</dd>
+<dt id="zram">zram</dt>
+<dd>Compressed swap in memory.</dd>
+</dl>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="/docs/updates/" rel="prev"><span>Previous</span>Updates and recovery</a><a class="next" href="/docs/developers/" rel="next"><span>Next</span>Developers</a></nav>
+<p class="edit"><a href="https://github.com/subculture-collective/subarchy/blob/main/tools/site/pages/docs/glossary.html" target="_blank" rel="noopener">Edit this page<span class="sr"> (opens in a new tab)</span></a></p>
+</main>
+</div>
+<footer><div class="wrap">
+<div class="row"><a href="/docs/">Docs</a><a href="/docs/glossary/">Glossary</a><a href="https://github.com/subculture-collective/subarchy" target="_blank" rel="noopener">Source<span class="sr"> (opens in a new tab)</span></a><a href="https://github.com/subculture-collective/subarchy/issues" target="_blank" rel="noopener">Issues<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv/support" target="_blank" rel="noopener">Support SUBCULT<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv" target="_blank" rel="noopener">subcult.tv<span class="sr"> (opens in a new tab)</span></a></div>
+<p>Subarchy is free software under GPL-3.0-or-later. Set in Departure Mono (OFL); the docs text in Dank Mono.</p>
+</div></footer>
+<script src="/app.js" defer></script>
+</body>
+</html>

@@ -28,7 +28,7 @@
 <a class="skip" href="#main">Skip to content</a>
 <header class="top"><div class="wrap nav">
 <a class="home" href="/" aria-label="Subarchy home"><img class="dark-only" src="/assets/mark-clean-dark.svg" alt="" width="200" height="140"><img class="light-only" src="/assets/mark-clean-light.svg" alt="" width="200" height="140"><span>subarchy</span></a>
-<nav class="links" aria-label="Main"><a href="/docs/">docs</a><a href="/#install">install</a><a href="https://github.com/subculture-collective/subarchy">git</a><a href="https://subcult.tv/support">support</a></nav>
+<nav class="links" aria-label="Main"><a href="/docs/">docs</a><a href="/docs/keys/">keys</a><a href="/docs/commands/">commands</a><a href="https://github.com/subculture-collective/subarchy" target="_blank" rel="noopener">git<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv/support" target="_blank" rel="noopener">support<span class="sr"> (opens in a new tab)</span></a></nav>
 <button type="button" data-theme-toggle hidden>paper</button>
 </div></header>
 <main id="main">
@@ -36,7 +36,7 @@
 <a class="note" href="#status">No release yet. The ISO builds in CI and it runs on one laptop &rarr;</a>
 <div class="word"><img class="dark-only" src="/assets/wordmark-dark.svg" alt="SUBARCHY" width="780" height="200"><img class="light-only" src="/assets/wordmark-light.svg" alt="SUBARCHY" width="780" height="200"></div>
 <h1>An Arch Linux desktop where the whole system answers to one command.</h1>
-<p>Subarchy runs Hyprland with <strong>its own shell, lock screen and theme</strong>. It is built from scratch by SUBCULT and borrows from Omarchy <em>where that fits</em>.</p>
+<p>Subarchy runs Hyprland with <strong>its own shell, lock screen and theme</strong>. Built from scratch by SUBCULT, <em>inspired by Omarchy</em>.</p>
 <div class="acts"><a class="btn pri" href="#install">Try it in a VM</a><a class="btn" href="/docs/">Read the docs</a></div>
 </div>
 <section><div class="wrap sec"><header><div class="n">01</div><h2>What it is</h2></header><div class="body"><p>A desktop distribution on Arch Linux. You install it from a live ISO with a guided installer, and from then on you manage it with <strong>one command</strong>, <code>subcult</code>: updates, themes, fonts, displays, hardware fixes.</p>
@@ -54,7 +54,7 @@
 <section><div class="wrap sec"><header><div class="n">02</div><h2>The desktop</h2></header><div class="body"><p>The bar, notifications, on-screen display, polkit dialog, Alt-Tab switcher and launcher are one Quickshell program. Widgets update <strong>on events</strong>, not on a timer where they can avoid it.</p>
 <ul class="tags" aria-label="Some of the 27 widgets in the source"><li>workspaces</li><li>audio</li><li>network</li><li>bluetooth</li><li>battery</li><li>calendar</li><li>weather</li><li>media</li><li>tray</li><li>updates</li><li>clock</li><li>notifications</li><li>tailscale</li><li>downloads</li></ul>
 <p class="muted small">Fourteen of the 27 widget folders in <code>shell/widgets</code>. Some panels and launcher features are still open on the roadmap.</p>
-<p><strong>One palette colours eight places</strong>: the shell, the lock screen, the terminal, Neovim, the cursor, the login screen, the boot splash and the boot menu. <a href="https://pult.subcult.tv">Pult</a> applies it to the first four. The cursor follows with <code>subcult cursor apply</code>, and the last three, which are system files, with <code>subcult theme apply-system</code>.</p></div></div></section>
+<p><strong>One palette colours eight places</strong>: the shell, the lock screen, the terminal, Neovim, the cursor, the login screen, the boot splash and the boot menu. <a href="https://pult.subcult.tv" target="_blank" rel="noopener">Pult<span class="sr"> (opens in a new tab)</span></a> applies it to the first four. The cursor follows with <code>subcult cursor apply</code>, and the last three, which are system files, with <code>subcult theme apply-system</code>.</p></div></div></section>
 <section><div class="wrap sec"><header><div class="n">03</div><h2>One command</h2></header><div class="body"><p>Every tool is a <code>subcult-*</code> program on the path, and <code>subcult</code> finds them. <code>sub</code> is the short form. These lines come from the summaries in the source.</p>
 <div class="cmds">
 <div><div class="cmd"><code>subcult update</code></div><p>Takes a snapshot, upgrades packages, runs migrations and cleans up.</p></div>
@@ -67,11 +67,11 @@
 <section id="install"><div class="wrap sec"><header><div class="n">04</div><h2>Try it</h2></header><div class="body"><p>There is no published image. To try Subarchy, build the ISO and install it into a virtual machine. On Arch Linux, with <code>archiso</code>, Go and Docker installed:</p>
 <div class="cmd"><code>git clone https://github.com/subculture-collective/subarchy.git &amp;&amp; cd subarchy</code></div>
 <div class="cmd"><code>make iso</code></div>
-<p class="muted small">The first run stops and names the packages Subarchy rebuilds itself. Build them with <code>packaging/aur/build.sh</code> and the names it printed, then run <code>make iso</code> again. <a href="/docs/#try">Details in the docs.</a></p>
+<p class="muted small">The first run stops and names the packages Subarchy rebuilds itself. Build them with <code>packaging/aur/build.sh</code> and the names it printed, then run <code>make iso</code> again. <a class="wl" href="/docs/install/#build">Details in the docs.</a></p>
 <p>Or let the test harness build a VM disk, install into it and boot the result. This needs <code>qemu-base</code>, <code>edk2-ovmf</code>, <code>swtpm</code> and <code>imagemagick</code>:</p>
 <div class="cmd"><code>make install-test</code></div>
 <div class="callout warning"><p class="ct" data-mark="&#9888;">Warning</p><p><strong>The installer wipes the disk you choose.</strong> It asks last and the default answer is no. Do not point it at a disk you need.</p></div>
-<p>The installer asks for a language, keyboard layout, Wi-Fi network, disk, computer name, user, password, disk passphrase and time zone. It can install <strong>with no network</strong>, from the package repository on the image. <a href="/docs/#installer">More in the docs.</a></p></div></div></section>
+<p>The installer asks for a language, keyboard layout, Wi-Fi network, disk, computer name, user, password, disk passphrase and time zone. It can install <strong>with no network</strong>, from the package repository on the image. <a class="wl" href="/docs/install/#installer">More in the docs.</a></p></div></div></section>
 <section id="status"><div class="wrap sec"><header><div class="n">05</div><h2>Where it stands</h2></header><div class="body"><div class="scroll"><table><caption>Fig. 2. Checked and not checked</caption>
 <thead><tr><th scope="col">Claim</th><th scope="col">State</th></tr></thead>
 <tbody>
@@ -82,15 +82,15 @@
 <tr><td>Hardware fixes for other machines</td><td>Mostly untested on real machines</td></tr>
 <tr><td>A release or a downloadable image</td><td><strong>None yet</strong></td></tr>
 </tbody></table></div>
-<p>Platform: x86_64 with UEFI. The <a href="https://github.com/subculture-collective/subarchy/blob/main/docs/roadmap.md">roadmap</a> lists what is open.</p></div></div></section>
+<p>Platform: x86_64 with UEFI. The <a href="https://github.com/subculture-collective/subarchy/blob/main/docs/roadmap.md" target="_blank" rel="noopener">roadmap<span class="sr"> (opens in a new tab)</span></a> lists what is open.</p></div></div></section>
 <section><div class="wrap"><div class="support">
 <p>Subarchy is built by SUBCULT, a small studio. If you want to put money toward its work, the studio has a support page. Support goes to SUBCULT, not to this project alone.</p>
 <a class="btn" href="https://subcult.tv/support">Support SUBCULT</a>
 </div></div></section>
 </main>
 <footer><div class="wrap">
-<div class="row"><a href="/docs/">Docs</a><a href="https://github.com/subculture-collective/subarchy">Source</a><a href="https://github.com/subculture-collective/subarchy/issues">Issues</a><a href="https://subcult.tv/support">Support SUBCULT</a><a href="https://subcult.tv">subcult.tv</a></div>
-<p>Subarchy is free software under GPL-3.0-or-later. It borrows from <a href="https://omarchy.org/">Omarchy</a> (MIT) and is not an Omarchy edition. Set in Departure Mono (OFL).</p>
+<div class="row"><a href="/docs/">Docs</a><a href="/docs/glossary/">Glossary</a><a href="https://github.com/subculture-collective/subarchy" target="_blank" rel="noopener">Source<span class="sr"> (opens in a new tab)</span></a><a href="https://github.com/subculture-collective/subarchy/issues" target="_blank" rel="noopener">Issues<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv/support" target="_blank" rel="noopener">Support SUBCULT<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv" target="_blank" rel="noopener">subcult.tv<span class="sr"> (opens in a new tab)</span></a></div>
+<p>Subarchy is free software under GPL-3.0-or-later. Set in Departure Mono (OFL); the docs text in Dank Mono.</p>
 </div></footer>
 <script src="/app.js" defer></script>
 </body>

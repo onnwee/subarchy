@@ -1,0 +1,52 @@
+<!--
+title: Theme and fonts · Subarchy docs
+h1: Theme and fonts
+description: Switch Subarchy's theme with Pult, carry it to the login screen and boot menu, set fonts and the cursor, and where your settings live.
+-->
+<p class="lede">One [[palette]] colours the shell, lock screen, terminal, Neovim, cursor, login screen, boot splash and boot menu.</p>
+
+<h2 id="theme">Theme</h2>
+<p>[[Pult]] switches themes. It applies the palette to the shell, lock screen, terminal and Neovim straight away. The default theme is <code>subcult-minimal</code>.</p>
+<div class="scroll"><table><caption class="sr">Theme commands</caption><tbody>
+<tr><th scope="row"><code>pult apply <var>name</var></code></th><td>Apply a theme from Pult's catalogue</td></tr>
+<tr><th scope="row"><code>pult tui</code></th><td>Browse and preview themes</td></tr>
+<tr><th scope="row"><code>pult doctor</code></th><td>Name the active theme</td></tr>
+<tr><th scope="row"><code>subcult cursor apply</code></th><td>Redraw the cursor in the new palette</td></tr>
+<tr><th scope="row"><code>subcult theme apply-system</code></th><td>Carry the palette to the login screen, boot splash and boot menu. Asks for your password.</td></tr>
+</tbody></table></div>
+<div class="cmd"><code>pult apply catppuccin-mocha</code></div>
+<p>Back to the default:</p>
+<div class="cmd"><code>pult apply -profile /usr/share/subcult/default/theme/subarchy.toml</code></div>
+<div class="callout note"><p class="ct" data-mark="&#9632;">Why a second command</p><p>The login screen ([[SDDM]]), boot splash ([[Plymouth]]) and boot menu ([[Limine]]) are system files. They change only when you run <code>subcult theme apply-system</code>.</p></div>
+
+<h2 id="fonts">Fonts</h2>
+<p>Three [[font roles]]: <strong>monospace</strong>, <strong>sans-serif</strong> and <strong>serif</strong>. GTK, Qt, the shell and the terminal all follow them.</p>
+<div class="scroll"><table><caption class="sr">Font commands</caption><tbody>
+<tr><th scope="row"><code>subcult font list</code></th><td>The curated fonts, what is installed, what each role uses</td></tr>
+<tr><th scope="row"><code>subcult font install <var>name</var></code></th><td>Install a curated font or any [[Nerd Font]]</td></tr>
+<tr><th scope="row"><code>subcult font set <var>family</var></code></th><td>Use it for the terminal and shell; <code>--ui</code> or <code>--serif</code> for the other roles</td></tr>
+<tr><th scope="row"><code>subcult font import <var>files</var></code></th><td>Add font files you own, for your user</td></tr>
+<tr><th scope="row"><code>subcult font current</code></th><td>Show the family behind each role</td></tr>
+</tbody></table></div>
+
+<h2 id="cursor">Cursor</h2>
+<p>Subarchy draws its own cursor in a palette colour.</p>
+<div class="cmd"><code>subcult cursor set --role lavender --size 24</code></div>
+<p>Sizes are 24, 32 and 48. The colour is a [[palette role]]. Run <code>subcult cursor apply</code> after a theme change.</p>
+
+<h2 id="display">Display</h2>
+<div class="scroll"><table><caption class="sr">Display commands</caption><tbody>
+<tr><th scope="row"><code>subcult display scale up</code></th><td>Also {{Super+/}}; <code>down</code> is {{Super+Alt+/}}</td></tr>
+<tr><th scope="row"><code>subcult display profile save <var>name</var></code></th><td>Save the connected monitors' layout and workspaces</td></tr>
+<tr><th scope="row"><code>subcult display profile apply</code></th><td>Apply the saved layout that matches the connected monitors</td></tr>
+</tbody></table></div>
+
+<h2 id="files">Where settings live</h2>
+<div class="scroll"><table><caption class="sr">Settings files</caption>
+<thead><tr><th scope="col">What</th><th scope="col">File</th></tr></thead><tbody>
+<tr><th scope="row">Your settings</th><td><code>~/.config/subcult/</code></td></tr>
+<tr><th scope="row">Palette</th><td><code>~/.config/subcult/theme/palette.json</code>, written by Pult</td></tr>
+<tr><th scope="row">Bar layout</th><td><code>~/.config/subcult/shell/bar.json</code>, merged key by key over <code>/usr/share/subcult/default/shell/bar.json</code></td></tr>
+<tr><th scope="row">Keys and windows</th><td><code>~/.config/hypr/hyprland.lua</code>, on top of the defaults</td></tr>
+<tr><th scope="row">Shell</th><td><code>~/.zshrc</code> or <code>~/.bashrc</code>, after the first line</td></tr>
+</tbody></table></div>

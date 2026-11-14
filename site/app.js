@@ -55,7 +55,10 @@
   });
 
   // Docs: mark the contents link for the section being read.
-  var toc = document.querySelector(".docs nav");
+  // The docs pages list starts closed; wide screens show it beside the page.
+  var details = document.querySelector(".docs .toc");
+  if (details && window.matchMedia("(min-width: 821px)").matches) details.open = true;
+  var toc = document.querySelector(".docs .side .sections");
   if (toc) {
     var links = {};
     toc.querySelectorAll('a[href^="#"]').forEach(function (a) { links[a.getAttribute("href").slice(1)] = a; });

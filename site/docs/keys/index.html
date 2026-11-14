@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Keys · Subarchy docs</title>
+<meta name="description" content="Every default Subarchy key binding in one chart: apps, windows, workspaces, mouse, capture, media and system keys, and the launcher's prefixes.">
+<link rel="canonical" href="https://subarchy.subcult.tv/docs/keys/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Keys · Subarchy docs">
+<meta property="og:description" content="Every default Subarchy key binding in one chart: apps, windows, workspaces, mouse, capture, media and system keys, and the launcher's prefixes.">
+<meta property="og:url" content="https://subarchy.subcult.tv/docs/keys/">
+<meta property="og:image" content="https://subarchy.subcult.tv/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="SUBARCHY in dripping green block letters above the line: An Arch Linux desktop from SUBCULT. In development.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#100B19" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F0ECE4" media="(prefers-color-scheme: light)">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="preload" href="/fonts/DepartureMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/DankMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/DankMono-Bold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/DankMono-Italic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style.css">
+<script>try{var t=localStorage.getItem("subarchy-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><div class="wrap nav">
+<a class="home" href="/" aria-label="Subarchy home"><img class="dark-only" src="/assets/mark-clean-dark.svg" alt="" width="200" height="140"><img class="light-only" src="/assets/mark-clean-light.svg" alt="" width="200" height="140"><span>subarchy</span></a>
+<nav class="links" aria-label="Main"><a href="/docs/">docs</a><a href="/docs/keys/" aria-current="page">keys</a><a href="/docs/commands/">commands</a><a href="https://github.com/subculture-collective/subarchy" target="_blank" rel="noopener">git<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv/support" target="_blank" rel="noopener">support<span class="sr"> (opens in a new tab)</span></a></nav>
+<button type="button" data-theme-toggle hidden>paper</button>
+</div></header>
+<div class="wrap docs">
+<nav class="side" aria-label="Docs"><details class="toc"><summary>Docs pages</summary><ol><li><a href="/docs/">Overview</a></li><li><a href="/docs/install/">Install</a></li><li><a href="/docs/keys/" aria-current="page">Keys</a><ol class="sections"><li><a href="#apps">Apps</a></li><li><a href="#windows">Windows</a></li><li><a href="#workspaces">Workspaces</a></li><li><a href="#mouse">Mouse</a></li><li><a href="#capture">Capture</a></li><li><a href="#system">System</a></li><li><a href="#media">Media</a></li><li><a href="#launcher">Launcher prefixes</a></li><li><a href="#custom">Add your own</a></li></ol></li><li><a href="/docs/commands/">Commands</a></li><li><a href="/docs/shell/">Shell aliases</a></li><li><a href="/docs/look/">Theme and fonts</a></li><li><a href="/docs/updates/">Updates and recovery</a></li><li><a href="/docs/glossary/">Glossary</a></li><li><a href="/docs/developers/">Developers</a></li></ol></details></nav>
+<main id="main">
+<p class="crumbs"><a href="/docs/">Docs</a> / Keys</p>
+<h1>Keys</h1>
+<p class="lede"><span class="keys"><kbd>Super</kbd></span> is the Windows or Command key. The bindings live in <code>default/hypr/bindings.lua</code>; add your own in <code>~/.config/hypr/hyprland.lua</code>.</p>
+
+<div class="charts">
+<section class="chart" aria-labelledby="apps"><h2 id="apps">Apps</h2>
+<table><caption class="sr">App keys</caption><tbody>
+<tr><th scope="row"><span class="keys"><kbd>Super</kbd> + <kbd>Return</kbd></span></th><td>Terminal</td></tr>
+<tr><th scope="row"><span class="keys"><kbd>Super</kbd> + <kbd>Space</kbd></span></th><td><a class="wl" href="/docs/glossary/#launcher">Launcher</a></td></tr>
+<tr><th scope="row"><span class="keys"><kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>B</kbd></span></th><td>Browser</td></tr>
+<tr><th scope="row"><span class="keys"><kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd></span></th><td>File manager</td></tr>
+<tr><th scope="row"><span class="keys"><kbd>Super</kbd> + <kbd>Ctrl</kbd> + <kbd>V</kbd></span></th><td>Clipboard history</td></tr>
+</tbody></table></section>
+
+<section class="chart" aria-labelledby="windows"><h2 id="windows">Windows</h2>
+<table><caption class="sr">Window keys</caption><tbody>
+<tr><th scope="row"><span class="keys"><kbd>Super</kbd> + <kbd>W</kbd></span> or <span class="keys"><kbd>Super</kbd> + <kbd>Q</kbd></span></th><td>Close</td></tr>
+<tr><th scope="row"><span class="keys"><kbd>Super</kbd> + <kbd>F</kbd></span></th><td>Full screen</td></tr>
+<tr><th scope="row"><span class="keys"><kbd>Super</kbd> + <kbd>Alt</kbd> + <kbd>F</kbd></span></th><td>Full width</td></tr>
+<tr><th scope="row"><span class="keys"><kbd>Super</kbd> + <kbd>T</kbd></span></th><td>Float or tile</td></tr>
+<tr><th scope="row"><span class="keys"><kbd>Super</kbd> + <kbd>J</kbd></span></th><td>Turn the split</td></tr>
+<tr><th scope="row"><span class="keys"><kbd>Super</kbd> + <em>arrow</em></span></th><td>Move focus</td></tr>
+<tr><th scope="row"><span class="keys"><kbd>Alt</kbd> + <kbd>Tab</kbd></span></th><td>Next window, most recent first</td></tr>
+<tr><th scope="row"><span class="keys"><kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>Tab</kbd></span></th><td>Previous window</td></tr>
+</tbody></table></section>
+
+<section class="chart" aria-labelledby="workspaces"><h2 id="workspaces">Workspaces</h2>
+<table><caption class="sr">Workspace keys</caption><tbody>
+<tr><th scope="row"><span class="keys"><kbd>Super</kbd> + <kbd>1</kbd></span> to <span class="keys"><kbd>Super</kbd> + <kbd>0</kbd></span></th><td>Go to workspace 1 to 10</td></tr>
+<tr><th scope="row"><span class="keys"><kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>1</kbd></span> to <span class="keys"><kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>0</kbd></span></th><td>Move the window there</td></tr>
+<tr><th scope="row"><span class="keys"><kbd>Super</kbd> + <kbd>S</kbd></span></th><td>Show or hide the <a class="wl" href="/docs/glossary/#scratchpad">scratchpad</a></td></tr>
+</tbody></table></section>
+
+<section class="chart" aria-labelledby="mouse"><h2 id="mouse">Mouse</h2>
+<table><caption class="sr">Mouse bindings</caption><tbody>
+<tr><th scope="row"><span class="keys"><kbd>Super</kbd> + <em>left drag</em></span></th><td>Move a window</td></tr>
+<tr><th scope="row"><span class="keys"><kbd>Super</kbd> + <em>right drag</em></span></th><td>Resize a window</td></tr>
+</tbody></table></section>
+
+<section class="chart" aria-labelledby="capture"><h2 id="capture">Capture</h2>
+<table><caption class="sr">Screenshot and recording keys</caption><tbody>
+<tr><th scope="row"><span class="keys"><kbd>Print</kbd></span></th><td>Screenshot: drag a region, or click a window or display</td></tr>
+<tr><th scope="row"><span class="keys"><kbd>Shift</kbd> + <kbd>Print</kbd></span></th><td>Screenshot of a window</td></tr>
+<tr><th scope="row"><span class="keys"><kbd>Ctrl</kbd> + <kbd>Print</kbd></span></th><td>Screenshot of the display</td></tr>
+<tr><th scope="row"><span class="keys"><kbd>Alt</kbd> + <kbd>Print</kbd></span></th><td>Start or stop a screen recording</td></tr>
+<tr><th scope="row"><span class="keys"><kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>Print</kbd></span></th><td>The same, with desktop and microphone audio</td></tr>
+</tbody></table>
+<p class="muted small">Screenshots go to Pictures and the clipboard; click the notification to annotate. Recordings go to Videos.</p></section>
+
+<section class="chart" aria-labelledby="system"><h2 id="system">System</h2>
+<table><caption class="sr">System keys</caption><tbody>
+<tr><th scope="row"><span class="keys"><kbd>Power</kbd></span></th><td>Lock. Holding it still powers off.</td></tr>
+<tr><th scope="row"><span class="keys"><kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>Esc</kbd></span></th><td>Log out</td></tr>
+<tr><th scope="row"><span class="keys"><kbd>Super</kbd> + <kbd>/</kbd></span></th><td>Display scale up</td></tr>
+<tr><th scope="row"><span class="keys"><kbd>Super</kbd> + <kbd>Alt</kbd> + <kbd>/</kbd></span></th><td>Display scale down</td></tr>
+<tr><th scope="row">Closing the lid</th><td>Handled by <code>subcult display</code></td></tr>
+</tbody></table></section>
+
+<section class="chart" aria-labelledby="media"><h2 id="media">Media</h2>
+<table><caption class="sr">Media keys</caption><tbody>
+<tr><th scope="row">Volume keys</th><td>Up and down 5 %, with the <a class="wl" href="/docs/glossary/#osd">OSD</a></td></tr>
+<tr><th scope="row">Mute keys</th><td>Speaker or microphone</td></tr>
+<tr><th scope="row">Brightness keys</th><td>Up and down, with the OSD</td></tr>
+<tr><th scope="row"><span class="keys"><kbd>Caps Lock</kbd></span></th><td>Shows its new state in the OSD</td></tr>
+</tbody></table>
+<p class="muted small">These work at the lock screen too.</p></section>
+</div>
+
+<h2 id="launcher">Launcher prefixes</h2>
+<p>Open the <a class="wl" href="/docs/glossary/#launcher">launcher</a> with <span class="keys"><kbd>Super</kbd> + <kbd>Space</kbd></span> and start the query with one of these. A plain query searches apps and <code>subcult</code> commands.</p>
+<div class="scroll"><table><caption class="sr">Launcher prefixes</caption>
+<thead><tr><th scope="col">Type</th><th scope="col">Finds</th><th scope="col"><span class="keys"><kbd>Enter</kbd></span></th></tr></thead><tbody>
+<tr><th scope="row"><code>=</code></th><td>Calculator. Math in a plain query is answered too.</td><td>Copies the answer</td></tr>
+<tr><th scope="row"><code>@</code></th><td>Web search and quicklinks: <code>@yt cats</code>, <code>@gh subarchy</code></td><td>Opens the browser</td></tr>
+<tr><th scope="row"><code>.</code></th><td>Files and folders under your home folder</td><td>Opens the pick</td></tr>
+<tr><th scope="row"><code>:</code></th><td>Emoji and symbols</td><td>Copies the pick</td></tr>
+<tr><th scope="row"><code>$</code></th><td>Clipboard history, also <span class="keys"><kbd>Super</kbd> + <kbd>Ctrl</kbd> + <kbd>V</kbd></span></td><td>Puts it back on the clipboard</td></tr>
+</tbody></table></div>
+<ul class="plain">
+<li>A command with words after it passes them on: <code>font set Iosevka</code>.</li>
+<li>Commands that change something important ask first: <span class="keys"><kbd>Enter</kbd></span> runs, <span class="keys"><kbd>Esc</kbd></span> goes back.</li>
+<li>The last row of a search asks the default AI agent. <em>That row sends your text off the machine</em>, and says so.</li>
+</ul>
+
+<h2 id="custom">Add your own</h2>
+<p>Bind keys in <code>~/.config/hypr/hyprland.lua</code>, which <a class="wl" href="/docs/glossary/#hyprland">Hyprland</a> reads on top of the defaults:</p>
+<pre>sub.bind("SUPER + ALT + U", "Update", "subcult update")</pre>
+<p>Launcher aliases can have keys too. See <a class="wl" href="/docs/developers/#launcher">Developers</a>.</p>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="/docs/install/" rel="prev"><span>Previous</span>Install</a><a class="next" href="/docs/commands/" rel="next"><span>Next</span>Commands</a></nav>
+<p class="edit"><a href="https://github.com/subculture-collective/subarchy/blob/main/tools/site/pages/docs/keys.html" target="_blank" rel="noopener">Edit this page<span class="sr"> (opens in a new tab)</span></a></p>
+</main>
+</div>
+<footer><div class="wrap">
+<div class="row"><a href="/docs/">Docs</a><a href="/docs/glossary/">Glossary</a><a href="https://github.com/subculture-collective/subarchy" target="_blank" rel="noopener">Source<span class="sr"> (opens in a new tab)</span></a><a href="https://github.com/subculture-collective/subarchy/issues" target="_blank" rel="noopener">Issues<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv/support" target="_blank" rel="noopener">Support SUBCULT<span class="sr"> (opens in a new tab)</span></a><a href="https://subcult.tv" target="_blank" rel="noopener">subcult.tv<span class="sr"> (opens in a new tab)</span></a></div>
+<p>Subarchy is free software under GPL-3.0-or-later. Set in Departure Mono (OFL); the docs text in Dank Mono.</p>
+</div></footer>
+<script src="/app.js" defer></script>
+</body>
+</html>
