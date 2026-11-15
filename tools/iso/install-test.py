@@ -1315,7 +1315,7 @@ def boot_snapshot(disk: Path, vars_file: Path) -> bool:
     cmd = qemu_command(vars_file, "-drive", f"file={disk},if=virtio,format=qcow2")
     proc, serial, log = start(cmd, VM / "snapshot-serial.log")
     try:
-        serial.expect(re.compile(rb"starting Boot.*Limine"), 60)
+        serial.expect(re.compile(rb'starting Boot[0-9A-Fa-f]+ "Subarchy"'), 60)
         time.sleep(1.5)  # let Limine draw its menu
         for key in (DOWN, DOWN, ENTER, DOWN, ENTER, DOWN, ENTER):
             serial.send(key)

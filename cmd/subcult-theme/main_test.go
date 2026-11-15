@@ -97,6 +97,41 @@ func TestMetadata(t *testing.T) {
 	}
 }
 
+// An accent-only change rewrites limine.conf without changing Plymouth.
+// Its enrolled checksum must follow without rebuilding any boot images.
+func TestLimineEnrollmentWithoutSplashRebuild(t *testing.T) {
+	for _, unchanged := range []bool{false, true} {
+		a, _, _, _ := newApp(t)
+		calls := 0
+		a.enrollLimine = func() error { calls++; return nil }
+		rep := systheme.Report{Written: []string{systheme.LimineConfPath}}
+		if unchanged {
+			// Retrying after a failed enrollment must repair the checksum
+			// even though the palette is already written.
+			rep = systheme.Report{Unchanged: []string{systheme.LimineConfPath}}
+		}
+		if err := a.enrollBootConfig(rep, "/"); err != nil || calls != 1 {
+			t.Fatalf("unchanged=%v: enrollment calls=%d, error=%v", unchanged, calls, err)
+		}
+	}
+}
+
+func TestLimineEnrollmentFailureAndSkippedTargets(t *testing.T) {
+	a, _, _, _ := newApp(t)
+	failure := errors.New("config signing failed")
+	a.enrollLimine = func() error { return failure }
+	rep := systheme.Report{Written: []string{systheme.LimineConfPath}}
+	if err := a.enrollBootConfig(rep, "/"); !errors.Is(err, failure) {
+		t.Fatalf("enrollment failure lost: %v", err)
+	}
+	if err := a.enrollBootConfig(rep, t.TempDir()); err != nil {
+		t.Fatalf("a test root ran the host's enrollment helper: %v", err)
+	}
+	if err := a.enrollBootConfig(systheme.Report{}, "/"); err != nil {
+		t.Fatalf("an absent Limine config ran the enrollment helper: %v", err)
+	}
+}
+
 // pkexec authorizes the program, whatever its arguments. As root, --root
 // would let the caller point the rewrites at files of its choosing.
 func TestSystemApplyRefusesAnotherRootAsRoot(t *testing.T) {

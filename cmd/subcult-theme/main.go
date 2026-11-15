@@ -20,6 +20,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"git.subcult.tv/subculture-collective/subarchy/internal/dispatch"
@@ -61,6 +62,8 @@ type app struct {
 	elevate func(tool string, args ...string) error
 	// initramfs rebuilds the initramfs; tests replace it.
 	initramfs func() error
+	// enrollLimine refreshes the config checksum and signs the boot loader.
+	enrollLimine func() error
 	// euid is the effective user; tests replace it.
 	euid func() int
 }
@@ -214,6 +217,16 @@ func (a *app) systemApply(args []string) int {
 	for _, s := range rep.Skipped {
 		fmt.Fprintln(a.stdout, "skipped:", s)
 	}
+	// Apply may have written limine.conf before another target failed.
+	// Refresh its enrolled hash even on that partial failure, and before
+	// deciding whether the splash needs an initramfs rebuild.
+	if enrollErr := a.enrollBootConfig(rep, *root); enrollErr != nil {
+		fmt.Fprintf(a.stderr, "subcult theme system-apply: limine-enroll-config: %v\n", enrollErr)
+		if err != nil {
+			fmt.Fprintf(a.stderr, "subcult theme system-apply: %v\n", err)
+		}
+		return 1
+	}
 	if err != nil {
 		fmt.Fprintf(a.stderr, "subcult theme system-apply: %v\n", err)
 		return 1
@@ -234,6 +247,21 @@ func (a *app) systemApply(args []string) int {
 	return 0
 }
 
+func (a *app) enrollBootConfig(rep systheme.Report, root string) error {
+	if !slices.Contains(rep.Written, systheme.LimineConfPath) && !slices.Contains(rep.Unchanged, systheme.LimineConfPath) {
+		return nil
+	}
+	if root != "/" {
+		fmt.Fprintln(a.stdout, "refresh Limine's enrolled config with limine-enroll-config on the installed system")
+		return nil
+	}
+	// Also run on an unchanged config: an earlier signing failure can be
+	// repaired by retrying the same palette. The helper respects Limine's
+	// enrollment setting and re-signs the loader when sbctl is configured.
+	fmt.Fprintln(a.stdout, "refreshing Limine's enrolled config (limine-enroll-config)")
+	return a.enrollLimine()
+}
+
 func main() {
 	a := &app{
 		stdout: os.Stdout, stderr: os.Stderr,
@@ -250,6 +278,11 @@ func main() {
 		// /usr/local/bin wrapper that would have run limine-mkinitcpio.
 		initramfs: func() error {
 			cmd := exec.Command("/usr/bin/limine-mkinitcpio")
+			cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
+			return cmd.Run()
+		},
+		enrollLimine: func() error {
+			cmd := exec.Command("/usr/bin/limine-enroll-config")
 			cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
 			return cmd.Run()
 		},
