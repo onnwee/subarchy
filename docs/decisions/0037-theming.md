@@ -266,4 +266,13 @@ which Subarchy does not use.
   at start like the palette. A Pult registry entry can own `screens.json`
   so a theme carries its screens; that needs a Pult release.
 
+- 2026-11-15: Subarchy vendors the published Pult 0.4.0 package recipe
+  and catalog (2026.11.14.0), including the KDE and swayimg entries from
+  pult#34. The ISO test now requires the KDE entry and a successful
+  Dracula apply, a rendered Dolphin window in Dracula's mantle, and
+  restoration of the Subarchy profile; the packaged fallback alone no
+  longer passes. This changes the qualification gate; the rebuilt image
+  still needs its installed-system run. VS Code and Obsidian remain
+  separate work on #78.
+
 Related: [[decision-map|Decision map]] · [[0048-config-ownership|ADR 0048]] · [[brand-identity|Brand identity]] · [[0038-wallpaper|ADR 0038]] · [[0039-fonts-icons|ADR 0039]]

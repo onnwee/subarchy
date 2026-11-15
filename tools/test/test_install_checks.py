@@ -174,7 +174,7 @@ class Lock(unittest.TestCase):
 
 
 APP_STATE = "DOLPHIN=0\nAPPLY=0\nGTK=1\nADW=1\nKDE_ENTRY=1\n'adw-gtk3-dark'\nDRACULA=0\nKDE=1\nRESTORE=0\n"
-# Pult 0.3.0 has no kde entry: no Dracula round, Dolphin on the packaged scheme.
+# Reject the older Pult fallback: Dolphin on the packaged scheme proves no catalog change.
 APP_STATE_NO_KDE = "DOLPHIN=0\nAPPLY=0\nGTK=1\nADW=1\nKDE_ENTRY=0\n'adw-gtk3-dark'\n"
 APP_WINDOWS = {"dolphin": "\tclass: org.kde.dolphin\n\tfullscreen: 2\n", "gtk": "\tclass: python3\n\tfullscreen: 2\n"}
 
@@ -188,8 +188,8 @@ class AppColours(unittest.TestCase):
     def test_both_apps_full_screen_in_the_palette_pass(self):
         self.assertTrue(install_test.app_colours_ok(apps()))
 
-    def test_a_pult_without_the_kde_entry_passes_on_the_packaged_scheme(self):
-        self.assertTrue(install_test.app_colours_ok(apps(state=APP_STATE_NO_KDE)))
+    def test_a_pult_without_the_kde_entry_fails_despite_the_packaged_scheme(self):
+        self.assertFalse(install_test.app_colours_ok(apps(state=APP_STATE_NO_KDE)))
 
     def test_an_app_in_its_own_colours_fails(self):
         self.assertFalse(install_test.app_colours_ok(apps(themed={"dolphin": False, "gtk": True})))

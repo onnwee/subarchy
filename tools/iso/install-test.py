@@ -493,11 +493,9 @@ def app_colours(serial: Serial, qmp: Path) -> dict:
     Each app is shown full screen on an empty workspace and captured;
     `themed` says whether the capture has the palette's colour
     and none of the colours the app shows unthemed. The GTK window is
-    checked under the profile. Dolphin is checked under Dracula when the
-    installed Pult has its `kde` entry, since the packaged scheme already
-    has the profile's colours; the profile is applied again afterwards.
-    A Pult without the entry (0.3.0) gets the packaged scheme only, which
-    Dolphin must still show. `state` is what the guest reports: exit codes,
+    checked under the profile. Dolphin is checked under Dracula, since
+    the packaged scheme already has the profile's colours; the profile
+    is applied again afterwards. `state` is what the guest reports: exit codes,
     the GTK import line, whether adw-gtk3-dark is installed, whether Pult
     has a `kde` entry and wrote the scheme, and the GTK theme setting.
     """
@@ -508,7 +506,6 @@ def app_colours(serial: Serial, qmp: Path) -> dict:
         " echo ADW=$(test -d /usr/share/themes/adw-gtk3-dark/gtk-3.0 && echo 1);"
         " echo KDE_ENTRY=$(pult list 2>/dev/null | grep -c '^kde ');"
         " gsettings get org.gnome.desktop.interface gtk-theme", timeout=900)
-    kde = "KDE_ENTRY=1" in state.split()
     gtk = "/tmp/subarchy-gtk.py"
     serial.run(
         "printf '%s\\n' 'import gi' 'gi.require_version(\"Gtk\", \"3.0\")' 'from gi.repository import Gtk'"
@@ -530,32 +527,25 @@ def app_colours(serial: Serial, qmp: Path) -> dict:
                    f" hyprctl -i 0 dispatch {shlex.quote(workspace_dispatch(1))} >/dev/null")
 
     show("gtk", f"python3 {gtk}", BASE, UNTHEMED["gtk"])
-    if kde:
-        # Dracula's base in the user's scheme; Dolphin must show Dracula's
-        # mantle and not the packaged scheme's.
-        # Serial.run drops the trailing newline; keep each output on its own line.
-        state += "\n" + serial.run(
-            "pult apply -yes dracula >/dev/null 2>&1; echo DRACULA=$?;"
-            " echo KDE=$(grep -c '^BackgroundNormal=40,42,54$' ~/.local/share/color-schemes/Pult.colors 2>/dev/null)",
-            timeout=300)
-        show("dolphin", "dolphin", DRACULA_MANTLE, UNTHEMED["dolphin"] + (MANTLE,))
-        state += "\n" + serial.run(f"{PROFILE_APPLY}; echo RESTORE=$?", timeout=300)
-    else:
-        show("dolphin", "dolphin", MANTLE, UNTHEMED["dolphin"])
+    # Dracula's base in the user's scheme; Dolphin must show Dracula's
+    # mantle and not the packaged scheme's.
+    # Serial.run drops the trailing newline; keep each output on its own line.
+    state += "\n" + serial.run(
+        "pult apply -yes dracula >/dev/null 2>&1; echo DRACULA=$?;"
+        " echo KDE=$(grep -c '^BackgroundNormal=40,42,54$' ~/.local/share/color-schemes/Pult.colors 2>/dev/null)",
+        timeout=300)
+    show("dolphin", "dolphin", DRACULA_MANTLE, UNTHEMED["dolphin"] + (MANTLE,))
+    state += "\n" + serial.run(f"{PROFILE_APPLY}; echo RESTORE=$?", timeout=300)
     return {"state": state, "windows": windows, "themed": themed}
 
 
 def app_colours_ok(result: dict) -> bool:
     """Pult applied and wrote the GTK import, adw-gtk3-dark is installed
     and set, and both apps showed full screen in the palette's colours.
-    With Pult's `kde` entry, Pult also wrote the KDE scheme for Dracula
-    and the profile went back on."""
+    Pult also wrote the KDE scheme for Dracula and the profile went back on."""
     state = set(result["state"].split())
-    want = {"DOLPHIN=0", "APPLY=0", "GTK=1", "ADW=1", "'adw-gtk3-dark'"}
-    if "KDE_ENTRY=1" in state:
-        want |= {"DRACULA=0", "KDE=1", "RESTORE=0"}
-    elif "KDE_ENTRY=0" not in state:
-        return False
+    want = {"DOLPHIN=0", "APPLY=0", "GTK=1", "ADW=1", "'adw-gtk3-dark'",
+            "KDE_ENTRY=1", "DRACULA=0", "KDE=1", "RESTORE=0"}
     windows = result["windows"]
     return (
         want <= state
@@ -1285,8 +1275,6 @@ finally:
         print("install-test: Alt-Tab:\n" + r["altswitch"].strip())
     if not checks["daily update check timer and count"]:
         print("install-test: update check:\n" + r["update_timer"].strip())
-    if "KDE_ENTRY=0" in r["app_colours"]["state"].split():
-        print("install-test: app colours: this Pult has no kde entry; Dolphin was checked against the packaged scheme only")
     if not app_colours_ok(r["app_colours"]):
         a = r["app_colours"]
         print(f"install-test: app colours: {a['state'].split()} themed {a['themed']}\n{a['windows']}")
