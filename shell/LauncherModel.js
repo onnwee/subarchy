@@ -57,9 +57,9 @@ function record(history, id, nowMs, cap) {
   return next
 }
 
-// Results for a query. An empty query is the home screen: the favorites
-// only, in their order.
-function rank(apps, favorites, history, query, nowMs, limit) {
+// Results for a query. An empty query is the favorites home screen unless
+// all is true for an explicit catalog (Applications, Commands, symbols…).
+function rank(apps, favorites, history, query, nowMs, limit, all) {
   const list = apps || []
   const fav = favorites || []
   const hist = history || {}
@@ -70,7 +70,7 @@ function rank(apps, favorites, history, query, nowMs, limit) {
   const pinned = fav.filter((id, i) => byId[id] && fav.indexOf(id) === i)
     .filter(id => empty || match(byId[id], query) > 0)
     .map(id => byId[id])
-  if (empty)
+  if (empty && !all)
     return pinned.slice(0, limit)
   const rest = list.filter(a => fav.indexOf(a.id) < 0)
     .map(a => ({ app: a, score: match(a, query), use: frecency(hist[a.id], nowMs) }))
@@ -123,11 +123,37 @@ function move(index, step, count) {
 
 // --- Commands, calculator and web search ---------------------------------
 
+// The visible source navigation and slash menu share these destinations.
+const sources = [
+  { mode: "root", name: "Favorites", prefix: "", hint: "Home", icon: "starred-symbolic", description: "Your pinned applications" },
+  { mode: "apps", name: "Applications", prefix: "/apps ", hint: "/apps", icon: "view-app-grid-symbolic", description: "Browse installed applications" },
+  { mode: "commands", name: "Commands", prefix: "/commands ", hint: "/commands", icon: "utilities-terminal-symbolic", description: "Subarchy system commands" },
+  { mode: "scripts", name: "Scripts", prefix: "/scripts ", hint: "/scripts", icon: "text-x-script-symbolic", description: "Your script commands" },
+  { mode: "snippets", name: "Snippets", prefix: "/snippets ", hint: "/snippets", icon: "edit-paste-symbolic", description: "Saved text to paste" },
+  { mode: "files", name: "Files", prefix: ". ", hint: ".", icon: "folder-symbolic", description: "Find files in your home folder" },
+  { mode: "clipboard", name: "Clipboard", prefix: "$ ", hint: "$", icon: "edit-copy-symbolic", description: "Text and images you copied" },
+  { mode: "symbols", name: "Symbols & emoji", prefix: ": ", hint: ":", icon: "face-smile-symbolic", description: "Find a character to copy" },
+  { mode: "web", name: "Web search", prefix: "@ ", hint: "@", icon: "web-browser-symbolic", description: "Search engines and quicklinks" },
+  { mode: "calc", name: "Calculator", prefix: "= ", hint: "=", icon: "accessories-calculator-symbolic", description: "Math, units and conversions" }
+]
+
+function sourceRows(query) {
+  return sources.filter(s => match({ name: s.name, genericName: s.description, id: s.mode }, query) > 0)
+    .map(s => ({ kind: "source", id: "source:" + s.mode, name: s.name, genericName: s.description,
+      icon: s.icon, prefix: s.prefix, hint: s.hint }))
+}
+
 // What a query asks for: "=" is the calculator, "@" web search, "." files,
 // ":" symbols and emoji, "$" the clipboard history; anything else is root
 // search.
 function parseQuery(query) {
   const q = String(query || "")
+  if (q.startsWith("/")) {
+    const words = q.slice(1).trim().split(/\s+/)
+    const source = sources.find(s => s.prefix.startsWith("/") && s.mode === words[0].toLowerCase())
+    return source ? { mode: source.mode, text: words.slice(1).join(" ").trim() }
+      : { mode: "sources", text: q.slice(1).trim() }
+  }
   if (q.startsWith("="))
     return { mode: "calc", text: q.slice(1).trim() }
   if (q.startsWith("@"))

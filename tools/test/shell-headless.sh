@@ -30,12 +30,16 @@ done
 work=$(mktemp -d)
 pids=()
 keep_logs() {
-  local dest log
+  local dest log shot
   mkdir -p "$root/build/shell-headless-logs" || return 1
   dest=$(mktemp -d "$root/build/shell-headless-logs/run.XXXXXX") || return 1
   for log in qs1 qs2 lock lock-fp; do
     [[ -f $work/$log.log ]] || continue
     cp -- "$work/$log.log" "$dest/" || return 1
+  done
+  for shot in "$work"/launcher-*.png; do
+    [[ -f $shot ]] || continue
+    cp -- "$shot" "$dest/" || return 1
   done
   echo "shell-headless: logs saved to $dest"
 }
@@ -378,7 +382,7 @@ check_log() { # log
   # No PipeWire daemon, NetworkManager, Hyprland or GPU may be here; those
   # messages are the environment, not the shell.
   if grep -vE 'Failed to (connect|create) pipewire context|Network will not work. Could not find an available backend|^MESA|ZINK' "$1" |
-    grep -nE 'ERROR|TypeError|ReferenceError|is not a type|is not installed|Cannot assign'; then
+    grep -nE 'ERROR|TypeError|ReferenceError|is not a type|is not installed|Cannot assign|Binding loop detected'; then
     fail "QML errors in the shell log"
   fi
 }
@@ -554,6 +558,59 @@ launcher close >/dev/null
 st=$(status "$home1")
 [[ $(json 'd.get("launcher")') == False ]] || fail "the launcher did not close: $st"
 
+# Source navigation is keyboard accessible; browsing Applications includes
+# unpinned entries while the home screen remains the owner's favorites.
+printf '[Desktop Entry]\nType=Application\nName=Unpinned Launcher App\nExec=true\n' \
+  >"$home1/.local/share/applications/subarchy-test-unpinned.desktop"
+sleep 0.5
+HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.menu >/dev/null
+launcher type / >/dev/null
+sleep 0.5
+st=$(status "$home1")
+[[ $(json 'd.get("panel")') == "" ]] || fail "the launcher left another panel competing for keyboard input"
+ls=$(launcher state)
+[[ $(python3 -c 'import json,sys; d=json.loads(sys.argv[1]); print(d["mode"] == "sources" and any(r["id"] == "source:apps" for r in d["rows"]))' "$ls") == True ]] || fail "slash did not browse the launcher's sources: $ls"
+shot HEADLESS-1; cp "$work/shot.png" "$work/launcher-sources.png"
+if command -v wtype >/dev/null; then
+  wtype -s 150 -k Down -k Return
+  sleep 0.5
+  ls=$(launcher state)
+  [[ $(python3 -c 'import json,sys; d=json.loads(sys.argv[1]); print(d["mode"] == "apps" and any(r["id"] == "subarchy-test-unpinned" for r in d["rows"]))' "$ls") == True ]] || fail "keyboard source navigation did not browse unpinned apps: $ls"
+  wtype -s 150 -k Escape
+  sleep 0.2
+  [[ $(launcher state) == *'"query":""'* ]] || fail "Escape did not return to Favorites: $(launcher state)"
+  wtype -s 150 -k Escape
+  sleep 0.2
+  st=$(status "$home1")
+  [[ $(json 'd.get("launcher")') == False ]] || fail "Escape from Favorites did not close the launcher"
+fi
+launcher source commands >/dev/null
+sleep 0.5
+ls=$(launcher state)
+[[ $(python3 -c 'import json,sys; d=json.loads(sys.argv[1]); print(d["mode"] == "commands" and len(d["rows"]) == 2 and all(r["kind"] == "command" for r in d["rows"]))' "$ls") == True ]] || fail "Commands did not restrict its results: $ls"
+
+# The real preview is visible beside a wide list and below a narrow one.
+# Keep each render with the diagnostics for human review.
+launcher type ': em dash' >/dev/null
+sleep 0.5
+ls=$(launcher state)
+[[ $(python3 -c 'import json,sys; d=json.loads(sys.argv[1]); x,y,w,h=d["previewBounds"]; print(d["sidePreview"] and w > 100 and h > 100 and x >= 0 and y >= 0 and x+w <= d["width"] and y+h <= d["height"])' "$ls") == True ]] || fail "the wide preview was not laid out: $ls"
+shot HEADLESS-1; cp "$work/shot.png" "$work/launcher-preview-wide.png"
+swaymsg output HEADLESS-1 resolution 640x480 >/dev/null
+sleep 0.5
+ls=$(launcher state)
+[[ $(python3 -c 'import json,sys; d=json.loads(sys.argv[1]); x,y,w,h=d["bounds"]; print(not d["sidePreview"] and x >= 0 and y >= 0 and x+w <= 640 and y+h <= 480 and d["previewBounds"][2] > 100)' "$ls") == True ]] || fail "the launcher did not fit a small output: $ls"
+shot HEADLESS-1; cp "$work/shot.png" "$work/launcher-preview-narrow.png"
+swaymsg output HEADLESS-1 resolution 1600x1000 scale 1.6 >/dev/null
+sleep 0.5
+launcher source root >/dev/null
+ls=$(launcher state)
+[[ $(python3 -c 'import json,sys; d=json.loads(sys.argv[1]); x,y,w,h=d["bounds"]; print(x >= 0 and y >= 0 and x+w <= 1000 and y+h <= 625 and d["columns"] == 4)' "$ls") == True ]] || fail "the launcher did not fit scale 1.6: $ls"
+shot HEADLESS-1; cp "$work/shot.png" "$work/launcher-scale-1.6.png"
+swaymsg output HEADLESS-1 resolution 1280x800 scale 1 >/dev/null
+launcher close >/dev/null
+check_log "$work/qs1.log"
+
 # Commands, the calculator and web search, through the launcher's state.
 lstate() { # query -> the launcher's state after typing it
   launcher type "$1" >/dev/null
@@ -684,6 +741,11 @@ launcher enter >/dev/null
 filewait "$home1/greet-out" "there friend" || fail "an alias did not pass its arguments"
 launcher close >/dev/null
 [[ $(lfield aliases) == "['hi', 'fs']" ]] || fail "the aliases are not registered: $(launcher state)"
+launcher source snippets >/dev/null
+launcher type '/snippets sig' >/dev/null
+sleep 0.5
+[[ $(lfield preview) == Best,* ]] || fail "the snippet preview did not show the expanded text: $(launcher state)"
+shot HEADLESS-1; cp "$work/shot.png" "$work/launcher-snippet.png"
 launcher hotkey hi >/dev/null
 [[ $(lfield argument) == 1 ]] || fail "an alias hotkey for a script with an argument did not ask for it: $(launcher state)"
 launcher close >/dev/null

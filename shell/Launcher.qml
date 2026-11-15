@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import QtQuick.Effects
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
@@ -84,9 +85,40 @@ PanelWindow { // qmllint disable uncreatable-type
     || (launcher.parsed.mode === "root" && Model.looksLikeMath(launcher.parsed.text)) ? launcher.parsed.text : ""
   readonly property var results: launcher.open ? launcher.rows(launcher.query) : []
   readonly property var selected: launcher.results[launcher.index] || null
-  readonly property bool previewing: launcher.selected !== null && ["file", "symbol", "ask", "clip"].indexOf(launcher.selected.kind) >= 0
+  readonly property bool previewing: launcher.selected !== null && ["file", "symbol", "ask", "clip", "snippet"].indexOf(launcher.selected.kind) >= 0
   readonly property bool home: launcher.query.trim() === "" && !launcher.argFor
-  readonly property int columns: 4
+  readonly property int columns: Math.max(1, Math.min(4, Math.floor(resultsPane.width / 132)))
+  readonly property var source: Model.sources.find(s => s.mode === launcher.parsed.mode) || null
+  readonly property string heading: launcher.argFor ? "Script arguments"
+    : launcher.asking ? "Ask " + (launcher.agent ? launcher.agent.name : "the agent")
+    : launcher.home ? "Favorites"
+    : launcher.parsed.mode === "root" ? "Search results"
+    : launcher.parsed.mode === "sources" ? "Search sources"
+    : launcher.source ? launcher.source.name : "Search results"
+  readonly property bool sidePreview: launcher.previewing && box.width >= 880
+  readonly property string actionLabel: !launcher.selected ? "Open"
+    : ["source", "quicklink"].includes(launcher.selected.kind) ? "Browse"
+    : ["symbol", "clip", "calc"].includes(launcher.selected.kind) ? "Copy"
+    : launcher.selected.kind === "snippet" ? "Paste"
+    : launcher.selected.kind === "argument" ? "Continue"
+    : launcher.selected.kind === "ask" ? (launcher.asking ? "Copy answer" : "Ask")
+    : ["command", "script"].includes(launcher.selected.kind) ? "Run" : "Open"
+
+  function iconFor(name) {
+    return Quickshell.iconPath(name || "", true) || Quickshell.iconPath("application-x-executable", true)
+  }
+
+  function chooseSource(mode) {
+    const source = Model.sources.find(s => s.mode === mode)
+    if (!source)
+      return
+    launcher.argFor = null
+    launcher.argValues = []
+    launcher.pending = null
+    launcher.asking = null
+    launcher.query = source.prefix
+    field.forceActiveFocus()
+  }
 
   visible: open
   screen: place.screen
@@ -114,6 +146,13 @@ PanelWindow { // qmllint disable uncreatable-type
     if (launcher.asking)
       return [Object.assign({}, launcher.asking.row, { name: launcher.asking.row.name, genericName: launcher.asking.answer === "" ? "Asking…" : "Answered; Enter copies the answer" })]
     const p = Model.parseQuery(q)
+    if (p.mode === "sources")
+      return Model.sourceRows(p.text)
+    if (["apps", "commands", "scripts", "snippets"].includes(p.mode)) {
+      const catalog = p.mode === "apps" ? launcher.apps : p.mode === "commands" ? launcher.commands
+        : p.mode === "scripts" ? launcher.scripts : launcher.snippets
+      return Model.rank(catalog, launcher.favorites, launcher.history, p.text, Date.now(), 50, true)
+    }
     const calc = launcher.calcResult.answer !== "" && launcher.calcResult.expr === launcher.calcExpr && launcher.calcExpr !== ""
       ? [{ kind: "calc", id: "calc", name: launcher.calcResult.answer, genericName: "= " + launcher.calcExpr + "   Enter copies the answer", icon: "accessories-calculator" }]
       : []
@@ -128,7 +167,7 @@ PanelWindow { // qmllint disable uncreatable-type
     if (p.mode === "files")
       return launcher.fileResult.text === p.text ? launcher.fileResult.rows : []
     if (p.mode === "symbols")
-      return Model.rank(launcher.symbolItems, [], launcher.history, p.text, Date.now(), 50)
+      return Model.rank(launcher.symbolItems, [], launcher.history, p.text, Date.now(), 50, true)
     if (p.mode === "clipboard") {
       if (p.text === "")
         return launcher.clips.length > 0 ? launcher.clips.concat([Model.clipClear]) : []
@@ -182,6 +221,7 @@ PanelWindow { // qmllint disable uncreatable-type
   function show() {
     if (launcher.open)
       return
+    Panels.close()
     launcher.query = ""
     launcher.pending = null
     launcher.argFor = null
@@ -208,6 +248,11 @@ PanelWindow { // qmllint disable uncreatable-type
   function launch(row, confirmed) {
     if (!row)
       return
+    if (row.kind === "source") {
+      launcher.query = row.prefix
+      field.forceActiveFocus()
+      return
+    }
     if (row.kind === "quicklink") {
       launcher.query = "@" + row.id + " "
       return
@@ -360,6 +405,10 @@ PanelWindow { // qmllint disable uncreatable-type
   // through a short read.
   function loadPreview() {
     const row = launcher.selected
+    if (row && row.kind === "snippet") {
+      launcher.preview = Model.expand(row.text, new Date(), Quickshell.clipboardText)
+      return
+    }
     if (row && row.kind === "clip" && !row.isImage) {
       if (previewRead.running) {
         launcher.previewAgain = true
@@ -399,7 +448,10 @@ PanelWindow { // qmllint disable uncreatable-type
     if (launcher.parsed.mode === "clipboard" && !clipList.running)
       clipList.running = true
   }
-  onSelectedChanged: launcher.loadPreview()
+  onSelectedChanged: {
+    launcher.preview = ""
+    launcher.loadPreview()
+  }
 
   Timer {
     id: calcDelay
@@ -585,11 +637,22 @@ PanelWindow { // qmllint disable uncreatable-type
     function last(): void { launcher.index = Model.move(launcher.results.length - 1, 0, launcher.results.length) }
     // What an alias's global shortcut does.
     function hotkey(name: string): void { launcher.runAlias(name) }
+    function source(mode: string): void { launcher.show(); launcher.chooseSource(mode) }
     function state(): string {
       return JSON.stringify({
         query: launcher.query,
         pending: launcher.pending ? launcher.pending.id : "",
         argument: launcher.argFor ? launcher.argValues.length + 1 : 0,
+        mode: launcher.parsed.mode,
+        heading: launcher.heading,
+        width: box.width,
+        height: box.height,
+        columns: launcher.columns,
+        index: launcher.index,
+        inputFocused: field.activeFocus,
+        bounds: [box.x, box.y, box.width, box.height],
+        previewBounds: launcher.previewing ? [previewPane.x, previewPane.y, previewPane.width, previewPane.height] : [],
+        sidePreview: launcher.sidePreview,
         placeholderCut: placeholder.truncated,
         aliases: Object.keys(launcher.aliasNames),
         rows: launcher.results.map(r => ({ kind: r.kind || "app", id: r.id, name: r.name, url: r.url || "" })),
@@ -662,319 +725,519 @@ PanelWindow { // qmllint disable uncreatable-type
 
   Rectangle {
     id: box
-    anchors.horizontalCenter: parent.horizontalCenter
-    y: Math.round(parent.height * 0.2)
-    width: 560
-    height: content.implicitHeight + 2 * Style.spacing
+    anchors.centerIn: parent
+    width: Math.min(960, Math.max(0, parent.width - 32))
+    height: Math.min(560, Math.max(0, parent.height - 64))
     color: Theme.mantle
     border.width: 1
     border.color: Theme.border
 
-    // Swallow clicks on the box so they do not close it.
-    MouseArea {
-      anchors.fill: parent
-    }
+    MouseArea { anchors.fill: parent }
 
-    Column {
-      id: content
-      x: Style.spacing
-      y: Style.spacing
-      width: parent.width - 2 * Style.spacing
-      spacing: Style.spacing
-
-      Rectangle {
-        width: parent.width
-        height: 36
-        color: Theme.base
-        border.width: 1
-        border.color: Theme.surface
-
-        TextInput {
-          id: field
-          anchors.fill: parent
-          anchors.leftMargin: Style.spacing
-          anchors.rightMargin: Style.spacing
-          verticalAlignment: TextInput.AlignVCenter
-          color: Theme.text
-          selectionColor: Theme.selection
-          selectedTextColor: Theme.text
-          font.family: Style.uiFontFamily
-          font.pixelSize: Style.fontSize + 4
-          text: launcher.query
-          onTextEdited: launcher.query = text
-
-          Keys.onPressed: (event) => {
-            const n = launcher.results.length
-            const across = launcher.home ? 1 : 0
-            const down = launcher.home ? launcher.columns : 1
-            if (event.key === Qt.Key_Escape && launcher.pending)
-              launcher.pending = null
-            else if (event.key === Qt.Key_Escape && launcher.asking)
-              launcher.asking = null
-            else if (event.key === Qt.Key_Escape && launcher.argFor) {
-              launcher.argFor = null
-              launcher.argValues = []
-              launcher.query = ""
-            }
-            else if (event.key === Qt.Key_Escape)
-              launcher.hide()
-            else if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && launcher.pending) {
-              if (Model.confirms(event.isAutoRepeat))
-                launcher.launch(launcher.pending, true)
-            }
-            else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter)
-              launcher.launch(launcher.results[launcher.index], false)
-            else if (event.key === Qt.Key_Down || event.key === Qt.Key_Tab)
-              launcher.index = Model.move(launcher.index, event.key === Qt.Key_Tab ? 1 : down, n)
-            else if (event.key === Qt.Key_Up || event.key === Qt.Key_Backtab)
-              launcher.index = Model.move(launcher.index, event.key === Qt.Key_Backtab ? -1 : -down, n)
-            else if (across && event.key === Qt.Key_Right)
-              launcher.index = Model.move(launcher.index, 1, n)
-            else if (across && event.key === Qt.Key_Left)
-              launcher.index = Model.move(launcher.index, -1, n)
-            else
-              return
-            event.accepted = true
+    // Search remains focused while arrows move through the results.
+    Rectangle {
+      id: searchBar
+      x: 1
+      y: 1
+      width: parent.width - 2
+      height: 64
+      color: Theme.base
+      Text {
+        x: 20
+        anchors.verticalCenter: parent.verticalCenter
+        text: "⌕"
+        color: Theme.accent
+        font.pixelSize: 26
+      }
+      TextInput {
+        id: field
+        x: 54
+        width: parent.width - 180
+        height: parent.height
+        verticalAlignment: TextInput.AlignVCenter
+        color: Theme.text
+        selectionColor: Theme.selection
+        selectedTextColor: Theme.text
+        font.family: Style.uiFontFamily
+        font.pixelSize: Style.fontSize + 7
+        clip: true
+        text: launcher.query
+        onTextEdited: launcher.query = text
+        Keys.onPressed: (event) => {
+          const n = launcher.results.length
+          const across = launcher.home ? 1 : 0
+          const down = launcher.home ? launcher.columns : 1
+          if (event.key === Qt.Key_Escape && launcher.pending)
+            launcher.pending = null
+          else if (event.key === Qt.Key_Escape && launcher.asking)
+            launcher.asking = null
+          else if (event.key === Qt.Key_Escape && launcher.argFor) {
+            launcher.argFor = null
+            launcher.argValues = []
+            launcher.query = ""
           }
-
-          // Short enough for the box; a long script argument placeholder
-          // is cut with an ellipsis.
-          Text {
-            id: placeholder
-            visible: field.text === ""
-            anchors.verticalCenter: parent.verticalCenter
-            width: parent.width
-            elide: Text.ElideRight
-            textFormat: Text.PlainText
-            text: launcher.argFor ? launcher.argFor.params[launcher.argValues.length].placeholder
-              : "Search   = calc  @ web  . files  : emoji  $ clipboard"
-            color: Theme.muted
-            font: field.font
+          else if (event.key === Qt.Key_Escape && launcher.query !== "")
+            launcher.chooseSource("root")
+          else if (event.key === Qt.Key_Escape)
+            launcher.hide()
+          else if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && launcher.pending) {
+            if (Model.confirms(event.isAutoRepeat))
+              launcher.launch(launcher.pending, true)
           }
+          else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter)
+            launcher.launch(launcher.results[launcher.index], false)
+          else if (event.key === Qt.Key_Down || event.key === Qt.Key_Tab)
+            launcher.index = Model.move(launcher.index, event.key === Qt.Key_Tab ? 1 : down, n)
+          else if (event.key === Qt.Key_Up || event.key === Qt.Key_Backtab)
+            launcher.index = Model.move(launcher.index, event.key === Qt.Key_Backtab ? -1 : -down, n)
+          else if (across && event.key === Qt.Key_Right)
+            launcher.index = Model.move(launcher.index, 1, n)
+          else if (across && event.key === Qt.Key_Left)
+            launcher.index = Model.move(launcher.index, -1, n)
+          else
+            return
+          event.accepted = true
+        }
+        Text {
+          id: placeholder
+          visible: field.text === ""
+          anchors.verticalCenter: parent.verticalCenter
+          width: parent.width
+          elide: Text.ElideRight
+          textFormat: Text.PlainText
+          text: launcher.argFor ? launcher.argFor.params[launcher.argValues.length].placeholder
+            : "Search apps, commands and more…"
+          color: Theme.subtext
+          font: field.font
         }
       }
-
-      // A dangerous command waits for confirmation.
       Rectangle {
-        visible: launcher.pending !== null
-        width: parent.width
-        height: visible ? confirm.implicitHeight + 2 * Style.spacing : 0
-        color: Theme.base
+        anchors.right: parent.right
+        anchors.rightMargin: 16
+        anchors.verticalCenter: parent.verticalCenter
+        width: 92
+        height: 28
+        color: sourceButton.containsMouse ? Theme.surface : "transparent"
         border.width: 1
-        border.color: Theme.warning
-
+        border.color: Theme.surface
         Text {
-          id: confirm
-          x: Style.spacing
-          y: Style.spacing
-          width: parent.width - 2 * Style.spacing
-          text: launcher.pending ? "“" + (launcher.pending.kind === "command" ? "subcult " : "") + launcher.pending.name + "” is marked dangerous. Enter runs it; Escape goes back." : ""
-          textFormat: Text.PlainText
-          wrapMode: Text.Wrap
-          color: Theme.warning
+          anchors.centerIn: parent
+          text: "/  Sources"
+          color: Theme.subtext
           font.family: Style.uiFontFamily
           font.pixelSize: Style.fontSize + 1
         }
+        MouseArea {
+          id: sourceButton
+          anchors.fill: parent
+          hoverEnabled: true
+          onClicked: { launcher.query = "/"; field.forceActiveFocus() }
+        }
       }
+    }
+    Rectangle { x: 1; y: searchBar.height; width: parent.width - 2; height: 1; color: Theme.surface }
 
-      // Home screen: the favorites grid.
-      GridView {
-        id: grid
-        visible: launcher.home
-        width: parent.width
-        height: visible ? Math.ceil(count / launcher.columns) * cellHeight : 0
-        cellWidth: width / launcher.columns
-        cellHeight: 84
-        interactive: false
-        model: launcher.home ? launcher.results : []
-        currentIndex: launcher.index
+    Row {
+      id: body
+      x: 16
+      y: searchBar.height + 16
+      width: parent.width - 32
+      height: parent.height - searchBar.height - footer.height - 32
+      spacing: 16
 
-        delegate: Rectangle {
-          id: tile
-          required property var modelData
-          required property int index
-          width: grid.cellWidth - 4
-          height: grid.cellHeight - 4
-          color: tile.index === launcher.index ? Theme.selection : "transparent"
-          border.width: tile.index === launcher.index ? 1 : 0
-          border.color: Theme.accent
-
-          Column {
-            anchors.centerIn: parent
-            width: parent.width - 8
-            spacing: 4
-            IconImage {
-              anchors.horizontalCenter: parent.horizontalCenter
-              implicitSize: 40
-              source: Quickshell.iconPath(tile.modelData.icon || "", "application-x-executable")
-            }
-            Text {
-              width: parent.width
-              horizontalAlignment: Text.AlignHCenter
-              text: tile.modelData.name || tile.modelData.id
-              textFormat: Text.PlainText
-              elide: Text.ElideRight
-              color: Theme.text
-              font.family: Style.uiFontFamily
-              font.pixelSize: Style.fontSize
-            }
+      Flickable {
+        id: navigation
+        height: body.height
+        contentHeight: sourceList.implicitHeight
+        clip: true
+        visible: box.width >= 700
+        width: visible ? 168 : 0
+        Column {
+          id: sourceList
+          width: parent.width
+          spacing: 2
+          Text {
+            height: 28
+            leftPadding: 10
+            text: "LIBRARY"
+            color: Theme.subtext
+            font.family: Style.uiFontFamily
+            font.pixelSize: Style.fontSize - 1
+            font.letterSpacing: 1.2
           }
-
-          MouseArea {
-            anchors.fill: parent
-            onClicked: launcher.launch(tile.modelData, false)
+          Repeater {
+            model: Model.sources
+            delegate: Rectangle {
+              id: destination
+              required property var modelData
+              readonly property bool selected: launcher.parsed.mode === modelData.mode
+                && (modelData.mode !== "root" || launcher.home)
+              width: navigation.width
+              height: 34
+              color: selected ? Theme.selection : sourceMouse.containsMouse ? Theme.surface : "transparent"
+              Rectangle {
+                visible: destination.selected
+                width: 2
+                height: parent.height - 12
+                x: 0
+                y: 6
+                color: Theme.accent
+              }
+              Text {
+                x: 10
+                anchors.verticalCenter: parent.verticalCenter
+                width: parent.width - 18
+                text: destination.modelData.name
+                textFormat: Text.PlainText
+                elide: Text.ElideRight
+                color: destination.selected ? Theme.text : Theme.subtext
+                font.family: Style.uiFontFamily
+                font.pixelSize: Style.fontSize + 2
+                font.weight: destination.selected ? Font.DemiBold : Font.Normal
+              }
+              MouseArea {
+                id: sourceMouse
+                anchors.fill: parent
+                hoverEnabled: true
+                onClicked: launcher.chooseSource(destination.modelData.mode)
+              }
+            }
           }
         }
       }
+      Rectangle { visible: navigation.visible; width: visible ? 1 : 0; height: parent.height; color: Theme.surface }
 
-      // Search results.
-      ListView {
-        id: list
-        visible: !launcher.home
-        width: parent.width
-        height: visible ? Math.min(count, 8) * 40 : 0
-        clip: true
-        model: launcher.home ? [] : launcher.results
-        currentIndex: launcher.index
-        highlightMoveDuration: 0
-
-        delegate: Rectangle {
-          id: row
-          required property var modelData
-          required property int index
-          width: list.width
-          height: 40
-          color: row.index === launcher.index ? Theme.selection : "transparent"
-
-          IconImage {
-            id: icon
-            anchors.verticalCenter: parent.verticalCenter
-            x: Style.spacing
-            implicitSize: 24
-            visible: row.modelData.kind !== "symbol"
-            source: visible ? Quickshell.iconPath(row.modelData.icon || "", "application-x-executable") : ""
+      Column {
+        id: resultsPane
+        width: body.width - (navigation.visible ? navigation.width + 33 : 0)
+          - (launcher.sidePreview ? Math.floor(body.width * 0.34) + 16 : 0)
+        height: body.height
+        spacing: 8
+        readonly property real available: Math.max(0, height - sectionTitle.height - 8
+          - (confirmation.visible ? confirmation.height + 8 : 0)
+          - (launcher.previewing && !launcher.sidePreview ? previewPane.height + 8 : 0))
+        Row {
+          id: sectionTitle
+          width: parent.width
+          height: 28
+          Text {
+            width: parent.width - countLabel.implicitWidth
+            text: launcher.heading
+            textFormat: Text.PlainText
+            elide: Text.ElideRight
+            color: Theme.text
+            font.family: Style.uiFontFamily
+            font.pixelSize: Style.fontSize + 3
+            font.weight: Font.DemiBold
           }
           Text {
-            anchors.verticalCenter: parent.verticalCenter
+            id: countLabel
+            text: launcher.results.length ? String(launcher.results.length) : ""
+            color: Theme.subtext
+            font.family: Style.fontFamily
+            font.pixelSize: Style.fontSize + 1
+          }
+        }
+
+        Rectangle {
+          id: confirmation
+          visible: launcher.pending !== null
+          width: parent.width
+          height: visible ? confirm.implicitHeight + 2 * Style.spacing : 0
+          color: Theme.base
+          border.width: 1
+          border.color: Theme.warning
+
+          Text {
+            id: confirm
             x: Style.spacing
-            width: 24
-            visible: row.modelData.kind === "symbol"
-            horizontalAlignment: Text.AlignHCenter
-            text: visible ? row.modelData.char : ""
+            y: Style.spacing
+            width: parent.width - 2 * Style.spacing
+            text: launcher.pending ? "“" + (launcher.pending.kind === "command" ? "subcult " : "") + launcher.pending.name + "” is marked dangerous. Enter runs it; Escape goes back." : ""
             textFormat: Text.PlainText
-            color: Theme.text
-            font.pixelSize: Style.fontSize + 6
+            wrapMode: Text.Wrap
+            color: Theme.warning
+            font.family: Style.uiFontFamily
+            font.pixelSize: Style.fontSize + 1
           }
-          Column {
-            anchors.verticalCenter: parent.verticalCenter
-            anchors.left: icon.right
-            anchors.leftMargin: Style.spacing
-            anchors.right: parent.right
-            anchors.rightMargin: Style.spacing
+        }
+
+
+        GridView {
+          id: grid
+          visible: launcher.home
+          width: parent.width
+          height: visible ? Math.min(Math.ceil(count / launcher.columns) * cellHeight, resultsPane.available) : 0
+          cellWidth: width / launcher.columns
+          cellHeight: 100
+          clip: true
+          interactive: contentHeight > height
+          model: launcher.home ? launcher.results : []
+          currentIndex: launcher.index
+          onCurrentIndexChanged: if (currentIndex >= 0) positionViewAtIndex(currentIndex, GridView.Contain)
+          delegate: Rectangle {
+            id: tile
+            required property var modelData
+            required property int index
+            width: grid.cellWidth - 6
+            height: grid.cellHeight - 6
+            color: tile.index === launcher.index ? Theme.selection : tileMouse.containsMouse ? Theme.surface : "transparent"
+            border.width: tile.index === launcher.index ? 1 : 0
+            border.color: Theme.accent
+            Column {
+              anchors.centerIn: parent
+              width: parent.width - 16
+              spacing: 10
+              IconImage {
+                id: tileIcon
+                anchors.horizontalCenter: parent.horizontalCenter
+                implicitSize: 36
+                visible: source !== ""
+                source: launcher.iconFor(tile.modelData.icon)
+                layer.enabled: String(tile.modelData.icon || "").endsWith("-symbolic") && Quickshell.hasThemeIcon(tile.modelData.icon)
+                // Flatten symbolic luminance before applying the palette.
+                layer.effect: MultiEffect { contrast: -1; brightness: 0.5; colorization: 1; colorizationColor: Theme.text }
+              }
+              Text {
+                visible: !tileIcon.visible
+                width: parent.width
+                height: 36
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                text: String(tile.modelData.name || tile.modelData.id).charAt(0).toUpperCase()
+                color: Theme.accent
+                font.family: Style.uiFontFamily
+                font.pixelSize: 28
+              }
+              Text {
+                width: parent.width
+                horizontalAlignment: Text.AlignHCenter
+                text: tile.modelData.name || tile.modelData.id
+                textFormat: Text.PlainText
+                elide: Text.ElideRight
+                color: Theme.text
+                font.family: Style.uiFontFamily
+                font.pixelSize: Style.fontSize + 2
+              }
+            }
+            MouseArea {
+              id: tileMouse
+              anchors.fill: parent
+              hoverEnabled: true
+              onPositionChanged: if (containsMouse) launcher.index = tile.index
+              onClicked: launcher.launch(tile.modelData, false)
+            }
+          }
+        }
+        ListView {
+          id: list
+          visible: !launcher.home
+          width: parent.width
+          height: visible ? Math.min(count * 52, resultsPane.available) : 0
+          clip: true
+          model: launcher.home ? [] : launcher.results
+          currentIndex: launcher.index
+          highlightMoveDuration: 0
+          onCurrentIndexChanged: if (currentIndex >= 0) positionViewAtIndex(currentIndex, ListView.Contain)
+          delegate: Rectangle {
+            id: row
+            required property var modelData
+            required property int index
+            width: list.width
+            height: 52
+            color: row.index === launcher.index ? Theme.selection : rowMouse.containsMouse ? Theme.surface : "transparent"
+            Rectangle { visible: row.index === launcher.index; width: 2; height: 30; y: 11; color: Theme.accent }
+            IconImage {
+              id: icon
+              anchors.verticalCenter: parent.verticalCenter
+              x: 12
+              implicitSize: 24
+              visible: row.modelData.kind !== "symbol"
+              source: visible ? launcher.iconFor(row.modelData.icon) : ""
+              layer.enabled: String(row.modelData.icon || "").endsWith("-symbolic") && Quickshell.hasThemeIcon(row.modelData.icon)
+              layer.effect: MultiEffect { contrast: -1; brightness: 0.5; colorization: 1; colorizationColor: Theme.text }
+            }
             Text {
-              width: parent.width
-              text: row.modelData.name || row.modelData.id
+              anchors.verticalCenter: parent.verticalCenter
+              x: 12
+              width: 24
+              visible: row.modelData.kind === "symbol" || icon.source === ""
+              horizontalAlignment: Text.AlignHCenter
+              text: row.modelData.kind === "symbol" ? row.modelData.char
+                : String(row.modelData.name || row.modelData.id).charAt(0).toUpperCase()
               textFormat: Text.PlainText
-              elide: Text.ElideRight
               color: Theme.text
-              font.family: Style.uiFontFamily
-              font.pixelSize: Style.fontSize + 1
+              font.pixelSize: Style.fontSize + 10
+            }
+            Column {
+              anchors.verticalCenter: parent.verticalCenter
+              x: 48
+              width: parent.width - 60 - (row.modelData.kind === "source" ? 76 : 0)
+              spacing: 3
+              Text {
+                width: parent.width
+                text: row.modelData.name || row.modelData.id
+                textFormat: Text.PlainText
+                elide: Text.ElideRight
+                color: Theme.text
+                font.family: Style.uiFontFamily
+                font.pixelSize: Style.fontSize + 3
+              }
+              Text {
+                visible: text !== ""
+                width: parent.width
+                text: row.modelData.genericName || ""
+                textFormat: Text.PlainText
+                elide: Text.ElideRight
+                color: Theme.subtext
+                font.family: Style.uiFontFamily
+                font.pixelSize: Style.fontSize
+              }
             }
             Text {
-              visible: text !== ""
-              width: parent.width
-              text: row.modelData.genericName || ""
-              textFormat: Text.PlainText
-              elide: Text.ElideRight
+              visible: row.modelData.kind === "source"
+              anchors.right: parent.right
+              anchors.rightMargin: 12
+              anchors.verticalCenter: parent.verticalCenter
+              text: row.modelData.hint || ""
               color: Theme.subtext
-              font.family: Style.uiFontFamily
-              font.pixelSize: Style.fontSize - 1
+              font.family: Style.fontFamily
+              font.pixelSize: Style.fontSize
+            }
+            MouseArea {
+              id: rowMouse
+              anchors.fill: parent
+              hoverEnabled: true
+              onPositionChanged: if (containsMouse) launcher.index = row.index
+              onClicked: launcher.launch(row.modelData, false)
             }
           }
-
-          MouseArea {
-            anchors.fill: parent
-            onClicked: launcher.launch(row.modelData, false)
-          }
-        }
-      }
-
-      // Preview of the selected file or symbol.
-      Rectangle {
-        visible: launcher.previewing
-        width: parent.width
-        height: visible ? 150 : 0
-        color: Theme.base
-        border.width: 1
-        border.color: Theme.surface
-        clip: true
-
-        Text {
-          visible: launcher.selected !== null && launcher.selected.kind === "symbol"
-          anchors.centerIn: parent
-          text: visible ? launcher.selected.char + "\n" : ""
-          textFormat: Text.PlainText
-          horizontalAlignment: Text.AlignHCenter
-          color: Theme.text
-          font.pixelSize: 56
-        }
-        Image {
-          id: imagePreview
-          readonly property bool wanted: launcher.selected !== null && ((launcher.selected.kind === "file" && Model.isImage(launcher.selected.path))
-            || (launcher.selected.kind === "clip" && launcher.selected.isImage))
-          visible: wanted
-          anchors.fill: parent
-          anchors.margins: 4
-          fillMode: Image.PreserveAspectFit
-          asynchronous: true
-          sourceSize.width: 1024
-          sourceSize.height: 1024
-          source: wanted ? "file://" + (launcher.selected.kind === "clip" ? launcher.selected.file : launcher.selected.path) : ""
         }
         Text {
-          visible: launcher.selected !== null && (launcher.selected.kind === "file" || launcher.selected.kind === "clip") && !imagePreview.wanted
-          x: Style.spacing
-          y: Style.spacing
-          width: parent.width - 2 * Style.spacing
-          text: launcher.preview
-          textFormat: Text.PlainText
-          wrapMode: Text.NoWrap
-          elide: Text.ElideRight
-          maximumLineCount: 9
-          color: Theme.subtext
-          font.family: Style.fontFamily
-          font.pixelSize: Style.fontSize - 1
-        }
-        Text {
-          visible: launcher.selected !== null && launcher.selected.kind === "ask"
-          x: Style.spacing
-          y: Style.spacing
-          width: parent.width - 2 * Style.spacing
-          text: launcher.asking ? (launcher.asking.answer === "" ? "Asking " + launcher.agent.name + "…" : launcher.asking.answer)
-            : "Enter sends the text to " + (launcher.agent ? launcher.agent.name : "the agent") + "'s provider. It leaves this machine."
+          visible: launcher.results.length === 0
+          topPadding: 16
+          width: parent.width
+          text: launcher.home ? "Your favorites will appear here. Browse Applications to get started."
+            : launcher.parsed.mode === "sources" ? "No matching sources"
+            : launcher.parsed.mode === "scripts" ? "No script commands yet"
+            : launcher.parsed.mode === "snippets" ? "No snippets yet"
+            : launcher.parsed.mode === "calc" ? (launcher.parsed.text === "" ? "Enter an expression, such as 25 * 4 or 5 km to mi" : "No answer")
+            : launcher.parsed.mode === "files" ? (launcher.parsed.text === "" ? "Type part of a file name; fd searches your home folder"
+              : launcher.fileResult.text === launcher.parsed.text ? "Nothing found" : "Searching…")
+            : launcher.parsed.mode === "symbols" && launcher.parsed.text === "" ? "Type an emoji or symbol name; Enter copies it"
+            : launcher.parsed.mode === "clipboard" ? (launcher.clips.length === 0 ? "Clipboard history is empty" : "Nothing found")
+            : "Nothing found"
           textFormat: Text.PlainText
           wrapMode: Text.Wrap
-          elide: Text.ElideRight
-          maximumLineCount: 9
-          color: launcher.asking ? Theme.text : Theme.warning
+          color: Theme.subtext
           font.family: Style.uiFontFamily
-          font.pixelSize: Style.fontSize
+          font.pixelSize: Style.fontSize + 2
         }
       }
 
+    }
+
+    Rectangle {
+      id: previewPane
+      visible: launcher.previewing
+      x: body.x + resultsPane.x + (launcher.sidePreview ? resultsPane.width + 16 : 0)
+      y: body.y + (launcher.sidePreview ? 0 : body.height - height)
+      width: launcher.sidePreview ? Math.floor(body.width * 0.34) : resultsPane.width
+      height: visible ? (launcher.sidePreview ? body.height : Math.min(160, body.height * 0.35)) : 0
+      color: Theme.base
+      border.width: 1
+      border.color: Theme.surface
+      clip: true
+
       Text {
-        visible: launcher.results.length === 0
-        width: parent.width
-        text: launcher.home ? "No favorites yet: add app ids to ~/.config/subcult/launcher/favorites.json"
-          : launcher.parsed.mode === "calc" ? "No answer"
-          : launcher.parsed.mode === "files" ? (launcher.parsed.text === "" ? "Type part of a file name; fd searches your home folder"
-            : launcher.fileResult.text === launcher.parsed.text ? "Nothing found" : "Searching…")
-          : launcher.parsed.mode === "symbols" && launcher.parsed.text === "" ? "Type an emoji or symbol name; Enter copies it"
-          : launcher.parsed.mode === "clipboard" ? (launcher.clips.length === 0 ? "Clipboard history is empty" : "Nothing found")
-          : "Nothing found"
+        x: Style.spacing
+        y: Style.spacing
+        text: "PREVIEW"
+        color: Theme.subtext
+        font.family: Style.uiFontFamily
+        font.pixelSize: Style.fontSize - 1
+        font.letterSpacing: 1
+      }
+      Text {
+        visible: launcher.selected !== null && launcher.selected.kind === "symbol"
+        anchors.centerIn: parent
+        text: visible ? launcher.selected.char + "\n" : ""
         textFormat: Text.PlainText
-        wrapMode: Text.Wrap
-        color: Theme.muted
+        horizontalAlignment: Text.AlignHCenter
+        color: Theme.text
+        font.pixelSize: 56
+      }
+      Image {
+        id: imagePreview
+        readonly property bool wanted: launcher.selected !== null && ((launcher.selected.kind === "file" && Model.isImage(launcher.selected.path))
+          || (launcher.selected.kind === "clip" && launcher.selected.isImage))
+        visible: wanted
+        anchors.fill: parent
+        anchors.margins: 8
+        anchors.topMargin: 28
+        fillMode: Image.PreserveAspectFit
+        asynchronous: true
+        sourceSize.width: 1024
+        sourceSize.height: 1024
+        source: wanted ? "file://" + (launcher.selected.kind === "clip" ? launcher.selected.file : launcher.selected.path) : ""
+      }
+      Flickable {
+        id: previewScroll
+        anchors.fill: parent
+        anchors.margins: 12
+        anchors.topMargin: 32
+        visible: launcher.selected !== null && launcher.selected.kind !== "symbol" && !imagePreview.wanted
+        contentWidth: width
+        contentHeight: previewText.implicitHeight
+        boundsBehavior: Flickable.StopAtBounds
+        clip: true
+        Text {
+          id: previewText
+          width: parent.width
+          readonly property bool isAsk: launcher.selected !== null && launcher.selected.kind === "ask"
+          text: !isAsk ? launcher.preview : launcher.asking
+            ? (launcher.asking.answer === "" ? "Asking " + launcher.agent.name + "…" : launcher.asking.answer)
+            : "Enter sends the text to " + (launcher.agent ? launcher.agent.name : "the agent") + "'s provider. It leaves this machine."
+          textFormat: Text.PlainText
+          wrapMode: Text.WrapAnywhere
+          color: isAsk && !launcher.asking ? Theme.warning : Theme.text
+          font.family: isAsk ? Style.uiFontFamily : Style.fontFamily
+          font.pixelSize: Style.fontSize + (isAsk ? 2 : 1)
+          onTextChanged: previewScroll.contentY = 0
+        }
+      }
+      Rectangle {
+        visible: previewScroll.visible && previewScroll.contentHeight > previewScroll.height
+        width: 2
+        height: Math.max(16, previewScroll.height * previewScroll.height / previewScroll.contentHeight)
+        x: parent.width - 5
+        y: previewScroll.y + Math.max(0, previewScroll.contentY) / Math.max(1, previewScroll.contentHeight - previewScroll.height) * (previewScroll.height - height)
+        color: Theme.border
+      }
+    }
+    Rectangle { x: 1; y: footer.y; width: parent.width - 2; height: 1; color: Theme.surface }
+    Item {
+      id: footer
+      x: 16
+      y: parent.height - height
+      width: parent.width - 32
+      height: 42
+      Text {
+        anchors.verticalCenter: parent.verticalCenter
+        text: launcher.home ? "↑ ↓ ← →  Navigate" : "↑ ↓  Navigate"
+        color: Theme.subtext
+        font.family: Style.uiFontFamily
+        font.pixelSize: Style.fontSize
+      }
+      Text {
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        text: !launcher.selected || (launcher.asking && launcher.asking.answer === "")
+          ? "Esc " + (launcher.query !== "" ? "Back" : "Close")
+          : launcher.pending ? "↵ Confirm    Esc Back"
+          : "↵ " + launcher.actionLabel
+            + "    Esc " + (launcher.query !== "" || launcher.argFor ? "Back" : "Close")
+        color: Theme.subtext
         font.family: Style.uiFontFamily
         font.pixelSize: Style.fontSize
       }

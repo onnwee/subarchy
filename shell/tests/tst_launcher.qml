@@ -64,6 +64,34 @@ TestCase {
     compare(Model.rank(apps, [], {}, "o", now, 2).length, 2)
   }
 
+  function test_catalogIncludesUnpinnedAppsWithoutChangingHome() {
+    const favorites = ["zen"]
+    const history = { kitty: { count: 3, last: now } }
+    const all = ids(Model.rank(apps, favorites, history, "", now, 50, true))
+    compare(all.slice(0, 2), ["zen", "kitty"])
+    compare(all.length, apps.length)
+    compare(ids(Model.rank(apps, favorites, history, "", now, 50)), ["zen"])
+    compare(ids(Model.rank(apps, favorites, history, "files", now, 50, true)), ["org.gnome.Nautilus"])
+    compare(Model.rank(apps, [], {}, "", now, 2, true).length, 2)
+  }
+
+  function test_sourceNavigationAndSlashQueries() {
+    compare(Model.parseQuery("/"), { mode: "sources", text: "" })
+    compare(Model.parseQuery("/apps"), { mode: "apps", text: "" })
+    compare(Model.parseQuery("/apps  web browser "), { mode: "apps", text: "web browser" })
+    compare(Model.parseQuery("/Commands font set"), { mode: "commands", text: "font set" })
+    compare(Model.parseQuery("/scripts hello"), { mode: "scripts", text: "hello" })
+    compare(Model.parseQuery("/snippets sig"), { mode: "snippets", text: "sig" })
+    compare(Model.parseQuery("/clip"), { mode: "sources", text: "clip" })
+    compare(Model.sourceRows("clip").map(r => r.prefix), ["$ "])
+    compare(Model.sourceRows("nothing-matches"), [])
+    for (const row of Model.sourceRows("")) {
+      compare(row.kind, "source")
+      const mode = row.id.slice("source:".length)
+      compare(Model.parseQuery(row.prefix).mode, mode)
+    }
+  }
+
   function test_frecencyDecays() {
     const e = { count: 2, last: now - day }
     verify(Model.frecency(e, now) > Model.frecency({ count: 2, last: now - 20 * day }, now))

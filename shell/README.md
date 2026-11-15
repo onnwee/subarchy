@@ -140,6 +140,16 @@ lists (read each time the launcher opens). Favorites come first in their own
 order, then apps and commands by frecency, then by how well they match. Apps
 start through `uwsm-app -- <id>.desktop`.
 
+The menu keeps a wide frame (up to 960 by 560 logical pixels), with a
+Library sidebar and visible keyboard hints. Applications, Commands,
+Scripts and Snippets can be browsed without a search. Type `/` or click
+Sources to choose a source from the keyboard; `/apps`, `/commands`,
+`/scripts` and `/snippets` search just that catalog. Escape returns from a
+search or source to Favorites, then closes the menu. Opening the launcher
+closes an existing widget panel so only one overlay takes keyboard input.
+On a small output the sidebar gives way to the Sources button, the grid
+uses fewer columns and long lists scroll.
+
 - Commands run in a terminal that stays open until Enter; one marked
   `silent` (`lock`, `system suspend`) has no output and starts without a
   terminal. A query that starts with a whole command passes the rest as its
@@ -172,9 +182,11 @@ start through `uwsm-app -- <id>.desktop`.
   on the Wayland socket between copies; no timers). Copies marked
   `x-kde-passwordManagerHint` are never stored and are cleared from the
   clipboard after 30 s.
-- Preview: the pane under the results shows the selected symbol, an image
+- Preview: the pane beside the results shows the selected symbol, an image
   file, a folder's first entries, a text file's first lines, a clipboard
-  entry or the agent's answer.
+  entry, an expanded snippet or the agent's answer. Long text scrolls;
+  narrow screens place the preview below the results. The footer names
+  the selected action (Open, Run, Copy, Paste, Browse or Continue).
 - Favorites: `/usr/share/subcult/default/launcher/favorites.json`, replaced
   by `~/.config/subcult/launcher/favorites.json` when that file has a
   `favorites` list of desktop entry ids.

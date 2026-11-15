@@ -4,7 +4,7 @@ type: decision
 status: accepted
 adr: 57
 created: 2026-11-07
-updated: 2026-11-07
+updated: 2026-11-15
 tags: [decision, adr, shell]
 aliases: [ADR 0057, Launcher, Raycast]
 ---
@@ -120,5 +120,20 @@ was proposed by the agent and confirmed by the owner on 2026-11-07.
   (issue #93); Ask AI as the last root row through `subcult app ask` (issue
   #116); `$` clipboard history kept by `subcult clipboard` with the secret
   rule of ADR 0056 (issue #94).
+
+- 2026-11-15: owner requested work on both the appearance and navigation
+  of Super+Space, keeping a wide layout and using Omarchy as a reference.
+  The menu now has a bounded 960 by 560 logical-pixel frame, a Library
+  sidebar, a keyboard-accessible `/` source list and explicit catalogs for
+  applications, commands, scripts and snippets. Empty root search still
+  shows the owner's favorites in their saved order. Previews sit beside
+  the list on wide screens and below it on narrow screens; long text
+  scrolls, snippets show their expanded text and the footer names the
+  action. Escape returns to Favorites before closing. A previous widget
+  panel closes when the launcher opens, avoiding two keyboard grabs.
+  Headless tests exercise source selection with actual key events and
+  retain renders at normal size, 640 by 480 and scale 1.6 with the logs.
+  Reference reviewed: Omarchy's menu at
+  [74de104](https://github.com/omacom/omarchy/blob/74de10479d3bf7aa7865408e33219064cfe45432/shell/plugins/menu/Menu.qml).
 
 Related: [[decision-map|Decision map]] · [[0036-shell-components|ADR 0036]] · [[0056-quality-of-life|ADR 0056]] · [[0046-distribution-cli|ADR 0046]]
