@@ -78,6 +78,15 @@ The check runs for as long as the lock is up, through the screensaver and
 display-off, so fprintd keeps the reader claimed. Whether that stops USB
 autosuspend or upsets readers after suspend is not tested yet.
 
+For a hanging PAM check (#211), `SUBCULT_LOCK_DEBUG=1` on the lock process
+enables timestamped `subcult-lock-auth` records for password and fingerprint
+starts, response requests, completion, errors and cancellation. The records
+contain lifecycle flags and result codes, never credentials, password
+lengths, usernames or PAM message text. Tracing is off by default.
+The headless test enables it for its fingerprint scenarios and checks the
+record fields. GitHub and Gitea keep the test logs in the
+`shell-headless-logs` artifact, including when the test fails.
+
 `subcult setup fingerprint` installs fprintd where `subcult hw fingerprint`
 finds a reader, enrolls a finger with `fprintd-enroll` and checks it with
 `fprintd-verify`; `subcult setup fingerprint remove` deletes the enrolled

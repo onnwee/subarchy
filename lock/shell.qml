@@ -28,6 +28,21 @@ ShellRoot {
   // Set once either check succeeds: nothing starts after that.
   property bool unlocking: false
 
+  // Opt-in lifecycle evidence for #211. Never include passwords, their
+  // lengths, responses, PAM message text or usernames in these records.
+  readonly property bool debugAuth: Quickshell.env("SUBCULT_LOCK_DEBUG") === "1"
+  function traceAuth(channel, event, outcome) {
+    if (!debugAuth)
+      return
+    const context = channel === "password" ? auth : fingerprintAuth
+    console.info("subcult-lock-auth " + JSON.stringify({
+      time: Date.now(), channel: channel, event: event,
+      active: context.active, responseRequired: context.responseRequired,
+      checking: root.lockState.checking, fingerprintChecking: root.fingerprintRunning,
+      outcome: outcome === undefined ? null : outcome
+    }))
+  }
+
   // The palette (ADR 0037): Subarchy's default under the user's file, which
   // Pult writes; read once at start, since the program lives for one lock.
   // ThemeModel.js is the shell's copy: Quickshell refuses imports outside
@@ -121,10 +136,14 @@ ShellRoot {
   function key(name, text) {
     const r = Model.key(root.lockState, name, text)
     root.lockState = r.state
-    if (r.cancel)
+    if (r.cancel) {
+      root.traceAuth("password", "abort")
       auth.abort()
+    }
     if (r.submit) {
-      if (!auth.start()) {
+      const started = auth.start()
+      root.traceAuth("password", "start", started)
+      if (!started) {
         root.lockState = Model.failed(root.lockState, "The password check could not start.")
       }
     }
@@ -135,10 +154,14 @@ ShellRoot {
     root.unlocking = true
     fingerprintRetry.stop()
     probeRetry.stop()
-    if (!byFingerprint && fingerprintAuth.active)
+    if (!byFingerprint && fingerprintAuth.active) {
+      root.traceAuth("fingerprint", "abort")
       fingerprintAuth.abort()
-    if (byFingerprint && auth.active)
+    }
+    if (byFingerprint && auth.active) {
+      root.traceAuth("password", "abort")
       auth.abort()
+    }
     root.lockState = Model.unlocked(root.lockState)
     lock.locked = false
     hardExit.start()
@@ -188,7 +211,9 @@ ShellRoot {
       return
     root.fingerprintRunning = true
     root.fingerprintStarted = Date.now()
-    if (!fingerprintAuth.start())
+    const started = fingerprintAuth.start()
+    root.traceAuth("fingerprint", "start", started)
+    if (!started)
       root.fingerprintSettled()
   }
 
@@ -229,7 +254,9 @@ ShellRoot {
     // pam_fprintd asks nothing. A stack that asks for a password is not a
     // fingerprint stack: it gets no answer.
     onResponseRequiredChanged: {
+      root.traceAuth("fingerprint", "response-required")
       if (responseRequired) {
+        root.traceAuth("fingerprint", "abort")
         fingerprintAuth.abort()
         root.fingerprintSettled()
       }
@@ -241,6 +268,7 @@ ShellRoot {
       root.fingerprint = mode
     }
     onCompleted: (result) => {
+      root.traceAuth("fingerprint", "completed", result)
       if (!root.fingerprintRunning)
         return
       if (result === PamResult.Success)
@@ -248,7 +276,10 @@ ShellRoot {
       else
         root.fingerprintSettled()
     }
-    onError: root.fingerprintSettled()
+    onError: (error) => {
+      root.traceAuth("fingerprint", "error", error)
+      root.fingerprintSettled()
+    }
   }
 
   // Once unlocked the program exits: on the compositor's word, or shortly
@@ -304,6 +335,7 @@ ShellRoot {
     config: root.pamConfig
     configDirectory: root.pamDir
     onResponseRequiredChanged: {
+      root.traceAuth("password", "response-required")
       if (responseRequired)
         auth.respond(root.lockState.password)
     }
@@ -312,6 +344,7 @@ ShellRoot {
         root.lockState = Model.pamMessage(root.lockState, message)
     }
     onCompleted: (result) => {
+      root.traceAuth("password", "completed", result)
       // A check given up with Escape reports nothing.
       if (!root.lockState.checking)
         return
@@ -322,6 +355,7 @@ ShellRoot {
       }
     }
     onError: (error) => {
+      root.traceAuth("password", "error", error)
       if (!root.lockState.checking)
         return
       root.lockState = Model.failed(root.lockState, "The password check failed (" + error + "). Try again.")

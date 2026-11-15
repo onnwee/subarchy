@@ -29,6 +29,16 @@ done
 
 work=$(mktemp -d)
 pids=()
+keep_logs() {
+  local dest log
+  mkdir -p "$root/build/shell-headless-logs" || return 1
+  dest=$(mktemp -d "$root/build/shell-headless-logs/run.XXXXXX") || return 1
+  for log in qs1 qs2 lock lock-fp; do
+    [[ -f $work/$log.log ]] || continue
+    cp -- "$work/$log.log" "$dest/" || return 1
+  done
+  echo "shell-headless: logs saved to $dest"
+}
 cleanup() {
   for p in "${pids[@]}"; do kill "$p" 2>/dev/null || true; done
   # Anything else this test started (the private bus daemon) carries the
@@ -40,6 +50,7 @@ cleanup() {
     fi
   done
   wait 2>/dev/null || true
+  keep_logs || echo "shell-headless: could not retain the test logs" >&2
   rm -rf -- "$work"
 }
 trap cleanup EXIT
@@ -1102,7 +1113,7 @@ if command -v wtype >/dev/null; then
   ffmpeg -v error -y -i "$work/art/screensaver/probe.webm" -frames:v 1 -threads 1 "$work/art/screensaver/probe.png"
   echo '{"schema":1,"loops":["probe"]}' >"$work/art/screensaver/index.json"
   echo '{"mode":"on"}' >"$home1/.config/subcult/motion.json"
-  SUBCULT_PATH=$work/art SUBCULT_LOCK_PAM=subcult-test SUBCULT_LOCK_PAM_DIR=$work/pam HOME=$home1 \
+  SUBCULT_LOCK_DEBUG=0 SUBCULT_PATH=$work/art SUBCULT_LOCK_PAM=subcult-test SUBCULT_LOCK_PAM_DIR=$work/pam HOME=$home1 \
     quickshell -n -p "$root/lock" >"$work/lock.log" 2>&1 &
   lockpid=$!
   pids+=("$lockpid")
@@ -1155,6 +1166,7 @@ if command -v wtype >/dev/null; then
   fi
   if wait "$lockpid"; then echo "lock: unlocked and exited"; else fail "the lock program exited with an error: $(tail -3 "$work/lock.log")"; fi
   grep -vE '^MESA|ZINK' "$work/lock.log" | grep -nE 'ERROR|TypeError|ReferenceError' && fail "QML errors in the lock log"
+  ! grep -q 'subcult-lock-auth ' "$work/lock.log" || fail "PAM tracing is enabled without opting in"
 
   # Fingerprint unlock (#93). A stand-in fprintd-list reports an enrolled
   # finger; the fingerprint stack waits until a file appears (the touch).
@@ -1168,7 +1180,7 @@ if command -v wtype >/dev/null; then
   printf 'auth required pam_deny.so\n' >"$work/pam/subcult-test"
   startlock() {
     rm -f "$work/pam/touch"
-    PATH=$work/fp-bin:$PATH SUBCULT_PATH=$work/art SUBCULT_LOCK_PAM=subcult-test SUBCULT_LOCK_FINGERPRINT_PAM=subcult-test-fp \
+    PATH=$work/fp-bin:$PATH SUBCULT_LOCK_DEBUG=1 SUBCULT_PATH=$work/art SUBCULT_LOCK_PAM=subcult-test SUBCULT_LOCK_FINGERPRINT_PAM=subcult-test-fp \
       SUBCULT_LOCK_PAM_DIR=$work/pam HOME=$home1 quickshell -n -p "$root/lock" >>"$work/lock-fp.log" 2>&1 &
     lockpid=$!
     pids+=("$lockpid")
@@ -1207,7 +1219,7 @@ if command -v wtype >/dev/null; then
   cp "$root/default/pam/subcult-lock-fingerprint" "$work/pam/subcult-test-fp-shipped"
   printf 'auth required pam_permit.so\naccount required pam_permit.so\n' >"$work/pam/subcult-test"
   for fp in deny asks shipped; do
-    PATH=$work/fp-bin:$PATH SUBCULT_PATH=$work/art SUBCULT_LOCK_PAM=subcult-test SUBCULT_LOCK_FINGERPRINT_PAM=subcult-test-fp-$fp \
+    PATH=$work/fp-bin:$PATH SUBCULT_LOCK_DEBUG=1 SUBCULT_PATH=$work/art SUBCULT_LOCK_PAM=subcult-test SUBCULT_LOCK_FINGERPRINT_PAM=subcult-test-fp-$fp \
       SUBCULT_LOCK_PAM_DIR=$work/pam HOME=$home1 quickshell -n -p "$root/lock" >>"$work/lock-fp.log" 2>&1 &
     lockpid=$!
     pids+=("$lockpid")
@@ -1219,6 +1231,27 @@ if command -v wtype >/dev/null; then
   done
   echo "lock: failing, asking and module-less fingerprint stacks back off and never unlock; the password still does"
   grep -vE '^MESA|ZINK' "$work/lock-fp.log" | grep -nE 'ERROR|TypeError|ReferenceError' && fail "QML errors in the fingerprint lock log"
+  python3 - "$work/lock-fp.log" <<'PY'
+import json
+import sys
+
+records = []
+for line in open(sys.argv[1]):
+    if "subcult-lock-auth " not in line:
+        continue
+    record = json.loads(line.split("subcult-lock-auth ", 1)[1])
+    assert set(record) == {"time", "channel", "event", "active", "responseRequired",
+                           "checking", "fingerprintChecking", "outcome"}, record
+    assert record["channel"] in ("password", "fingerprint"), record
+    assert record["event"] in ("start", "abort", "response-required", "completed", "error"), record
+    assert record["outcome"] is None or isinstance(record["outcome"], (bool, int)), record
+    assert "secret" not in line and "wrong" not in line, "a test password reached the trace"
+    records.append(record)
+events = {(r["channel"], r["event"]) for r in records}
+assert {("password", "start"), ("password", "completed"),
+        ("fingerprint", "start"), ("fingerprint", "completed")} <= events, events
+print("lock: opt-in PAM traces cover both checks without credential data")
+PY
 else
   echo "shell-headless: wtype not installed, lock check skipped"
 fi
