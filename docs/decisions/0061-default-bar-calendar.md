@@ -4,7 +4,7 @@ type: decision
 status: accepted
 adr: 61
 created: 2026-11-07
-updated: 2026-11-07
+updated: 2026-11-14
 tags: [decision, adr, shell]
 aliases: [ADR 0061, Bar layout, Calendar]
 ---
@@ -62,5 +62,11 @@ Calendar is not reachable from other apps, so it is not a source.
   and opens a month panel with a mark on days that have events and the
   selected day's list. The cache file is watched; the label follows the
   shared minute clock; nothing polls.
+
+- 2026-11-14: issue #89 adds Google sources through the Workspace CLI's
+  existing sign-in, including paging, expanded recurring instances and
+  all-day dates in the shared cache. Missing CLI, account and page errors
+  retain the source's previous events. Fixture tests cover the adapter;
+  the owner's signed-in sync remains pending. See [[calendar-sync]].
 
 Related: [[decision-map|Decision map]] · [[0036-shell-components|ADR 0036]] · [[0057-launcher|ADR 0057]]

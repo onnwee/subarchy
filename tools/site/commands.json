@@ -131,7 +131,7 @@
    "route": "subcult calendar sync",
    "group": "calendar",
    "args": "[--force]",
-   "summary": "Sync the configured CalDAV and iCal calendars into the cache",
+   "summary": "Sync the configured CalDAV, iCal and Google calendars into the cache",
    "examples": [
     "subcult calendar sync",
     "subcult calendar sync --force"

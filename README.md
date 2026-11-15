@@ -42,7 +42,7 @@ still open.
 - **`subcult` commands**, discovered from `subcult-*` programs on the path.
   `subcult commands` lists them. Groups include `app` (catalogue install,
   remove and default apps), `font`, `cursor`, `display` (scale and saved
-  monitor layouts), `clipboard` (history), `calendar` (CalDAV and iCal sync),
+  monitor layouts), `clipboard` (history), `calendar` (CalDAV, iCal and Google sync),
   `idle`, `hw` (hardware detection and fixes), `gpu`, `secureboot`,
   `disk tpm`, `thermal`, `channel`, `update` and `system`.
 

@@ -1,5 +1,5 @@
 [Unit]
-Description=Sync CalDAV and iCal calendars into the shell's cache (ADR 0061)
+Description=Sync CalDAV, iCal and Google calendars into the shell's cache (ADR 0061)
 Documentation=https://git.subcult.tv/subculture-collective/subarchy
 After=network-online.target
 # Not for system users: the greeter's sddm user gets a user manager too.

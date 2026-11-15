@@ -9,15 +9,16 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
-// Source is one calendar: a CalDAV collection or an iCal feed. Nothing
-// secret lives here: a source password is read from the keyring under the
-// source's name (`secret-tool lookup service subcult-calendar source
-// <name>`).
+// Source is one calendar: a CalDAV collection, iCal feed or Google calendar. Nothing
+// secret lives here: HTTP source passwords come from the keyring under the
+// source's name (`secret-tool lookup service subcult-calendar source <name>`).
+// Google authentication belongs to gws.
 type Source struct {
-	Name string `toml:"name"`
-	Kind string `toml:"kind"` // "caldav" or "ical"
-	URL  string `toml:"url"`
-	User string `toml:"user"` // optional for public iCal feeds; password is in the keyring
+	Name     string `toml:"name"`
+	Kind     string `toml:"kind"` // "caldav", "ical" or "google"
+	URL      string `toml:"url"`
+	User     string `toml:"user"`     // optional for public iCal feeds; password is in the keyring
+	Calendar string `toml:"calendar"` // Google calendar ID; empty means "primary"
 }
 
 // Config is ~/.config/subcult/calendar.toml.
@@ -53,9 +54,13 @@ func LoadConfig(path string) (Config, error) {
 			return c, fmt.Errorf("%s: source %d has no name", path, i+1)
 		case seen[s.Name]:
 			return c, fmt.Errorf("%s: source %q listed twice", path, s.Name)
-		case s.Kind != "caldav" && s.Kind != "ical":
-			return c, fmt.Errorf("%s: source %q: kind must be caldav or ical", path, s.Name)
-		case !strings.HasPrefix(s.URL, "https://") && !strings.HasPrefix(s.URL, "http://"):
+		case s.Kind != "caldav" && s.Kind != "ical" && s.Kind != "google":
+			return c, fmt.Errorf("%s: source %q: kind must be caldav, ical or google", path, s.Name)
+		case s.Kind == "google" && (s.URL != "" || s.User != ""):
+			return c, fmt.Errorf("%s: source %q: Google uses calendar and gws authentication, not url or user", path, s.Name)
+		case s.Kind != "google" && s.Calendar != "":
+			return c, fmt.Errorf("%s: source %q: calendar is only for Google sources", path, s.Name)
+		case s.Kind != "google" && !strings.HasPrefix(s.URL, "https://") && !strings.HasPrefix(s.URL, "http://"):
 			return c, fmt.Errorf("%s: source %q: url must be http or https", path, s.Name)
 		case s.Kind == "caldav" && s.User == "":
 			return c, fmt.Errorf("%s: source %q: a caldav source needs a user", path, s.Name)

@@ -198,12 +198,16 @@ type fakeFetch struct {
 	calls []string
 }
 
-func (f *fakeFetch) Fetch(_ context.Context, s Source, password string, _ Window) ([]string, error) {
+func (f *fakeFetch) Fetch(_ context.Context, s Source, password string, w Window) ([]Event, error) {
 	f.calls = append(f.calls, s.Name+":"+password)
 	if err := f.fail[s.Name]; err != nil {
 		return nil, err
 	}
-	return f.texts[s.Name], nil
+	var events []Event
+	for _, text := range f.texts[s.Name] {
+		events = append(events, Occurrences(s.Name, parseICS(text, w.From.Location()), w)...)
+	}
+	return events, nil
 }
 
 type fakeSecrets map[string]string
@@ -267,13 +271,23 @@ func TestLoadConfig(t *testing.T) {
 	if err != nil || len(c.Sources) != 2 || c.Sources[0].User != "me" {
 		t.Errorf("good config: %+v, %v", c, err)
 	}
+	for _, id := range []string{"", "team@group.calendar.google.com"} {
+		google := fmt.Sprintf("schema = 1\n[[source]]\nname = \"google\"\nkind = \"google\"\ncalendar = %q\n", id)
+		os.WriteFile(path, []byte(google), 0o644)
+		if c, err := LoadConfig(path); err != nil || len(c.Sources) != 1 || c.Sources[0].Calendar != id {
+			t.Errorf("Google config: %+v, %v", c, err)
+		}
+	}
 	for name, bad := range map[string]string{
-		"schema":    "schema = 2\n",
-		"kind":      "schema = 1\n[[source]]\nname = \"a\"\nkind = \"gcal\"\nurl = \"https://x\"\n",
-		"url":       "schema = 1\n[[source]]\nname = \"a\"\nkind = \"ical\"\nurl = \"ftp://x\"\n",
-		"user":      "schema = 1\n[[source]]\nname = \"a\"\nkind = \"caldav\"\nurl = \"https://x\"\n",
-		"duplicate": "schema = 1\n[[source]]\nname = \"a\"\nkind = \"ical\"\nurl = \"https://x\"\n[[source]]\nname = \"a\"\nkind = \"ical\"\nurl = \"https://y\"\n",
-		"password":  "schema = 1\n[[source]]\nname = \"a\"\nkind = \"caldav\"\nurl = \"https://x\"\nuser = \"u\"\npassword = \"nope\"\n",
+		"schema":        "schema = 2\n",
+		"kind":          "schema = 1\n[[source]]\nname = \"a\"\nkind = \"gcal\"\nurl = \"https://x\"\n",
+		"url":           "schema = 1\n[[source]]\nname = \"a\"\nkind = \"ical\"\nurl = \"ftp://x\"\n",
+		"user":          "schema = 1\n[[source]]\nname = \"a\"\nkind = \"caldav\"\nurl = \"https://x\"\n",
+		"duplicate":     "schema = 1\n[[source]]\nname = \"a\"\nkind = \"ical\"\nurl = \"https://x\"\n[[source]]\nname = \"a\"\nkind = \"ical\"\nurl = \"https://y\"\n",
+		"password":      "schema = 1\n[[source]]\nname = \"a\"\nkind = \"caldav\"\nurl = \"https://x\"\nuser = \"u\"\npassword = \"nope\"\n",
+		"Google user":   "schema = 1\n[[source]]\nname = \"a\"\nkind = \"google\"\nuser = \"u\"\n",
+		"Google URL":    "schema = 1\n[[source]]\nname = \"a\"\nkind = \"google\"\nurl = \"https://x\"\n",
+		"HTTP calendar": "schema = 1\n[[source]]\nname = \"a\"\nkind = \"ical\"\nurl = \"https://x\"\ncalendar = \"primary\"\n",
 	} {
 		os.WriteFile(path, []byte(bad), 0o644)
 		if _, err := LoadConfig(path); err == nil {

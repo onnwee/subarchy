@@ -12,10 +12,14 @@ import (
 	"git.subcult.tv/subculture-collective/subarchy/internal/calendar"
 )
 
-type fakeFetch struct{ texts []string }
+type fakeFetch struct{ events []calendar.Event }
 
-func (f fakeFetch) Fetch(context.Context, calendar.Source, string, calendar.Window) ([]string, error) {
-	return f.texts, nil
+func (f fakeFetch) Fetch(_ context.Context, s calendar.Source, _ string, _ calendar.Window) ([]calendar.Event, error) {
+	events := append([]calendar.Event(nil), f.events...)
+	for i := range events {
+		events[i].Calendar = s.Name
+	}
+	return events, nil
 }
 
 type fakeSecrets struct{}
@@ -31,8 +35,8 @@ func harness(t *testing.T, config string) (*app, *bytes.Buffer, *bytes.Buffer, p
 	}
 	out, errOut := &bytes.Buffer{}, &bytes.Buffer{}
 	now := time.Date(2026, 11, 7, 12, 0, 0, 0, time.UTC)
-	feed := "BEGIN:VCALENDAR\nBEGIN:VEVENT\nUID:1\nSUMMARY:Lunch\nDTSTART:20261108T120000Z\nDTEND:20261108T130000Z\nEND:VEVENT\nEND:VCALENDAR\n"
-	a := &app{stdout: out, stderr: errOut, paths: func() (paths, error) { return p, nil }, fetch: fakeFetch{[]string{feed}}, secrets: fakeSecrets{}, now: func() time.Time { return now }}
+	event := calendar.Event{ID: "1", Title: "Lunch", Start: now.AddDate(0, 0, 1), End: now.AddDate(0, 0, 1).Add(time.Hour)}
+	a := &app{stdout: out, stderr: errOut, paths: func() (paths, error) { return p, nil }, fetch: fakeFetch{[]calendar.Event{event}}, secrets: fakeSecrets{}, now: func() time.Time { return now }}
 	return a, out, errOut, p
 }
 
@@ -112,5 +116,38 @@ func TestSyncRecoversCorruptCache(t *testing.T) {
 				t.Fatalf("bad recovered cache: %+v %v", cache, err)
 			}
 		})
+	}
+}
+
+func TestGoogleCommandSync(t *testing.T) {
+	a, out, errOut, p := harness(t, "schema = 1\n[[source]]\nname = \"google\"\nkind = \"google\"\n")
+	bin := t.TempDir()
+	t.Setenv("PATH", bin)
+	command := filepath.Join(bin, "gws")
+	script := `#!/bin/sh
+printf '%s\n' '{"items":[{"id":"fixture","summary":"Google lunch","start":{"dateTime":"2026-11-08T12:00:00Z"},"end":{"dateTime":"2026-11-08T13:00:00Z"}}]}'
+`
+	if err := os.WriteFile(command, []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	a.fetch = calendar.SourceFetcher{}
+	a.secrets = nil
+	if code := a.run([]string{"sync"}); code != 0 || !strings.Contains(out.String(), "synced 1 events") {
+		t.Fatalf("Google sync: %d %s %s", code, out, errOut)
+	}
+	cache, err := calendar.ReadCache(p.cache)
+	if err != nil || len(cache.Events) != 1 || cache.Events[0].Calendar != "google" || cache.Events[0].Title != "Google lunch" {
+		t.Fatalf("Google cache: %+v %v", cache, err)
+	}
+	// An expired sign-in must not empty a previously usable calendar.
+	if err := os.WriteFile(command, []byte("#!/bin/sh\nprintf '%s\\n' 'private account data' >&2\nexit 1\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if code := a.run([]string{"sync", "--force"}); code != 1 || strings.Contains(errOut.String(), "private account data") {
+		t.Fatalf("failed sync: %d %s", code, errOut)
+	}
+	cache, err = calendar.ReadCache(p.cache)
+	if err != nil || len(cache.Events) != 1 || cache.Events[0].Title != "Google lunch" || cache.Sources[0].OK {
+		t.Fatalf("failed sync lost the previous calendar: %+v %v", cache, err)
 	}
 }

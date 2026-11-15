@@ -11,10 +11,9 @@ import (
 	"time"
 )
 
-// Fetcher gets the iCalendar texts of a source. HTTPFetcher talks to the
-// network; tests use a fake.
+// Fetcher gets the occurrences of a source within the cache window.
 type Fetcher interface {
-	Fetch(ctx context.Context, s Source, password string, w Window) ([]string, error)
+	Fetch(ctx context.Context, s Source, password string, w Window) ([]Event, error)
 }
 
 // HTTPFetcher reads iCal feeds with GET and CalDAV collections with a
@@ -31,9 +30,20 @@ func (f HTTPFetcher) client() *http.Client {
 	return &http.Client{Timeout: 30 * time.Second}
 }
 
-// Fetch returns one iCalendar text per calendar object (CalDAV) or the
-// whole feed (iCal).
-func (f HTTPFetcher) Fetch(ctx context.Context, s Source, password string, w Window) ([]string, error) {
+// Fetch expands iCalendar objects into occurrences in the cache window.
+func (f HTTPFetcher) Fetch(ctx context.Context, s Source, password string, w Window) ([]Event, error) {
+	texts, err := f.fetchTexts(ctx, s, password, w)
+	if err != nil {
+		return nil, err
+	}
+	var events []Event
+	for _, text := range texts {
+		events = append(events, Occurrences(s.Name, parseICS(text, w.From.Location()), w)...)
+	}
+	return events, nil
+}
+
+func (f HTTPFetcher) fetchTexts(ctx context.Context, s Source, password string, w Window) ([]string, error) {
 	if s.Kind == "ical" {
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.URL, nil)
 		if err != nil {

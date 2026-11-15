@@ -66,15 +66,9 @@ func Sync(ctx context.Context, cfg Config, prev Cache, now time.Time, fetch Fetc
 		if s.Kind == "caldav" || s.User != "" {
 			password, err = secrets.Password(s.Name)
 		}
-		var texts []string
-		if err == nil {
-			texts, err = fetch.Fetch(ctx, s, password, w)
-		}
 		var events []Event
 		if err == nil {
-			for _, t := range texts {
-				events = append(events, Occurrences(s.Name, parseICS(t, now.Location()), w)...)
-			}
+			events, err = fetch.Fetch(ctx, s, password, w)
 		}
 		if err != nil {
 			res.Error = err.Error()

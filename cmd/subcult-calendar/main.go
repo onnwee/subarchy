@@ -1,5 +1,5 @@
 // Command subcult-calendar serves `subcult calendar ...` (ADR 0061, plan 3):
-// `calendar sync` reads the CalDAV and iCal sources in
+// `calendar sync` reads the CalDAV, iCal and Google sources in
 // ~/.config/subcult/calendar.toml into ~/.local/state/subcult/calendar/
 // events.json, which the calendar widget watches; a user timer runs it
 // every quarter hour, and on battery a sync younger than an hour is kept.
@@ -18,6 +18,10 @@
 //	name = "holidays"
 //	kind = "ical"
 //	url = "https://example.org/holidays.ics"
+//	[[source]]
+//	name = "google"
+//	kind = "google"          # sign in first with gws auth login -s calendar
+//	calendar = "primary"     # optional Google calendar ID
 package main
 
 import (
@@ -37,7 +41,7 @@ import (
 
 var routes = []dispatch.Described{
 	{Words: []string{"calendar", "sync"}, Metadata: dispatch.Metadata{
-		Summary: "Sync the configured CalDAV and iCal calendars into the cache", Args: "[--force]",
+		Summary: "Sync the configured CalDAV, iCal and Google calendars into the cache", Args: "[--force]",
 		Examples: []string{"subcult calendar sync", "subcult calendar sync --force"}}},
 	{Words: []string{"calendar", "list"}, Metadata: dispatch.Metadata{
 		Summary: "Show the cached events", Args: "[--json]",
@@ -184,6 +188,6 @@ func (a *app) fail(err error) int {
 }
 
 func main() {
-	a := &app{stdout: os.Stdout, stderr: os.Stderr, paths: defaultPaths, fetch: calendar.HTTPFetcher{}, secrets: calendar.KeyringSecrets{}, now: time.Now}
+	a := &app{stdout: os.Stdout, stderr: os.Stderr, paths: defaultPaths, fetch: calendar.SourceFetcher{}, secrets: calendar.KeyringSecrets{}, now: time.Now}
 	os.Exit(a.run(os.Args[1:]))
 }
