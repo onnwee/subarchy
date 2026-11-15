@@ -4,7 +4,7 @@ type: decision
 status: accepted
 adr: 36
 created: 2026-11-06
-updated: 2026-11-12
+updated: 2026-11-15
 tags: [decision, adr, shell, security]
 aliases: [ADR 0036, D3, D4, Lock screen, Idle]
 ---
@@ -118,5 +118,34 @@ be drawn by the lock screen, which hyprlock cannot do.
   password while the fingerprint check waits; a stand-in stack that fails
   at once, and one that asks for a password, never unlock. Not yet tested:
   a real reader, and fprintd after suspend.
+
+- 2026-11-15 UTC, Kvant: #211 reproduced with Quickshell 0.3.2 and a
+  playing video. A minimal concurrent-PAM probe hung at attempt 309; both
+  workers were alive in `futex_wait_queue`, with stacks through
+  `__lll_lock_wait_private`, `__syslog_chk` and `pam_syslog`. The UI's
+  event loop remained responsive. This matches the process-boundary
+  concern in [upstream #964](https://github.com/quickshell-mirror/quickshell/issues/964);
+  it does not identify the workers from the earlier CI failures.
+  `PamSession.qml` now executes a separate, unprivileged Python/Linux-PAM
+  helper for each check, instead of forking PAM inside the renderer.
+  Password and fingerprint stacks, pacing and success decisions stay as
+  above. The same graphical probe completed 2,000 attempts with the
+  helper. Real PAM and QML transport tests cover refusal, malformed
+  responses, missing/crashed helpers, cancellation and immediate retry.
+  Physical fingerprint acceptance remains pending on #93.
+
+- 2026-11-15 UTC, Kvant: an offline-installed, encrypted Subarchy VM with
+  Linux-PAM 1.7.3 and Quickshell 0.3.2 passed 21 assertions against the
+  candidate lock. The helper ran as the installed user (uid 1000), without
+  setuid, and the password PAM policy matched the shipped file. A wrong
+  password kept the session locked and retained text typed during the
+  check for a retry without a click. Escape cancelled an active real-PAM
+  check; an immediate correct retry unlocked and reaped the old helper.
+  Killing a helper kept the session locked, and a correct retry recovered.
+  The probe also caught a prompt-ordering regression: responding cleared
+  `responseRequired` before the lock classified the PAM message, so
+  `Password:` became the retry error. Classifying the message first fixes
+  it; the graphical regression test now asks for a response before
+  refusing, and checks the retry message.
 
 Related: [[decision-map|Decision map]] · [[0034-shell-toolkit|ADR 0034]] · [[0035-plugin-api|ADR 0035]]

@@ -51,7 +51,7 @@ done
 
 # Fingerprint unlock (#93) has its own PAM service; the password stack does
 # not change and never names pam_fprintd.
-for path in etc/pam.d/subcult-lock etc/pam.d/subcult-lock-fingerprint usr/share/subcult/lock/FingerprintModel.js usr/bin/subcult-setup-fingerprint; do
+for path in etc/pam.d/subcult-lock etc/pam.d/subcult-lock-fingerprint usr/share/subcult/lock/FingerprintModel.js usr/share/subcult/lock/PamSession.qml usr/lib/subcult/pam-helper usr/bin/subcult-setup-fingerprint; do
   grep -qx "$path" <<<"$list" || fail "missing $path"
 done
 bsdtar -xOf "$pkg" etc/pam.d/subcult-lock | grep -q pam_fprintd && fail "the lock's password stack runs pam_fprintd"

@@ -13,6 +13,7 @@ set -euo pipefail
 
 src=$(realpath "${1:?path to the shell folder}")
 root=$(git rev-parse --show-toplevel)
+export SUBCULT_LOCK_PAM_HELPER="$root/tools/lock/pam-helper.py"
 fail() { # the message, then the shell log's last warnings when it exists
   echo "shell-headless: $*" >&2
   [[ -f ${work:-}/qs1.log ]] && tail -n 30 "$work/qs1.log" | cut -c1-300 >&2
@@ -1261,7 +1262,9 @@ if command -v wtype >/dev/null; then
   printf '#!/bin/sh\nwhile [ ! -e %s ]; do sleep 0.2; done\n' "$work/pam/touch" >"$work/pam/touch.sh"
   chmod +x "$work/fp-bin/fprintd-list" "$work/pam/touch.sh"
   printf 'auth required pam_exec.so %s\nauth required pam_permit.so\naccount required pam_permit.so\n' "$work/pam/touch.sh" >"$work/pam/subcult-test-fp"
-  printf 'auth required pam_deny.so\n' >"$work/pam/subcult-test"
+  # Ask before refusing, as pam_unix does, so the password prompt cannot
+  # replace the wrong-password error after the response has been sent.
+  printf 'auth required pam_exec.so expose_authtok /usr/bin/dd of=/dev/null status=none\nauth required pam_deny.so\n' >"$work/pam/subcult-test"
   startlock() {
     rm -f "$work/pam/touch"
     PATH=$work/fp-bin:$PATH SUBCULT_LOCK_DEBUG=1 SUBCULT_PATH=$work/art SUBCULT_LOCK_PAM=subcult-test SUBCULT_LOCK_FINGERPRINT_PAM=subcult-test-fp \
@@ -1283,6 +1286,7 @@ if command -v wtype >/dev/null; then
   wtype -s 150 -k Return 'wrong' -k Return
   for _ in $(seq 40); do lk=$(lockst); [[ $lk == *'"attempts":1'* ]] && break; sleep 0.25; done
   [[ $lk == *'"locked":true'* && $lk == *'"attempts":1'* && $lk == *'"fingerprintChecking":true'* ]] || fail "a wrong password stopped the fingerprint check: $lk"
+  [[ $lk == *'"message":"That did not work. Try again."'* ]] || fail "the password prompt replaced the retry error: $lk"
   touch "$work/pam/touch"
   exited "the lock did not unlock on the fingerprint"
   echo "lock: unlocked on the fingerprint beside a refused password"

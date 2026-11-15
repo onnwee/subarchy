@@ -20,6 +20,15 @@ apart from the desktop shell, so a shell crash cannot unlock the session.
   outside the program; `make shell-index-check` keeps the two equal), once
   at start.
 - `LockModel.js` holds the state and key handling, tested in `tests/`.
+- `PamSession.qml` runs each check in `/usr/lib/subcult/pam-helper`, a
+  freshly executed Python process using Linux-PAM. Quickshell 0.3.2's
+  `PamContext` forks without executing a new process; with video threads
+  active, a worker can inherit a held libc syslog mutex and hang (#211).
+  The helper authenticates the caller's real uid with the same PAM stacks,
+  exchanging messages and responses over private pipes. It is not setuid.
+  Cancellation retires that worker; an old result cannot affect a retry.
+  A missing, crashed or malformed helper reports an authentication error.
+  `SUBCULT_LOCK_PAM_HELPER` selects the checkout helper in tests.
 
 `subcult lock` starts the unit by hand; hypridle starts it on idle through
 `loginctl lock-session`, from the config `subcult-idle` generates out of
@@ -86,6 +95,9 @@ lengths, usernames or PAM message text. Tracing is off by default.
 The headless test enables it for its fingerprint scenarios and checks the
 record fields. GitHub and Gitea keep the test logs in the
 `shell-headless-logs` artifact, including when the test fails.
+`make shell-native-test` also tests the helper against private PAM stacks
+and covers failed launches, malformed output, cancellation and immediate
+retry through the real QML transport.
 
 `subcult setup fingerprint` installs fprintd where `subcult hw fingerprint`
 finds a reader, enrolls a finger with `fprintd-enroll` and checks it with

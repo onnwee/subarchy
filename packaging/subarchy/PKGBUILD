@@ -11,7 +11,7 @@ pkgdesc="Subarchy: SUBCULT's Arch Linux desktop (subcult CLI, defaults and OS id
 arch=('x86_64')
 url="https://git.subcult.tv/subculture-collective/subarchy"
 license=('GPL-3.0-or-later')
-depends=('bash' 'glibc' 'pacman-contrib' 'fakeroot' 'hypridle' 'python-pyte' 'python-pillow' 'ffmpeg' 'qt6-multimedia' 'power-profiles-daemon' 'python-gobject' 'adw-gtk-theme')
+depends=('bash' 'glibc' 'pam' 'pacman-contrib' 'fakeroot' 'hypridle' 'python-pyte' 'python-pillow' 'ffmpeg' 'qt6-multimedia' 'power-profiles-daemon' 'python-gobject' 'adw-gtk-theme')
 makedepends=('go' 'git' 'librsvg' 'imagemagick' 'xorg-xcursorgen' 'hyprcursor' 'ttf-dejavu' 'ttf-jetbrains-mono-nerd')
 optdepends=('fprintd: fingerprint unlock on the lock screen (subcult setup fingerprint)')
 options=('!debug')
@@ -78,6 +78,7 @@ package() {
     install -Dm755 "$f" "$pkgdir/usr/bin/$(basename "$f")"
   done
   install -Dm755 "$root/tools/bluetooth/pair-agent.py" "$pkgdir/usr/lib/subcult/bluetooth-pair-agent"
+  install -Dm755 "$root/tools/lock/pam-helper.py" "$pkgdir/usr/lib/subcult/pam-helper"
   # The desktop portal's file picker for scripts (subcult tailscale send),
   # the root sides of `subcult docker tui` and of the Tailscale panel that
   # their polkit actions name, and the Taildrop receiver

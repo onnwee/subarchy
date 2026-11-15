@@ -28,6 +28,8 @@ shell-test:
 # with screenshots under build/*-preview/. Needs quickshell, qt6-declarative,
 # librsvg, imagemagick and python; CI runs it in the Arch shell job.
 shell-native-test:
+	python3 -m unittest discover -s tools/lock -p 'test_*.py' -v
+	tools/test/lock-pam-test.sh
 	tools/test/dell-power-refresh.sh
 	tools/test/lock-focus-test.sh
 	python3 -m unittest discover -s tools/bluetooth -p 'test_*.py' -v
