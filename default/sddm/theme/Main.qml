@@ -24,9 +24,9 @@ Rectangle {
   // with the screen to 2 (a 4K screen at scale 1), so the form neither
   // shrinks to a strip on a large screen nor crowds a small one.
   readonly property real unit: Math.max(1, Math.min(2, width / 1280, height / 800))
-  // A small window (1280x800 at scale 1.5, 1280x720 at scale 1.25) leaves
+  // A small window (1280x600, 1280x800 at scale 1.5) leaves
   // out the clock, so the form and a two-line message still fit unscrolled.
-  readonly property bool compact: width < 640 || height < 600
+  readonly property bool compact: width < 640 || height < 640
   property bool authenticating: false
   property bool startingSession: false
   property string message: ""

@@ -209,13 +209,13 @@ Item {
       verify(user.enabled && password.enabled && submit.enabled)
     }
 
-    // 1280x600 is the smallest full layout; 1280x800 at scale 1.5 leaves
+    // 1280x640 is the smallest full layout; 1280x600 and scale 1.5 leave
     // out the clock; 4K at scale 1 doubles the type and spacing.
     function test_screenSizes() {
       compare(greeter.unit, 1)
       verify(findChild(greeter, "clock").visible)
       checkFits()
-      fixture.height = 600
+      fixture.height = 640
       wait(50)
       verify(!greeter.compact && findChild(greeter, "clock").visible)
       checkFits()
@@ -230,9 +230,10 @@ Item {
       greeter.message = ""
       wait(50)
       compare(logo.mapToItem(greeter, 0, 0).y, before, "clearing it does not either")
-      fixture.height = 599
+      fixture.height = 600
       wait(50)
       verify(greeter.compact)
+      checkFits()
       fixture.width = 853
       fixture.height = 533
       wait(50)

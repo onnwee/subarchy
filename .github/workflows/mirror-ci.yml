@@ -86,7 +86,7 @@ jobs:
     steps:
       - name: Install Quickshell, Qt and the headless test tools
         run: |
-          pacman -Syu --noconfirm --needed git make nodejs python python-gobject ffmpeg quickshell qt6-multimedia qt6-declarative sway grim imagemagick libnotify ttf-dejavu ttf-iosevkaterm-nerd libqalculate fd unicode-emoji wtype librsvg
+          pacman -Syu --noconfirm --needed git make nodejs python python-gobject ffmpeg quickshell qt6-multimedia qt6-declarative sway grim imagemagick libnotify ttf-dejavu ttf-iosevkaterm-nerd ttf-jetbrains-mono-nerd libqalculate fd unicode-emoji wtype librsvg
           # Arch gives sway cap_sys_nice as a file capability, which a container
           # may not grant; without it the binary cannot start at all.
           setcap -r /usr/bin/sway
@@ -96,6 +96,8 @@ jobs:
       - name: Model tests, lint and widget index
         run: |
           git config --global --add safe.directory "$PWD"
+          # Use the installed desktop's generic font roles in native previews.
+          ln -s "$PWD/default/fontconfig/44-subarchy-roles.conf" /etc/fonts/conf.d/44-subarchy-roles.conf
           make shell-test shell-lint shell-index-check shell-native-test
       - name: Keep native greeter and panel previews
         if: always()
