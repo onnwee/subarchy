@@ -1,21 +1,24 @@
 import QtQuick
 import QtQuick.Controls
+import "AsciiClock.js" as AsciiClock
 
 // SDDM supplies config, userModel, sessionModel, keyboard and sddm. The
-// packaged artwork is rendered from the unchanged SUBCULT master (ADR 0052);
+// packaged artwork is rendered from the selected Bloody SUBCULT art (ADR 0052);
 // theme.conf's logo, from the chosen art set, replaces it.
-// The layout follows the lock screen (lock/LockView.qml): the lockup, the
-// clock and the date in one centred column, the fields under them in the
-// lock's style (a surface box with a violet edge, green round bullets).
+// The selected Bloody wordmark, ASCII clock and Departure Mono follow the
+// Subarchy website. The form keeps its keyboard and authentication flow.
 Rectangle {
   id: root
   objectName: "subarchyGreeter"
+  FontLoader { id: departure; source: "DepartureMono-Regular.woff2"; objectName: "interfaceFontLoader" }
+  readonly property string interfaceFont: departure.status === FontLoader.Ready ? departure.name : "monospace"
+  readonly property string clockLabel: Qt.formatTime(root.now, "HH:mm")
 
   readonly property color base: config.base ? config.base : "#100B19"
   readonly property color surface: config.surface ? config.surface : "#1F1830"
-  readonly property color borderColor: config.border ? config.border : "#8B5CF6"
+  readonly property color borderColor: config.border ? config.border : "#6E55B8"
   readonly property color borderInactive: config.borderInactive ? config.borderInactive : "#3B2470"
-  readonly property color text: config.text ? config.text : "#F0ECE4"
+  readonly property color text: config.text ? config.text : "#A78BFA"
   readonly property color subtext: config.subtext ? config.subtext : "#9A92A8"
   readonly property color muted: config.muted ? config.muted : "#5E5570"
   readonly property color accent: config.accent ? config.accent : "#00FF88"
@@ -129,7 +132,7 @@ Rectangle {
     color: enabled ? root.text : root.muted
     selectionColor: root.borderColor
     selectedTextColor: root.base
-    font.family: "monospace"
+    font.family: root.interfaceFont
     font.pixelSize: root.sp(16)
     leftPadding: root.sp(44)
     rightPadding: root.sp(14)
@@ -155,7 +158,7 @@ Rectangle {
     property Item field
     readonly property bool focused: !!field && field.activeFocus
     color: focused ? root.text : root.subtext
-    font.family: "sans-serif"
+    font.family: root.interfaceFont
     font.pixelSize: root.sp(13)
     font.bold: focused
   }
@@ -180,17 +183,14 @@ Rectangle {
       Image {
         objectName: "brandLogo"
         anchors.horizontalCenter: parent.horizontalCenter
-        width: parent.width
-        height: width * 0.26
-        // The login screen's art set (ADR 0052), written to theme.conf by
-        // `subcult theme apply-system`; the packaged lockup when there is
-        // none or it fails to load.
+        width: Math.min(root.sp(560), scroller.width - 48)
+        height: root.sp(root.height < 800 ? 100 : 156)
         property bool chosenFailed: false
         source: config.logo && !chosenFailed ? "file://" + config.logo : "lockup-dark.png"
         onStatusChanged: if (status === Image.Error && source.toString().startsWith("file://")) chosenFailed = true
-        sourceSize.width: width * 2
+        sourceSize.width: 2000
         fillMode: Image.PreserveAspectFit
-        smooth: true
+        smooth: false
         Accessible.role: Accessible.Graphic
         Accessible.name: config.logoName ? config.logoName : "SUBCULT"
       }
@@ -204,18 +204,23 @@ Rectangle {
           objectName: "clockTime"
           width: parent.width
           horizontalAlignment: Text.AlignHCenter
-          text: ("0" + root.now.getHours()).slice(-2) + ":" + ("0" + root.now.getMinutes()).slice(-2)
+          text: AsciiClock.render(root.clockLabel)
+          Accessible.role: Accessible.StaticText
+          Accessible.name: root.clockLabel
           color: root.text
-          font.family: "monospace"
-          font.pixelSize: root.sp(64)
-          font.bold: true
+          font.family: root.interfaceFont
+          font.pixelSize: root.sp(28)
+          font.bold: false
+          lineHeightMode: Text.FixedHeight
+          lineHeight: root.sp(28)
+          renderType: Text.NativeRendering
         }
         Text {
           width: parent.width
           horizontalAlignment: Text.AlignHCenter
           text: Qt.formatDate(root.now, "dddd d MMMM")
           color: root.subtext
-          font.family: "sans-serif"
+          font.family: root.interfaceFont
           font.pixelSize: root.sp(18)
         }
       }
@@ -312,7 +317,7 @@ Rectangle {
               visible: root.authenticating && !root.startingSession
               text: "Checking…"
               color: root.muted
-              font.family: "sans-serif"
+              font.family: root.interfaceFont
               font.pixelSize: root.sp(14)
             }
 
@@ -333,7 +338,7 @@ Rectangle {
                 anchors.centerIn: parent
                 text: "Caps Lock"
                 color: root.text
-                font.family: "sans-serif"
+                font.family: root.interfaceFont
                 font.pixelSize: root.sp(12)
                 font.bold: true
               }
@@ -361,12 +366,12 @@ Rectangle {
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             color: submit.enabled ? root.base : root.authenticating ? root.text : root.subtext
-            font.family: "sans-serif"
+            font.family: root.interfaceFont
             font.pixelSize: root.sp(16)
             font.bold: true
           }
           background: Rectangle {
-            color: root.authenticating ? root.borderInactive : !submit.enabled ? root.surface : submit.down ? Qt.darker(root.borderColor, 1.1) : submit.hovered ? Qt.lighter(root.borderColor, 1.1) : root.borderColor
+            color: root.authenticating ? root.borderInactive : !submit.enabled ? root.surface : submit.down ? Qt.darker(root.accent, 1.1) : submit.hovered ? Qt.lighter(root.accent, 1.1) : root.accent
             border.width: submit.activeFocus ? 2 : 1
             border.color: submit.activeFocus ? root.text : submit.enabled ? root.borderColor : root.borderInactive
           }
@@ -392,7 +397,7 @@ Rectangle {
               width: parent.width - parent.spacing - Math.max(3, root.sp(3))
               text: root.message
               color: root.text
-              font.family: "sans-serif"
+              font.family: root.interfaceFont
               font.pixelSize: root.sp(14)
               wrapMode: Text.WordWrap
               Accessible.role: Accessible.AlertMessage
@@ -407,7 +412,7 @@ Rectangle {
         horizontalAlignment: Text.AlignHCenter
         elide: Text.ElideRight
         color: root.subtext
-        font.family: "monospace"
+        font.family: root.interfaceFont
         font.pixelSize: root.sp(13)
       }
     }

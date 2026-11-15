@@ -22,10 +22,13 @@ trap 'rm -rf -- "$work"' EXIT
 mkdir -p "$work/theme" "$work/tests" "$work/run"
 chmod 700 "$work/run"
 cp "$root/default/sddm/theme/Main.qml" "$work/theme/"
+cp "$root/default/sddm/theme/AsciiClock.js" "$work/theme/"
+cp "$root/site/fonts/DepartureMono-Regular.woff2" "$work/theme/"
 cp "$root/tools/test/greeter/tst_greeter.qml" "$work/tests/"
 # Use the real brand fonts without installing anything into the host.
 export FONTCONFIG_FILE="$root/branding/fontconfig.xml" XDG_RUNTIME_DIR="$work/run" QT_QUICK_BACKEND=software
-"$root/tools/branding/lockup-png.sh" 2000 "$work/theme/lockup-dark.png"
+"$root/tools/branding/screens.sh" "$work/art"
+cp "$work/art/subcult/login.png" "$work/theme/lockup-dark.png"
 cd "$work"
 status=0
 "$qt/qmltestrunner" -platform offscreen -input "$work/tests" >"$work/greeter-test.log" 2>&1 || status=$?

@@ -33,6 +33,12 @@ ShellRoot {
       test.check(++test.ticks < 200, "timed out at phase " + test.phase)
       switch (test.phase) {
       case 0:
+        const font = keys.findChild(view, "lockFontLoader")
+        test.check(font.status !== FontLoader.Error, "Departure Mono did not load")
+        if (font.status !== FontLoader.Ready) return
+        const clock = keys.findChild(view, "lockClockTime")
+        test.check(clock.text.split("\n").length === 3, "the lock clock is not ASCII")
+        test.check(/^\d\d:\d\d$/.test(clock.Accessible.name), "the lock clock has no plain time label")
         // The lock hides the pointer; it has nothing to point at.
         test.check(keys.findChild(view, "lockPointer").cursorShape === Qt.BlankCursor, "the pointer shows on the lock")
         other.forceActiveFocus()

@@ -41,7 +41,7 @@ pragma Singleton
 import QtQuick
 QtObject {
  property color surface: "#1f1830"
- property color text: "#f0ece4"
+ property color text: "#a78bfa"
  property color subtext: "#9a92a8"
  property color accent: "#8b5cf6"
  property color warning: "#f6d447"

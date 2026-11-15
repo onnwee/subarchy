@@ -4,7 +4,7 @@ type: decision
 status: accepted
 adr: 52
 created: 2026-11-06
-updated: 2026-11-13
+updated: 2026-11-15
 tags: [decision, adr, brand]
 aliases: [ADR 0052, R4, Name, os-release, Subarchy]
 ---
@@ -99,5 +99,18 @@ This was not a formal trademark search.
   pixels a side. The lock screen reads the file itself. The table above
   holds for every row except the boot menu and splash, which now carry
   SUBARCHY by default; the installer's own console screens stay SUBCULT.
+
+- 2026-11-15: the owner selected the Bloody SUBCULT login wordmark after
+  comparing it with a black-on-violet treatment, and requested an ASCII
+  clock plus the existing website branding. The greeter now uses the
+  selected wordmark, Departure Mono from the website with its OFL notice,
+  the website's colour roles and a three-row block clock. Its plain time
+  label is exposed to accessibility, and it keeps the minute timer. The
+  owner then explicitly approved it for the session lock too. Both images
+  in the `subcult` art set carry the selected Bloody wordmark. Ordinary UI
+  text in the default palette is lavender (`#A78BFA`); the fixed white art
+  highlights and explicit terminal/highlight roles keep their values.
+  Catalog themes still supply their own semantic text colour. The
+  selection of art sets above still applies.
 
 Related: [[decision-map|Decision map]] · [[brand-identity|Brand identity]] · [[0046-distribution-cli|ADR 0046]] · [[0053-licence|ADR 0053]]

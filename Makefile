@@ -43,6 +43,7 @@ shell-native-test:
 
 # The widget index is generated and committed; this fails when it is stale.
 shell-index-check:
+	@[ "$$(sha256sum < lock/AsciiClock.js)" = "$$(sha256sum < default/sddm/theme/AsciiClock.js)" ] || { echo 'login/lock ASCII clocks differ'; exit 1; }
 	@for f in MotionModel.js WatchedFile.qml; do \
 	  [ "$$(sha256sum < shell/Commons/$$f)" = "$$(sha256sum < lock/$$f)" ] || { echo "lock/$$f differs from shell/Commons/$$f"; exit 1; }; done
 	@[ "$$(sha256sum < shell/Commons/ThemeModel.js)" = "$$(sha256sum < lock/ThemeModel.js)" ] || { echo "lock/ThemeModel.js differs from shell/Commons/ThemeModel.js; copy it"; exit 1; }

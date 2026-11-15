@@ -1246,7 +1246,7 @@ finally:
         "one bar layer per monitor": bar_layers_ok(r["layers"]),
         "full bar with every widget of the default layout": full_bar_ok(r["shell_status"]),
         "HT3 widget loaded and hidden without headphones": widget_hidden(r["shell_status"], "subcult.ht3"),
-        "bar colours (base, line, text)": {"100B19", "1F1830", "F0ECE4"} <= r["bar_colours"],
+        "bar colours (base, line, text)": {"100B19", "1F1830", "A78BFA"} <= r["bar_colours"],
         "font roles": r["fonts"].split("\n")[:3] == ["JetBrainsMono Nerd Font", "JetBrainsMono Nerd Font Propo", "Libertinus Mono"],
         "GTK icons and cursor": "'Papirus-Dark'" in r["gtk"] and "'subcult-cursor'" in r["gtk"],
         "Neovim starts offline with its plugins": "NVIM_RC=0" in r["nvim"] and "Failed" not in r["nvim"],

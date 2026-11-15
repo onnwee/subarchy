@@ -225,7 +225,7 @@ TestCase {
   }
 
   readonly property var fallback: ({
-    base: "#100B19", mantle: "#0B0812", crust: "#06040A", surface0: "#1F1830", text: "#F0ECE4",
+    base: "#100B19", mantle: "#0B0812", crust: "#06040A", surface0: "#1F1830", text: "#A78BFA",
     subtext0: "#9A92A8", overlay0: "#5E5570", green: "#00FF88", mauve: "#8F4BC8",
     selection_bg: "#3B2470", yellow: "#F6D447", red: "#D52032"
   })
@@ -234,7 +234,7 @@ TestCase {
     const t = ThemeModel.tokens(fallback, fallback)
     compare(t.base, "#100B19")
     compare(t.surface, "#1F1830")
-    compare(t.text, "#F0ECE4")
+    compare(t.text, "#A78BFA")
     compare(t.subtext, "#9A92A8")
     compare(t.muted, "#5E5570")
     compare(t.accent, "#00FF88")
@@ -250,7 +250,7 @@ TestCase {
     delete broken.mauve
     const t = ThemeModel.tokens(broken, fallback)
     compare(t.base, "#100B19")
-    compare(t.text, "#F0ECE4")
+    compare(t.text, "#A78BFA")
     compare(t.border, "#8F4BC8")
     compare(ThemeModel.tokens(null, fallback).accent, "#00FF88")
   }

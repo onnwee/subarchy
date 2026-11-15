@@ -29,17 +29,25 @@ redistributed under the OFL files beside them. Check the backgrounds with
 Subarchy brand pack (`subcult-tv` `studio/brands/subarchy/logos/wordmark-dark.svg`
 at `e9a9edf`, SHA-256 `07f37478…a955`), drawn from the owner's ANSI art.
 
+On 2026-11-15 the owner selected the Bloody SUBCULT treatment for the
+login and session lock screens, with an ASCII clock and the website's typography.
+`marks/subcult-wordmark-dark.svg` is the unchanged selected Studio export,
+from `subcult-tv` `studio/brands/subarchy/logos/subcult-dark.svg` at
+`efb1adb39d60843fb32537ba6c09fca1ffe17a46`, SHA-256
+`7feae64445be82b5550d48d5485f0e61db87a270c2f2bf7ff30f69a1c3193e19`.
+The login and lock screens' Departure Mono font is the existing
+`site/fonts/DepartureMono-Regular.woff2`; packaging includes its adjacent
+OFL text. The font's SHA-256 is
+`5b4fed1daa90708aa9c6ee1190abca9dc22164a1c1def0020386e46b61038cfb`,
+matching the live website's font on that date.
+
 The system screens show art sets (ADR 0052) that
 `tools/branding/screens.sh` builds during packaging into
 `/usr/share/subcult/screens/`: `subarchy` (the wordmark, at whole-pixel
-sizes) and `subcult` (`marks/mark-dark.svg` at boot, the master lockup on
-the login and lock screens). By default the boot splash uses `subarchy`;
-the greeter (`default/sddm/theme/`) and lock use `subcult`, a PNG rendered
-from `studio/logos/lockup-dark.svg`. Qt's SVG renderer omits the
-master's embedded SVG mark; the librsvg export keeps the complete artwork.
-`tools/branding/lockup-png.sh` makes that PNG and centres the ink on its
-canvas, since the master leaves its right part empty and both screens
-centre the image. The original SVG and its geometry stay unchanged.
+sizes) and `subcult` (the mark at boot, the Bloody wordmark at login and
+lock). By default the boot splash uses
+`subarchy`, and the greeter and lock use their `subcult` art. Both wordmarks are rendered in whole cells and centred on their
+canvas. The original SVGs and their geometry stay unchanged.
 
 The palette Theme Tender ships for Subarchy (`default/theme/palette.json`,
 subcult-minimal) keeps these roles: violet, ink, acid and paper.

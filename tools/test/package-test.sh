@@ -98,6 +98,9 @@ grep -qx usr/share/fontconfig/conf.avail/44-subarchy-roles.conf <<<"$list" || fa
 for path in usr/share/sddm/themes/subarchy/lockup-dark.png usr/share/subcult/lock/lockup-dark.png; do
   grep -qx "$path" <<<"$list" || fail "missing rendered lockup $path"
 done
+for path in usr/share/sddm/themes/subarchy/DepartureMono-Regular.woff2 usr/share/subcult/lock/DepartureMono-Regular.woff2 usr/share/licenses/subarchy/DepartureMono-OFL.txt; do
+  grep -qx "$path" <<<"$list" || fail "missing greeter font or licence $path"
+done
 for set in subcult subarchy; do
   for f in boot.png login.png lock.png title.txt; do
     grep -qx "usr/share/subcult/screens/$set/$f" <<<"$list" || fail "missing art set file $set/$f"
@@ -132,7 +135,13 @@ done
 mkdir "$work/root"
 bsdtar -xf "$pkg" -C "$work/root" usr
 cmp "$work/root/usr/share/sddm/themes/subarchy/lockup-dark.png" \
-  "$work/root/usr/share/subcult/lock/lockup-dark.png" || fail "greeter and lock artwork differ"
+  "$work/root/usr/share/subcult/screens/subcult/login.png" || fail "the greeter artwork is not the subcult login set's"
+cmp "$root/site/fonts/DepartureMono-Regular.woff2" \
+  "$work/root/usr/share/sddm/themes/subarchy/DepartureMono-Regular.woff2" || fail "greeter font differs from the website's"
+cmp "$root/site/fonts/DepartureMono-Regular.woff2" \
+  "$work/root/usr/share/subcult/lock/DepartureMono-Regular.woff2" || fail "lock font differs from the website's"
+cmp "$root/site/fonts/departuremono-OFL.txt" \
+  "$work/root/usr/share/licenses/subarchy/DepartureMono-OFL.txt" || fail "greeter font licence differs from the website's"
 # The defaults (ADR 0052): Subarchy's wordmark at boot, SUBCULT after it.
 cmp "$work/root/usr/share/plymouth/themes/subarchy/logo.png" \
   "$work/root/usr/share/subcult/screens/subarchy/boot.png" || fail "the splash logo is not the subarchy set's"

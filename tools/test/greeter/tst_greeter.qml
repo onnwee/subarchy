@@ -1,6 +1,7 @@
 import QtQuick
 import QtTest
 import "../theme" as Theme
+import "../theme/AsciiClock.js" as AsciiClock
 
 // SDDM's public context, without a display manager, PAM or real credentials.
 Item {
@@ -43,6 +44,7 @@ Item {
     property var scroller: null
 
     function initTestCase() {
+      tryCompare(findChild(greeter, "interfaceFontLoader"), "status", FontLoader.Ready)
       user = findChild(greeter, "userField")
       password = findChild(greeter, "passwordField")
       submit = findChild(greeter, "signInButton")
@@ -264,10 +266,11 @@ Item {
         if (o.objectName === "clockTimer")
           timer = o
       verify(time && timer)
-      verify(/^\d\d:\d\d$/.test(time.text), time.text)
+      verify(/^\d\d:\d\d$/.test(time.Accessible.name), time.Accessible.name)
       verify(timer.running)
       greeter.now = new Date(2001, 0, 2, 3, 4)
-      compare(time.text, "03:04")
+      compare(time.text, AsciiClock.render("03:04"))
+      compare(time.Accessible.name, "03:04")
       fixture.height = 533
       wait(50)
       verify(greeter.compact && !timer.running, "no clock, no ticks")
@@ -279,6 +282,49 @@ Item {
       verify(greeter.now.getFullYear() > 2001, "the clock catches up when it comes back")
       verify(timer.interval <= 60050, "the next tick is at the coming minute: " + timer.interval)
       compare(timer.interval, 60050 - (greeter.now.getTime() % 60000))
+    }
+
+    function test_asciiClockDigitsShareBounds() {
+      const shapes = new Set()
+      for (let digit = 0; digit < 10; digit++) {
+        const art = AsciiClock.render(String(digit))
+        shapes.add(art)
+        const rows = art.split("\n")
+        compare(rows.length, 3)
+        let top = 6, bottom = -1, left = 3, right = -1
+        for (let y = 0; y < 3; y++) {
+          compare(rows[y].length, 3)
+          for (let x = 0; x < 3; x++) {
+            const c = rows[y][x]
+            if (c === " ") continue
+            verify(c === "█" || c === "▀" || c === "▄")
+            top = Math.min(top, 2 * y + (c === "▄" ? 1 : 0))
+            bottom = Math.max(bottom, 2 * y + (c === "▀" ? 0 : 1))
+            left = Math.min(left, x)
+            right = Math.max(right, x)
+          }
+        }
+        compare(top, 0, "digit " + digit + " aligns at the top")
+        compare(bottom, 4, "digit " + digit + " aligns at the bottom")
+        if (digit === 1) compare(right - left + 1, 1, "1 has a narrow stem")
+      }
+      compare(shapes.size, 10, "every digit is distinct")
+      const clock = AsciiClock.render("09:58").split("\n")
+      verify(clock.every(row => row.length === 17))
+    }
+
+    function test_asciiClockColonIsVerticallyCentred() {
+      const rows = AsciiClock.render(":").split("\n")
+      const dots = []
+      for (let y = 0; y < rows.length; y++) {
+        compare(rows[y].length, 1)
+        if (rows[y] === "▄") dots.push(2 * y + 1)
+        else if (rows[y] === "▀") dots.push(2 * y)
+        else compare(rows[y], " ", "colon uses two separate half-cell dots")
+      }
+      compare(dots.length, 2)
+      compare((dots[0] + dots[1]) / 2, 2, "dots centre on the digits' five-half-cell height")
+      verify(dots[0] < 2 && dots[1] > 2)
     }
 
     // theme.conf from subcult theme apply-system recolours the form.

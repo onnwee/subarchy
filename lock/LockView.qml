@@ -5,12 +5,18 @@ import QtMultimedia
 import Quickshell
 import "LockModel.js" as Model
 import "FingerprintModel.js" as Fingerprint
+import "AsciiClock.js" as AsciiClock
 
 // One output's lock surface: the lockup and the clock in the middle, the
 // prompt under them once a key was pressed. Keys go to the program through
 // `key`; the text typed never shows, only bullets.
 FocusScope {
   id: view
+
+  FontLoader { id: departure; source: "DepartureMono-Regular.woff2"; objectName: "lockFontLoader" }
+  readonly property string interfaceFont: departure.status === FontLoader.Ready ? departure.name : "monospace"
+  readonly property real unit: Math.max(1, Math.min(2, width / 1280, height / 800))
+  function sp(n) { return Math.round(n * unit) }
 
   property var lockState: Model.initial()
   // The fingerprint check's mode (FingerprintModel.js); "off" shows nothing.
@@ -123,39 +129,46 @@ FocusScope {
   Column {
     visible: view.lockState.prompt || view.still.toString() === ""
     anchors.centerIn: parent
-    spacing: 28
+    spacing: view.sp(28)
 
     Image {
+      objectName: "lockLogo"
       anchors.horizontalCenter: parent.horizontalCenter
-      width: 360
-      height: width * 0.26
+      width: Math.min(view.sp(560), view.width - 48)
+      height: view.sp(view.height < 800 ? 100 : 156)
       source: view.logoPath !== "" ? "file://" + view.logoPath : Qt.resolvedUrl("lockup-dark.png")
       onStatusChanged: if (status === Image.Error && view.logoPath !== "") view.logoIndex++
-      sourceSize.width: width * 2
+      sourceSize.width: 2000
       fillMode: Image.PreserveAspectFit
-      smooth: true
+      smooth: false
     }
 
     Text {
       anchors.horizontalCenter: parent.horizontalCenter
-      text: Model.clockText(view.now)
-      color: view.theme.text || "#F0ECE4"
-      font.family: "monospace"
-      font.pixelSize: 64
-      font.bold: true
+      objectName: "lockClockTime"
+      text: AsciiClock.render(Model.clockText(view.now))
+      Accessible.role: Accessible.StaticText
+      Accessible.name: Model.clockText(view.now)
+      color: view.theme.text || "#A78BFA"
+      font.family: view.interfaceFont
+      font.pixelSize: view.sp(28)
+      font.bold: false
+      lineHeightMode: Text.FixedHeight
+      lineHeight: view.sp(28)
+      renderType: Text.NativeRendering
     }
 
     Text {
       anchors.horizontalCenter: parent.horizontalCenter
       text: Qt.formatDate(view.now, "dddd d MMMM")
       color: view.theme.subtext || "#9A92A8"
-      font.family: "sans-serif"
-      font.pixelSize: 18
+      font.family: view.interfaceFont
+      font.pixelSize: view.sp(18)
     }
 
     Item {
-      width: 320
-      height: 72
+      width: Math.min(view.sp(360), view.width - 96)
+      height: view.sp(88)
       anchors.horizontalCenter: parent.horizontalCenter
 
       // The field looks like the disk unlock prompt at boot
@@ -165,23 +178,23 @@ FocusScope {
         id: field
         visible: view.lockState.prompt
         width: parent.width
-        height: 36
+        height: view.sp(44)
         color: view.theme.surface || "#1F1830"
         border.width: 1
-        border.color: view.lockState.checking ? (view.theme.muted || "#5E5570") : (view.theme.border || "#8B5CF6")
+        border.color: view.lockState.checking ? (view.theme.subtext || "#9A92A8") : (view.theme.border || "#8B5CF6")
 
         Row {
           visible: !view.lockState.checking
           anchors.left: parent.left
-          anchors.leftMargin: 14
+          anchors.leftMargin: view.sp(14)
           anchors.verticalCenter: parent.verticalCenter
-          spacing: 6
+          spacing: view.sp(6)
           Repeater {
             model: Model.bulletCount(view.lockState.password.length)
             Rectangle {
-              width: 12
-              height: 12
-              radius: 6
+              width: view.sp(12)
+              height: view.sp(12)
+              radius: width / 2
               color: view.theme.accent || "#00FF88"
             }
           }
@@ -190,12 +203,12 @@ FocusScope {
         Text {
           visible: view.lockState.checking
           anchors.left: parent.left
-          anchors.leftMargin: 14
+          anchors.leftMargin: view.sp(14)
           anchors.verticalCenter: parent.verticalCenter
           text: "Checking…"
-          color: view.theme.muted || "#5E5570"
-          font.family: "sans-serif"
-          font.pixelSize: 14
+          color: view.theme.subtext || "#9A92A8"
+          font.family: view.interfaceFont
+          font.pixelSize: view.sp(14)
         }
       }
 
@@ -215,14 +228,14 @@ FocusScope {
           radius: 6
           color: "transparent"
           border.width: 2
-          border.color: view.theme.text || "#F0ECE4"
+          border.color: view.theme.text || "#A78BFA"
         }
         Rectangle {
           x: 2
           y: 11
           width: 16
           height: 13
-          color: view.theme.text || "#F0ECE4"
+          color: view.theme.text || "#A78BFA"
         }
         Rectangle {
           x: 9
@@ -245,9 +258,9 @@ FocusScope {
         horizontalAlignment: Text.AlignHCenter
         wrapMode: Text.WordWrap
         // While a check runs this is what PAM says ("Place your finger…").
-        color: view.lockState.checking ? (view.theme.muted || "#5E5570") : (view.theme.error || "#D52032")
-        font.family: "sans-serif"
-        font.pixelSize: 14
+        color: view.lockState.checking ? (view.theme.subtext || "#9A92A8") : (view.theme.error || "#D52032")
+        font.family: view.interfaceFont
+        font.pixelSize: view.sp(14)
       }
 
       // The fingerprint line, under the password check's message when there
@@ -262,18 +275,18 @@ FocusScope {
         width: Math.min(implicitWidth, view.width - 48)
         horizontalAlignment: Text.AlignHCenter
         wrapMode: Text.WordWrap
-        color: view.fingerprint === "nomatch" ? (view.theme.error || "#D52032") : (view.theme.muted || "#5E5570")
-        font.family: "sans-serif"
-        font.pixelSize: 14
+        color: view.fingerprint === "nomatch" ? (view.theme.error || "#D52032") : (view.theme.subtext || "#9A92A8")
+        font.family: view.interfaceFont
+        font.pixelSize: view.sp(14)
       }
 
       Text {
         anchors.centerIn: parent
         visible: !view.lockState.prompt
         text: Fingerprint.idleText(view.fingerprint)
-        color: view.theme.muted || "#5E5570"
-        font.family: "sans-serif"
-        font.pixelSize: 14
+        color: view.theme.subtext || "#9A92A8"
+        font.family: view.interfaceFont
+        font.pixelSize: view.sp(14)
       }
     }
   }

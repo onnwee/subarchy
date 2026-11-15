@@ -22,7 +22,7 @@ Singleton {
   readonly property color mantle: tokens.mantle || "#0B0812"
   readonly property color crust: tokens.crust || "#06040A"
   readonly property color surface: tokens.surface || "#1F1830"
-  readonly property color text: tokens.text || "#F0ECE4"
+  readonly property color text: tokens.text || "#A78BFA"
   readonly property color subtext: tokens.subtext || "#9A92A8"
   readonly property color muted: tokens.muted || "#5E5570"
   readonly property color accent: tokens.accent || "#00FF88"

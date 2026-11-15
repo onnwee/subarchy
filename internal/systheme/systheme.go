@@ -36,7 +36,7 @@ var roleName = regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
 // theme leaves out comes from here.
 var Fallback = map[string]string{
 	"base": "#100b19", "mantle": "#0b0812", "crust": "#06040a", "surface0": "#1f1830", "surface1": "#3b2470",
-	"text": "#f0ece4", "subtext0": "#9a92a8", "overlay0": "#5e5570", "mauve": "#8f4bc8", "green": "#00ff88",
+	"text": "#a78bfa", "subtext0": "#9a92a8", "overlay0": "#5e5570", "mauve": "#8f4bc8", "green": "#00ff88",
 	"red": "#d52032", "yellow": "#f6d447",
 }
 

@@ -29,7 +29,7 @@ pragma Singleton
 import QtQuick
 QtObject {
  property color base: "#100b19"; property color surface: "#1f1830"
- property color text: "#f0ece4"; property color subtext: "#9a92a8"
+ property color text: "#a78bfa"; property color subtext: "#9a92a8"
  property color muted: "#786c8b"; property color accent: "#8b5cf6"
  property color selection: "#3b2470"; property color error: "#d52032"
  property color warning: "#ffb000"; property color mantle: "#191226"

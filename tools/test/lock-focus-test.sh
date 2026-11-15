@@ -11,8 +11,10 @@ work=$(mktemp -d)
 trap 'rm -rf -- "$work"' EXIT
 mkdir -p "$work/lock" "$work/run"
 chmod 700 "$work/run"
-cp "$root/lock/"{LockView.qml,LockModel.js,FingerprintModel.js} "$work/lock/"
-"$root/tools/branding/lockup-png.sh" 720 "$work/lock/lockup-dark.png"
+cp "$root/lock/"{LockView.qml,LockModel.js,FingerprintModel.js,AsciiClock.js} "$work/lock/"
+cp "$root/site/fonts/DepartureMono-Regular.woff2" "$work/lock/"
+"$root/tools/branding/screens.sh" "$work/art"
+cp "$work/art/subcult/lock.png" "$work/lock/lockup-dark.png"
 cp "$root/tools/test/lock-focus.qml" "$work/shell.qml"
 # A short loop for the still/loop check.
 ffmpeg -loglevel error -f lavfi -i color=c=0x100b19:s=64x36:d=2 -c:v libvpx-vp9 "$work/lock/loop.webm"

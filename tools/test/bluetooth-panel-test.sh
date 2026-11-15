@@ -36,7 +36,7 @@ import QtQuick
 QtObject {
  property color base: "#100b19"
  property color surface: "#1f1830"
- property color text: "#f0ece4"
+ property color text: "#a78bfa"
  property color subtext: "#9a92a8"
  property color muted: "#5e5570"
  property color accent: "#8b5cf6"
