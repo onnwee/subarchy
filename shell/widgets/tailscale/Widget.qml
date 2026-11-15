@@ -19,14 +19,31 @@ BarWidget {
   hidden: !Tailscale.installed
   implicitWidth: button.implicitWidth
 
-  Component.onCompleted: Tailscale.refresh()
+  Component.onCompleted: Tailscale.readStatus()
 
   WidgetTimer {
+    id: refreshTimer
     widget: root
     timerName: "refresh"
-    running: true
+    running: false
     repeat: true
-    onTriggered: Tailscale.refresh()
+    onTriggered: Tailscale.readStatus()
+  }
+
+  // Share the clock's minute boundary, so a status refresh and clock
+  // redraw can use the same wake-up. Re-align after a power-source change.
+  Connections {
+    target: Clock
+    enabled: !refreshTimer.running
+    function onNowChanged() {
+      Tailscale.readStatus()
+      refreshTimer.start()
+    }
+  }
+
+  Connections {
+    target: Power
+    function onOnBatteryChanged() { refreshTimer.stop() }
   }
 
   IconButton {

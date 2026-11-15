@@ -7,8 +7,9 @@ import "../widgets/tailscale/Model.js" as Model
 // Tailscale (ADR 0058), shared by the bar widget and its panel. The status
 // comes from `tailscale status --json` when the widget's timer fires, when
 // the panel opens and after each action, and every few seconds while a
-// sign-in waits for the browser; the saved accounts (tailscale's
-// profiles) from `tailscale switch --list --json` with it. Up, down,
+// sign-in waits for the browser. The bar reads only status; full refreshes
+// for the panel, actions and sign-in also read the saved accounts from
+// `tailscale switch --list --json`. Up, down,
 // sign-in, adding and switching accounts and the exit node go through
 // pkexec and the root helper (polkit action tv.subcult.tailscale, no
 // password in the active session); no account is tailscaled's operator

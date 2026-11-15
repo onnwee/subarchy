@@ -308,6 +308,8 @@ cat >"$shell/widgets/test-probe/manifest.json" <<'EOF'
 EOF
 cat >"$shell/widgets/test-probe/Widget.qml" <<'EOF'
 import QtQuick
+import Quickshell.Io
+import qs.Commons
 import qs.Ui
 
 BarWidget {
@@ -315,6 +317,15 @@ BarWidget {
   implicitWidth: 12
   Rectangle { anchors.centerIn: parent; width: 10; height: 10; color: "#FF00FF" }
   WidgetTimer { widget: root; timerName: "tick"; running: true; repeat: true }
+  IpcHandler {
+    target: "subcult.test-probe." + (root.screen ? root.screen.name : "")
+    function realignTailscale(): string {
+      Power.onBatteryChanged()
+      const stopped = !Power.report()["subcult.tailscale.refresh"].running
+      Clock.nowMs += 1
+      return JSON.stringify({ stopped: stopped, restarted: Power.report()["subcult.tailscale.refresh"].running })
+    }
+  }
   Component.onCompleted: console.info("probe: mode=" + mode + " shell=" + (shell.power ? "ok" : "missing")
     + " interval=" + (shell.power ? shell.power.interval("tick") : -1))
 }
@@ -976,10 +987,21 @@ ts() { HOME=$home1 quickshell ipc -p "$shell" call subcult.tailscale "$@"; }
 tsfail() { fail "$1: state $(ts state 2>&1); tailscale calls: $(tr '\n' ';' <"$home1/tailscale-log" 2>/dev/null)"; }
 for _ in $(seq 20); do [[ $(ts state) == *'"state":"NeedsLogin"'* ]] && break; sleep 0.5; done
 [[ $(ts state) == *'"state":"NeedsLogin"'* ]] || tsfail "tailscale signed out not reported"
+# The bar needs status, not the saved-account list used only by its panel.
+! grep -qx 'switch --list --json' "$home1/tailscale-log" || tsfail "the closed Tailscale panel read saved accounts"
+# A power notification stops the timer; the next shared clock notification
+# restarts it and reads status. The test probe emits both synchronously.
+reads=$(grep -cx 'status --json' "$home1/tailscale-log")
+alignment=$(HOME=$home1 quickshell ipc -p "$shell" call subcult.test-probe.HEADLESS-1 realignTailscale)
+[[ $alignment == '{"stopped":true,"restarted":true}' ]] || tsfail "tailscale did not realign after a power change: $alignment"
+for _ in $(seq 20); do [[ $(grep -cx 'status --json' "$home1/tailscale-log") -gt $reads ]] && break; sleep 0.1; done
+[[ $(grep -cx 'status --json' "$home1/tailscale-log") -gt $reads ]] || tsfail "the shared clock did not refresh status"
+! grep -qx 'switch --list --json' "$home1/tailscale-log" || tsfail "the shared clock read saved accounts with the panel closed"
 HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.tailscale >/dev/null
 sleep 1
 st=$(status "$home1")
 [[ $(json 'd.get("panel")') == subcult.tailscale ]] || fail "the tailscale panel did not open: $st"
+grep -qx 'switch --list --json' "$home1/tailscale-log" || tsfail "opening the Tailscale panel did not read saved accounts"
 ts signIn >/dev/null
 for _ in $(seq 20); do [[ $(ts state) == *'"loginUrl":"https://login.tailscale.com/a/headless"'* ]] && break; sleep 0.5; done
 [[ $(ts state) == *'"loginUrl":"https://login.tailscale.com/a/headless"'* ]] || tsfail "no sign-in link from the helper"
