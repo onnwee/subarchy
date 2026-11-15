@@ -672,4 +672,58 @@ Matching #51's list, with the [[test-checklist|checklist]] items:
 - How many installs ran on the SPCC disk between November 9 and today (one
   left ESP `ce2275ae-…`).
 
+## November 14 evening: LTS battery and HT3 controls
+
+Observed on Sputnik from Kvant, November 15 at 03:36–03:37 UTC
+(November 14 CST), after the owner selected **Subarchy → linux-lts**,
+unlocked the disk and signed in. The owner closed btop and disconnected
+the charger and powered dock. This is a later checkpoint than the earlier
+reinstall observations above.
+
+### NVIDIA runtime power (#195, P9)
+
+Both boots used the open NVIDIA driver `620.70.06`, fine-grained power
+setting `DynamicPowerManagement=2` and PCI `power/control=auto`.
+
+| Passive battery check | Zen `7.3.4-zen2-2-zen` | LTS `6.18.63-3-lts` |
+|---|---|---|
+| Driver RTD3 status | Not supported | Enabled (fine-grained) |
+| PCI runtime status | Active | Suspended |
+| Suspended-time counter | Remained zero | Increased from 350464 to 370466 ms over three samples ten seconds apart |
+| Video memory | Active | Off |
+
+The LTS boot ID was `d8c99bc8-5fbf-40d8-9106-81554675790c`.
+Sysfs confirmed the battery discharging at 75%, all USB power inputs
+offline and AC offline. No btop process was present. The session selected
+`AQ_DRM_DEVICES=/dev/dri/subcult-igpu`; DRM device links identified the
+Intel and NVIDIA nodes separately. No `nvidia-smi`, GPU monitor, offloaded
+app, driver reload or PCI rebind ran during this capture. A final passive
+reading after the other checks still showed suspension.
+
+**P9 passes on LTS; it still fails on Zen.** This narrows the remaining
+issue to the kernel/driver interaction and supplies a tested fallback,
+without establishing the exact failing kernel operation on Sputnik. The
+upstream [NVIDIA #1507](https://github.com/NVIDIA/open-gpu-kernel-modules/issues/1507)
+report and [PR #1512](https://github.com/NVIDIA/open-gpu-kernel-modules/pull/1512)
+describe matching Linux 7.3 symptoms and a source fix. The fix was still
+unmerged at this check; it has not been applied or tested on this laptop.
+Keep #195 open for the default Zen kernel. Select the installed LTS entry
+when its working runtime power management is needed; the boot default was
+not changed.
+
+SSH was not running after this reboot. The owner enabled and started
+`sshd`; key authentication then reconnected at the existing MAC-reserved
+Wi-Fi address, and `systemctl is-enabled sshd` returned `enabled`.
+
+### HT3 controls (#153)
+
+The owner selected noise modes and HT3-specific volume as this issue's
+scope, with EQ separate. The installed panel matched the merged source
+from #181. The owner then confirmed that Normal, ANC and Transparency all
+changed the real headphones and were confirmed in the panel, and that the
+volume control affected only the HT3. This completes #153's owner
+checkpoint. The owner also explicitly confirmed the real headset's battery
+percentage, completing #65's remaining hardware checkpoint. Both HT3 issues
+are closed; the widget epic still waits on the Google account sync in #89.
+
 Related: [[0049-installer|ADR 0049]] · [[0050-hardware-support|Hardware support]] · [[package-publishing|Package publishing]] · [[roadmap|Roadmap]] · [[review-index|Review index]]

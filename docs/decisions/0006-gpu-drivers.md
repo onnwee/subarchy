@@ -4,7 +4,7 @@ type: decision
 status: accepted
 adr: 6
 created: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-14
 tags: [decision, adr, foundation, gpu]
 aliases: [ADR 0006, F5, GPU drivers]
 ---
@@ -142,5 +142,22 @@ Implementation notes:
   The `nvidia-runtime-pm` hardware fix, for hybrid NVIDIA laptops, sets
   `0x02` and NVIDIA's udev rules for `power/control=auto`. Untested on the
   hardware: P9 decides.
+
+- 2026-11-14, evening: the owner booted the installed LTS kernel on
+  `sputnik`, closed btop and unplugged charger and powered dock. Passive
+  readings on November 15 at 03:36–03:37 UTC confirmed `6.18.63-3-lts`,
+  the same open NVIDIA driver `620.70.06`, `DynamicPowerManagement=2`,
+  `power/control=auto`, battery discharging and the Intel-only
+  `AQ_DRM_DEVICES`. Three samples ten seconds apart showed
+  `runtime_status=suspended`, increasing suspended time, fine-grained RTD3
+  enabled and video memory off. The earlier Zen `7.3.4-zen2-2-zen` battery
+  test with that driver and setting stayed active with zero suspended time
+  and RTD3 unsupported. LTS therefore passes P9 on this install; Zen still
+  fails and #195 stays open. This matches the symptoms in
+  [NVIDIA issue #1507](https://github.com/NVIDIA/open-gpu-kernel-modules/issues/1507)
+  and its still-open [fix #1512](https://github.com/NVIDIA/open-gpu-kernel-modules/pull/1512),
+  but that source fix has not been tested on Sputnik. Use the installed
+  LTS boot entry as the tested workaround; no driver patch or boot-default
+  change was made. See [[first-install]] for the dated comparison.
 
 Related: [[decision-map|Decision map]] · [[0004-kernel|ADR 0004]] · [[0005-firmware|ADR 0005]]
