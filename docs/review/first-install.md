@@ -4,7 +4,7 @@ type: review
 status: draft
 review: pending
 created: 2026-11-07
-updated: 2026-11-14
+updated: 2026-11-15
 tags: [review, installer]
 aliases: [First install, Install runbook]
 ---
@@ -725,5 +725,52 @@ volume control affected only the HT3. This completes #153's owner
 checkpoint. The owner also explicitly confirmed the real headset's battery
 percentage, completing #65's remaining hardware checkpoint. Both HT3 issues
 are closed; the widget epic still waits on the Google account sync in #89.
+
+## November 15: fingerprint unlock and NVIDIA terminal startup
+
+Owner-assisted checks on the newly installed Sputnik desktop, observed
+from Kvant on November 15 UTC. The installed core was `0.0.0-616`, kernel
+`7.3.4-zen2-2-zen`, and open NVIDIA driver `620.70.06`. The owner saved
+their work before the controlled lock and application checks. No GPU
+session mode, compositor, driver or boot setting changed.
+
+### Fingerprint unlock (#93)
+
+The Goodix USB reader `27c6:63ac` was detected by installed `fprintd
+1.94.5-2` / `libfprint 1.94.100-2`. The owner completed enrollment and
+verification on the laptop; no password or biometric data was captured
+in the evidence.
+
+The real lock reported `locked=true`, `secure=true`,
+`fingerprint=ready` and `fingerprintChecking=true`. The owner touched the
+enrolled finger without typing a password and confirmed a return to the
+desktop; the lock unit then reported inactive. On a second lock, with the
+reader untouched, the owner entered one wrong password and then the
+correct password without clicking. Focus, retry and unlock all passed,
+and the lock unit again became inactive.
+
+The no-reader behavior remains covered by the native headless regression:
+without a fingerprint PAM stack it requires `fingerprint=off` and
+`fingerprintChecking=false`; the native view check requires a hidden hint
+in that state. Those checks use a controlled fixture, separate from this
+real-reader acceptance. This completes #93's owner checkpoint.
+
+### NVIDIA offload terminal startup (#106)
+
+Three owned `subcult gpu run kitty --debug-rendering` windows each ran a
+five-second child and closed deliberately at its end. Each reported
+`3.1.0 NVIDIA 620.70.06`, exited zero without a timeout, and remained
+mapped and not hidden in all 25 compositor samples taken about 0.2 seconds
+apart. The owner observed the repeat and confirmed that all three worked
+normally. Two earlier automated rounds of eight and fifteen seconds per
+window also exited zero with NVIDIA rendering; the first was not observed
+by the owner and is not the visual acceptance result.
+
+This qualifies repeated offloaded terminal startup on this installation;
+it does not qualify a GPU session-mode switch or resolve the separate
+Zen runtime-D3 failure in #195. Raw renderer/exit logs and sample records
+are retained privately on Kvant and Sputnik under the dated release-check
+evidence directories. The historical November 9 inconclusive result above
+is retained as history.
 
 Related: [[0049-installer|ADR 0049]] · [[0050-hardware-support|Hardware support]] · [[package-publishing|Package publishing]] · [[roadmap|Roadmap]] · [[review-index|Review index]]
