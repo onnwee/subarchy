@@ -1,3 +1,5 @@
+-- Full Omarchy MIT notice: LICENSES/Omarchy-MIT.txt; installed at
+-- /usr/share/licenses/subarchy/Omarchy-MIT.txt.
 -- Default key bindings, a small subset of Omarchy's (MIT) so muscle memory
 -- carries over. Menus arrive with the Quickshell shell.
 

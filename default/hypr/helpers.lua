@@ -1,3 +1,5 @@
+-- Full Omarchy MIT notice: LICENSES/Omarchy-MIT.txt; installed at
+-- /usr/share/licenses/subarchy/Omarchy-MIT.txt.
 -- Helpers shared by Subarchy's Hyprland defaults and user configs.
 -- Borrowed in shape from Omarchy's default/hypr/helpers.lua (MIT).
 

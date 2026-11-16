@@ -1,4 +1,6 @@
 # shellcheck shell=bash
+# Full Omarchy MIT notice: LICENSES/Omarchy-MIT.txt; installed at
+# /usr/share/licenses/subarchy/Omarchy-MIT.txt.
 # Subarchy's shell aliases (ADR 0041), sourced by zsh and bash: keep the
 # syntax POSIX. The set follows Omarchy's default/bash/aliases (MIT,
 # (c) David Heinemeier Hansson). A tool that is not installed gets no alias.

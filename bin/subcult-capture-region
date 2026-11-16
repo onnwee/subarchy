@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Full Omarchy MIT notice: LICENSES/Omarchy-MIT.txt; installed at
+# /usr/share/licenses/subarchy/Omarchy-MIT.txt.
 # subcult:summary=Pick a part of the screen and print it as slurp does (X,Y WxH)
 # subcult:args=[region|window|output]
 # subcult:examples=subcult capture region | subcult capture region output

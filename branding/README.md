@@ -24,6 +24,9 @@ art are built from these files (issues #73, #96, #121).
 The marks, logos and backgrounds are SUBCULT's own work. The fonts are
 redistributed under the OFL files beside them. Check the backgrounds with
 `cd branding/backgrounds && sha256sum --check backgrounds.sha256`.
+The rice's exact asset notice is retained in
+[`LICENSES/SUBCULT-rice-ASSETS.txt`](../LICENSES/SUBCULT-rice-ASSETS.txt),
+with its source revision in [`LICENSES/README.md`](../LICENSES/README.md).
 
 `marks/subarchy-wordmark-dark.svg` is the SUBARCHY wordmark from the
 Subarchy brand pack (`subcult-tv` `studio/brands/subarchy/logos/wordmark-dark.svg`

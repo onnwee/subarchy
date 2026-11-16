@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Full Omarchy MIT notice: LICENSES/Omarchy-MIT.txt; installed at
+# /usr/share/licenses/subarchy/Omarchy-MIT.txt.
 # subcult:summary=Take a screenshot to the Pictures folder and the clipboard
 # subcult:args=[region|window|output]
 # subcult:examples=subcult capture screenshot | subcult capture screenshot output

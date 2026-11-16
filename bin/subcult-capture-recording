@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Full Omarchy MIT notice: LICENSES/Omarchy-MIT.txt; installed at
+# /usr/share/licenses/subarchy/Omarchy-MIT.txt.
 # subcult:summary=Start or stop a screen recording to the Videos folder
 # subcult:args=[--audio]
 # subcult:examples=subcult capture recording | subcult capture recording --audio

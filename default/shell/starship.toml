@@ -1,3 +1,5 @@
+# Full Omarchy MIT notice: LICENSES/Omarchy-MIT.txt; installed at
+# /usr/share/licenses/subarchy/Omarchy-MIT.txt.
 # Subarchy's starship prompt (ADR 0041), used until the user has their own
 # ~/.config/starship.toml. Follows Omarchy's config/starship.toml (MIT):
 # the folder, the git branch and its state, and a prompt character.

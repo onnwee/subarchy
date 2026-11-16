@@ -247,4 +247,7 @@ package() {
   done
 
   install -Dm644 "$root/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  for f in README.md Omarchy-MIT.txt SUBCULT-rice-MIT.txt SUBCULT-rice-ASSETS.txt; do
+    install -Dm644 "$root/LICENSES/$f" "$pkgdir/usr/share/licenses/$pkgname/$f"
+  done
 }

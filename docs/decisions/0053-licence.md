@@ -4,7 +4,7 @@ type: decision
 status: accepted
 adr: 53
 created: 2026-11-06
-updated: 2026-11-13
+updated: 2026-11-15
 tags: [decision, adr, legal]
 aliases: [ADR 0053, R5, Licence, GPL]
 ---
@@ -77,5 +77,16 @@ public.
   (SUBCULT marks and artwork under the rice's `ASSETS_LICENSE.md`, origin
   headers on borrowed files) are not recorded as done; this is the
   owner's call.
+
+- 2026-11-15: retained the exact Omarchy MIT notice and the rice's MIT and
+  asset notices under `LICENSES/`, with their source identifiers. The seven
+  Omarchy-derived capture/configuration files point to the full notice;
+  packaging ships all three texts beside Subarchy's GPL notice. The core
+  package check compares each installed text byte for byte. The legacy
+  NVIDIA 580xx 32-bit split packages now each install the extracted vendor
+  `LICENSE`; this replaces a self-referencing link and a link to a package
+  that was not a dependency. A packaging-function regression checks both
+  packages independently. The final image and other application packages
+  still need the release audit.
 
 Related: [[decision-map|Decision map]] · [[0052-name-identity|ADR 0052]]

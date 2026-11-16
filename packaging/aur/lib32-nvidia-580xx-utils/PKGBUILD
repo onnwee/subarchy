@@ -2,11 +2,12 @@
 # Contributor: Sven-Hendrik Haase <svenstaro@archlinux.org>
 # Contributor: Thomas Baechler <thomas@archlinux.org>
 # Contributor: James Rayner <iphitus@gmail.com>
+# Subarchy, 2026-11-15: ship the vendor notice in both split packages.
 
 pkgbase=lib32-nvidia-580xx-utils
 pkgname=('lib32-nvidia-580xx-utils' 'lib32-opencl-nvidia-580xx')
 pkgver=580.196.07
-pkgrel=1
+pkgrel=2
 arch=('x86_64')
 url="http://www.nvidia.com/"
 #makedepends=('nvidia-libgl')  # To avoid conflict during installation in the build chroot
@@ -44,8 +45,7 @@ package_lib32-opencl-nvidia-580xx() {
 
     create_links
 
-    mkdir -p "${pkgdir}/usr/share/licenses"
-    ln -s lib32-nvidia-580xx-utils "${pkgdir}/usr/share/licenses/lib32-opencl-nvidia"
+    install -Dm644 ../LICENSE "${pkgdir}/usr/share/licenses/lib32-opencl-nvidia-580xx/LICENSE"
 }
 
 package_lib32-nvidia-580xx-utils() {
@@ -101,6 +101,5 @@ package_lib32-nvidia-580xx-utils() {
     create_links
 
     rm -rf "${pkgdir}"/usr/{include,share,bin}
-    mkdir -p "${pkgdir}/usr/share/licenses"
-    ln -s lib32-nvidia-580xx-utils "${pkgdir}/usr/share/licenses/${pkgname}"
+    install -Dm644 ../LICENSE "${pkgdir}/usr/share/licenses/lib32-nvidia-580xx-utils/LICENSE"
 }

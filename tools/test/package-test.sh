@@ -101,6 +101,10 @@ done
 for path in usr/share/sddm/themes/subarchy/DepartureMono-Regular.woff2 usr/share/subcult/lock/DepartureMono-Regular.woff2 usr/share/licenses/subarchy/DepartureMono-OFL.txt; do
   grep -qx "$path" <<<"$list" || fail "missing greeter font or licence $path"
 done
+for f in README.md Omarchy-MIT.txt SUBCULT-rice-MIT.txt SUBCULT-rice-ASSETS.txt; do
+  bsdtar -xOf "$pkg" "usr/share/licenses/subarchy/$f" | cmp - "$root/LICENSES/$f" ||
+    fail "third-party notice $f is missing or changed"
+done
 for set in subcult subarchy; do
   for f in boot.png login.png lock.png title.txt; do
     grep -qx "usr/share/subcult/screens/$set/$f" <<<"$list" || fail "missing art set file $set/$f"
