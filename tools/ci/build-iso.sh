@@ -33,8 +33,9 @@ pacman -S --noconfirm --needed "${deps[@]}"
 # The same version the packages workflow publishes for this commit.
 sed -i "s/^pkgrel=.*/pkgrel=$(git rev-list --count HEAD)/" "$root/packaging/subarchy/PKGBUILD"
 
-# The pinned rebuilds, by package name through pacman with signatures
-# required. Not by file name: the registry answers a request for
+# The pinned rebuilds, by exact package version through pacman with signatures
+# required. An older published version must not qualify a new source pin.
+# Not by file name: the registry answers a request for
 # nvidia-580xx-utils-... with the lib32 package (see publish-packages.py).
 keyring="$root/packaging/subarchy-keyring"
 install -Dm644 "$keyring/registry.key" /usr/share/pacman/keyrings/subarchy.gpg
@@ -51,10 +52,14 @@ printf '[options]\nArchitecture = auto\nDBPath = /tmp/registry-db\nCacheDir = %s
 names=()
 for dir in "$root"/packaging/*/ "$root"/packaging/aur/*/; do
   [[ -f $dir/PKGBUILD && $dir != "$root/packaging/subarchy/" ]] || continue
-  mapfile -t -O "${#names[@]}" names < <(cd "$dir" && runuser -u builder -- makepkg --printsrcinfo | awk '$1 == "pkgname" {print $3}')
+  mapfile -t -O "${#names[@]}" names < <(cd "$dir" && runuser -u builder -- makepkg --printsrcinfo | awk '
+    $1 == "epoch" {epoch = $3 ":"}
+    $1 == "pkgver" {version = $3}
+    $1 == "pkgrel" {release = $3}
+    $1 == "pkgname" {print $3 "=" epoch version "-" release}')
 done
 pacman --config /tmp/registry-pacman.conf -Syddw --noconfirm "${names[@]}" ||
-  { echo "build-iso: a pinned package is not in the stable registry; the packages workflow publishes them on main" >&2; exit 1; }
+  { echo "build-iso: a pinned package version is not in the stable registry; wait for the packages workflow to publish this main commit" >&2; exit 1; }
 rm -f -- "$repo"/*.sig
 # build/ and the repository were made by root just now.
 chown -R builder: "$root/build"

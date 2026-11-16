@@ -117,6 +117,7 @@ site-commands: build
 docs-check:
 	python3 tools/obsidian/check-vault.py
 	python3 tools/test/test_package_publish.py
+	python3 tools/test/test_iso_package_pins.py
 	python3 tools/test/test_install_checks.py
 	python3 tools/portal/test_file_chooser.py
 	python3 tools/test/palette-test.py
