@@ -25,6 +25,8 @@ for name in "$@"; do
   # to build, so makepkg runs with --nodeps.
   docker run --rm \
     -v "$dir:/src:ro" -v "$out:/out" \
+    -v "$root/tools:/home/builder/tools:ro" \
+    -v "$root/default:/home/builder/default:ro" \
     -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" \
     archlinux:latest bash -euo pipefail -c '
       pacman -Syu --noconfirm --needed base-devel git >/dev/null
@@ -33,10 +35,13 @@ for name in "$@"; do
       # targets, which it refuses.
       [ -z "$makedeps" ] || pacman -S --noconfirm --needed $makedeps >/dev/null
       useradd -m builder
-      cp -r /src /home/builder/pkg
-      chown -R builder /home/builder/pkg
-      su builder -c "cd ~/pkg && makepkg --nodeps --noconfirm"
-      cp /home/builder/pkg/*.pkg.tar.zst /out/
+      # Keep repository-relative check() inputs available, read-only, without
+      # exposing the rest of the host checkout to the package build.
+      mkdir -p /home/builder/packaging
+      cp -r /src /home/builder/packaging/pkg
+      chown -R builder /home/builder/packaging
+      su builder -c "cd ~/packaging/pkg && makepkg --nodeps --noconfirm"
+      cp /home/builder/packaging/pkg/*.pkg.tar.zst /out/
       chown -R "$HOST_UID:$HOST_GID" /out
     ' >"$out/build.log" 2>&1 || { tail -30 "$out/build.log" >&2; exit 1; }
   for pkg in "$out"/*.pkg.tar.zst; do

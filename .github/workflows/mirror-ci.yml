@@ -38,6 +38,8 @@ jobs:
           fi
       - name: make verify
         run: make verify
+      - name: Pinned Pult package and app targets
+        run: tools/test/pult-package-test.sh
 
   package:
     if: github.repository == 'subculture-collective/subarchy'

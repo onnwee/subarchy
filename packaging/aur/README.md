@@ -62,5 +62,7 @@ packaging/aur/build.sh limine-mkinitcpio-hook limine-snapper-sync
 
 builds each one in a fresh `archlinux:latest` container and adds the result
 to `build/repo`, the local unsigned repository the ISO and install tests use.
+Package checks can read the checkout's `tools/` and `default/` directories
+through read-only mounts; the recipe retains its `packaging/` parent layout.
 To update a package, review the new AUR PKGBUILD diff, copy it here and
 update this table.

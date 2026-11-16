@@ -4,7 +4,7 @@ type: decision
 status: accepted
 adr: 37
 created: 2026-11-06
-updated: 2026-11-12
+updated: 2026-11-16
 tags: [decision, adr, shell, theme, brand]
 aliases: [ADR 0037, D5, Theming, Themes, Theme Tender]
 ---
@@ -294,5 +294,15 @@ which Subarchy does not use.
   released binary, so an initial install and a later `pult apply` use the
   same role mappings. A fresh Dolphin preview on Sputnik confirmed the
   focus accent with the dark default palette.
+
+- 2026-11-16: #78's remaining upstream features are merged: Pult PR #37
+  edits VS Code's JSONC colour keys without an extension, and PR #38
+  themes each available registered Obsidian vault. Subarchy pins their
+  upstream commit `7a703f18d2a934d5c4821c24a723c0ad4863417d` as
+  `0.4.1.r2.g7a703f1`, retaining the 0.4.1 catalog and the existing swayimg
+  Lua integration. The recipe and PR CI run upstream tests and an isolated
+  CLI apply/change/undo check for all three targets and the covered CLI
+  apps. This does not establish native or installed-system acceptance;
+  [[pult-app-targets|the acceptance matrix]] records those follow-ups.
 
 Related: [[decision-map|Decision map]] · [[0048-config-ownership|ADR 0048]] · [[brand-identity|Brand identity]] · [[0038-wallpaper|ADR 0038]] · [[0039-fonts-icons|ADR 0039]]

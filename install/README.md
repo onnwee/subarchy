@@ -177,8 +177,8 @@ The two Limine tools are AUR packages, and the prebuilt Neovim is Subarchy's
 own package (`packaging/subarchy-nvim`), rebuilt locally into `build/repo` by
 `packaging/aur/build.sh` (needs docker) until the Subarchy repository
 exists.
-Pult is vendored from its release PKGBUILD (`packaging/pult`) and builds
-the same way.
+Pult uses a checksum-pinned upstream source/catalog recipe (`packaging/pult`)
+and builds the same way.
 
 ## Testing
 
