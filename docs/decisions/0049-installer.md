@@ -4,7 +4,7 @@ type: decision
 status: accepted
 adr: 49
 created: 2026-11-06
-updated: 2026-11-13
+updated: 2026-11-16
 tags: [decision, adr, delivery]
 aliases: [ADR 0049, R2, Installer, ISO]
 ---
@@ -152,5 +152,21 @@ Decision map item R2. Accepted 2026-11-06.
 - 2026-11-13: issue #77 above (the offline cache) is Gitea #77, now
   GitHub #53; it was written before GitHub became the source
   ([[vault-conventions#Links]]).
+
+- 2026-11-16: reconciled every original #124 item and its November 13
+  checklist against main `16475c8`, including merged PR #155 (`a41c936`).
+  Under the owner's delegated scope decision, the first release keeps the
+  whole-disk layout of [[0009-disk-layout|ADR 0009]] and mandatory LUKS2
+  encryption of [[0010-disk-encryption|ADR 0010]]. Same-disk alongside
+  installation is deferred beyond that release, with the required layout,
+  EFI/free-space and preservation-test decisions in
+  [[guided-installer-scope|the acceptance matrix]]. The visible 2-second
+  boot menu with its speech entry, visible live-boot progress, and the
+  owner's mark above the install progress bar remain the chosen behavior
+  (#127, #131, #144); a hidden menu and a traced icon are not pending work.
+  This is a documentation/scope reconciliation, with no installer or image
+  behavior change. Earlier VM and hardware observations retain their dates;
+  the three post-#155 field checks remain unobserved here. No ISO build,
+  VM run or device change was performed for this reconciliation.
 
 Related: [[decision-map|Decision map]] · [[0050-hardware-support|ADR 0050]]

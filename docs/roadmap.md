@@ -3,7 +3,7 @@ title: "Roadmap"
 type: plan
 status: draft
 created: 2026-11-06
-updated: 2026-11-13
+updated: 2026-11-16
 tags: [plan]
 aliases: []
 ---
@@ -14,12 +14,16 @@ Built from scratch ([[0001-fork-strategy|ADR 0001]]), in the order of the
 [[decision-map|decision map]]. Each phase ends with something that boots or
 runs and is checked in CI.
 
-The items below are tracked as GitHub issues under
-[roadmap issue #5](https://github.com/subculture-collective/subarchy/issues/5),
-one issue per PR in dependency order; the numbers after each item are GitHub
-issue numbers. The issue plan is `tools/roadmap/subarchy-roadmap.json`; edit
-it and republish it to GitHub with the `roadmap-slicer` skill when this page
-changes.
+The active tracker is
+[roadmap issue #230](https://github.com/subculture-collective/subarchy/issues/230):
+finish desktop qualification and ship the first stable release. It carries
+the remaining work and release dependencies. The phases below retain the
+original implementation history; their older checkboxes are not a current
+issue-status report. The numbers after each item are GitHub issue numbers.
+
+Roadmap #5 is retired. `tools/roadmap/subarchy-roadmap.json` is its historical
+plan; do not republish it over #230. Record new scope and qualification on
+the existing work issues under #230.
 
 ## Phase 0: inventory and decisions
 
@@ -59,7 +63,12 @@ Plymouth, NetworkManager with the DNS trust policy, PipeWire, ufw.
       [[0054-lightweight-battery-first|ADR 0054]])
 - [x] Update command: snapshot, upgrade, DKMS check, migrations, channels,
       the check timer and restart detection (#45, #88)
-- [ ] Installer that imitates Omarchy's guided installer (#124)
+- [x] Guided installer (#124): delivered behavior and first-release scope
+      reconciled 2026-11-16 ([[guided-installer-scope|acceptance matrix]]).
+      Whole-disk installs with mandatory encryption; same-disk installation
+      beside another OS is deferred. The visible speech-accessible boot
+      menu and the mark above a progress bar stay. Remaining field
+      observations are listed separately from implementation completion.
 
 ## Phase 3: session and shell
 
