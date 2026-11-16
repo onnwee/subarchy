@@ -7,3 +7,8 @@
 # installed, so after installing the first one run `pult apply` again.
 [UiSettings]
 ColorScheme=Pult
+
+[KDE]
+# Keep unchecked boxes and radio buttons visible on the dark default.
+# This also applies when a Pult-generated scheme does not set its own value.
+frameContrast=0.65

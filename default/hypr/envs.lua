@@ -13,6 +13,9 @@ hl.env("QT_QPA_PLATFORM", "wayland;xcb")
 -- Dolphin) use Pult's KDE colour scheme instead, which /etc/xdg/kdeglobals
 -- selects.
 hl.env("QT_QPA_PLATFORMTHEME", "gtk3")
+-- Breeze honours KDE's frame contrast; Fusion's dark unchecked controls
+-- derive their outline from the window background and nearly disappear.
+hl.env("QT_STYLE_OVERRIDE", "breeze")
 hl.env("MOZ_ENABLE_WAYLAND", "1")
 hl.env("ELECTRON_OZONE_PLATFORM_HINT", "wayland")
 hl.env("XDG_SESSION_TYPE", "wayland")
