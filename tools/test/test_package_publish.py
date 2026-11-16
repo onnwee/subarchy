@@ -2,6 +2,7 @@
 """Publishing safety and retry behavior, without registry writes."""
 
 import importlib.util
+import http.client
 import io
 import os
 from pathlib import Path
@@ -57,15 +58,141 @@ class PublishTests(unittest.TestCase):
             self.assertEqual(publisher.published("edge"), set())
 
     def test_registry_failure_does_not_attempt_upload(self):
-        error = urllib.error.HTTPError("https://example.test", 503, "unavailable", {}, None)
+        error = urllib.error.HTTPError("https://example.test", 403, "forbidden", {}, None)
         with patch.dict(
             os.environ,
             {"GITHUB_EVENT_NAME": "push", "GITHUB_REF": "refs/heads/main", "SUBARCHY_PACKAGE_TOKEN": "unused"},
             clear=True,
         ), patch.object(publisher.urllib.request, "urlopen", side_effect=error) as request:
-            with self.assertRaisesRegex(RuntimeError, "HTTP 503"):
+            with self.assertRaisesRegex(RuntimeError, "HTTP 403"):
                 publisher.main()
             self.assertEqual(request.call_count, 1)
+
+    def test_lookup_recovers_from_temporary_dns_failure(self):
+        response = MagicMock()
+        response.__enter__.return_value.read.return_value = database("new-1.0-1")
+        with patch.object(publisher.urllib.request, "urlopen", side_effect=[
+            urllib.error.URLError("temporary DNS failure"), response,
+        ]) as request, patch.object(publisher.time, "sleep"):
+            self.assertEqual(publisher.published("stable"), {"new-1.0-1"})
+        self.assertEqual(request.call_count, 2)
+        self.assertTrue(all(call.args[0].method == "GET" for call in request.call_args_list))
+
+    def test_lookup_recovers_from_truncated_http_response(self):
+        class Socket:
+            def makefile(self, *args):
+                return io.BytesIO(b"HTTP/1.1 200 OK\r\nContent-Length: 100\r\n\r\ntruncated")
+        truncated = http.client.HTTPResponse(Socket())
+        truncated.begin()
+        response = MagicMock()
+        response.__enter__.return_value.read.return_value = database("new-1.0-1")
+        with patch.object(publisher.urllib.request, "urlopen", side_effect=[truncated, response]) as request, patch.object(
+            publisher.time, "sleep",
+        ):
+            self.assertEqual(publisher.published("stable"), {"new-1.0-1"})
+        self.assertEqual(request.call_count, 2)
+        self.assertTrue(truncated.isclosed())
+
+    def test_repeated_incomplete_reads_stop_without_echoing_body(self):
+        with patch.object(publisher.urllib.request, "urlopen", side_effect=http.client.IncompleteRead(
+            b"sensitive body marker", 100,
+        )) as request, patch.object(publisher.time, "sleep"):
+            with self.assertRaisesRegex(RuntimeError, "lookup.*3 attempts") as error:
+                publisher.published("stable")
+            self.assertEqual(request.call_count, 3)
+            self.assertNotIn("sensitive body marker", str(error.exception))
+
+    def test_lookup_stops_after_repeated_transient_failures(self):
+        for error in (urllib.error.URLError("unavailable"),
+                      urllib.error.HTTPError("https://example.test", 503, "unavailable", {}, None)):
+            with self.subTest(error=type(error).__name__), patch.object(
+                publisher.urllib.request, "urlopen", side_effect=error,
+            ) as request, patch.object(publisher.time, "sleep"):
+                with self.assertRaisesRegex(RuntimeError, "lookup.*3 attempts"):
+                    publisher.published("stable")
+                self.assertEqual(request.call_count, 3)
+
+    def test_interrupted_upload_checks_whether_the_registry_committed_it(self):
+        with tempfile.TemporaryDirectory() as temp:
+            package = Path(temp) / "new-1.0-1-any.pkg.tar.zst"
+            package.write_bytes(b"package bytes")
+            with patch.object(publisher.urllib.request, "urlopen", side_effect=urllib.error.URLError(
+                "temporary DNS failure",
+            )) as request, patch.object(publisher, "published", return_value={"new-1.0-1"}) as lookup:
+                publisher.publish(package, "stable", "test-token", set())
+            lookup.assert_called_once_with("stable")
+            self.assertEqual(request.call_count, 1, "a committed version must not be resent")
+
+    def test_interrupted_http_status_line_checks_for_a_committed_upload(self):
+        with tempfile.TemporaryDirectory() as temp:
+            package = Path(temp) / "new-1.0-1-any.pkg.tar.zst"
+            package.write_bytes(b"package bytes")
+            with patch.object(publisher.urllib.request, "urlopen", side_effect=http.client.BadStatusLine(
+                "truncated status marker",
+            )) as request, patch.object(publisher, "published", return_value={"new-1.0-1"}) as lookup:
+                publisher.publish(package, "stable", "test-token", set())
+            lookup.assert_called_once_with("stable")
+            self.assertEqual(request.call_count, 1)
+
+    def test_upload_retry_opens_a_fresh_complete_stream(self):
+        with tempfile.TemporaryDirectory() as temp:
+            package = Path(temp) / "new-1.0-1-any.pkg.tar.zst"
+            package.write_bytes(b"complete package")
+            streams = []
+            def upload(request, **kwargs):
+                streams.append(request.data)
+                self.assertEqual(request.data.read(), b"complete package")
+                if len(streams) == 1:
+                    raise urllib.error.URLError("connection interrupted")
+                response = MagicMock()
+                response.__enter__.return_value.status = 201
+                return response
+            with patch.object(publisher.urllib.request, "urlopen", side_effect=upload), patch.object(
+                publisher, "published", return_value=set(),
+            ), patch.object(publisher.time, "sleep"):
+                publisher.publish(package, "edge", "test-token", set())
+            self.assertEqual(len(streams), 2)
+            self.assertIsNot(streams[0], streams[1])
+            self.assertTrue(all(stream.closed for stream in streams))
+
+    def test_upload_stops_after_repeated_network_failures(self):
+        with tempfile.TemporaryDirectory() as temp:
+            package = Path(temp) / "new-1.0-1-any.pkg.tar.zst"
+            package.write_bytes(b"package bytes")
+            with patch.object(publisher.urllib.request, "urlopen", side_effect=urllib.error.URLError(
+                "do not echo request details or test-token",
+            )) as request, patch.object(publisher, "published", return_value=set()), patch.object(
+                publisher.time, "sleep",
+            ):
+                with self.assertRaisesRegex(RuntimeError, "upload.*3 attempts") as error:
+                    publisher.publish(package, "stable", "test-token", set())
+                self.assertEqual(request.call_count, 3)
+                self.assertNotIn("test-token", str(error.exception))
+
+    def test_upload_is_not_replayed_when_readback_fails(self):
+        with tempfile.TemporaryDirectory() as temp:
+            package = Path(temp) / "new-1.0-1-any.pkg.tar.zst"
+            package.write_bytes(b"package bytes")
+            with patch.object(publisher.urllib.request, "urlopen", side_effect=urllib.error.URLError(
+                "connection interrupted",
+            )) as request, patch.object(publisher, "published", side_effect=RuntimeError("lookup failed")):
+                with self.assertRaisesRegex(RuntimeError, "lookup failed"):
+                    publisher.publish(package, "stable", "test-token", set())
+                self.assertEqual(request.call_count, 1)
+
+    def test_upload_auth_failure_does_not_retry_or_read_back(self):
+        with tempfile.TemporaryDirectory() as temp:
+            package = Path(temp) / "new-1.0-1-any.pkg.tar.zst"
+            package.write_bytes(b"package bytes")
+            for code in (401, 403):
+                error = urllib.error.HTTPError("https://example.test", code, "refused", {}, None)
+                with self.subTest(code=code), patch.object(
+                    publisher.urllib.request, "urlopen", side_effect=error,
+                ) as request, patch.object(publisher, "published") as lookup:
+                    with self.assertRaisesRegex(RuntimeError, f"HTTP {code}"):
+                        publisher.publish(package, "stable", "test-token", set())
+                    self.assertEqual(request.call_count, 1)
+                    lookup.assert_not_called()
 
     def test_existing_version_is_never_uploaded(self):
         with patch.object(publisher.urllib.request, "urlopen") as request:

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Upload immutable packages from a main CI run; Gitea signs what it serves."""
 
+import http.client
 import io
 import os
 from pathlib import Path
@@ -13,6 +14,18 @@ import urllib.request
 
 REGISTRY = "https://git.subcult.tv/api/packages/subculture-collective/arch"
 CHANNELS = ("stable", "edge")
+ATTEMPTS = 3
+
+
+def transient(error):
+    return not isinstance(error, urllib.error.HTTPError) or error.code in (408, 429, 500, 502, 503, 504)
+
+
+def retry(operation, attempt):
+    if attempt + 1 == ATTEMPTS:
+        raise RuntimeError(f"{operation} failed after {ATTEMPTS} attempts") from None
+    print(f"{operation}: transient failure; retrying", file=sys.stderr)
+    time.sleep(attempt + 1)
 
 
 def entry(package):
@@ -26,19 +39,25 @@ def published(channel):
     answers a request for nvidia-580xx-utils-... with
     lib32-nvidia-580xx-utils-..., whose name ends the same way."""
     # The query keeps a stale copy out of the CDN's answer.
-    request = urllib.request.Request(
-        f"{REGISTRY}/{channel}/x86_64/subarchy.db?ci-check={time.time_ns()}",
-        headers={"User-Agent": "subarchy-ci/1"},
-        method="GET",
-    )
-    try:
-        with urllib.request.urlopen(request, timeout=60) as response:
-            data = response.read()
-    except urllib.error.HTTPError as error:
-        error.close()
-        if error.code == 404:
-            return set()  # no database before the channel's first upload
-        raise RuntimeError(f"registry lookup returned HTTP {error.code}") from None
+    for attempt in range(ATTEMPTS):
+        request = urllib.request.Request(
+            f"{REGISTRY}/{channel}/x86_64/subarchy.db?ci-check={time.time_ns()}",
+            headers={"User-Agent": "subarchy-ci/1"},
+            method="GET",
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=60) as response:
+                data = response.read()
+            break
+        except urllib.error.HTTPError as error:
+            error.close()
+            if error.code == 404:
+                return set()  # no database before the channel's first upload
+            if not transient(error):
+                raise RuntimeError(f"registry lookup returned HTTP {error.code}") from None
+        except (urllib.error.URLError, TimeoutError, ConnectionError, http.client.HTTPException):
+            pass
+        retry(f"registry lookup for {channel}", attempt)
     with tarfile.open(fileobj=io.BytesIO(data)) as database:
         return {name.removesuffix("/desc") for name in database.getnames() if name.endswith("/desc")}
 
@@ -57,22 +76,26 @@ def publish(package, channel, token, listed):
         return
     # Stream the file, with credentials only in the request header. Never
     # print request objects, response bodies, environment values or the token.
-    with package.open("rb") as data:
-        request = urllib.request.Request(
-            url,
-            data=data,
-            headers={
-                "Authorization": f"token {token}",
-                "Content-Type": "application/octet-stream",
-                "Content-Length": str(package.stat().st_size),
-                "User-Agent": "subarchy-ci/1",
-            },
-            method="PUT",
-        )
+    for attempt in range(ATTEMPTS):
         try:
-            with urllib.request.urlopen(request, timeout=600) as response:
-                if response.status != 201:
-                    raise RuntimeError(f"upload returned HTTP {response.status}")
+            # A failed request may have consumed part of the stream.
+            with package.open("rb") as data:
+                request = urllib.request.Request(
+                    url,
+                    data=data,
+                    headers={
+                        "Authorization": f"token {token}",
+                        "Content-Type": "application/octet-stream",
+                        "Content-Length": str(package.stat().st_size),
+                        "User-Agent": "subarchy-ci/1",
+                    },
+                    method="PUT",
+                )
+                with urllib.request.urlopen(request, timeout=600) as response:
+                    if response.status != 201:
+                        raise RuntimeError(f"upload returned HTTP {response.status}")
+            print(f"published: {channel}/{package.name}")
+            return
         except urllib.error.HTTPError as error:
             error.close()
             if error.code == 413:
@@ -80,8 +103,16 @@ def publish(package, channel, token, listed):
                     f"{package.name} is over the 100 MB the public route accepts; "
                     "upload it through the origin (docs/package-publishing.md)"
                 ) from None
-            raise RuntimeError(f"upload returned HTTP {error.code} for {package.name}") from None
-    print(f"published: {channel}/{package.name}")
+            if not transient(error):
+                raise RuntimeError(f"upload returned HTTP {error.code} for {package.name}") from None
+        except (urllib.error.URLError, TimeoutError, ConnectionError, http.client.HTTPException):
+            pass
+        # A lost response does not prove the server rejected the upload.
+        # Resolve the exact immutable version before deciding to resend it.
+        if entry(package) in published(channel):
+            print(f"already published: {channel}/{package.name} (after interrupted upload)")
+            return
+        retry(f"upload of {channel}/{package.name}", attempt)
 
 
 def main():

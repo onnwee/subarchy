@@ -48,8 +48,14 @@ the registry answered one for `nvidia-580xx-utils-…` with
 `lib32-nvidia-580xx-utils-…`, so the 64-bit package and
 `opencl-nvidia-580xx` were skipped as published and never uploaded, and
 every publication on `main` failed its verification (found 2026-11-09).
-An upload error fails the job; rerunning after a partial upload skips the
-files that reached the registry. No existing package is deleted or replaced.
+Transient DNS, connection, timeout and HTTP 408/429/500/502/503/504 failures
+get up to three attempts, with one- and two-second delays. Each interrupted
+upload first refreshes the channel database: a committed version is skipped;
+an absent version is retried with a newly opened package stream. Permanent
+HTTP failures, including authentication errors and the 100 MB limit below,
+fail immediately. If recovery cannot establish the registry state or exhausts
+the attempts, the job fails; rerunning it skips files that reached the
+registry. No existing package is deleted or replaced.
 
 ## Two registry limits
 
