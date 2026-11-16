@@ -4,12 +4,11 @@ import Quickshell
 
 // Which widget's click-out panel is open: one at a time, for the whole
 // shell. A WidgetHost toggles its own; PanelOverlay shows it on the host's
-// output, under the host's place in the bar.
+// output, centred in the available screen space.
 Singleton {
   id: root
 
   property var host: null
-  property real anchorX: 0
 
   // Switching from one widget's panel to another's goes through closed, so
   // the overlay's loader drops the old Panel.qml and loads the new one.
@@ -19,7 +18,6 @@ Singleton {
       return
     }
     root.host = null
-    root.anchorX = h.mapToItem(null, 0, 0).x
     root.host = h
   }
 

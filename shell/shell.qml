@@ -27,7 +27,7 @@ ShellRoot {
 
   NotificationPopups {}
 
-  PanelOverlay {}
+  PanelOverlay { id: panelOverlay }
 
   Osd {
     id: osd
@@ -103,6 +103,7 @@ ShellRoot {
         history: Notifications.history.slice(0, 5).map(e => ({ id: e.id, summary: e.summary, body: e.body, appName: e.appName })),
         osd: osd.kind,
         panel: Panels.host ? Panels.host.widgetId : "",
+        panelLayout: Panels.host ? panelOverlay.layoutState : null,
 
         workspaceLabels: Object.keys(Workspaces.names).reduce((acc, id) => { acc[id] = Workspaces.label(Number(id)); return acc }, {}),
         launcher: launcher.open,

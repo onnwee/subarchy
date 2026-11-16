@@ -185,8 +185,8 @@ TestCase {
   function test_commandArgv() {
     const c = Model.commands(commandsJson)
     const font = Model.commandArgv(Object.assign({}, c[0], { args: ["Iosevka Term"] }))
-    compare(font.slice(0, 5), ["uwsm-app", "--", "xdg-terminal-exec", "sh", "-c"])
-    verify(font[5].indexOf("Press Enter to close") >= 0, "the output stays readable")
+    compare(font.slice(0, 6), ["uwsm-app", "--", "xdg-terminal-exec", "--app-id=subcult-utility", "sh", "-c"])
+    verify(font[6].indexOf("Press Enter to close") >= 0, "the output stays readable")
     compare(font.slice(-4), ["sh", "font", "set", "Iosevka Term"])
     compare(Model.commandArgv(c[0]).slice(-3), ["sh", "font", "set"], "the usage text is not an argument")
     compare(Model.commandArgv(c[3]), ["uwsm-app", "--", "subcult", "lock"], "a silent command opens no terminal")
@@ -275,7 +275,7 @@ TestCase {
   function test_scriptArgv() {
     const s = Model.scripts("\x1e/c/pkg.sh\n" + raycastScript)[0]
     const full = Model.scriptArgv(s, ["a b&c"], "/home/u")
-    compare(full.slice(0, 4), ["uwsm-app", "--", "xdg-terminal-exec", "sh"])
+    compare(full.slice(0, 5), ["uwsm-app", "--", "xdg-terminal-exec", "--app-id=subcult-utility", "sh"])
     compare(full.slice(-3), ["/home/u/src", "/c/pkg.sh", "a%20b%26c"], "the home folder and percent encoding")
     const silent = Model.scriptArgv(Object.assign({}, s, { mode: "silent", dir: "/w" }), ["x"], "/home/u")
     compare(silent[0], "sh")

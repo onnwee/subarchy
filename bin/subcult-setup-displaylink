@@ -21,7 +21,7 @@ if [[ ${1:-} == --offer ]]; then
   pacman -T "${pkgs[@]:0:2}" >/dev/null && exit 0
   action=$(notify-send -a Displays -i video-display -t 30000 -A install="Install drivers" -- \
     "DisplayLink dock plugged in" "Its screens need the evdi and DisplayLink drivers.") || exit 0
-  [[ $action != install ]] || exec xdg-terminal-exec subcult setup displaylink
+  [[ $action != install ]] || exec xdg-terminal-exec --app-id=subcult-utility subcult setup displaylink
   exit 0
 fi
 [[ $# -eq 0 ]] || die "unknown argument '$1'"

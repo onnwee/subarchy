@@ -69,7 +69,7 @@ called xdg-terminal-exec && fail "opened a terminal without the button"
 fresh
 : >"$work/pressed"
 run --offer || fail "offer failed"
-called 'xdg-terminal-exec subcult setup displaylink' || fail "the button did not open the setup"
+called 'xdg-terminal-exec --app-id=subcult-utility subcult setup displaylink' || fail "the button did not open the setup in a utility window"
 called 'pacman -S' && fail "--offer installed packages itself"
 
 if run bogus; then fail "accepted an unknown argument"; fi

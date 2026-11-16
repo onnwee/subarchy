@@ -6,7 +6,7 @@ import qs.Commons
 import qs.Ui
 
 // The click-out panel host (shell stage 2): one panel at a time, on the
-// output of the bar whose widget opened it, under that widget. A
+// output of the bar whose widget opened it, centred on the screen. A
 // transparent layer over the whole output, so a click outside the panel or
 // Escape closes it. The panel's content exists only while it is open.
 PanelWindow { // qmllint disable uncreatable-type
@@ -14,6 +14,11 @@ PanelWindow { // qmllint disable uncreatable-type
 
   readonly property var host: Panels.host
   readonly property PanelBase panelItem: loader.item as PanelBase
+  readonly property var layoutState: ({
+    x: frame.x, y: frame.y, width: frame.width, height: frame.height,
+    screenWidth: width, screenHeight: height,
+    contentHeight: viewport.contentHeight, viewportHeight: viewport.height
+  })
 
   visible: host !== null
   screen: host ? host.screen : Quickshell.screens[0] || null
@@ -41,10 +46,11 @@ PanelWindow { // qmllint disable uncreatable-type
 
     Rectangle {
       id: frame
-      x: Math.max(Style.spacing, Math.min(Panels.anchorX, overlay.width - width - Style.spacing))
-      y: Style.barHeight + Style.spacing
-      width: overlay.panelItem ? overlay.panelItem.implicitWidth + 2 * Style.spacing : 0
-      height: overlay.panelItem ? overlay.panelItem.implicitHeight + 2 * Style.spacing : 0
+      objectName: "panelFrame"
+      x: (overlay.width - width) / 2
+      y: Math.max(Style.barHeight + Style.spacing, (overlay.height - height) / 2)
+      width: overlay.panelItem ? Math.min(overlay.panelItem.implicitWidth + 2 * Style.spacing, overlay.width - 2 * Style.spacing) : 0
+      height: overlay.panelItem ? Math.min(overlay.panelItem.implicitHeight + 2 * Style.spacing, overlay.height - Style.barHeight - 2 * Style.spacing) : 0
       visible: overlay.panelItem !== null
       color: Theme.mantle
       border.width: 1
@@ -55,25 +61,38 @@ PanelWindow { // qmllint disable uncreatable-type
         anchors.fill: parent
       }
 
-      Loader {
-        id: loader
+      Flickable {
+        id: viewport
+        objectName: "panelViewport"
         x: Style.spacing
         y: Style.spacing
-        active: overlay.host !== null && overlay.host.entry !== null && overlay.host.manifest.panel === true
-        onActiveChanged: {
-          if (active)
-            setSource(Qt.resolvedUrl("widgets/" + overlay.host.entry.dir + "/Panel.qml"),
-              { settings: overlay.host.settings, shell: overlay.host.shellServices })
-        }
-        onLoaded: {
-          const p = item as PanelBase
-          if (!p) {
-            console.warn("subcult shell:", overlay.host.widgetId, "Panel.qml is not a PanelBase")
-            return
+        width: Math.max(0, frame.width - 2 * Style.spacing)
+        height: Math.max(0, frame.height - 2 * Style.spacing)
+        contentWidth: width
+        contentHeight: loader.implicitHeight
+        clip: true
+        boundsBehavior: Flickable.StopAtBounds
+        flickableDirection: Flickable.VerticalFlick
+
+        Loader {
+          id: loader
+          width: viewport.width
+          active: overlay.host !== null && overlay.host.entry !== null && overlay.host.manifest.panel === true
+          onActiveChanged: {
+            if (active)
+              setSource(Qt.resolvedUrl("widgets/" + overlay.host.entry.dir + "/Panel.qml"),
+                { settings: overlay.host.settings, shell: overlay.host.shellServices })
           }
-          p.settings = Qt.binding(() => overlay.host ? overlay.host.settings : ({}))
-          p.shell = overlay.host.shellServices
-          p.closePanel.connect(() => Panels.close())
+          onLoaded: {
+            const p = item as PanelBase
+            if (!p) {
+              console.warn("subcult shell:", overlay.host.widgetId, "Panel.qml is not a PanelBase")
+              return
+            }
+            p.settings = Qt.binding(() => overlay.host ? overlay.host.settings : ({}))
+            p.shell = overlay.host.shellServices
+            p.closePanel.connect(() => Panels.close())
+          }
         }
       }
     }

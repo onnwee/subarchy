@@ -219,7 +219,7 @@ function commandArgv(row) {
   const words = row.id.split(" ").slice(1).concat(Array.isArray(row.args) ? row.args : [])
   if (row.silent)
     return ["uwsm-app", "--", "subcult"].concat(words)
-  return ["uwsm-app", "--", "xdg-terminal-exec", "sh", "-c",
+  return ["uwsm-app", "--", "xdg-terminal-exec", "--app-id=subcult-utility", "sh", "-c",
     'subcult "$@"; s=$?; printf "\\n[exit %d] Press Enter to close." "$s"; read -r _', "sh"].concat(words)
 }
 
@@ -378,7 +378,7 @@ function scriptArgv(script, args, home) {
   const dir = String(script.dir || "").replace(/^~(?=\/|$)/, home)
   const values = (args || []).map((v, i) => script.params && script.params[i] && script.params[i].percentEncoded ? encodeURIComponent(v) : v)
   if (script.mode === "fullOutput")
-    return ["uwsm-app", "--", "xdg-terminal-exec", "sh", "-c",
+    return ["uwsm-app", "--", "xdg-terminal-exec", "--app-id=subcult-utility", "sh", "-c",
       'cd "$1" || exit; shift; "$@"; s=$?; printf "\\n[exit %d] Press Enter to close." "$s"; read -r _', "sh", dir, script.path].concat(values)
   if (script.mode === "silent")
     return ["sh", "-c", 'cd "$1" || exit; shift; exec "$@" >/dev/null 2>&1', "sh", dir, script.path].concat(values)

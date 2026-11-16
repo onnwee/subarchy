@@ -30,6 +30,6 @@ BarWidget {
     tooltip: root.count + (root.count === 1 ? " update" : " updates")
     // Through uwsm-app (ADR 0031): the update runs in its own unit and
     // survives a shell restart.
-    onClicked: Quickshell.execDetached(["uwsm-app", "--", "xdg-terminal-exec", "subcult", "update"])
+    onClicked: Quickshell.execDetached(["uwsm-app", "--", "xdg-terminal-exec", "--app-id=subcult-utility", "subcult", "update"])
   }
 }

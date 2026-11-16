@@ -27,6 +27,9 @@ PINNED = {
 KDE_ROLES = {
     ("Colors:Window", "BackgroundNormal"): "base",
     ("Colors:Window", "ForegroundNormal"): "text",
+    ("Colors:Window", "DecorationFocus"): "green",
+    ("Colors:Window", "DecorationHover"): "teal",
+    ("Colors:Window", "ForegroundActive"): "teal",
     ("Colors:View", "BackgroundNormal"): "mantle",
     ("Colors:Button", "BackgroundNormal"): "surface0",
     ("Colors:Selection", "BackgroundNormal"): "mauve",

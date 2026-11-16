@@ -287,4 +287,12 @@ which Subarchy does not use.
   used a private configuration and extracted, signature-verified Breeze
   packages; the installed release image still needs its full theme test.
 
+- 2026-11-15: the owner requested more colour variation after the
+  lavender-text preview. Pult 0.4.1 gives KDE green keyboard focus and teal
+  hover/active controls, keeping blue links and purple selection. Subarchy
+  vendors that published recipe and regenerates its fallback with the
+  released binary, so an initial install and a later `pult apply` use the
+  same role mappings. A fresh Dolphin preview on Sputnik confirmed the
+  focus accent with the dark default palette.
+
 Related: [[decision-map|Decision map]] · [[0048-config-ownership|ADR 0048]] · [[brand-identity|Brand identity]] · [[0038-wallpaper|ADR 0038]] · [[0039-fonts-icons|ADR 0039]]

@@ -4,7 +4,7 @@ type: decision
 status: accepted
 adr: 32
 created: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-15
 tags: [decision, adr, session]
 aliases: [ADR 0032, L4, Hyprland]
 ---
@@ -54,5 +54,13 @@ topology-aware `monitors.lua`, and the dock workspace watcher.
   Omarchy-derived binding set, and `dbus-update-activation-environment` at
   start. `make hypr-check` runs `Hyprland --verify-config` on them. In the VM
   test the session starts and `hyprctl` reports the defaults.
+
+- 2026-11-15: the owner requested centred floating Files, Updates and
+  utility windows. `windows.lua` floats Dolphin and the terminal class
+  `subcult-utility`, sizes them relative to the monitor, and centres modal
+  dialogs and other floating windows. Launcher commands, output scripts
+  and the update widget use that terminal class. Bar panels are centred
+  by their own host on the initiating output, with a scrolling viewport
+  when their content exceeds the available screen space.
 
 Related: [[decision-map|Decision map]] · [[0031-session-manager|ADR 0031]] · [[0033-portals|ADR 0033]]

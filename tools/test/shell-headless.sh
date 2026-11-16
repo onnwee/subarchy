@@ -799,6 +799,27 @@ HOME=$home1 quickshell ipc -p "$shell" call subcult.shell panel subcult.menu >/d
 sleep 1.5
 st=$(status "$home1")
 [[ $(json 'd.get("panel")') == subcult.menu ]] || fail "the settings panel did not open: $st"
+panel_layout_ok() {
+  python3 - "$1" <<'PY'
+import json, sys
+p = json.loads(sys.argv[1])["panelLayout"]
+assert p["width"] > 0 and p["height"] > 0, p
+assert abs(p["x"] + p["width"] / 2 - p["screenWidth"] / 2) <= 1, p
+assert p["x"] >= 8 and p["y"] >= 26, p
+assert p["x"] + p["width"] <= p["screenWidth"] - 8, p
+assert p["y"] + p["height"] <= p["screenHeight"] - 8, p
+print("shell-headless: centred, bounded panel", p)
+PY
+}
+panel_layout_ok "$st" || fail "the settings panel is not centred and within the output"
+swaymsg output HEADLESS-1 resolution 1280x600 >/dev/null
+sleep 0.5
+st=$(status "$home1")
+panel_layout_ok "$st" || fail "the settings panel overflows a short output"
+[[ $(json 'd["panelLayout"]["screenHeight"] == 600 and d["panelLayout"]["contentHeight"] > d["panelLayout"]["viewportHeight"]') == True ]] ||
+  fail "the tall settings panel has no scrolling viewport on a short output: $st"
+swaymsg output HEADLESS-1 resolution 1280x800 >/dev/null
+sleep 0.5
 for _ in $(seq 10); do [[ $(sfield current) == *"'font.ui': 'Inter'"* ]] && break; sleep 0.5; done
 [[ $(sfield current) == *"'font.ui': 'Inter'"* && $(sfield current) == *"'idle.lock': 7"* ]] || fail "settings current values: $(settings state)"
 # Typed key by key, a field keeps its text while the value is not valid yet:
