@@ -4,7 +4,7 @@ type: review
 status: draft
 review: pending
 created: 2026-11-07
-updated: 2026-11-15
+updated: 2026-11-16
 tags: [review, installer]
 aliases: [First install, Install runbook]
 ---
@@ -710,6 +710,11 @@ unmerged at this check; it has not been applied or tested on this laptop.
 Keep #195 open for the default Zen kernel. Select the installed LTS entry
 when its working runtime power management is needed; the boot default was
 not changed.
+
+The November 16 [[nvidia-rtd3-source-qualification|source qualification]]
+records the exact upstream patch, its 620.70.06 context conflict, reproducible
+preflight checks and the build/hardware gates for a candidate. It adds no
+new Sputnik battery result.
 
 SSH was not running after this reboot. The owner enabled and started
 `sshd`; key authentication then reconnected at the existing MAC-reserved
