@@ -35,15 +35,15 @@ precedence. Package source and catalog downloads both require SHA-256 matches.
 
 ## Acceptance matrix
 
-| Target | Integration | Repository acceptance check | Remaining native acceptance |
+| Target | Integration | Repository acceptance check | Native acceptance on 2026-11-16 |
 |---|---|---|---|
-| swayimg | Upstream registry and Lua template; a `dofile()` in `init.lua`, version 5.5+ | Default, Dracula and light palette update viewer, gallery and text fields; custom Lua retained; exact undo | Launch viewer and gallery on the installed desktop after a palette change |
-| VS Code | Upstream `vscode` registry; JSONC keys in `Code/User/settings.json`, version 1.78+ | Editor and ANSI colours, dark/light base themes, comments and custom keys retained; duplicate keys rejected before writing; exact undo | Install/run VS Code and check workbench, syntax and terminal in both appearances |
-| Obsidian | Upstream `obsidian` registry; theme CSS, manifest and selector in each registered vault | Two vaults, including a closed one and a path containing spaces; duplicate/stale registry entries; metadata, notes and workspace bytes retained; exact undo | Open registered vaults and check colours and first-time theme discovery on the installed build |
+| swayimg | Upstream registry and Lua template; a `dofile()` in `init.lua`, version 5.5+ | Default, Dracula and light palette update viewer, gallery and text fields; custom Lua retained; exact undo | Installed swayimg 5.7 rendered viewer/gallery in all three palettes on a private headless display; background, text and selection-border pixels matched; normal undo restored original Lua |
+| VS Code | Upstream `vscode` registry; JSONC keys in `Code/User/settings.json`, version 1.78+ | Editor and ANSI colours, dark/light base themes, comments and custom keys retained; duplicate keys rejected before writing; exact undo | Official portable Code 1.105.1 rendered workbench, Python syntax and terminal on owned Xvfb; dark/light base themes and live palette changes passed; normal undo restored original settings bytes |
+| Obsidian | Upstream `obsidian` registry; theme CSS, manifest and selector in each registered vault | Two vaults, including a closed one and a path containing spaces; duplicate/stale registry entries; metadata, notes and workspace bytes retained; exact undo | Installed Obsidian 1.15.0 discovered and selected Pult in a disposable registered vault; all three palettes rendered, live changes and light restart passed; initialized-baseline undo passed, with first-launch conflict protection described below |
 | bat, git-delta, eza, fzf | Existing upstream registry; ANSI selection or YAML colour keys | Included in the same apply/change/undo check with existing config fixtures | Native CLI rendering was not repeated for this change |
 | Neovim | Existing `subcult` scheme reads the Pult shell palette | Existing `nvim-theme-test.sh`; shell palette generation checked by the new Pult fixture | Native installed-editor acceptance was not repeated |
 | fastfetch | Existing terminal palette behaviour | No new registry entry or config rewrite; unchanged from #78's recorded covered list | Terminal colour rendering was not repeated |
-| Chromium | Existing packaged managed `color.json`; `subcult theme apply-system` writes the selected palette through polkit | Existing `internal/systheme` tests and package-content checks | Live Chromium policy readback was not repeated |
+| Chromium | Existing packaged managed `color.json`; `subcult theme apply-system` writes the selected palette through polkit | Existing `internal/systheme` tests and package-content checks | Sputnik's installed managed policy sets `BrowserThemeColor` to `#100b19` and dark appearance; a native browser policy-page readback was not performed |
 
 The CLI acceptance fixture substitutes app binaries for detection. It runs
 the real packaged Pult, its embedded catalog, registry and templates in a
@@ -66,20 +66,60 @@ tar and sha256sum; it does not require pacman or install packages. PR CI
 runs it after `make verify`. On Arch, the recipe's `check()` runs the same
 app fixture as part of makepkg.
 
-## Installed-system follow-up
+## Native qualification and issue boundary
 
-Keep #78 open until its acceptance evidence is reconciled with this package.
-This checkout does not establish package publication, an ISO install test,
-or native rendering on Sputnik. No ISO or VM build belongs in this lane.
+The November 16 Kvant/Sputnik native lane used the recipe-built Pult binary
+with SHA-256
+`6d7876d908d54f1b9b9ad353a52cd3ae815f1d349fcd2d8c26f178659b45aa55`.
+Its upstream pin, embedded-data version and app integration code match the
+merged recipe. Native tests used SUBCULT Minimal, Dracula and Catppuccin
+Latte, disposable HOME/XDG roots, private D-Bus sessions and owned headless
+Wayland/Xvfb displays. No owner vault, app singleton or desktop was used.
+The screenshots were inspected; application configuration and rendering
+checks are distinct in the matrix above.
 
-- [ ] Qualify the new Pult package in the normal main-branch package/ISO jobs.
-- [ ] Run `pult list` on the target and confirm the three remaining entries.
-- [ ] With disposable VS Code settings and registered Obsidian vaults, apply
-  the default profile, Dracula and a light theme; inspect each native app.
-- [ ] Confirm swayimg viewer and gallery use the selected palette after relaunch.
-- [ ] Close apps before testing normal `pult uninstall` restoration; do not
-  force past app-written configuration conflicts.
-- [ ] Record exact package versions and results on #78 before closing it.
+The Code archive came from Microsoft's version API for 1.105.1; its
+SHA-256 matched that API's
+`32a650f1a111df00354ad9571f57d12268376777677dd5af2162ead921067a89`.
+No extension or account was used. Code's default terminal contrast correction
+can adjust glyph RGB values; runtime terminal theme variables matched Pult,
+and all six Dracula ANSI colours also matched captured glyph pixels. The
+test retained that accessibility behavior.
+
+Native swayimg caught an invalid test preference before Pult's Lua could
+load: `viewer.scale = 'fit'` requires a number in swayimg 5.7. The fixture
+now uses its valid fixed-scale setting, `viewer.default_scale = 'fit'`, and
+still requires byte-for-byte retention through palette changes and undo.
+This corrects the test input; Pult's generated Lua did not need changing.
+
+Obsidian's first launch adds preferences and reformats `appearance.json`.
+Normal uninstall detected that app-written change, reported a conflict and
+retained the edited file; no force was used. That is conflict protection,
+not an exact-undo pass. A second round began with Obsidian's initialized
+preferences, rendered dark/light palettes and then closed the app: normal
+uninstall restored those original bytes and removed Pult's theme assets.
+
+The native lane's cleanup readback found no owned app, D-Bus, display or
+tunnel process left behind. Relevant real Sputnik config hashes matched
+before and after; temporary binaries, profiles, runtime trees and Xauthority
+were removed. Dated logs, screenshots, palette/pixel observations, source
+provenance and cleanup receipts are retained privately with roadmap #230's
+coordinator evidence.
+
+#78 is an agent-completable integration issue: its criteria are coverage of
+the listed app targets and a managed Chromium colour policy. The existing
+Neovim palette reader and fastfetch terminal-colour path are the accepted
+design recorded in [[0037-theming|ADR 0037]] and the issue's earlier comments;
+they do not need redundant registry entries. The new entries/templates,
+upstream tests, native checks and installed Chromium policy establish that
+integration. No owner-acceptance gate is added to #78.
+
+Package publication, the exact-release ISO install test and replacement of
+the owner's installed Pult remain separate release qualification under #84
+and hardware acceptance under #51. This native run used a supplied binary
+in disposable roots: it did not install the new package, install Code on
+Sputnik, inspect Chromium's native policy page or qualify the owner's
+desktop. Those broader claims are not made by completing the integration.
 
 VS Code's integration handles the default user profile; workspace and named
 profile settings can override it. It uses built-in Modern themes and colour

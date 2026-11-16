@@ -70,7 +70,7 @@ class AppTargets(unittest.TestCase):
         self.write(".config/Code/User/settings.json", '\ufeff{\r\n'
                    '  // Keep my editor settings\r\n  "editor.fontSize": 19,\r\n'
                    '  "workbench.colorCustomizations": {"extension.custom": "#123456",},\r\n}\r\n')
-        self.write(".config/swayimg/init.lua", "-- My keys stay here\nswayimg.viewer.scale = 'fit'\n")
+        self.write(".config/swayimg/init.lua", "-- My keys stay here\nswayimg.viewer.default_scale = 'fit'\n")
         self.write(".config/bat/config", "--paging=never\n")
         self.write(".gitconfig", "[user]\n\tname = Fixture\n")
         self.write(".config/eza/theme.yml", "# My listing style\ncolourful: false\n")
@@ -130,7 +130,7 @@ class AppTargets(unittest.TestCase):
                      "swayimg.text.color = 0xff" + colors["text"][1:]):
             self.assertIn(text, lua)
         init = self.read(".config/swayimg/init.lua")
-        self.assertTrue(init.startswith("-- My keys stay here\nswayimg.viewer.scale = 'fit'\n"))
+        self.assertTrue(init.startswith("-- My keys stay here\nswayimg.viewer.default_scale = 'fit'\n"))
         self.assertEqual(init.count('dofile("' + str(self.config / "swayimg/pult.lua") + '")'), 1)
         palette = json.loads(self.read(".config/subcult/theme/palette.json"))
         self.assertEqual(palette["colors"]["base"].lower(), colors["base"])
