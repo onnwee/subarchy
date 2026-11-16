@@ -20,7 +20,7 @@ run() { # prints "<scheme> <Normal fg> <Normal bg>"
 }
 
 # No palette anywhere: Subcult Ink's colours under the subcult name.
-[[ $(run) == "subcult F0ECE4 100B19" ]] || fail "fallback: $(run)"
+[[ $(run) == "subcult A78BFA 100B19" ]] || fail "fallback: $(run)"
 
 # A user palette: its roles.
 printf '{"schema": 1, "colors": {"base": "#112233", "text": "#EEDDCC", "mauve": "#AA55FF", "surface0": "#223344"}}\n' >"$home/.config/subcult/theme/palette.json"
@@ -28,6 +28,6 @@ printf '{"schema": 1, "colors": {"base": "#112233", "text": "#EEDDCC", "mauve": 
 
 # A broken palette file falls back.
 printf '{ broken' >"$home/.config/subcult/theme/palette.json"
-[[ $(run) == "subcult F0ECE4 100B19" ]] || fail "broken palette: $(run)"
+[[ $(run) == "subcult A78BFA 100B19" ]] || fail "broken palette: $(run)"
 
 echo "nvim-theme-test: ok"

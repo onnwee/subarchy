@@ -17,7 +17,7 @@ ROLES = [
 SPECIALS = ["background", "foreground", "cursor", "selection_bg", "selection_fg"]
 PINNED = {
     "base": "#100B19", "mantle": "#0B0812", "crust": "#06040A", "surface0": "#1F1830",
-    "text": "#A78BFA", "subtext1": "#DDD6E8", "subtext0": "#9A92A8", "overlay0": "#5E5570",
+    "text": "#A78BFA", "foreground": "#A78BFA", "subtext1": "#DDD6E8", "subtext0": "#9A92A8", "overlay0": "#5E5570",
     "green": "#00FF88", "mauve": "#8F4BC8", "lavender": "#A78BFA", "selection_bg": "#3B2470",
 }
 
