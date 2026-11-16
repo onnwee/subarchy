@@ -3,15 +3,15 @@
   "application": "yay",
   "source_version": "13.1.0",
   "observed": "2026-11-16",
-  "basis": "Pinned app archives and module h1/go.sum/linkage audit on Kvant, 2026-11-16; Refs #243, roadmap #230. Inventory, not legal clearance.",
+  "basis": "Pinned app archives and module h1/go.sum/linkage audit on Kvant, 2026-11-16; Refs #243, roadmap #230. Inventory, not legal clearance. BSON copied-origin notice follow-up: Refs #247; exact upstream aggregation section and primitive source headers.",
   "application_source": {
     "url": "https://github.com/Jguer/yay/archive/v13.1.0.tar.gz",
     "sha256": "acd3c97fac52449ba3589fefc076b90f42fa5072ef274f5bcbcd381f50b2701a"
   },
   "bundle": {
     "file": "THIRD-PARTY-NOTICES.txt",
-    "sha256": "d787cadc3e2d9d69e99f3a3cca40a9ad5fd6e4b10fff8b812eeb0f4e0356bd35",
-    "bytes": 130833
+    "sha256": "9722bfb50c6da9e9486a4e0cc3942b7492d9d8fd2a0bf68037809088bbc73deb",
+    "bytes": 132969
   },
   "mapping": "offset and bytes locate exact source bytes in the UTF-8 bundle; hashes cover those bytes, not section headings. Attribution excerpts preserve lines and map each line to its source files.",
   "entries": [
@@ -543,6 +543,41 @@
       },
       "section": "Text 001",
       "offset": 1039
+    },
+    {
+      "module": "go.mongodb.org/mongo-driver",
+      "version": "v1.17.9",
+      "path": "THIRD-PARTY-NOTICES (gopkg.in/mgo.v2/bson section, lines 188-212)",
+      "url": "https://proxy.golang.org/go.mongodb.org/mongo-driver/@v/v1.17.9.zip",
+      "module_h1": "h1:IexDdCuuNJ3BHrELgBlyaH9p60JXAvdzWR128q+U5tU=",
+      "sha256": "ff92ab592e4c82cd7e85df223cc19d476535bf51d18bf33340aeeeadfd072fee",
+      "bytes": 1353,
+      "kind": "source text",
+      "source_aggregation_sha256": "7de04f108a833eea9dc54b6f05ac10c152f83d99df4a58a1b33e6a49b7321f08",
+      "section": "Text 023",
+      "offset": 131142
+    },
+    {
+      "module": "go.mongodb.org/mongo-driver",
+      "version": "v1.17.9",
+      "path": "linked-source copied-origin lines (excerpts)",
+      "url": "https://proxy.golang.org/go.mongodb.org/mongo-driver/@v/v1.17.9.zip",
+      "module_h1": "h1:IexDdCuuNJ3BHrELgBlyaH9p60JXAvdzWR128q+U5tU=",
+      "sha256": "5e2be86fb4fc7de6ab79a6ab6a36234d24bd9cf63166608091502c2e47ea22ac",
+      "bytes": 108,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Based on gopkg.in/mgo.v2/bson by Gustavo Niemeyer": [
+          "bson/primitive/decimal.go",
+          "bson/primitive/objectid.go"
+        ],
+        "// See THIRD-PARTY-NOTICES for original license terms.": [
+          "bson/primitive/decimal.go",
+          "bson/primitive/objectid.go"
+        ]
+      },
+      "section": "Text 024",
+      "offset": 132822
     }
   ],
   "application_licenses": [

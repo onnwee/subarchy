@@ -77,6 +77,19 @@ There is no published image. To try Subarchy, build the ISO with `make iso`
 and install it into a virtual machine, or run `make install-test`. The
 installer wipes the disk you choose, so do not point it at a disk you need.
 
+## Development packages and sources
+
+These x86_64 archives are development builds. The [source index](SOURCES.md)
+gives their exact recipe revisions, complete source inputs, checksums and
+build-environment retrieval directions alongside the downloads.
+
+| Package | Binary archive | Sources |
+|---|---|---|
+| Core `0.0.0-636` | [Download](https://git.subcult.tv/api/packages/subculture-collective/arch/stable/x86_64/subarchy-0.0.0-636-x86_64.pkg.tar.zst) | [Actual build revision and inputs](SOURCES.md#core-select-the-actual-build-revision) |
+| Pult `0.4.1.r2.g7a703f1-2` | [Download](https://git.subcult.tv/api/packages/subculture-collective/arch/stable/x86_64/pult-0.4.1.r2.g7a703f1-2-x86_64.pkg.tar.zst) | [Recipe, upstream and catalogue](SOURCES.md#application-source-and-extra-inputs) |
+| yay `13.1.0-3` | [Download](https://git.subcult.tv/api/packages/subculture-collective/arch/stable/x86_64/yay-13.1.0-3-x86_64.pkg.tar.zst) | [Sources and BSON notice provenance](SOURCES.md#downloads-and-recipe-revisions) |
+| cliamp `2.4.1-2` | [Download](https://git.subcult.tv/api/packages/subculture-collective/arch/stable/x86_64/cliamp-2.4.1-2-x86_64.pkg.tar.zst) | [Recipe and upstream](SOURCES.md#application-source-and-extra-inputs), [combined GPL3 terms](SOURCES.md#distribution-terms) |
+
 ## Configuration
 
 User settings live under `~/.config/subcult/`; the palette Pult writes is

@@ -1,12 +1,12 @@
 # Maintainer: Jguer <pkgbuilds at jguer.space>
 pkgname=yay
 pkgver=13.1.0
-pkgrel=2
+pkgrel=3
 pkgdesc="Yet another yogurt. Pacman wrapper and AUR helper written in go."
 arch=('i686' 'pentium4' 'x86_64' 'arm' 'armv7h' 'armv6h' 'aarch64' 'riscv64')
 url="https://github.com/Jguer/yay"
 options=(!lto)
-license=('GPL-3.0-or-later' 'MIT' 'BSD-3-Clause' 'Apache-2.0' 'MPL-2.0')
+license=('GPL-3.0-or-later' 'MIT' 'BSD-3-Clause' 'BSD-2-Clause' 'Apache-2.0' 'MPL-2.0')
 depends=(
   'pacman>6.1'
   'git'
@@ -20,8 +20,8 @@ source=("${pkgname}-${pkgver}.tar.gz::https://github.com/Jguer/yay/archive/v${pk
         'THIRD-PARTY-NOTICES.txt'
         'THIRD-PARTY-NOTICES.provenance.json')
 sha256sums=('acd3c97fac52449ba3589fefc076b90f42fa5072ef274f5bcbcd381f50b2701a'
-            'd787cadc3e2d9d69e99f3a3cca40a9ad5fd6e4b10fff8b812eeb0f4e0356bd35'
-            '45846500abc39f0d93d475ef3219dcbcc6fe3dec58d8a672c212a2f024d991d2')
+            '9722bfb50c6da9e9486a4e0cc3942b7492d9d8fd2a0bf68037809088bbc73deb'
+            'c02062fa08d2130b4c43f9f4eff9a43f09d418b6508997d9c1958431a5c027ae')
 
 build() {
   export GOPATH="$srcdir"/gopath

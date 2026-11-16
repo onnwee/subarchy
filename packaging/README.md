@@ -1,5 +1,9 @@
 # packaging
 
+Development binary downloads and version-specific source directions are
+paired in the public [source index](../SOURCES.md): full upstream trees,
+Subarchy recipes/helpers, Go modules, Pult's catalogue and build metadata.
+
 PKGBUILDs and the pacman repository definition. Omarchy publishes 256 packages at `https://pkgs.omarchy.org/stable/$arch` ([list](../docs/inventory/generated/omarchy-repo-packages.md)). The SUBCULT rice already has release and VCS PKGBUILD designs in `subcult-omarchy-rice/packaging/arch/`.
 
 | Directory | What |

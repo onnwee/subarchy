@@ -30,6 +30,7 @@ ANCHORS = {
     "yay": [
         "3a64aa4539f34bcf8370feb989228e6bd610e8d0d2991626c86d81ddd779ca31",  # gotext MIT/BSD
         "e54301d602505bd5e95f380a8b0ea05db04738c0b43a4d025f59ce79632f70e2",  # modifications
+        "ff92ab592e4c82cd7e85df223cc19d476535bf51d18bf33340aeeeadfd072fee",  # copied BSON BSD
     ],
     "cliamp": [
         "fc535686ab935d5776543a21c729f3081d53cd50b81ea07f6b1321c20e935ba3",  # xlab
@@ -40,7 +41,7 @@ ANCHORS = {
 }
 ATTRIBUTIONS = {
     "pult": ["Thomas Pelletier", "Canonical Ltd", "Evan Shaw", "Rich Felker", "Yann Collet"],
-    "yay": ["Leonel Quinteros", "Jonas Obrist", "DeineAgentur", "gotext maintainers"],
+    "yay": ["Leonel Quinteros", "Jonas Obrist", "DeineAgentur", "gotext maintainers", "Gustavo Niemeyer"],
     "cliamp": ["Lucent Technologies", "V8 project authors", "gRPC authors", "Psiphon", "Maxim Kupriianov"],
 }
 
@@ -65,7 +66,7 @@ def recipe_inputs(directory):
 def check_sources(app):
     directory = ROOT / PACKAGES[app]
     version, release, sources, hashes = recipe_inputs(directory)
-    assert release == "2", (app, release)
+    assert release == ("3" if app == "yay" else "2"), (app, release)
     assert len(sources) == len(hashes), app
     manifest = json.loads((directory / PROVENANCE).read_text())
     bundle = (directory / BUNDLE).read_bytes()
@@ -88,6 +89,22 @@ def check_sources(app):
             assert entry["module_h1"].startswith("h1:"), entry
         seen.add(entry["sha256"])
     assert set(ANCHORS.get(app, [])) <= seen, app
+    if app == "yay":
+        bson = next(e for e in manifest["entries"] if e["sha256"] == ANCHORS["yay"][-1])
+        assert bson["bytes"] == 1353
+        assert bson["module"] == "go.mongodb.org/mongo-driver" and bson["version"] == "v1.17.9"
+        assert bson["url"] == "https://proxy.golang.org/go.mongodb.org/mongo-driver/@v/v1.17.9.zip"
+        assert bson["module_h1"] == "h1:IexDdCuuNJ3BHrELgBlyaH9p60JXAvdzWR128q+U5tU="
+        assert bson["source_aggregation_sha256"] == "7de04f108a833eea9dc54b6f05ac10c152f83d99df4a58a1b33e6a49b7321f08"
+        origin = b"// Based on gopkg.in/mgo.v2/bson by Gustavo Niemeyer\n"
+        attribution = next(e for e in manifest["entries"] if e.get("line_sources", {}).get(origin.decode().strip()))
+        assert attribution["module"] == bson["module"] and attribution["version"] == bson["version"]
+        assert attribution["url"] == bson["url"] and attribution["module_h1"] == bson["module_h1"]
+        assert attribution["line_sources"][origin.decode().strip()] == [
+            "bson/primitive/decimal.go", "bson/primitive/objectid.go",
+        ]
+        data = bundle[attribution["offset"]:attribution["offset"] + attribution["bytes"]]
+        assert origin in data
     for author in ATTRIBUTIONS[app]:
         assert author.encode() in bundle, (app, author)
     assert b"Copyright 2009 The Go Authors." in bundle, app
