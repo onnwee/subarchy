@@ -89,7 +89,9 @@ class PamHelperTest(unittest.TestCase):
         for _ in range(100):
             try:
                 state = Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()[0]
-            except FileNotFoundError:
+            except (FileNotFoundError, ProcessLookupError):
+                # The process may vanish before open (ENOENT) or between
+                # opening the procfs node and reading it (ESRCH).
                 return
             if state == "Z":
                 return

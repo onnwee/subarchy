@@ -24,12 +24,7 @@ published=$(python3 "$root/tools/ci/publish-packages.py" --published)
 
 # The registry finds a package file by substring, so two file names where
 # one contains the other cannot both be served. Refuse before building.
-all_files=()
-for dir in "$root"/packaging/*/ "$root"/packaging/aur/*/; do
-  [[ -f $dir/PKGBUILD ]] || continue
-  mapfile -t -O "${#all_files[@]}" all_files < <(cd "$dir" && runuser -u builder -- env PKGDEST="$out" makepkg --packagelist)
-done
-python3 "$root/tools/ci/publish-packages.py" --check-names "${all_files[@]##*/}"
+runuser -u builder -- "$root/tools/ci/check-package-names.sh"
 
 for dir in "$root"/packaging/*/ "$root"/packaging/aur/*/; do
   [[ -f $dir/PKGBUILD ]] || continue

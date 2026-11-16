@@ -15,7 +15,7 @@ sha256 in the PKGBUILD.
 | `tzupdate` | 3.1.0-1 | `1b3c3bdf` | time zone from the network's location (ADR 0025 list); Rust build from the GitHub tag |
 | `ufw-docker` | 251123-1 | `76e18ac8` | Docker behind ufw (ADR 0025 list); a shell script from the GitHub tag, b2sum-pinned |
 | `nvidia-580xx-utils` | 580.196.07-2 (AUR: -1; see the PKGBUILD) | `0b45a070` | the 580xx driver branch for Maxwell to Pascal GPUs (ADR 0006): `nvidia-580xx-utils`, `nvidia-580xx-dkms` and `opencl-nvidia-580xx` from NVIDIA's `.run` installer, sha256-pinned, with the AUR's two kernel patches |
-| `lib32-nvidia-580xx-utils` | 580.196.07-2 (AUR: -1) | `489271ac` | the 32-bit libraries of the same branch (Steam, Wine): `lib32-nvidia-580xx-utils` and `lib32-opencl-nvidia-580xx`; each split package carries the vendor licence independently |
+| `lib32-nvidia-580xx-utils` | 580.196.07-3 (AUR: -1) | `489271ac` | the 32-bit libraries of the same branch (Steam, Wine): `lib32-nvidia-580xx-utils` and `lib32-opencl-nvidia-580xx`; each split package carries the vendor licence independently; `-3` avoids the registry's filename collision with the 64-bit `-2` packages |
 | `claude-code` | 2.1.323-1 | `e04b815a` | the default coding agent (app list, ADR 0047): Anthropic's binary from downloads.claude.ai, sha256 as in its release manifest. Proprietary; the terms page is kept here as `legal-and-compliance.md` (the AUR fetches it unpinned). 154 MB, uploaded through the origin |
 | `cliamp` | 2.4.1-1 | `544da13c` | the terminal music player (app list); Go build from the GitHub tag |
 | `localsend-bin` | 1.18.2-2 | `f35ec0d6` | LocalSend file sharing (ADR 0056); upstream's `.deb`, Apache-2.0. `fuse2` dropped from depends: it is for the AppImage |

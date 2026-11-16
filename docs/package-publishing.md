@@ -3,7 +3,7 @@ title: "Package publishing"
 type: guide
 status: active
 created: 2026-11-08
-updated: 2026-11-13
+updated: 2026-11-16
 tags: [guide, ci, packages]
 ---
 
@@ -60,8 +60,14 @@ present it answers 404 for the shorter name (observed 2026-11-09, after both
 were uploaded). The builder refuses such a pair before it builds
 (`publish-packages.py --check-names`). The fix is a different `pkgrel` on
 one of them: `nvidia-580xx-utils` carries `-2` against the lib32 package's
-`-1`. The unreachable `nvidia-580xx-utils` and `opencl-nvidia-580xx`
+`-3` (the independent licence-file correction first used `-2`, colliding
+again; corrected 2026-11-16). The unreachable `nvidia-580xx-utils` and `opencl-nvidia-580xx`
 `580.196.07-1` versions stay in the registry; the databases list `-2`.
+
+`tools/ci/check-package-names.sh` reads every recipe's real output through
+`makepkg --packagelist`, including split packages. Both GitHub pull-request
+package checks and the Gitea main build run it before building, so a
+collision cannot pass the PR gate and fail only during publication.
 
 **The public route refuses uploads over 100 MB.** Cloudflare in front of
 `git.subcult.tv` answers HTTP 413, and `nvidia-580xx-utils` is about

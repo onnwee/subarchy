@@ -63,7 +63,7 @@ jobs:
           useradd -m builder
           git config --global --add safe.directory "$PWD"
           chown -R builder: "$PWD"
-          su builder -c "git config --global --add safe.directory '$PWD' && make package"
+          su builder -c "git config --global --add safe.directory '$PWD' && tools/ci/check-package-names.sh && make package"
       - name: Checks the Ubuntu verify job skips
         # Hyprland, Neovim, zsh, lua and the role fonts exist only here; each
         # of these tests skips without its tool, so a skip fails this step.
