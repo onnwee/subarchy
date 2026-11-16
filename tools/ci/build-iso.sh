@@ -58,8 +58,34 @@ for dir in "$root"/packaging/*/ "$root"/packaging/aur/*/; do
     $1 == "pkgrel" {release = $3}
     $1 == "pkgname" {print $3 "=" epoch version "-" release}')
 done
-pacman --config /tmp/registry-pacman.conf -Syddw --noconfirm "${names[@]}" ||
-  { echo "build-iso: a pinned package version is not in the stable registry; wait for the packages workflow to publish this main commit" >&2; exit 1; }
+# Retry only the interrupted transfer observed in CI. Keep pacman's cache
+# (including completed packages) and exact arguments for every attempt.
+download_log="$root/build/registry-download.log"
+for attempt in 1 2 3; do
+  if LC_ALL=C pacman --config /tmp/registry-pacman.conf -Syddw --noconfirm "${names[@]}" >"$download_log" 2>&1; then
+    cat "$download_log"
+    break
+  else
+    status=$?
+  fi
+  cat "$download_log" >&2
+  # Require a specific transport error, not just "download library error".
+  # Any other error, even alongside a reset, must fail without retrying.
+  if ! awk '
+    /^error: failed retrieving file .* : Recv failure: Connection reset by peer$/ {reset = 1; next}
+    /^error: failed to commit transaction \(download library error\)$/ {next}
+    /^error:/ {other = 1}
+    END {exit !(reset && !other)}' "$download_log"; then
+    echo "build-iso: signed pinned-package download failed; see pacman diagnostics above" >&2
+    exit "$status"
+  fi
+  if (( attempt == 3 )); then
+    echo "build-iso: pinned-package transport failed after 3 attempts; see pacman diagnostics above" >&2
+    exit "$status"
+  fi
+  echo "build-iso: package transfer reset (attempt $attempt/3); retrying in ${attempt}s" >&2
+  sleep "$attempt"
+done
 rm -f -- "$repo"/*.sig
 # build/ and the repository were made by root just now.
 chown -R builder: "$root/build"
