@@ -177,6 +177,44 @@ func TestPlanAmbiguousSerialsUseSavedConnectors(t *testing.T) {
 	}
 }
 
+// Exercise the saved store used by the watcher, not just an in-memory
+// profile. Neither connector survives and live enumeration is reversed.
+func TestStoredProfileFollowsSerialAfterFullRenumber(t *testing.T) {
+	ms := []Monitor{
+		{Name: "DP-9", Description: "ONN pair", Serial: "portrait", Width: 1920, Height: 1080, RefreshRate: 60, X: -1080, Scale: 1, Transform: 1},
+		{Name: "DP-10", Description: "ONN pair", Serial: "landscape", Width: 1920, Height: 1080, RefreshRate: 75, X: 2560, Scale: 1.25},
+	}
+	path := filepath.Join(t.TempDir(), "profiles.json")
+	if err := Save(path, Store{Profiles: []Profile{Capture("desk", ms, []Workspace{{ID: 5, Monitor: "DP-9"}, {ID: 8, Monitor: "DP-10"}})}}); err != nil {
+		t.Fatal(err)
+	}
+	store, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ms[0].Name, ms[1].Name = "DP-12", "DP-11"
+	ms[0], ms[1] = ms[1], ms[0]
+	p, ok := store.Match(ms)
+	if !ok || p.Name != "desk" {
+		t.Fatalf("saved profile must still match the connected set: %+v, %v", p, ok)
+	}
+	steps, missing := Plan(p, ms)
+	want := []Step{
+		{"eval", `hl.monitor({ output = "DP-12", disabled = false, mode = "1920x1080@60", position = "-1080x0", scale = 1, transform = 1, mirror = "" })`},
+		{"eval", `hl.monitor({ output = "DP-11", disabled = false, mode = "1920x1080@75", position = "2560x0", scale = 1.25, transform = 0, mirror = "" })`},
+		{"dispatch", `hl.dsp.workspace.move({ workspace = "5", monitor = "DP-12" })`},
+		{"dispatch", `hl.dsp.workspace.move({ workspace = "8", monitor = "DP-11" })`},
+	}
+	if len(missing) != 0 || len(steps) != len(want) {
+		t.Fatalf("plan = %+v, missing %v", steps, missing)
+	}
+	for i := range want {
+		if steps[i] != want[i] {
+			t.Errorf("step %d = %+v, want %+v", i, steps[i], want[i])
+		}
+	}
+}
+
 func TestPlanReservesSerialBeforeConnectorFallback(t *testing.T) {
 	ms := []Monitor{
 		{Name: "DP-9", Description: "ONN pair"},

@@ -48,6 +48,7 @@ shell-index-check:
 	  [ "$$(sha256sum < shell/Commons/$$f)" = "$$(sha256sum < lock/$$f)" ] || { echo "lock/$$f differs from shell/Commons/$$f"; exit 1; }; done
 	@[ "$$(sha256sum < shell/Commons/ThemeModel.js)" = "$$(sha256sum < lock/ThemeModel.js)" ] || { echo "lock/ThemeModel.js differs from shell/Commons/ThemeModel.js; copy it"; exit 1; }
 	python3 tools/shell/test_gen_index.py
+	python3 tools/shell/test_frame_probe.py
 	python3 tools/shell/gen-index.py --check
 
 # Quickshell maps the shell folder to the module prefix qs (import qs.Commons),
