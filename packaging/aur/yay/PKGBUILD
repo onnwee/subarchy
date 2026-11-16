@@ -1,12 +1,12 @@
 # Maintainer: Jguer <pkgbuilds at jguer.space>
 pkgname=yay
 pkgver=13.1.0
-pkgrel=1
+pkgrel=2
 pkgdesc="Yet another yogurt. Pacman wrapper and AUR helper written in go."
 arch=('i686' 'pentium4' 'x86_64' 'arm' 'armv7h' 'armv6h' 'aarch64' 'riscv64')
 url="https://github.com/Jguer/yay"
 options=(!lto)
-license=('GPL-3.0-or-later')
+license=('GPL-3.0-or-later' 'MIT' 'BSD-3-Clause' 'Apache-2.0' 'MPL-2.0')
 depends=(
   'pacman>6.1'
   'git'
@@ -16,8 +16,12 @@ optdepends=(
   'doas: privilege elevation'
 )
 makedepends=('go>=1.26')
-source=("${pkgname}-${pkgver}.tar.gz::https://github.com/Jguer/yay/archive/v${pkgver}.tar.gz")
-sha256sums=('acd3c97fac52449ba3589fefc076b90f42fa5072ef274f5bcbcd381f50b2701a')
+source=("${pkgname}-${pkgver}.tar.gz::https://github.com/Jguer/yay/archive/v${pkgver}.tar.gz"
+        'THIRD-PARTY-NOTICES.txt'
+        'THIRD-PARTY-NOTICES.provenance.json')
+sha256sums=('acd3c97fac52449ba3589fefc076b90f42fa5072ef274f5bcbcd381f50b2701a'
+            'd787cadc3e2d9d69e99f3a3cca40a9ad5fd6e4b10fff8b812eeb0f4e0356bd35'
+            '45846500abc39f0d93d475ef3219dcbcc6fe3dec58d8a672c212a2f024d991d2')
 
 build() {
   export GOPATH="$srcdir"/gopath
@@ -34,4 +38,7 @@ build() {
 package() {
   cd "$srcdir/$pkgname-$pkgver"
   make VERSION=$pkgver DESTDIR="$pkgdir" PREFIX="/usr" install
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm644 "$srcdir/THIRD-PARTY-NOTICES.txt" "$pkgdir/usr/share/licenses/$pkgname/THIRD-PARTY-NOTICES.txt"
+  install -Dm644 "$srcdir/THIRD-PARTY-NOTICES.provenance.json" "$pkgdir/usr/share/licenses/$pkgname/THIRD-PARTY-NOTICES.provenance.json"
 }

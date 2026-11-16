@@ -1,0 +1,2685 @@
+{
+  "schema": 1,
+  "application": "cliamp",
+  "source_version": "2.4.1",
+  "observed": "2026-11-16",
+  "basis": "Pinned app archives and module h1/go.sum/linkage audit on Kvant, 2026-11-16; Refs #243, roadmap #230. Inventory, not legal clearance.",
+  "application_source": {
+    "url": "https://github.com/bjarneo/cliamp/archive/refs/tags/v2.4.1.tar.gz",
+    "sha256": "fb5e43513b71287cd1db39403a293436b38db2ffa73fcd820a34ba3a73d2523e"
+  },
+  "bundle": {
+    "file": "THIRD-PARTY-NOTICES.txt",
+    "sha256": "dfe3a75d767348dc966a7bf7e83fde8da8ada4bb2494b4bea38c3e189190e5b3",
+    "bytes": 193821
+  },
+  "mapping": "offset and bytes locate exact source bytes in the UTF-8 bundle; hashes cover those bytes, not section headings. Attribution excerpts preserve lines and map each line to its source files.",
+  "entries": [
+    {
+      "module": "Go toolchain/runtime",
+      "version": "go1.27.4",
+      "path": "LICENSE",
+      "url": "https://raw.githubusercontent.com/golang/go/go1.27.4/LICENSE",
+      "module_h1": null,
+      "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad",
+      "bytes": 1453,
+      "kind": "source text",
+      "section": "Text 052",
+      "offset": 125046
+    },
+    {
+      "module": "charm.land/bubbletea/v2",
+      "version": "v2.0.9",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/charm.land/bubbletea/v2/@v/v2.0.9.zip",
+      "module_h1": "h1:DpJCMWKgzQK8SJv4zbKKFHAI10ymWy/evClPFk0k0f8=",
+      "sha256": "373b3931e66627aadcfebd7771df93f3439203147e587a924508c63e20184d7f",
+      "bytes": 1081,
+      "kind": "source text",
+      "section": "Text 022",
+      "offset": 90520
+    },
+    {
+      "module": "charm.land/lipgloss/v2",
+      "version": "v2.0.6",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/charm.land/lipgloss/v2/@v/v2.0.6.zip",
+      "module_h1": "h1:EaGKeuA8FvF+v2BT5VmZd2LoYLaMZJXA5n34th8nCIQ=",
+      "sha256": "3f531fb89f23b218fbe16b24fb5950418fa1f0046db5cfddb2c1e0d6d39bfcc0",
+      "bytes": 1081,
+      "kind": "source text",
+      "section": "Text 026",
+      "offset": 94384
+    },
+    {
+      "module": "cloud.google.com/go/auth",
+      "version": "v0.23.2",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/cloud.google.com/go/auth/@v/v0.23.2.zip",
+      "module_h1": "h1:pxSCpfiji41hpzpPdMCftEUCezpgpqmmDdYiAjCKXxo=",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "bytes": 11358,
+      "kind": "source text",
+      "section": "Text 069",
+      "offset": 157941
+    },
+    {
+      "module": "cloud.google.com/go/auth",
+      "version": "v0.23.2",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/cloud.google.com/go/auth/@v/v0.23.2.zip",
+      "module_h1": "h1:pxSCpfiji41hpzpPdMCftEUCezpgpqmmDdYiAjCKXxo=",
+      "sha256": "5b5a054fcfe716ee5c940e864aa9dec3bb96adfcc33cf88d29dc68d7fd1e3458",
+      "bytes": 116,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright 2023 Google LLC": [
+          "auth.go",
+          "credentials/compute.go",
+          "credentials/detect.go",
+          "credentials/filetypes.go",
+          "credentials/internal/externalaccount/aws_provider.go",
+          "credentials/internal/externalaccount/executable_provider.go",
+          "credentials/internal/externalaccount/externalaccount.go",
+          "credentials/internal/externalaccount/file_provider.go",
+          "credentials/internal/externalaccount/info.go",
+          "credentials/internal/externalaccount/url_provider.go",
+          "credentials/internal/externalaccountuser/externalaccountuser.go",
+          "credentials/internal/gdch/gdch.go",
+          "credentials/internal/impersonate/impersonate.go",
+          "credentials/internal/stsexchange/sts_exchange.go",
+          "credentials/selfsignedjwt.go",
+          "httptransport/httptransport.go",
+          "httptransport/transport.go",
+          "internal/credsfile/credsfile.go",
+          "internal/credsfile/parse.go",
+          "internal/internal.go",
+          "internal/jwt/jwt.go",
+          "internal/transport/cba.go",
+          "internal/transport/cert/default_cert.go",
+          "internal/transport/cert/enterprise_cert.go",
+          "internal/transport/cert/secureconnect_cert.go",
+          "internal/transport/s2a.go",
+          "internal/transport/transport.go",
+          "threelegged.go"
+        ],
+        "// Copyright 2024 Google LLC": [
+          "credentials/internal/externalaccount/programmatic_provider.go",
+          "credentials/internal/externalaccount/x509_provider.go",
+          "internal/transport/cert/workload_cert.go"
+        ],
+        "// Copyright 2025 Google LLC": [
+          "internal/regionalaccessboundary/external_accounts_config_providers.go",
+          "internal/retry/retry.go",
+          "internal/transport/headers/headers.go"
+        ],
+        "// Copyright 2026 Google LLC": [
+          "internal/regionalaccessboundary/regional_access_boundary.go",
+          "internal/retry/retry_linux.go"
+        ]
+      },
+      "section": "Text 034",
+      "offset": 102642
+    },
+    {
+      "module": "cloud.google.com/go/auth/oauth2adapt",
+      "version": "v0.2.8",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/cloud.google.com/go/auth/oauth2adapt/@v/v0.2.8.zip",
+      "module_h1": "h1:keo8NaayQZ6wimpNSmW5OPc283g65QNIiLpZnkHRbnc=",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "bytes": 11358,
+      "kind": "source text",
+      "section": "Text 069",
+      "offset": 157941
+    },
+    {
+      "module": "cloud.google.com/go/auth/oauth2adapt",
+      "version": "v0.2.8",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/cloud.google.com/go/auth/oauth2adapt/@v/v0.2.8.zip",
+      "module_h1": "h1:keo8NaayQZ6wimpNSmW5OPc283g65QNIiLpZnkHRbnc=",
+      "sha256": "dc17e9c9beae80e8ada2d6228c94e7e5eed01608e5d828787c1b2b9ad3dd5c07",
+      "bytes": 29,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright 2023 Google LLC": [
+          "oauth2adapt.go"
+        ]
+      },
+      "section": "Text 034",
+      "offset": 102642
+    },
+    {
+      "module": "cloud.google.com/go/compute/metadata",
+      "version": "v0.9.0",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/cloud.google.com/go/compute/metadata/@v/v0.9.0.zip",
+      "module_h1": "h1:pDUj4QMoPejqq20dK0Pg2N4yG9zIkYGdBtwLoEkH9Zs=",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "bytes": 11358,
+      "kind": "source text",
+      "section": "Text 069",
+      "offset": 157941
+    },
+    {
+      "module": "cloud.google.com/go/compute/metadata",
+      "version": "v0.9.0",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/cloud.google.com/go/compute/metadata/@v/v0.9.0.zip",
+      "module_h1": "h1:pDUj4QMoPejqq20dK0Pg2N4yG9zIkYGdBtwLoEkH9Zs=",
+      "sha256": "34f49626ced954c66d936567508c27341d0e8a569b11569045069276adfe7528",
+      "bytes": 87,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright 2014 Google LLC": [
+          "metadata.go"
+        ],
+        "// Copyright 2021 Google LLC": [
+          "retry.go",
+          "retry_linux.go"
+        ],
+        "// Copyright 2024 Google LLC": [
+          "log.go",
+          "syscheck_linux.go"
+        ]
+      },
+      "section": "Text 021",
+      "offset": 90149
+    },
+    {
+      "module": "github.com/andybalholm/brotli",
+      "version": "v1.2.7",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/andybalholm/brotli/@v/v1.2.7.zip",
+      "module_h1": "h1:UgafRPGMam5ySHfRkhthMqOFA6IFoeF3D7mWIDLjG5A=",
+      "sha256": "3d180008e36922a4e8daec11c34c7af264fed5962d07924aea928c38e8663c94",
+      "bytes": 1084,
+      "kind": "source text",
+      "section": "Text 023",
+      "offset": 91891
+    },
+    {
+      "module": "github.com/bitly/go-simplejson",
+      "version": "v0.5.1",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/bitly/go-simplejson/@v/v0.5.1.zip",
+      "module_h1": "h1:xgwPbetQScXt1gh9BmoJ6j9JMr3TElvuIyjR8pgdoow=",
+      "sha256": "89807acf2309bd285f033404ee78581602f3cd9b819a16ac2f0e5f60ff4a473e",
+      "bytes": 1023,
+      "kind": "source text",
+      "section": "Text 008",
+      "offset": 61181
+    },
+    {
+      "module": "github.com/cenkalti/backoff/v4",
+      "version": "v4.3.0",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/cenkalti/backoff/v4/@v/v4.3.0.zip",
+      "module_h1": "h1:MyRJ/UdXutAwSAT+s3wNd7MfTIcy71VQueUuFK343L8=",
+      "sha256": "5c0476add4c38b55d0ed5ac11b85e00c38f26e1caee20dfe3ab58190103d1fbc",
+      "bytes": 1077,
+      "kind": "source text",
+      "section": "Text 035",
+      "offset": 103049
+    },
+    {
+      "module": "github.com/cespare/xxhash/v2",
+      "version": "v2.3.0",
+      "path": "LICENSE.txt",
+      "url": "https://proxy.golang.org/github.com/cespare/xxhash/v2/@v/v2.3.0.zip",
+      "module_h1": "h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=",
+      "sha256": "f566a9f97bacdaf00d9f21dd991e81dc11201c4e016c86b470799429a1c9a79c",
+      "bytes": 1068,
+      "kind": "source text",
+      "section": "Text 085",
+      "offset": 184963
+    },
+    {
+      "module": "github.com/charmbracelet/colorprofile",
+      "version": "v0.4.3",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/charmbracelet/colorprofile/@v/v0.4.3.zip",
+      "module_h1": "h1:QPa1IWkYI+AOB+fE+mg/5/4HRMZcaXex9t5KX76i20Q=",
+      "sha256": "57d6eeeb336030b89c0e0d12cf869f84b97a481cd00b350ef21fca995da5a39a",
+      "bytes": 1080,
+      "kind": "source text",
+      "section": "Text 033",
+      "offset": 101038
+    },
+    {
+      "module": "github.com/charmbracelet/ultraviolet",
+      "version": "v0.0.0-20260812204455-68fa937c71be",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/charmbracelet/ultraviolet/@v/v0.0.0-20260812204455-68fa937c71be.zip",
+      "module_h1": "h1:qEvkJy1sjJXP+yf8IH2o13NV+Rh4nIUHjaLNJ+pWxpI=",
+      "sha256": "8a77c755a1d1fbdc932e86f0449549121820b6f4cc1234b12fcfc8d38013c1de",
+      "bytes": 1075,
+      "kind": "source text",
+      "section": "Text 049",
+      "offset": 120435
+    },
+    {
+      "module": "github.com/charmbracelet/x/ansi",
+      "version": "v0.11.8",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/charmbracelet/x/ansi/@v/v0.11.8.zip",
+      "module_h1": "h1:JMFwp0CgDC2+jcOB162HH5k7I3FVbgFSMMYg7dSPBQQ=",
+      "sha256": "0baa4a5942a801d93f4050d2bc0039d8c037105fcd335230d118eec99a11782b",
+      "bytes": 1076,
+      "kind": "source text",
+      "section": "Text 003",
+      "offset": 4070
+    },
+    {
+      "module": "github.com/charmbracelet/x/term",
+      "version": "v0.2.2",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/charmbracelet/x/term/@v/v0.2.2.zip",
+      "module_h1": "h1:xVRT/S2ZcKdhhOuSP4t5cLi5o+JxklsoEObBSgfgZRk=",
+      "sha256": "0baa4a5942a801d93f4050d2bc0039d8c037105fcd335230d118eec99a11782b",
+      "bytes": 1076,
+      "kind": "source text",
+      "section": "Text 003",
+      "offset": 4070
+    },
+    {
+      "module": "github.com/charmbracelet/x/termios",
+      "version": "v0.1.1",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/charmbracelet/x/termios/@v/v0.1.1.zip",
+      "module_h1": "h1:o3Q2bT8eqzGnGPOYheoYS8eEleT5ZVNYNy8JawjaNZY=",
+      "sha256": "0baa4a5942a801d93f4050d2bc0039d8c037105fcd335230d118eec99a11782b",
+      "bytes": 1076,
+      "kind": "source text",
+      "section": "Text 003",
+      "offset": 4070
+    },
+    {
+      "module": "github.com/clipperhouse/displaywidth",
+      "version": "v0.11.0",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/clipperhouse/displaywidth/@v/v0.11.0.zip",
+      "module_h1": "h1:lBc6kY44VFw+TDx4I8opi/EtL9m20WSEFgwIwO+UVM8=",
+      "sha256": "fcdcc889a11c39c73d36019b838af41b418eb7811af12b746ace40c3074bb96c",
+      "bytes": 1069,
+      "kind": "source text",
+      "section": "Text 089",
+      "offset": 190209
+    },
+    {
+      "module": "github.com/clipperhouse/uax29/v2",
+      "version": "v2.7.0",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/clipperhouse/uax29/v2/@v/v2.7.0.zip",
+      "module_h1": "h1:+gs4oBZ2gPfVrKPthwbMzWZDaAFPGYK72F0NJv2v7Vk=",
+      "sha256": "07e9e3daaccc707c9b7d535ed1405a65d37919fdd42197fe55e68820e974688c",
+      "bytes": 1069,
+      "kind": "source text",
+      "section": "Text 001",
+      "offset": 846
+    },
+    {
+      "module": "github.com/coder/websocket",
+      "version": "v1.8.15",
+      "path": "LICENSE.txt",
+      "url": "https://proxy.golang.org/github.com/coder/websocket/@v/v1.8.15.zip",
+      "module_h1": "h1:6B2JPeOGlpff2Uz6vOEH1Vzpi0iUz20A+lPVhPHtNUA=",
+      "sha256": "cc0975a5f6305145bdd7b41ce9479632fdac3870e6ac4281f28017f18c767c4e",
+      "bytes": 720,
+      "kind": "source text",
+      "section": "Text 068",
+      "offset": 156523
+    },
+    {
+      "module": "github.com/devgianlu/go-librespot",
+      "version": "v0.9.1",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/devgianlu/go-librespot/@v/v0.9.1.zip",
+      "module_h1": "h1:cgHB0Qo3GgqBe+8iZ1qw+kPJVp1s0obTlTXMdPsgb0U=",
+      "sha256": "0f54dfc78e7aafc99567986887d738750466d96bb0af297eafba4be8e7543342",
+      "bytes": 35134,
+      "kind": "source text",
+      "section": "Text 006",
+      "offset": 23877
+    },
+    {
+      "module": "github.com/devgianlu/shannon",
+      "version": "v0.0.0-20230613115856-82ec90b7fa7e",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/devgianlu/shannon/@v/v0.0.0-20230613115856-82ec90b7fa7e.zip",
+      "module_h1": "h1:OoETp+L//8ZDtd5BWKaogHQjgA104yF4a2yqjfaG3mE=",
+      "sha256": "faa7f75fb58e03a20d74203d682fb01b796665f77918cddd5667ef0c74902131",
+      "bytes": 1068,
+      "kind": "source text",
+      "section": "Text 087",
+      "offset": 187047
+    },
+    {
+      "module": "github.com/dhowden/tag",
+      "version": "v0.0.0-20240417053706-3d75831295e8",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/dhowden/tag/@v/v0.0.0-20240417053706-3d75831295e8.zip",
+      "module_h1": "h1:OtSeLS5y0Uy01jaKK4mA/WVIYtpzVm63vLVAPzJXigg=",
+      "sha256": "dca9103f610a5e0d49bc95f2a11e0bac3502ef0483637a04979645d9e4b3bb40",
+      "bytes": 1291,
+      "kind": "source text",
+      "section": "Text 073",
+      "offset": 171741
+    },
+    {
+      "module": "github.com/dhowden/tag",
+      "version": "v0.0.0-20240417053706-3d75831295e8",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/github.com/dhowden/tag/@v/v0.0.0-20240417053706-3d75831295e8.zip",
+      "module_h1": "h1:OtSeLS5y0Uy01jaKK4mA/WVIYtpzVm63vLVAPzJXigg=",
+      "sha256": "e445d20d248a7ccf5d3fdc62b0ebebcf2ddc0329148c2015094bdf61a5b2ce4a",
+      "bytes": 32,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright 2015, David Howden": [
+          "dsf.go",
+          "flac.go",
+          "id3v1.go",
+          "id3v2.go",
+          "id3v2frames.go",
+          "id3v2metadata.go",
+          "mp4.go",
+          "ogg.go",
+          "tag.go",
+          "util.go",
+          "vorbis.go"
+        ]
+      },
+      "section": "Text 076",
+      "offset": 175567
+    },
+    {
+      "module": "github.com/dlclark/regexp2/v2",
+      "version": "v2.7.1",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/dlclark/regexp2/v2/@v/v2.7.1.zip",
+      "module_h1": "h1:yqDtwI1ptXXvEUNpYTk2lad4jLtAcKqkzepn4savSk4=",
+      "sha256": "9be5d04bb4d706914d5bf943710da4afeb42048f7c529902fb57c82762a991a9",
+      "bytes": 1072,
+      "kind": "source text",
+      "section": "Text 054",
+      "offset": 128427
+    },
+    {
+      "module": "github.com/dop251/goja",
+      "version": "v0.0.0-20260826204918-8f1c0696a37b",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/dop251/goja/@v/v0.0.0-20260826204918-8f1c0696a37b.zip",
+      "module_h1": "h1:mYHoARbZ0mUYXXsaNeHoDFBft3TK4PpFEe3KU7hdDgg=",
+      "sha256": "8a1266c1dd7d22027455bea83b92087f606c8d5fc701b269a8411f008ed49a99",
+      "bytes": 1090,
+      "kind": "source text",
+      "section": "Text 048",
+      "offset": 119020
+    },
+    {
+      "module": "github.com/dop251/goja",
+      "version": "v0.0.0-20260826204918-8f1c0696a37b",
+      "path": "ftoa/LICENSE_LUCENE",
+      "url": "https://proxy.golang.org/github.com/dop251/goja/@v/v0.0.0-20260826204918-8f1c0696a37b.zip",
+      "module_h1": "h1:mYHoARbZ0mUYXXsaNeHoDFBft3TK4PpFEe3KU7hdDgg=",
+      "sha256": "eb4df27f95a096a23d88e567331a4bee5590d22185942a1b0456197e29d03e59",
+      "bytes": 1028,
+      "kind": "source text",
+      "section": "Text 079",
+      "offset": 178943
+    },
+    {
+      "module": "github.com/dop251/goja",
+      "version": "v0.0.0-20260826204918-8f1c0696a37b",
+      "path": "ftoa/internal/fast/LICENSE_V8",
+      "url": "https://proxy.golang.org/github.com/dop251/goja/@v/v0.0.0-20260826204918-8f1c0696a37b.zip",
+      "module_h1": "h1:mYHoARbZ0mUYXXsaNeHoDFBft3TK4PpFEe3KU7hdDgg=",
+      "sha256": "a1ecb1a1e1d57c90ccb2455259db836c68942d83a885091bd4375a52e74bec9d",
+      "bytes": 1522,
+      "kind": "source text",
+      "section": "Text 056",
+      "offset": 130529
+    },
+    {
+      "module": "github.com/ebitengine/oto/v3",
+      "version": "v3.4.1",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/ebitengine/oto/v3/@v/v3.4.1.zip",
+      "module_h1": "h1:uX7B03/P2P8oWiSI5HXjyjSP4besYn3V9nDk3cR+eIY=",
+      "sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1",
+      "bytes": 11357,
+      "kind": "source text",
+      "section": "Text 063",
+      "offset": 141019
+    },
+    {
+      "module": "github.com/ebitengine/oto/v3",
+      "version": "v3.4.1",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/github.com/ebitengine/oto/v3/@v/v3.4.1.zip",
+      "module_h1": "h1:uX7B03/P2P8oWiSI5HXjyjSP4besYn3V9nDk3cR+eIY=",
+      "sha256": "60058463d77ab0e147e835fd5c47327a5f60adb67c3cb3c5b19acf5c9050926f",
+      "bytes": 34,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright 2021 The Oto Authors": [
+          "context.go",
+          "driver_unix.go",
+          "internal/mux/mux.go",
+          "player.go"
+        ]
+      },
+      "section": "Text 036",
+      "offset": 104448
+    },
+    {
+      "module": "github.com/go-faster/errors",
+      "version": "v0.8.0",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/go-faster/errors/@v/v0.8.0.zip",
+      "module_h1": "h1:9T9eJrM+72dFk7n4DfhuaDDe6cyuFCSW2oNUkN77Yqc=",
+      "sha256": "2d36597f7117c38b006835ae7f537487207d8ec407aa9d9980794b2030cbc067",
+      "bytes": 1479,
+      "kind": "source text",
+      "section": "Text 018",
+      "offset": 85604
+    },
+    {
+      "module": "github.com/go-faster/errors",
+      "version": "v0.8.0",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/github.com/go-faster/errors/@v/v0.8.0.zip",
+      "module_h1": "h1:9T9eJrM+72dFk7n4DfhuaDDe6cyuFCSW2oNUkN77Yqc=",
+      "sha256": "775b2610a36ddadbfdacf77df82399291f9c65c3bf30091dca34ad13bd8968fb",
+      "bytes": 110,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright 2011 The Go Authors. All rights reserved.": [
+          "errors.go"
+        ],
+        "// Copyright 2018 The Go Authors. All rights reserved.": [
+          "adaptor.go",
+          "format.go",
+          "frame.go",
+          "wrap.go"
+        ]
+      },
+      "section": "Text 041",
+      "offset": 110265
+    },
+    {
+      "module": "github.com/go-faster/jx",
+      "version": "v1.2.0",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/go-faster/jx/@v/v1.2.0.zip",
+      "module_h1": "h1:T2YHJPrFaYu21fJtUxC9GzmluKu8rVIFDwwGBKTDseI=",
+      "sha256": "3247931083f058b00760a3c32a9ca0962c05e4d562ad2ffcc1753451fa8d4486",
+      "bytes": 1070,
+      "kind": "source text",
+      "section": "Text 019",
+      "offset": 87367
+    },
+    {
+      "module": "github.com/go-faster/jx",
+      "version": "v1.2.0",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/github.com/go-faster/jx/@v/v1.2.0.zip",
+      "module_h1": "h1:T2YHJPrFaYu21fJtUxC9GzmluKu8rVIFDwwGBKTDseI=",
+      "sha256": "30d3c86e0eea3afe07c2e558cc03cb1869bfc5e096adfff48b858c457668cde5",
+      "bytes": 55,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright 2009 The Go Authors. All rights reserved.": [
+          "w_float_bits.go"
+        ]
+      },
+      "section": "Text 024",
+      "offset": 93405
+    },
+    {
+      "module": "github.com/go-faster/xor",
+      "version": "v1.0.0",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/go-faster/xor/@v/v1.0.0.zip",
+      "module_h1": "h1:2o8vTOgErSGHP3/7XwA5ib1FTtUsNtwCoLLBjl31X38=",
+      "sha256": "2d36597f7117c38b006835ae7f537487207d8ec407aa9d9980794b2030cbc067",
+      "bytes": 1479,
+      "kind": "source text",
+      "section": "Text 018",
+      "offset": 85604
+    },
+    {
+      "module": "github.com/go-faster/xor",
+      "version": "v1.0.0",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/github.com/go-faster/xor/@v/v1.0.0.zip",
+      "module_h1": "h1:2o8vTOgErSGHP3/7XwA5ib1FTtUsNtwCoLLBjl31X38=",
+      "sha256": "e1854e24519d69156af074451f7f472c21c54f69653457085b91023d3a44b923",
+      "bytes": 55,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright 2018 The Go Authors. All rights reserved.": [
+          "xor_amd64.go",
+          "xor_amd64.s"
+        ]
+      },
+      "section": "Text 041",
+      "offset": 110320
+    },
+    {
+      "module": "github.com/go-logr/logr",
+      "version": "v1.4.4",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/go-logr/logr/@v/v1.4.4.zip",
+      "module_h1": "h1:tG4xh9yMsRCAiodLVTxyrkzSZ9+o0L1Kg/+cPVcbP/8=",
+      "sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1",
+      "bytes": 11357,
+      "kind": "source text",
+      "section": "Text 063",
+      "offset": 141019
+    },
+    {
+      "module": "github.com/go-logr/logr",
+      "version": "v1.4.4",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/github.com/go-logr/logr/@v/v1.4.4.zip",
+      "module_h1": "h1:tG4xh9yMsRCAiodLVTxyrkzSZ9+o0L1Kg/+cPVcbP/8=",
+      "sha256": "249c44659710683014dd8f938c9ad02cfb9a5e871e01b23149959f2330f3ed16",
+      "bytes": 66,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "Copyright 2019 The logr Authors.": [
+          "logr.go"
+        ],
+        "Copyright 2021 The logr Authors.": [
+          "funcr/funcr.go"
+        ]
+      },
+      "section": "Text 015",
+      "offset": 83050
+    },
+    {
+      "module": "github.com/go-logr/stdr",
+      "version": "v1.2.2",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/go-logr/stdr/@v/v1.2.2.zip",
+      "module_h1": "h1:hSWxHoqTgW2S2qGc0LTAI563KZ5YKYRhT3MFKZMbjag=",
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "bytes": 11357,
+      "kind": "source text",
+      "section": "Text 010",
+      "offset": 63898
+    },
+    {
+      "module": "github.com/go-logr/stdr",
+      "version": "v1.2.2",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/github.com/go-logr/stdr/@v/v1.2.2.zip",
+      "module_h1": "h1:hSWxHoqTgW2S2qGc0LTAI563KZ5YKYRhT3MFKZMbjag=",
+      "sha256": "76c2bc1158de4292e71ab8e8e396b934d8cd0dbd7efc7cdd6b099d24adc1bf0c",
+      "bytes": 33,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "Copyright 2019 The logr Authors.": [
+          "stdr.go"
+        ]
+      },
+      "section": "Text 015",
+      "offset": 83050
+    },
+    {
+      "module": "github.com/go-sourcemap/sourcemap",
+      "version": "v2.1.4+incompatible",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/go-sourcemap/sourcemap/@v/v2.1.4+incompatible.zip",
+      "module_h1": "h1:a+iTbH5auLKxaNwQFg0B+TCYl6lbukKPc7b5x0n1s6Q=",
+      "sha256": "92e002c4f78b8f80445cf72c4bd33d78e4998371a5eff80886c5648a7974a19f",
+      "bytes": 1331,
+      "kind": "source text",
+      "section": "Text 053",
+      "offset": 126806
+    },
+    {
+      "module": "github.com/godbus/dbus/v5",
+      "version": "v5.2.2",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/godbus/dbus/v5/@v/v5.2.2.zip",
+      "module_h1": "h1:TUR3TgtSVDmjiXOgAAyaZbYmIeP3DPkld3jgKGV8mXQ=",
+      "sha256": "e4646a82a976369d7ae8f6ed5c11d35dc0af18433a8ccc24c85b459ad8b95128",
+      "bytes": 1328,
+      "kind": "source text",
+      "section": "Text 077",
+      "offset": 175885
+    },
+    {
+      "module": "github.com/google/pprof",
+      "version": "v0.0.0-20260830191439-4932ad3515ea",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/google/pprof/@v/v0.0.0-20260830191439-4932ad3515ea.zip",
+      "module_h1": "h1:nItRa0lOM9n5+PZiNPdBI2RjLCZoBrhWqKDJuB3+gSU=",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "bytes": 11358,
+      "kind": "source text",
+      "section": "Text 069",
+      "offset": 157941
+    },
+    {
+      "module": "github.com/google/pprof",
+      "version": "v0.0.0-20260830191439-4932ad3515ea",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/github.com/google/pprof/@v/v0.0.0-20260830191439-4932ad3515ea.zip",
+      "module_h1": "h1:nItRa0lOM9n5+PZiNPdBI2RjLCZoBrhWqKDJuB3+gSU=",
+      "sha256": "f41c3bc0efd8d2cb698c9383945480ba5ca71da85424fb470af8d5cced414030",
+      "bytes": 51,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright 2014 Google Inc. All Rights Reserved.": [
+          "profile/legacy_java_profile.go",
+          "profile/legacy_profile.go",
+          "profile/profile.go",
+          "profile/prune.go"
+        ]
+      },
+      "section": "Text 084",
+      "offset": 184547
+    },
+    {
+      "module": "github.com/google/s2a-go",
+      "version": "v0.1.9",
+      "path": "LICENSE.md",
+      "url": "https://proxy.golang.org/github.com/google/s2a-go/@v/v0.1.9.zip",
+      "module_h1": "h1:LGD7gtMgezd8a/Xak7mEWL0PjoTQFvpRudN895yqKW0=",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "bytes": 11358,
+      "kind": "source text",
+      "section": "Text 069",
+      "offset": 157941
+    },
+    {
+      "module": "github.com/google/s2a-go",
+      "version": "v0.1.9",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/github.com/google/s2a-go/@v/v0.1.9.zip",
+      "module_h1": "h1:LGD7gtMgezd8a/Xak7mEWL0PjoTQFvpRudN895yqKW0=",
+      "sha256": "d9dcfefa0a09fda9c904977ea15ac759e68d83d82b44fbeef9efc694243263f5",
+      "bytes": 142,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "* Copyright 2021 Google LLC": [
+          "internal/handshaker/service/service.go",
+          "internal/record/record.go",
+          "internal/tokenmanager/tokenmanager.go",
+          "s2a.go"
+        ],
+        "* Copyright 2022 Google LLC": [
+          "internal/v2/certverifier/certverifier.go",
+          "internal/v2/remotesigner/remotesigner.go",
+          "internal/v2/s2av2.go",
+          "internal/v2/tlsconfigstore/tlsconfigstore.go"
+        ],
+        "* Copyright 2023 Google LLC": [
+          "retry/retry.go"
+        ],
+        "// Copyright 2021 Google LLC": [
+          "internal/proto/common_go_proto/common.pb.go",
+          "internal/proto/s2a_context_go_proto/s2a_context.pb.go",
+          "internal/proto/s2a_go_proto/s2a.pb.go"
+        ],
+        "// Copyright 2022 Google LLC": [
+          "internal/proto/v2/common_go_proto/common.pb.go",
+          "internal/proto/v2/s2a_context_go_proto/s2a_context.pb.go",
+          "internal/proto/v2/s2a_go_proto/s2a.pb.go",
+          "internal/proto/v2/s2a_go_proto/s2a_grpc.pb.go"
+        ]
+      },
+      "section": "Text 072",
+      "offset": 171288
+    },
+    {
+      "module": "github.com/google/uuid",
+      "version": "v1.6.0",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/google/uuid/@v/v1.6.0.zip",
+      "module_h1": "h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=",
+      "sha256": "0a8d61ed3cbfd5312326e8126c31ce9c627a283adc99131b56896d29ada04b2d",
+      "bytes": 1480,
+      "kind": "source text",
+      "section": "Text 002",
+      "offset": 2198
+    },
+    {
+      "module": "github.com/google/uuid",
+      "version": "v1.6.0",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/github.com/google/uuid/@v/v1.6.0.zip",
+      "module_h1": "h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=",
+      "sha256": "c3fbe23613cc7f723e0584e2f79b998cdcddfedd72db79ebe5334a540dc8287f",
+      "bytes": 104,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright 2016 Google Inc.  All rights reserved.": [
+          "hash.go",
+          "util.go",
+          "version4.go"
+        ],
+        "// Copyright 2018 Google Inc.  All rights reserved.": [
+          "uuid.go"
+        ]
+      },
+      "section": "Text 067",
+      "offset": 156127
+    },
+    {
+      "module": "github.com/googleapis/enterprise-certificate-proxy",
+      "version": "v0.3.21",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/googleapis/enterprise-certificate-proxy/@v/v0.3.21.zip",
+      "module_h1": "h1:OFdQ3tnCX/zaQ0Cedur3D3z7kI6HiLX9g3TiAN4/DFU=",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "bytes": 11358,
+      "kind": "source text",
+      "section": "Text 069",
+      "offset": 157941
+    },
+    {
+      "module": "github.com/googleapis/enterprise-certificate-proxy",
+      "version": "v0.3.21",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/github.com/googleapis/enterprise-certificate-proxy/@v/v0.3.21.zip",
+      "module_h1": "h1:OFdQ3tnCX/zaQ0Cedur3D3z7kI6HiLX9g3TiAN4/DFU=",
+      "sha256": "226b6c0474269e1fda78e66a902d790e1cf27ab9bcc0776753e434567ba55beb",
+      "bytes": 30,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright 2022 Google LLC.": [
+          "client/client.go",
+          "client/util/util.go"
+        ]
+      },
+      "section": "Text 009",
+      "offset": 63144
+    },
+    {
+      "module": "github.com/googleapis/gax-go/v2",
+      "version": "v2.24.0",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/googleapis/gax-go/v2/@v/v2.24.0.zip",
+      "module_h1": "h1:myMaPYyF9MecEmvQqMqomIwn9t/4KCZN9qnwsS76wlg=",
+      "sha256": "b95218cd9607855a6536384c0262922b30a0c2bf56e4ced790240f3a3bac4722",
+      "bytes": 1471,
+      "kind": "source text",
+      "section": "Text 065",
+      "offset": 153696
+    },
+    {
+      "module": "github.com/googleapis/gax-go/v2",
+      "version": "v2.24.0",
+      "path": "apierror/apierror.go [leading full licence comment]",
+      "url": "https://proxy.golang.org/github.com/googleapis/gax-go/v2/@v/v2.24.0.zip",
+      "module_h1": "h1:myMaPYyF9MecEmvQqMqomIwn9t/4KCZN9qnwsS76wlg=",
+      "sha256": "a9cba5947a3a2a1088869d0f6a19c1253d13737dcaff71afd86576bd48fb8b4a",
+      "bytes": 1475,
+      "kind": "source text",
+      "section": "Text 058",
+      "offset": 133747
+    },
+    {
+      "module": "github.com/googleapis/gax-go/v2",
+      "version": "v2.24.0",
+      "path": "callctx/callctx.go [leading full licence comment]",
+      "url": "https://proxy.golang.org/github.com/googleapis/gax-go/v2/@v/v2.24.0.zip",
+      "module_h1": "h1:myMaPYyF9MecEmvQqMqomIwn9t/4KCZN9qnwsS76wlg=",
+      "sha256": "84b7cd7efaa5e077404d6c9e9ecab919cbb61b1a95faaacb1ac462771775eae0",
+      "bytes": 1475,
+      "kind": "source text",
+      "section": "Text 043",
+      "offset": 111213
+    },
+    {
+      "module": "github.com/googleapis/gax-go/v2",
+      "version": "v2.24.0",
+      "path": "content_type.go [leading full licence comment]",
+      "url": "https://proxy.golang.org/github.com/googleapis/gax-go/v2/@v/v2.24.0.zip",
+      "module_h1": "h1:myMaPYyF9MecEmvQqMqomIwn9t/4KCZN9qnwsS76wlg=",
+      "sha256": "af403416a1528b7d79efb4e280021adf9b302f2f6e29b5855f04bedb581e3cee",
+      "bytes": 1475,
+      "kind": "source text",
+      "section": "Text 062",
+      "offset": 139169
+    },
+    {
+      "module": "github.com/googleapis/gax-go/v2",
+      "version": "v2.24.0",
+      "path": "feature.go [leading full licence comment]",
+      "url": "https://proxy.golang.org/github.com/googleapis/gax-go/v2/@v/v2.24.0.zip",
+      "module_h1": "h1:myMaPYyF9MecEmvQqMqomIwn9t/4KCZN9qnwsS76wlg=",
+      "sha256": "69c7247a0705b5a177565882ee41cc9f3a314cdddfe78ecfbb8b9a5e2e708bde",
+      "bytes": 1475,
+      "kind": "source text",
+      "section": "Text 039",
+      "offset": 107036
+    },
+    {
+      "module": "github.com/googleapis/gax-go/v2",
+      "version": "v2.24.0",
+      "path": "header.go [leading full licence comment]",
+      "url": "https://proxy.golang.org/github.com/googleapis/gax-go/v2/@v/v2.24.0.zip",
+      "module_h1": "h1:myMaPYyF9MecEmvQqMqomIwn9t/4KCZN9qnwsS76wlg=",
+      "sha256": "f1e1ea5480d70cb80129ee0945ee97a50c9b2541d46cb45317459b5fd56f463f",
+      "bytes": 1475,
+      "kind": "source text",
+      "section": "Text 082",
+      "offset": 182179
+    },
+    {
+      "module": "github.com/googleapis/gax-go/v2",
+      "version": "v2.24.0",
+      "path": "internallog/internal/internal.go [leading full licence comment]",
+      "url": "https://proxy.golang.org/github.com/googleapis/gax-go/v2/@v/v2.24.0.zip",
+      "module_h1": "h1:myMaPYyF9MecEmvQqMqomIwn9t/4KCZN9qnwsS76wlg=",
+      "sha256": "3fbfd74a0d78ed9a4f2c3809a96ca26b617ec8c8f495998ea5a2a295314e81aa",
+      "bytes": 1475,
+      "kind": "source text",
+      "section": "Text 027",
+      "offset": 95814
+    },
+    {
+      "module": "github.com/googleapis/gax-go/v2",
+      "version": "v2.24.0",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/github.com/googleapis/gax-go/v2/@v/v2.24.0.zip",
+      "module_h1": "h1:myMaPYyF9MecEmvQqMqomIwn9t/4KCZN9qnwsS76wlg=",
+      "sha256": "ff528b3fce0389214094ca3d064b065b628f8202951cc6d19e27e6f23576d86d",
+      "bytes": 380,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright 2016, Google Inc.": [
+          "call_option.go"
+        ],
+        "// Copyright 2018, Google Inc.": [
+          "header.go"
+        ],
+        "// Copyright 2021 Google LLC": [
+          "apierror/internal/proto/error.pb.go"
+        ],
+        "// Copyright 2021, Google Inc.": [
+          "apierror/apierror.go"
+        ],
+        "// Copyright 2022 Google LLC": [
+          "apierror/internal/proto/custom_error.pb.go"
+        ],
+        "// Copyright 2022, Google Inc.": [
+          "content_type.go"
+        ],
+        "// Copyright 2023, Google Inc.": [
+          "callctx/callctx.go"
+        ],
+        "// Copyright 2024, Google Inc.": [
+          "internallog/internal/internal.go",
+          "internallog/internallog.go"
+        ],
+        "// Copyright 2025, Google Inc.": [
+          "feature.go"
+        ],
+        "// Copyright 2026, Google Inc.": [
+          "telemetry.go"
+        ],
+        "// copyright notice, this list of conditions and the following disclaimer": [
+          "apierror/apierror.go",
+          "call_option.go",
+          "callctx/callctx.go",
+          "content_type.go",
+          "feature.go",
+          "header.go",
+          "internallog/internal/internal.go",
+          "internallog/internallog.go",
+          "telemetry.go"
+        ]
+      },
+      "section": "Text 090",
+      "offset": 191604
+    },
+    {
+      "module": "github.com/googleapis/gax-go/v2",
+      "version": "v2.24.0",
+      "path": "telemetry.go [leading full licence comment]",
+      "url": "https://proxy.golang.org/github.com/googleapis/gax-go/v2/@v/v2.24.0.zip",
+      "module_h1": "h1:myMaPYyF9MecEmvQqMqomIwn9t/4KCZN9qnwsS76wlg=",
+      "sha256": "23e3e529715b00848e95a5befa530f500d63e5bd044b9e21ea513398d56f2734",
+      "bytes": 1475,
+      "kind": "source text",
+      "section": "Text 014",
+      "offset": 81185
+    },
+    {
+      "module": "github.com/gopxl/beep/v2",
+      "version": "v2.1.1",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/gopxl/beep/v2/@v/v2.1.1.zip",
+      "module_h1": "h1:6FYIYMm2qPAdWkjX+7xwKrViS1x0Po5kDMdRkq8NVbU=",
+      "sha256": "ae34cb138b18131bfab5b22e59758e4e6c4c5bfd1f19d6f28fd664678f7eed32",
+      "bytes": 1070,
+      "kind": "source text",
+      "section": "Text 061",
+      "offset": 137767
+    },
+    {
+      "module": "github.com/gotd/ige",
+      "version": "v0.3.0",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/gotd/ige/@v/v0.3.0.zip",
+      "module_h1": "h1:4f6LEHWsVDLBG0bT9wWG2/9TZb5aWm265G8ZlTXmRRU=",
+      "sha256": "0f42475dcfcc51b91f0a93c40991f5c2cc6ef1412a3fba539b92615aa1d8947e",
+      "bytes": 1069,
+      "kind": "source text",
+      "section": "Text 005",
+      "offset": 22514
+    },
+    {
+      "module": "github.com/gotd/log",
+      "version": "v0.1.0",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/gotd/log/@v/v0.1.0.zip",
+      "module_h1": "h1:4LJUEvafD1xtBwx2QkrlzFnRgbYXTlWqJPDi8BvrLbU=",
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "bytes": 11357,
+      "kind": "source text",
+      "section": "Text 010",
+      "offset": 63898
+    },
+    {
+      "module": "github.com/gotd/td",
+      "version": "v0.162.0",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/gotd/td/@v/v0.162.0.zip",
+      "module_h1": "h1:3pUzBsEbb0I5QquvfSkXihkVBXI+QTtdd/upijjUbkw=",
+      "sha256": "1eeb0cd3ebdaf6d391806a704a97c4b0bf3714d7b33a52398345c335821e49ad",
+      "bytes": 1074,
+      "kind": "source text",
+      "section": "Text 012",
+      "offset": 78421
+    },
+    {
+      "module": "github.com/hajimehoshi/go-mp3",
+      "version": "v0.3.4",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/hajimehoshi/go-mp3/@v/v0.3.4.zip",
+      "module_h1": "h1:NUP7pBYH8OguP4diaTZ9wJbUbk3tC0KlfzsEpWmYj68=",
+      "sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1",
+      "bytes": 11357,
+      "kind": "source text",
+      "section": "Text 063",
+      "offset": 141019
+    },
+    {
+      "module": "github.com/hajimehoshi/go-mp3",
+      "version": "v0.3.4",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/github.com/hajimehoshi/go-mp3/@v/v0.3.4.zip",
+      "module_h1": "h1:NUP7pBYH8OguP4diaTZ9wJbUbk3tC0KlfzsEpWmYj68=",
+      "sha256": "50de1dcc720af3078f48f05df70528e74e22bf4bce06d889bb81ffda8e50ea73",
+      "bytes": 31,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright 2017 Hajime Hoshi": [
+          "decode.go",
+          "internal/bits/bits.go",
+          "internal/consts/consts.go",
+          "internal/frame/frame.go",
+          "internal/frameheader/frameheader.go",
+          "internal/huffman/huffman.go",
+          "internal/imdct/imdct.go",
+          "internal/maindata/huffman.go",
+          "internal/maindata/maindata.go",
+          "internal/sideinfo/sideinfo.go",
+          "source.go"
+        ]
+      },
+      "section": "Text 031",
+      "offset": 100294
+    },
+    {
+      "module": "github.com/jfreymuth/oggvorbis",
+      "version": "v1.0.5",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/jfreymuth/oggvorbis/@v/v1.0.5.zip",
+      "module_h1": "h1:u+Ck+R0eLSRhgq8WTmffYnrVtSztJcYrl588DM4e3kQ=",
+      "sha256": "e833f898bbaf0633803636011c6e5bfc5e22d1d822dc7fb62517c8dcec82f123",
+      "bytes": 1072,
+      "kind": "source text",
+      "section": "Text 078",
+      "offset": 177548
+    },
+    {
+      "module": "github.com/jfreymuth/pulse",
+      "version": "v0.1.3",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/jfreymuth/pulse/@v/v0.1.3.zip",
+      "module_h1": "h1:bc5TdxiB8E+2INnFjFWWgyfgXtz2IyNNNCX+Wt/ZD14=",
+      "sha256": "760c950667c30badc8b40f809a7640cffc793becb7f57d86b07d38806e6b85d8",
+      "bytes": 1072,
+      "kind": "source text",
+      "section": "Text 040",
+      "offset": 108798
+    },
+    {
+      "module": "github.com/jfreymuth/vorbis",
+      "version": "v1.0.2",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/jfreymuth/vorbis/@v/v1.0.2.zip",
+      "module_h1": "h1:m1xH6+ZI4thH927pgKD8JOH4eaGRm18rEE9/0WKjvNE=",
+      "sha256": "e833f898bbaf0633803636011c6e5bfc5e22d1d822dc7fb62517c8dcec82f123",
+      "bytes": 1072,
+      "kind": "source text",
+      "section": "Text 078",
+      "offset": 177548
+    },
+    {
+      "module": "github.com/kkdai/youtube/v2",
+      "version": "v2.10.6",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/kkdai/youtube/v2/@v/v2.10.6.zip",
+      "module_h1": "h1:4sKaX6GtjbsDRnPINrf2rtBIxRKz5eXQZ5ccUVPjkyg=",
+      "sha256": "89cba335e960ae58c8d1a4073b370bba385730c69490d5ba9dde669e123ae654",
+      "bytes": 1076,
+      "kind": "source text",
+      "section": "Text 047",
+      "offset": 117633
+    },
+    {
+      "module": "github.com/klauspost/compress",
+      "version": "v1.20.2",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/klauspost/compress/@v/v1.20.2.zip",
+      "module_h1": "h1:v5tiZvm1KGLyg5d5oXdXe3lsSPrbEUiKoXGia//I7Qo=",
+      "sha256": "0d9e582ee4bff57bf1189c9e514e6da7ce277f9cd3bc2d488b22fbb39a6d87cf",
+      "bytes": 16733,
+      "kind": "source text",
+      "section": "Text 004",
+      "offset": 5501
+    },
+    {
+      "module": "github.com/klauspost/compress",
+      "version": "v1.20.2",
+      "path": "fse/fse.go [attribution header]",
+      "url": "https://proxy.golang.org/github.com/klauspost/compress/@v/v1.20.2.zip",
+      "module_h1": "h1:v5tiZvm1KGLyg5d5oXdXe3lsSPrbEUiKoXGia//I7Qo=",
+      "sha256": "f1f605fac83db7cae968994f04b08b909457ee11724d260bb8e59d69c4af27cd",
+      "bytes": 233,
+      "kind": "source text",
+      "section": "Text 083",
+      "offset": 183969
+    },
+    {
+      "module": "github.com/klauspost/compress",
+      "version": "v1.20.2",
+      "path": "internal/snapref/LICENSE",
+      "url": "https://proxy.golang.org/github.com/klauspost/compress/@v/v1.20.2.zip",
+      "module_h1": "h1:v5tiZvm1KGLyg5d5oXdXe3lsSPrbEUiKoXGia//I7Qo=",
+      "sha256": "f69f157b0be75da373605dbc8bbf142e8924ee82d8f44f11bcaf351335bf98cf",
+      "bytes": 1486,
+      "kind": "source text",
+      "section": "Text 004",
+      "offset": 19631
+    },
+    {
+      "module": "github.com/klauspost/compress",
+      "version": "v1.20.2",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/github.com/klauspost/compress/@v/v1.20.2.zip",
+      "module_h1": "h1:v5tiZvm1KGLyg5d5oXdXe3lsSPrbEUiKoXGia//I7Qo=",
+      "sha256": "3dc0c32b07e22d91d8535648100a8ff658add6b28c57a6e809dae0d3bd0ae957",
+      "bytes": 363,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright (c) 2015 Klaus Post": [
+          "flate/deflate.go"
+        ],
+        "// Copyright 2009 The Go Authors. All rights reserved.": [
+          "flate/deflate.go",
+          "flate/huffman_bit_writer.go",
+          "flate/huffman_code.go",
+          "flate/inflate.go",
+          "flate/token.go",
+          "gzip/gunzip.go"
+        ],
+        "// Copyright 2010 The Go Authors. All rights reserved.": [
+          "gzip/gzip.go"
+        ],
+        "// Copyright 2011 The Snappy-Go Authors. All rights reserved.": [
+          "flate/fast_encoder.go",
+          "internal/snapref/snappy.go"
+        ],
+        "// Copyright 2016 The Go Authors. All rights reserved.": [
+          "flate/dict_decoder.go"
+        ],
+        "// Copyright 2018 Klaus Post. All rights reserved.": [
+          "fse/bitreader.go",
+          "fse/bitwriter.go",
+          "fse/bytereader.go",
+          "fse/compress.go",
+          "fse/fse.go",
+          "huff0/bitreader.go"
+        ],
+        "// Copyright 2019+ Klaus Post. All rights reserved.": [
+          "flate/matchlen_generic.go",
+          "zstd/bitreader.go",
+          "zstd/blockdec.go",
+          "zstd/bytebuf.go",
+          "zstd/bytereader.go",
+          "zstd/decoder.go",
+          "zstd/decoder_options.go",
+          "zstd/framedec.go",
+          "zstd/fse_decoder.go",
+          "zstd/fse_encoder.go",
+          "zstd/fse_predefined.go",
+          "zstd/history.go",
+          "zstd/seqdec.go",
+          "zstd/seqenc.go",
+          "zstd/snappy.go"
+        ]
+      },
+      "section": "Text 024",
+      "offset": 93372
+    },
+    {
+      "module": "github.com/klauspost/compress",
+      "version": "v1.20.2",
+      "path": "zstd/internal/xxhash/LICENSE.txt",
+      "url": "https://proxy.golang.org/github.com/klauspost/compress/@v/v1.20.2.zip",
+      "module_h1": "h1:v5tiZvm1KGLyg5d5oXdXe3lsSPrbEUiKoXGia//I7Qo=",
+      "sha256": "f566a9f97bacdaf00d9f21dd991e81dc11201c4e016c86b470799429a1c9a79c",
+      "bytes": 1068,
+      "kind": "source text",
+      "section": "Text 085",
+      "offset": 184963
+    },
+    {
+      "module": "github.com/lucasb-eyer/go-colorful",
+      "version": "v1.4.1",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/lucasb-eyer/go-colorful/@v/v1.4.1.zip",
+      "module_h1": "h1:1EO+WB73+EH8EVbzlrG3KLAfEypQWVHIBqlTf+2hNss=",
+      "sha256": "1e4cf2a117516ec1b54041d68ed4f5d331878b04de3386f4790e7b5b9c04e1ec",
+      "bytes": 1055,
+      "kind": "source text",
+      "section": "Text 011",
+      "offset": 77085
+    },
+    {
+      "module": "github.com/mattn/go-runewidth",
+      "version": "v0.0.28",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/mattn/go-runewidth/@v/v0.0.28.zip",
+      "module_h1": "h1:rPyg2ybwEKPebvpzVWe1gKBkH8EQFkxO4Y0hjBeLaBU=",
+      "sha256": "88a2379b3ca34bf5c57127aff9dcb802bbb60ece0805cdbda65b3bd115f971d9",
+      "bytes": 1085,
+      "kind": "source text",
+      "section": "Text 046",
+      "offset": 116259
+    },
+    {
+      "module": "github.com/muesli/cancelreader",
+      "version": "v0.2.2",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/muesli/cancelreader/@v/v0.2.2.zip",
+      "module_h1": "h1:3I4Kt4BQjOR54NavqnDogx/MIoWBFa0StPA8ELUXHmA=",
+      "sha256": "8c139dbbc83b4fb055b4100b6b9402f7de3dd6bbca05015bdfcc4b392c8cfd5f",
+      "bytes": 1095,
+      "kind": "source text",
+      "section": "Text 050",
+      "offset": 121801
+    },
+    {
+      "module": "github.com/pkg/errors",
+      "version": "v0.9.1",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/pkg/errors/@v/v0.9.1.zip",
+      "module_h1": "h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=",
+      "sha256": "8d427fd87bc9579ea368fde3d49f9ca22eac857f91a9dec7e3004bdfab7dee86",
+      "bytes": 1312,
+      "kind": "source text",
+      "section": "Text 051",
+      "offset": 123178
+    },
+    {
+      "module": "github.com/refraction-networking/utls",
+      "version": "v1.8.2",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/refraction-networking/utls/@v/v1.8.2.zip",
+      "module_h1": "h1:j4Q1gJj0xngdeH+Ox/qND11aEfhpgoEvV+S9iJ2IdQo=",
+      "sha256": "2d36597f7117c38b006835ae7f537487207d8ec407aa9d9980794b2030cbc067",
+      "bytes": 1479,
+      "kind": "source text",
+      "section": "Text 018",
+      "offset": 85604
+    },
+    {
+      "module": "github.com/refraction-networking/utls",
+      "version": "v1.8.2",
+      "path": "dicttls/LICENSE",
+      "url": "https://proxy.golang.org/github.com/refraction-networking/utls/@v/v1.8.2.zip",
+      "module_h1": "h1:j4Q1gJj0xngdeH+Ox/qND11aEfhpgoEvV+S9iJ2IdQo=",
+      "sha256": "ac089a3cb515b32ba1c8c2b401646527f55815a9022013693d515f2e2e4fb6ec",
+      "bytes": 1498,
+      "kind": "source text",
+      "section": "Text 060",
+      "offset": 135984
+    },
+    {
+      "module": "github.com/refraction-networking/utls",
+      "version": "v1.8.2",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/github.com/refraction-networking/utls/@v/v1.8.2.zip",
+      "module_h1": "h1:j4Q1gJj0xngdeH+Ox/qND11aEfhpgoEvV+S9iJ2IdQo=",
+      "sha256": "b60223fbc77d7056952fb31ca61fa9a4ab40a974d3a08ed9e2aeb374bf8142a6",
+      "bytes": 696,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "* Copyright (c) 2019, Psiphon Inc.": [
+          "u_prng.go"
+        ],
+        "// Copyright 2009 The Go Authors. All rights reserved.": [
+          "alert.go",
+          "common.go",
+          "handshake_client.go",
+          "handshake_messages.go",
+          "handshake_server.go",
+          "prf.go"
+        ],
+        "// Copyright 2010 The Go Authors. All rights reserved.": [
+          "cipher_suites.go",
+          "conn.go",
+          "key_agreement.go"
+        ],
+        "// Copyright 2012 The Go Authors. All rights reserved.": [
+          "ticket.go"
+        ],
+        "// Copyright 2017 Google Inc. All rights reserved.": [
+          "u_common.go",
+          "u_conn.go",
+          "u_parrots.go",
+          "u_public.go",
+          "u_tls_extensions.go"
+        ],
+        "// Copyright 2017 The Go Authors. All rights reserved.": [
+          "auth.go"
+        ],
+        "// Copyright 2018 The Go Authors. All rights reserved.": [
+          "handshake_client_tls13.go",
+          "handshake_server_tls13.go",
+          "key_schedule.go"
+        ],
+        "// Copyright 2022 The Go Authors. All rights reserved.": [
+          "cache.go"
+        ],
+        "// Copyright 2022 uTLS Authors. All rights reserved.": [
+          "u_handshake_client.go",
+          "u_handshake_messages.go"
+        ],
+        "// Copyright 2023 The Go Authors. All rights reserved.": [
+          "quic.go"
+        ],
+        "// Copyright 2023 The uTLS Authors. All rights reserved.": [
+          "u_quic.go"
+        ],
+        "// Copyright 2024 The Go Authors. All rights reserved.": [
+          "defaults.go",
+          "ech.go",
+          "internal/byteorder/byteorder.go",
+          "internal/hpke/hpke.go",
+          "internal/tls12/tls12.go",
+          "internal/tls13/tls13.go"
+        ],
+        "// Copyright 2024 The quic-go Authors. All rights reserved.": [
+          "internal/quicvarint/varint.go"
+        ]
+      },
+      "section": "Text 064",
+      "offset": 152707
+    },
+    {
+      "module": "github.com/refraction-networking/utls",
+      "version": "v1.8.2",
+      "path": "u_prng.go [attribution header]",
+      "url": "https://proxy.golang.org/github.com/refraction-networking/utls/@v/v1.8.2.zip",
+      "module_h1": "h1:j4Q1gJj0xngdeH+Ox/qND11aEfhpgoEvV+S9iJ2IdQo=",
+      "sha256": "47582224321cbf1cc6face14d66c3a72c2868393959abc82e4c6a18119a4b740",
+      "bytes": 171,
+      "kind": "source text",
+      "section": "Text 028",
+      "offset": 97610
+    },
+    {
+      "module": "github.com/rivo/uniseg",
+      "version": "v0.4.7",
+      "path": "LICENSE.txt",
+      "url": "https://proxy.golang.org/github.com/rivo/uniseg/@v/v0.4.7.zip",
+      "module_h1": "h1:WUdvkW8uEhrYfLC4ZzdpI2ztxP1I582+49Oc5Mq64VQ=",
+      "sha256": "a59885f5f0f3b3c07cf9444db5fe399b6f0791eac82055f7b85cc65500551039",
+      "bytes": 1072,
+      "kind": "source text",
+      "section": "Text 057",
+      "offset": 132338
+    },
+    {
+      "module": "github.com/urfave/cli/v3",
+      "version": "v3.11.0",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/urfave/cli/v3/@v/v3.11.0.zip",
+      "module_h1": "h1:P/euJp99kb9p0tlVY+iYTLYYTAQlfl0hR2gUO1Img1Q=",
+      "sha256": "85695dfe027cabaf97c7fea77c45a01a36c0815e52df9219894b1ba031ee72f0",
+      "bytes": 1079,
+      "kind": "source text",
+      "section": "Text 044",
+      "offset": 112974
+    },
+    {
+      "module": "github.com/xlab/vorbis-go",
+      "version": "v0.0.0-20210911202351-b5b85f1ec645",
+      "path": "LICENSE (later upstream addition)",
+      "url": "https://raw.githubusercontent.com/xlab/vorbis-go/7a1a42804d4d9f8eb7466be0b953c18069c6c271/LICENSE",
+      "module_h1": "h1:lYg/+vV/Fd5WM1+Ptg54Am3y4mDXaMSrT+mKUHV5uVc=",
+      "sha256": "fc535686ab935d5776543a21c729f3081d53cd50b81ea07f6b1321c20e935ba3",
+      "bytes": 1106,
+      "kind": "later upstream licence for identical source",
+      "section": "Text 091",
+      "offset": 192677,
+      "later_license_evidence": {
+        "pinned_commit": "b5b85f1ec645f3cffd000583b7c7f60b45d95379",
+        "license_commit": "7a1a42804d4d9f8eb7466be0b953c18069c6c271",
+        "license_added": "2026-10-30",
+        "compare_head": "cfbc67241c69b72f281ab3e1303ca90719e66d00",
+        "compare_url": "https://github.com/xlab/vorbis-go/compare/b5b85f1ec645f3cffd000583b7c7f60b45d95379...cfbc67241c69b72f281ab3e1303ca90719e66d00",
+        "status": "ahead",
+        "ahead_by": 2,
+        "changed_paths": [
+          "LICENSE",
+          "go.mod",
+          "go.sum"
+        ],
+        "runtime_source_changed": false
+      }
+    },
+    {
+      "module": "github.com/xo/terminfo",
+      "version": "v1.0.0",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/xo/terminfo/@v/v1.0.0.zip",
+      "module_h1": "h1:2ZpYzqWzyyytjk3TP6aJVDhkMAkc99/1xKQdA3TDTBY=",
+      "sha256": "1f5f51151ba96f0492ce288bd007242f924fdad9f04002e175e951644340a891",
+      "bytes": 1078,
+      "kind": "source text",
+      "section": "Text 013",
+      "offset": 79778
+    },
+    {
+      "module": "github.com/yuin/gopher-lua",
+      "version": "v1.1.2",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/github.com/yuin/gopher-lua/@v/v1.1.2.zip",
+      "module_h1": "h1:yF/FjE3hD65tBbt0VXLE13HWS9h34fdzJmrWRXwobGA=",
+      "sha256": "260ffdb7a4ba43069407382e611dab0797bcdabad46deb3d25b36af7f8204f66",
+      "bytes": 1081,
+      "kind": "source text",
+      "section": "Text 016",
+      "offset": 83403
+    },
+    {
+      "module": "go.opentelemetry.io/auto/sdk",
+      "version": "v1.2.1",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/go.opentelemetry.io/auto/sdk/@v/v1.2.1.zip",
+      "module_h1": "h1:jXsnJ4Lmnqd11kwkBV2LgLoFMZKizbCi5fNZ/ipaZ64=",
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "bytes": 11357,
+      "kind": "source text",
+      "section": "Text 010",
+      "offset": 63898
+    },
+    {
+      "module": "go.opentelemetry.io/auto/sdk",
+      "version": "v1.2.1",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/go.opentelemetry.io/auto/sdk/@v/v1.2.1.zip",
+      "module_h1": "h1:jXsnJ4Lmnqd11kwkBV2LgLoFMZKizbCi5fNZ/ipaZ64=",
+      "sha256": "2ba92a34a09ca537bcb28eb74158d8d2d1f5b0ed83e31b389abe83cdf3a59434",
+      "bytes": 39,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright The OpenTelemetry Authors": [
+          "internal/telemetry/attr.go",
+          "internal/telemetry/id.go",
+          "internal/telemetry/number.go",
+          "internal/telemetry/resource.go",
+          "internal/telemetry/scope.go",
+          "internal/telemetry/span.go",
+          "internal/telemetry/status.go",
+          "internal/telemetry/traces.go",
+          "internal/telemetry/value.go",
+          "limit.go",
+          "span.go",
+          "tracer.go",
+          "tracer_provider.go"
+        ]
+      },
+      "section": "Text 017",
+      "offset": 85156
+    },
+    {
+      "module": "go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp",
+      "version": "v0.71.0",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp/@v/v0.71.0.zip",
+      "module_h1": "h1:3g7B90UzBltIDKq1/5mrTGxTnOFDV0ICOhLoxiZ8jlg=",
+      "sha256": "1ae07514be1d7bb33f0698f8d91fb51b8b9fe1463157ec1c72081a49b9bc6f40",
+      "bytes": 12892,
+      "kind": "source text",
+      "section": "Text 010",
+      "offset": 63898
+    },
+    {
+      "module": "go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp",
+      "version": "v0.71.0",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp/@v/v0.71.0.zip",
+      "module_h1": "h1:3g7B90UzBltIDKq1/5mrTGxTnOFDV0ICOhLoxiZ8jlg=",
+      "sha256": "2ba92a34a09ca537bcb28eb74158d8d2d1f5b0ed83e31b389abe83cdf3a59434",
+      "bytes": 39,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright The OpenTelemetry Authors": [
+          "common.go",
+          "config.go",
+          "internal/request/body_wrapper.go",
+          "internal/semconv/client.go",
+          "internal/semconv/server.go",
+          "internal/semconv/util.go",
+          "labeler.go",
+          "transport.go"
+        ]
+      },
+      "section": "Text 017",
+      "offset": 85156
+    },
+    {
+      "module": "go.opentelemetry.io/otel",
+      "version": "v1.46.0",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/go.opentelemetry.io/otel/@v/v1.46.0.zip",
+      "module_h1": "h1:FHt5/CDyVxi/8IM1CH7VE/rRgq3kLHa2mSTVMO8AWyc=",
+      "sha256": "1ae07514be1d7bb33f0698f8d91fb51b8b9fe1463157ec1c72081a49b9bc6f40",
+      "bytes": 12892,
+      "kind": "source text",
+      "section": "Text 010",
+      "offset": 63898
+    },
+    {
+      "module": "go.opentelemetry.io/otel",
+      "version": "v1.46.0",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/go.opentelemetry.io/otel/@v/v1.46.0.zip",
+      "module_h1": "h1:FHt5/CDyVxi/8IM1CH7VE/rRgq3kLHa2mSTVMO8AWyc=",
+      "sha256": "2ba92a34a09ca537bcb28eb74158d8d2d1f5b0ed83e31b389abe83cdf3a59434",
+      "bytes": 39,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright The OpenTelemetry Authors": [
+          "attribute/encoder.go",
+          "attribute/hash.go",
+          "attribute/internal/attribute.go",
+          "attribute/internal/xxhash/xxhash.go",
+          "attribute/iterator.go",
+          "attribute/key.go",
+          "attribute/kv.go",
+          "attribute/rawhelpers.go",
+          "attribute/set.go",
+          "attribute/value.go",
+          "codes/codes.go",
+          "handler.go",
+          "internal/errorhandler/errorhandler.go",
+          "internal/global/instruments.go",
+          "internal/global/internal_logging.go",
+          "internal/global/meter.go",
+          "internal/global/propagator.go",
+          "internal/global/state.go",
+          "internal/global/trace.go",
+          "metric.go",
+          "propagation.go",
+          "propagation/propagation.go",
+          "propagation/trace_context.go",
+          "semconv/internal/metricpool/pool.go",
+          "semconv/v1.37.0/attribute_group.go",
+          "semconv/v1.43.0/attribute_group.go",
+          "semconv/v1.43.0/error_type.go",
+          "semconv/v1.43.0/httpconv/metric.go",
+          "trace.go"
+        ]
+      },
+      "section": "Text 017",
+      "offset": 85156
+    },
+    {
+      "module": "go.opentelemetry.io/otel/metric",
+      "version": "v1.46.0",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/go.opentelemetry.io/otel/metric/@v/v1.46.0.zip",
+      "module_h1": "h1:yBnkXvgV7AXFILZc5K6IZe/CBFF3OS7BJ8ov6/lj0K8=",
+      "sha256": "1ae07514be1d7bb33f0698f8d91fb51b8b9fe1463157ec1c72081a49b9bc6f40",
+      "bytes": 12892,
+      "kind": "source text",
+      "section": "Text 010",
+      "offset": 63898
+    },
+    {
+      "module": "go.opentelemetry.io/otel/metric",
+      "version": "v1.46.0",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/go.opentelemetry.io/otel/metric/@v/v1.46.0.zip",
+      "module_h1": "h1:yBnkXvgV7AXFILZc5K6IZe/CBFF3OS7BJ8ov6/lj0K8=",
+      "sha256": "2ba92a34a09ca537bcb28eb74158d8d2d1f5b0ed83e31b389abe83cdf3a59434",
+      "bytes": 39,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright The OpenTelemetry Authors": [
+          "asyncfloat64.go",
+          "asyncint64.go",
+          "config.go",
+          "instrument.go",
+          "noop/noop.go",
+          "syncfloat64.go",
+          "syncint64.go"
+        ]
+      },
+      "section": "Text 017",
+      "offset": 85156
+    },
+    {
+      "module": "go.opentelemetry.io/otel/trace",
+      "version": "v1.46.0",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/go.opentelemetry.io/otel/trace/@v/v1.46.0.zip",
+      "module_h1": "h1:OULy7ccdJnZtJ0UDYFOIGaCmiWzJ8Vi2G/Rsu60qs1c=",
+      "sha256": "1ae07514be1d7bb33f0698f8d91fb51b8b9fe1463157ec1c72081a49b9bc6f40",
+      "bytes": 12892,
+      "kind": "source text",
+      "section": "Text 010",
+      "offset": 63898
+    },
+    {
+      "module": "go.opentelemetry.io/otel/trace",
+      "version": "v1.46.0",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/go.opentelemetry.io/otel/trace/@v/v1.46.0.zip",
+      "module_h1": "h1:OULy7ccdJnZtJ0UDYFOIGaCmiWzJ8Vi2G/Rsu60qs1c=",
+      "sha256": "2ba92a34a09ca537bcb28eb74158d8d2d1f5b0ed83e31b389abe83cdf3a59434",
+      "bytes": 39,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright The OpenTelemetry Authors": [
+          "auto.go",
+          "config.go",
+          "context.go",
+          "internal/telemetry/attr.go",
+          "internal/telemetry/id.go",
+          "internal/telemetry/number.go",
+          "internal/telemetry/resource.go",
+          "internal/telemetry/scope.go",
+          "internal/telemetry/span.go",
+          "internal/telemetry/status.go",
+          "internal/telemetry/traces.go",
+          "internal/telemetry/value.go",
+          "noop.go",
+          "noop/noop.go",
+          "span.go",
+          "trace.go",
+          "tracestate.go"
+        ]
+      },
+      "section": "Text 017",
+      "offset": 85156
+    },
+    {
+      "module": "go.uber.org/atomic",
+      "version": "v1.11.0",
+      "path": "LICENSE.txt",
+      "url": "https://proxy.golang.org/go.uber.org/atomic/@v/v1.11.0.zip",
+      "module_h1": "h1:ZvwS0R+56ePWxUNi+Atn9dWONBPp/AUETXlHW0DxSjE=",
+      "sha256": "edbb5a4d165ac69376c765b551c0662ff42bea87e1f1eda85f42ac90c34b09d0",
+      "bytes": 1067,
+      "kind": "source text",
+      "section": "Text 081",
+      "offset": 180786
+    },
+    {
+      "module": "go.uber.org/atomic",
+      "version": "v1.11.0",
+      "path": "bool_ext.go [leading full licence comment]",
+      "url": "https://proxy.golang.org/go.uber.org/atomic/@v/v1.11.0.zip",
+      "module_h1": "h1:ZvwS0R+56ePWxUNi+Atn9dWONBPp/AUETXlHW0DxSjE=",
+      "sha256": "3348b63f26d0914724bb884ade7202e9a5385b76672309a38735e35798ab8407",
+      "bytes": 1067,
+      "kind": "source text",
+      "section": "Text 020",
+      "offset": 88752
+    },
+    {
+      "module": "go.uber.org/atomic",
+      "version": "v1.11.0",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/go.uber.org/atomic/@v/v1.11.0.zip",
+      "module_h1": "h1:ZvwS0R+56ePWxUNi+Atn9dWONBPp/AUETXlHW0DxSjE=",
+      "sha256": "aa29a4a673577a470565aa5d6273a04a70340fd0d133bc09e6f11e1cbb8b497c",
+      "bytes": 143,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright (c) 2020 Uber Technologies, Inc.": [
+          "bool_ext.go"
+        ],
+        "// Copyright (c) 2020-2023 Uber Technologies, Inc.": [
+          "bool.go",
+          "int64.go",
+          "uint32.go"
+        ],
+        "// Copyright (c) 2022 Uber Technologies, Inc.": [
+          "pointer_go118.go",
+          "pointer_go119.go"
+        ]
+      },
+      "section": "Text 059",
+      "offset": 135535
+    },
+    {
+      "module": "go.uber.org/atomic",
+      "version": "v1.11.0",
+      "path": "pointer_go119.go [leading full licence comment]",
+      "url": "https://proxy.golang.org/go.uber.org/atomic/@v/v1.11.0.zip",
+      "module_h1": "h1:ZvwS0R+56ePWxUNi+Atn9dWONBPp/AUETXlHW0DxSjE=",
+      "sha256": "111c0a160faceceea1d13f135b2b6d9e1a10ab58a7b4f2badfbba2e179d6d979",
+      "bytes": 1067,
+      "kind": "source text",
+      "section": "Text 008",
+      "offset": 61137
+    },
+    {
+      "module": "go.uber.org/multierr",
+      "version": "v1.11.0",
+      "path": "LICENSE.txt",
+      "url": "https://proxy.golang.org/go.uber.org/multierr/@v/v1.11.0.zip",
+      "module_h1": "h1:blXXJkSxSSfBVBlC76pxqeO+LN3aDfLQo+309xJstO0=",
+      "sha256": "dcdabe03bef2382a130640d1c3a4cd5ec42aba1035095c38272fde694eb72405",
+      "bytes": 1072,
+      "kind": "source text",
+      "section": "Text 074",
+      "offset": 173318
+    },
+    {
+      "module": "go.uber.org/multierr",
+      "version": "v1.11.0",
+      "path": "error.go [leading full licence comment]",
+      "url": "https://proxy.golang.org/go.uber.org/multierr/@v/v1.11.0.zip",
+      "module_h1": "h1:blXXJkSxSSfBVBlC76pxqeO+LN3aDfLQo+309xJstO0=",
+      "sha256": "624f4d95a8651134ec49c13adf4d456c4e5d0b3bd698d0c3faf85a10a1156ea2",
+      "bytes": 1072,
+      "kind": "source text",
+      "section": "Text 037",
+      "offset": 104796
+    },
+    {
+      "module": "go.uber.org/multierr",
+      "version": "v1.11.0",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/go.uber.org/multierr/@v/v1.11.0.zip",
+      "module_h1": "h1:blXXJkSxSSfBVBlC76pxqeO+LN3aDfLQo+309xJstO0=",
+      "sha256": "3dd54a7c14fdff7c8c9482accbd68df0daa2ce28959cbd4953c1832290a6b208",
+      "bytes": 51,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright (c) 2017-2023 Uber Technologies, Inc.": [
+          "error.go",
+          "error_post_go120.go"
+        ]
+      },
+      "section": "Text 025",
+      "offset": 94050
+    },
+    {
+      "module": "golang.org/x/crypto",
+      "version": "v0.57.0",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/golang.org/x/crypto/@v/v0.57.0.zip",
+      "module_h1": "h1:3ZVCjf8Ggz7zneR/EHRVx68Ctf+2pmIMP2UFhh9cC6M=",
+      "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad",
+      "bytes": 1453,
+      "kind": "source text",
+      "section": "Text 052",
+      "offset": 125046
+    },
+    {
+      "module": "golang.org/x/crypto",
+      "version": "v0.57.0",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/golang.org/x/crypto/@v/v0.57.0.zip",
+      "module_h1": "h1:3ZVCjf8Ggz7zneR/EHRVx68Ctf+2pmIMP2UFhh9cC6M=",
+      "sha256": "c02fd609e78abfe678e32fcc2629d00a31f1ae7697def9fd2e29982cfe74067b",
+      "bytes": 330,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright 2012 The Go Authors. All rights reserved.": [
+          "internal/poly1305/poly1305.go",
+          "internal/poly1305/sum_asm.go",
+          "pbkdf2/pbkdf2.go"
+        ],
+        "// Copyright 2014 The Go Authors. All rights reserved.": [
+          "hkdf/hkdf.go",
+          "sha3/hashes.go",
+          "sha3/shake.go"
+        ],
+        "// Copyright 2016 The Go Authors. All rights reserved.": [
+          "chacha20/chacha_generic.go",
+          "chacha20poly1305/chacha20poly1305.go",
+          "chacha20poly1305/chacha20poly1305_amd64.go",
+          "chacha20poly1305/chacha20poly1305_generic.go"
+        ],
+        "// Copyright 2017 The Go Authors. All rights reserved.": [
+          "cryptobyte/asn1.go",
+          "cryptobyte/builder.go",
+          "cryptobyte/string.go"
+        ],
+        "// Copyright 2018 The Go Authors. All rights reserved.": [
+          "chacha20/chacha_noasm.go",
+          "chacha20/xor.go",
+          "internal/alias/alias.go",
+          "internal/poly1305/sum_generic.go"
+        ],
+        "// Copyright 2025 The Go Authors. All rights reserved.": [
+          "chacha20poly1305/fips140only_go1.26.go"
+        ]
+      },
+      "section": "Text 066",
+      "offset": 155481
+    },
+    {
+      "module": "golang.org/x/exp",
+      "version": "v0.0.0-20260824195058-e88cd73687aa",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/golang.org/x/exp/@v/v0.0.0-20260824195058-e88cd73687aa.zip",
+      "module_h1": "h1:QSyA8ishJCyT21kER9KwNt0b7BM3iRK4x9QXhjN5Fdk=",
+      "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad",
+      "bytes": 1453,
+      "kind": "source text",
+      "section": "Text 052",
+      "offset": 125046
+    },
+    {
+      "module": "golang.org/x/exp",
+      "version": "v0.0.0-20260824195058-e88cd73687aa",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/golang.org/x/exp/@v/v0.0.0-20260824195058-e88cd73687aa.zip",
+      "module_h1": "h1:QSyA8ishJCyT21kER9KwNt0b7BM3iRK4x9QXhjN5Fdk=",
+      "sha256": "7b46adf241a792b851319bc2dcd3639e56bb23907b89455fd8da6a6a4704e7a8",
+      "bytes": 165,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright 2009 The Go Authors. All rights reserved.": [
+          "rand/rand.go"
+        ],
+        "// Copyright 2017 The Go Authors. All rights reserved.": [
+          "rand/rng.go"
+        ],
+        "// Copyright 2021 The Go Authors. All rights reserved.": [
+          "maps/maps.go",
+          "slices/slices.go"
+        ]
+      },
+      "section": "Text 042",
+      "offset": 110713
+    },
+    {
+      "module": "golang.org/x/net",
+      "version": "v0.60.0",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/golang.org/x/net/@v/v0.60.0.zip",
+      "module_h1": "h1:79p50tfZlm0J9YfoDsSi639qSXNGVwEzOPLCxM2FsYU=",
+      "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad",
+      "bytes": 1453,
+      "kind": "source text",
+      "section": "Text 052",
+      "offset": 125046
+    },
+    {
+      "module": "golang.org/x/net",
+      "version": "v0.60.0",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/golang.org/x/net/@v/v0.60.0.zip",
+      "module_h1": "h1:79p50tfZlm0J9YfoDsSi639qSXNGVwEzOPLCxM2FsYU=",
+      "sha256": "d7678cc21145198c5b37dea87d2dea7d76244b1fdb4e9bd9d908f1d4cfb6ab32",
+      "bytes": 605,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright 2010 The Go Authors. All rights reserved.": [
+          "html/entity.go",
+          "html/parse.go"
+        ],
+        "// Copyright 2011 The Go Authors. All rights reserved.": [
+          "html/const.go",
+          "html/foreign.go",
+          "html/render.go",
+          "proxy/direct.go",
+          "proxy/per_host.go",
+          "proxy/proxy.go",
+          "proxy/socks5.go"
+        ],
+        "// Copyright 2013 The Go Authors. All rights reserved.": [
+          "html/charset/charset.go"
+        ],
+        "// Copyright 2014 The Go Authors. All rights reserved.": [
+          "http2/errors.go",
+          "http2/frame.go",
+          "http2/gotrack.go",
+          "http2/hpack/encode.go",
+          "http2/hpack/hpack.go",
+          "http2/hpack/huffman.go",
+          "http2/hpack/tables.go",
+          "http2/http2.go",
+          "http2/write.go"
+        ],
+        "// Copyright 2015 The Go Authors. All rights reserved.": [
+          "internal/timeseries/timeseries.go",
+          "trace/events.go",
+          "trace/histogram.go",
+          "trace/trace.go"
+        ],
+        "// Copyright 2016 The Go Authors. All rights reserved.": [
+          "http/httpguts/httplex.go",
+          "idna/idna.go",
+          "idna/punycode.go",
+          "idna/trie.go"
+        ],
+        "// Copyright 2017 The Go Authors. All rights reserved.": [
+          "http/httpproxy/proxy.go"
+        ],
+        "// Copyright 2018 The Go Authors. All rights reserved.": [
+          "http/httpguts/guts.go",
+          "internal/socks/client.go",
+          "internal/socks/socks.go"
+        ],
+        "// Copyright 2019 The Go Authors. All rights reserved.": [
+          "proxy/dial.go"
+        ],
+        "// Copyright 2021 The Go Authors. All rights reserved.": [
+          "http2/ascii.go"
+        ],
+        "// Copyright 2026 The Go Authors. All rights reserved.": [
+          "http2/clientconn.go",
+          "http2/transport_common.go",
+          "http2/transport_wrap.go"
+        ]
+      },
+      "section": "Text 071",
+      "offset": 170365
+    },
+    {
+      "module": "golang.org/x/oauth2",
+      "version": "v0.36.0",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/golang.org/x/oauth2/@v/v0.36.0.zip",
+      "module_h1": "h1:peZ/1z27fi9hUOFCAZaHyrpWG5lwe0RJEEEeH0ThlIs=",
+      "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad",
+      "bytes": 1453,
+      "kind": "source text",
+      "section": "Text 052",
+      "offset": 125046
+    },
+    {
+      "module": "golang.org/x/oauth2",
+      "version": "v0.36.0",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/golang.org/x/oauth2/@v/v0.36.0.zip",
+      "module_h1": "h1:peZ/1z27fi9hUOFCAZaHyrpWG5lwe0RJEEEeH0ThlIs=",
+      "sha256": "f62f35cb1240d702c14721106831a8e7f04a859367ee9fbdd8bf438d4a467a91",
+      "bytes": 385,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright 2014 The Go Authors. All rights reserved.": [
+          "google/google.go",
+          "internal/oauth2.go",
+          "internal/token.go",
+          "internal/transport.go",
+          "jws/jws.go",
+          "jwt/jwt.go",
+          "oauth2.go",
+          "token.go",
+          "transport.go"
+        ],
+        "// Copyright 2015 The Go Authors. All rights reserved.": [
+          "google/default.go",
+          "google/jwt.go",
+          "google/sdk.go"
+        ],
+        "// Copyright 2020 The Go Authors. All rights reserved.": [
+          "google/externalaccount/basecredentials.go",
+          "google/externalaccount/filecredsource.go",
+          "google/externalaccount/urlcredsource.go",
+          "google/internal/stsexchange/clientauth.go",
+          "google/internal/stsexchange/sts_exchange.go"
+        ],
+        "// Copyright 2021 The Go Authors. All rights reserved.": [
+          "authhandler/authhandler.go",
+          "google/externalaccount/aws.go",
+          "google/internal/impersonate/impersonate.go"
+        ],
+        "// Copyright 2022 The Go Authors. All rights reserved.": [
+          "google/error.go",
+          "google/externalaccount/executablecredsource.go"
+        ],
+        "// Copyright 2023 The Go Authors. All rights reserved.": [
+          "google/externalaccount/header.go",
+          "google/internal/externalaccountauthorizeduser/externalaccountauthorizeduser.go",
+          "pkce.go"
+        ],
+        "// Copyright 2024 The Go Authors. All rights reserved.": [
+          "google/externalaccount/programmaticrefreshcredsource.go"
+        ]
+      },
+      "section": "Text 086",
+      "offset": 186345
+    },
+    {
+      "module": "golang.org/x/sync",
+      "version": "v0.24.0",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/golang.org/x/sync/@v/v0.24.0.zip",
+      "module_h1": "h1:iqiDrGoDgyuvAKrhLQthUEzU/R378N78gXbBjxed7oA=",
+      "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad",
+      "bytes": 1453,
+      "kind": "source text",
+      "section": "Text 052",
+      "offset": 125046
+    },
+    {
+      "module": "golang.org/x/sync",
+      "version": "v0.24.0",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/golang.org/x/sync/@v/v0.24.0.zip",
+      "module_h1": "h1:iqiDrGoDgyuvAKrhLQthUEzU/R378N78gXbBjxed7oA=",
+      "sha256": "4e1f67a1083b3d04e340976a283c62bb6339c4cd3373e6acf92fef421e3c68fa",
+      "bytes": 110,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright 2013 The Go Authors. All rights reserved.": [
+          "singleflight/singleflight.go"
+        ],
+        "// Copyright 2016 The Go Authors. All rights reserved.": [
+          "errgroup/errgroup.go"
+        ]
+      },
+      "section": "Text 030",
+      "offset": 99861
+    },
+    {
+      "module": "golang.org/x/sys",
+      "version": "v0.49.0",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/golang.org/x/sys/@v/v0.49.0.zip",
+      "module_h1": "h1:XbzkgYJHdqh/8m2Uu0W/dQv8nktxx4BFHp1M0gROTXA=",
+      "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad",
+      "bytes": 1453,
+      "kind": "source text",
+      "section": "Text 052",
+      "offset": 125046
+    },
+    {
+      "module": "golang.org/x/sys",
+      "version": "v0.49.0",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/golang.org/x/sys/@v/v0.49.0.zip",
+      "module_h1": "h1:XbzkgYJHdqh/8m2Uu0W/dQv8nktxx4BFHp1M0gROTXA=",
+      "sha256": "ec2e53296fefeb2bee8c8c427866825c992c5bd9e40cb0c372faa1ea8940d370",
+      "bytes": 220,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright 2009 The Go Authors. All rights reserved.": [
+          "unix/asm_linux_amd64.s",
+          "unix/syscall_linux.go",
+          "unix/syscall_unix.go"
+        ],
+        "// Copyright 2017 The Go Authors. All rights reserved.": [
+          "unix/timestruct.go"
+        ],
+        "// Copyright 2018 The Go Authors. All rights reserved.": [
+          "cpu/cpu.go",
+          "cpu/cpu_gc_x86.s",
+          "cpu/cpu_x86.go",
+          "unix/ioctl_unsigned.go"
+        ],
+        "// Copyright 2023 The Go Authors. All rights reserved.": [
+          "cpu/runtime_auxv_go121.go",
+          "unix/mremap.go"
+        ]
+      },
+      "section": "Text 080",
+      "offset": 180282
+    },
+    {
+      "module": "golang.org/x/text",
+      "version": "v0.43.0",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/golang.org/x/text/@v/v0.43.0.zip",
+      "module_h1": "h1:1QivrlhwAsnMOcqgOdl9my7s9OyZl8O5/UGUTJVXoWc=",
+      "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad",
+      "bytes": 1453,
+      "kind": "source text",
+      "section": "Text 052",
+      "offset": 125046
+    },
+    {
+      "module": "golang.org/x/text",
+      "version": "v0.43.0",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/golang.org/x/text/@v/v0.43.0.zip",
+      "module_h1": "h1:1QivrlhwAsnMOcqgOdl9my7s9OyZl8O5/UGUTJVXoWc=",
+      "sha256": "9e5b7b03fe449ad26fc66576715ebd7c49d7ad99b27c8d927d336568aecadd3b",
+      "bytes": 385,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright 2011 The Go Authors. All rights reserved.": [
+          "unicode/norm/composition.go",
+          "unicode/norm/forminfo.go",
+          "unicode/norm/input.go",
+          "unicode/norm/iter.go",
+          "unicode/norm/normalize.go",
+          "unicode/norm/readwriter.go",
+          "unicode/norm/trie.go"
+        ],
+        "// Copyright 2012 The Go Authors. All rights reserved.": [
+          "collate/collate.go",
+          "internal/colltab/collelem.go",
+          "internal/colltab/contract.go",
+          "internal/colltab/table.go",
+          "internal/colltab/trie.go"
+        ],
+        "// Copyright 2013 The Go Authors. All rights reserved.": [
+          "collate/index.go",
+          "collate/sort.go",
+          "encoding/charmap/charmap.go",
+          "encoding/encoding.go",
+          "encoding/japanese/eucjp.go",
+          "encoding/japanese/iso2022jp.go",
+          "encoding/japanese/shiftjis.go",
+          "encoding/korean/euckr.go",
+          "encoding/simplifiedchinese/gbk.go",
+          "encoding/simplifiedchinese/hzgb2312.go",
+          "encoding/traditionalchinese/big5.go",
+          "encoding/unicode/unicode.go",
+          "internal/language/compact/language.go",
+          "internal/language/language.go",
+          "internal/language/lookup.go",
+          "internal/language/match.go",
+          "internal/language/parse.go",
+          "internal/language/tags.go",
+          "language/language.go",
+          "language/match.go",
+          "language/parse.go",
+          "language/tags.go",
+          "transform/transform.go",
+          "unicode/norm/transform.go"
+        ],
+        "// Copyright 2014 The Go Authors. All rights reserved.": [
+          "cases/cases.go",
+          "cases/context.go",
+          "cases/map.go",
+          "collate/option.go",
+          "internal/colltab/numeric.go",
+          "language/coverage.go",
+          "runes/runes.go"
+        ],
+        "// Copyright 2015 The Go Authors. All rights reserved.": [
+          "cases/info.go",
+          "encoding/htmlindex/htmlindex.go",
+          "encoding/htmlindex/map.go",
+          "encoding/internal/internal.go",
+          "encoding/japanese/all.go",
+          "encoding/simplifiedchinese/all.go",
+          "encoding/unicode/override.go",
+          "internal/colltab/colltab.go",
+          "internal/colltab/iter.go",
+          "internal/match.go",
+          "internal/tag/tag.go",
+          "unicode/rangetable/merge.go"
+        ],
+        "// Copyright 2016 The Go Authors. All rights reserved.": [
+          "secure/bidirule/bidirule.go",
+          "unicode/bidi/prop.go"
+        ],
+        "// Copyright 2018 The Go Authors. All rights reserved.": [
+          "internal/language/compact.go",
+          "internal/language/compact/compact.go",
+          "internal/language/compose.go"
+        ]
+      },
+      "section": "Text 055",
+      "offset": 129811
+    },
+    {
+      "module": "google.golang.org/api",
+      "version": "v0.295.0",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/google.golang.org/api/@v/v0.295.0.zip",
+      "module_h1": "h1:SSqFeEVjnK5SKo6t7D0E0M7EfX8SP7K0+OJd2Ly5FzU=",
+      "sha256": "110244b02140866ee37d17fa7449436a377ec3b85a481fbb208f4c87964382de",
+      "bytes": 1475,
+      "kind": "source text",
+      "section": "Text 007",
+      "offset": 59295
+    },
+    {
+      "module": "google.golang.org/api",
+      "version": "v0.295.0",
+      "path": "internal/third_party/uritemplates/LICENSE",
+      "url": "https://proxy.golang.org/google.golang.org/api/@v/v0.295.0.zip",
+      "module_h1": "h1:SSqFeEVjnK5SKo6t7D0E0M7EfX8SP7K0+OJd2Ly5FzU=",
+      "sha256": "fc0a2f71df4e8f047902da53d1f85301be43e0f360fc167057a2d04658ed2ba9",
+      "bytes": 1478,
+      "kind": "source text",
+      "section": "Text 088",
+      "offset": 188433
+    },
+    {
+      "module": "google.golang.org/api",
+      "version": "v0.295.0",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/google.golang.org/api/@v/v0.295.0.zip",
+      "module_h1": "h1:SSqFeEVjnK5SKo6t7D0E0M7EfX8SP7K0+OJd2Ly5FzU=",
+      "sha256": "14476844a424f0676081624534dc8979e8378c8e8edc0cca0b7226c3ed309eb3",
+      "bytes": 693,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright 2011 Google LLC. All rights reserved.": [
+          "googleapi/googleapi.go"
+        ],
+        "// Copyright 2012 Google LLC. All rights reserved.": [
+          "googleapi/transport/apikey.go"
+        ],
+        "// Copyright 2013 Joshua Tacoma. All rights reserved.": [
+          "internal/third_party/uritemplates/uritemplates.go"
+        ],
+        "// Copyright 2015 Google LLC.": [
+          "transport/http/dial.go"
+        ],
+        "// Copyright 2015 The Go Authors. All rights reserved.": [
+          "internal/gensupport/json.go",
+          "internal/gensupport/params.go"
+        ],
+        "// Copyright 2016 Google LLC.": [
+          "internal/gensupport/jsonfloat.go"
+        ],
+        "// Copyright 2016 The Go Authors. All rights reserved.": [
+          "internal/gensupport/buffer.go",
+          "internal/gensupport/media.go",
+          "internal/gensupport/resumable.go",
+          "internal/gensupport/send.go",
+          "internal/third_party/uritemplates/utils.go"
+        ],
+        "// Copyright 2017 Google LLC.": [
+          "internal/creds.go",
+          "internal/settings.go",
+          "option/option.go"
+        ],
+        "// Copyright 2020 Google LLC.": [
+          "internal/cba.go",
+          "internal/cert/default_cert.go",
+          "option/internaloption/internaloption.go"
+        ],
+        "// Copyright 2020 Google LLC. All rights reserved.": [
+          "internal/gensupport/version.go"
+        ],
+        "// Copyright 2020 The Go Authors. All rights reserved.": [
+          "internal/impersonate/impersonate.go"
+        ],
+        "// Copyright 2021 Google LLC.": [
+          "internal/gensupport/retry.go"
+        ],
+        "// Copyright 2022 Google LLC.": [
+          "internal/cert/enterprise_cert.go",
+          "internal/cert/secureconnect_cert.go"
+        ],
+        "// Copyright 2022 Google LLC. All rights reserved.": [
+          "internal/gensupport/error.go"
+        ],
+        "// Copyright 2023 Google LLC.": [
+          "internal/s2a.go"
+        ],
+        "// Copyright 2024 Google LLC.": [
+          "internal/credentialstype/credentialstype.go"
+        ],
+        "// Copyright 2026 Google LLC.": [
+          "youtube/v3/youtube-gen.go"
+        ]
+      },
+      "section": "Text 009",
+      "offset": 62622
+    },
+    {
+      "module": "google.golang.org/genproto/googleapis/rpc",
+      "version": "v0.0.0-20260825221802-da73d73af1c5",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/google.golang.org/genproto/googleapis/rpc/@v/v0.0.0-20260825221802-da73d73af1c5.zip",
+      "module_h1": "h1:1VUiZAXyC+zmiFYi+WLtBzr68Cj8wOofHjjrA/kkizc=",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "bytes": 11358,
+      "kind": "source text",
+      "section": "Text 069",
+      "offset": 157941
+    },
+    {
+      "module": "google.golang.org/genproto/googleapis/rpc",
+      "version": "v0.0.0-20260825221802-da73d73af1c5",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/google.golang.org/genproto/googleapis/rpc/@v/v0.0.0-20260825221802-da73d73af1c5.zip",
+      "module_h1": "h1:1VUiZAXyC+zmiFYi+WLtBzr68Cj8wOofHjjrA/kkizc=",
+      "sha256": "971e5be7ac18d24d6260f2f20274a153eb93c340c6ce32a35da253f88353d7e0",
+      "bytes": 29,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright 2026 Google LLC": [
+          "code/code.pb.go",
+          "errdetails/error_details.pb.go",
+          "status/status.pb.go"
+        ]
+      },
+      "section": "Text 034",
+      "offset": 102729
+    },
+    {
+      "module": "google.golang.org/grpc",
+      "version": "v1.83.2",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/google.golang.org/grpc/@v/v1.83.2.zip",
+      "module_h1": "h1:EManeRomTObA0BU7I8vXgg/78uE5MJ9M8B39EX2WscU=",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "bytes": 11358,
+      "kind": "source text",
+      "section": "Text 069",
+      "offset": 157941
+    },
+    {
+      "module": "google.golang.org/grpc",
+      "version": "v1.83.2",
+      "path": "NOTICE.txt",
+      "url": "https://proxy.golang.org/google.golang.org/grpc/@v/v1.83.2.zip",
+      "module_h1": "h1:EManeRomTObA0BU7I8vXgg/78uE5MJ9M8B39EX2WscU=",
+      "sha256": "693ff28ec216d5112ac1bbfe64ef539005867d1c7bd427b57d579683293b947f",
+      "bytes": 554,
+      "kind": "source text",
+      "section": "Text 038",
+      "offset": 106155
+    },
+    {
+      "module": "google.golang.org/grpc",
+      "version": "v1.83.2",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/google.golang.org/grpc/@v/v1.83.2.zip",
+      "module_h1": "h1:EManeRomTObA0BU7I8vXgg/78uE5MJ9M8B39EX2WscU=",
+      "sha256": "d45ea39a49222829c6c470f37b1645213df1d37941ffa6557ab313e867385d22",
+      "bytes": 438,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "* Copyright 2014 gRPC authors.": [
+          "call.go",
+          "clientconn.go",
+          "codec.go",
+          "codes/codes.go",
+          "credentials/credentials.go",
+          "credentials/tls.go",
+          "internal/transport/controlbuf.go",
+          "internal/transport/flowcontrol.go",
+          "internal/transport/http2_client.go",
+          "internal/transport/http2_server.go",
+          "internal/transport/http_util.go",
+          "internal/transport/transport.go",
+          "metadata/metadata.go",
+          "peer/peer.go",
+          "rpc_util.go",
+          "server.go",
+          "stream.go"
+        ],
+        "* Copyright 2015 gRPC authors.": [
+          "trace.go"
+        ],
+        "* Copyright 2016 gRPC authors.": [
+          "internal/internal.go",
+          "internal/transport/handler_server.go",
+          "stats/stats.go"
+        ],
+        "* Copyright 2017 gRPC authors.": [
+          "balancer/balancer.go",
+          "balancer/base/balancer.go",
+          "balancer/pickfirst/pickfirst.go",
+          "balancer/roundrobin/roundrobin.go",
+          "balancer_wrapper.go",
+          "codes/code_string.go",
+          "connectivity/connectivity.go",
+          "encoding/encoding.go",
+          "grpclog/grpclog.go",
+          "grpclog/loggerv2.go",
+          "internal/backoff/backoff.go",
+          "internal/resolver/passthrough/passthrough.go",
+          "internal/transport/bdp_estimator.go",
+          "internal/transport/proxy.go",
+          "picker_wrapper.go",
+          "resolver/resolver.go",
+          "resolver_wrapper.go",
+          "service_config.go",
+          "status/status.go"
+        ],
+        "* Copyright 2018 gRPC authors.": [
+          "dialoptions.go",
+          "internal/binarylog/binarylog.go",
+          "internal/binarylog/binarylog_testutil.go",
+          "internal/binarylog/env_config.go",
+          "internal/binarylog/method_logger.go",
+          "internal/binarylog/sink.go",
+          "internal/channelz/channelmap.go",
+          "internal/channelz/funcs.go",
+          "internal/channelz/syscall_linux.go",
+          "internal/channelz/trace.go",
+          "internal/credentials/syscallconn.go",
+          "internal/envconfig/envconfig.go",
+          "internal/grpcsync/event.go",
+          "internal/grpcutil/method.go",
+          "internal/resolver/dns/dns_resolver.go",
+          "internal/syscall/syscall_linux.go"
+        ],
+        "* Copyright 2019 gRPC authors.": [
+          "attributes/attributes.go",
+          "internal/balancerload/load.go",
+          "internal/buffer/unbounded.go"
+        ],
+        "* Copyright 2020 gRPC authors.": [
+          "balancer/grpclb/state/state.go",
+          "credentials/insecure/insecure.go",
+          "grpclog/component.go",
+          "internal/channelz/logging.go",
+          "internal/credentials/spiffe.go",
+          "internal/credentials/util.go",
+          "internal/envconfig/xds.go",
+          "internal/grpclog/prefix_logger.go",
+          "internal/grpcutil/encode_duration.go",
+          "internal/grpcutil/metadata.go",
+          "internal/metadata/metadata.go",
+          "internal/resolver/config_selector.go",
+          "internal/resolver/unix/unix.go",
+          "internal/serviceconfig/serviceconfig.go",
+          "internal/status/status.go",
+          "internal/transport/networktype/networktype.go"
+        ],
+        "* Copyright 2021 gRPC authors.": [
+          "internal/credentials/credentials.go",
+          "internal/pretty/pretty.go",
+          "resolver/map.go"
+        ],
+        "* Copyright 2022 gRPC authors.": [
+          "internal/balancer/gracefulswitch/gracefulswitch.go",
+          "internal/envconfig/observability.go",
+          "internal/grpcsync/callback_serializer.go",
+          "internal/grpcutil/compressor.go"
+        ],
+        "* Copyright 2023 gRPC authors.": [
+          "internal/grpcsync/pubsub.go",
+          "internal/idle/idle.go",
+          "internal/serviceconfig/duration.go",
+          "internal/tcp_keepalive_unix.go",
+          "internal/transport/logging.go"
+        ],
+        "* Copyright 2024 gRPC authors.": [
+          "balancer/endpointsharding/endpointsharding.go",
+          "balancer/pickfirst/internal/internal.go",
+          "encoding/encoding_v2.go",
+          "encoding/proto/proto.go",
+          "experimental/stats/metricregistry.go",
+          "experimental/stats/metrics.go",
+          "grpclog/internal/loggerv2.go",
+          "internal/balancer/gracefulswitch/config.go",
+          "internal/channelz/channel.go",
+          "internal/channelz/server.go",
+          "internal/channelz/socket.go",
+          "internal/channelz/subchannel.go",
+          "internal/proxyattributes/proxyattributes.go",
+          "internal/resolver/delegatingresolver/delegatingresolver.go",
+          "internal/stats/metrics_recorder_list.go",
+          "internal/transport/client_stream.go",
+          "internal/transport/server_stream.go",
+          "mem/buffer_pool.go",
+          "mem/buffer_slice.go",
+          "mem/buffers.go",
+          "stats/metrics.go",
+          "trace_withtrace.go"
+        ],
+        "* Copyright 2025 gRPC authors.": [
+          "experimental/balancer/weight/weight.go",
+          "internal/stats/stats.go"
+        ],
+        "* Copyright 2026 gRPC authors.": [
+          "clientconn_disconnect_reason_noplan9.go",
+          "internal/mem/buffer_pool.go",
+          "internal/transport/readyreader/raw_conn_linux.go",
+          "internal/transport/readyreader/ready_reader.go"
+        ],
+        "// Copyright 2018 The gRPC Authors": [
+          "binarylog/grpc_binarylog_v1/binarylog.pb.go"
+        ]
+      },
+      "section": "Text 070",
+      "offset": 169616
+    },
+    {
+      "module": "google.golang.org/protobuf",
+      "version": "v1.36.12",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/google.golang.org/protobuf/@v/v1.36.12.zip",
+      "module_h1": "h1:pJOKDDOyeXErUroCihFAd5LQuwXBSpVnKGrj5o/fwxc=",
+      "sha256": "4835612df0098ca95f8e7d9e3bffcb02358d435dbb38057c844c99d7f725eb20",
+      "bytes": 1479,
+      "kind": "source text",
+      "section": "Text 029",
+      "offset": 98070
+    },
+    {
+      "module": "google.golang.org/protobuf",
+      "version": "v1.36.12",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/google.golang.org/protobuf/@v/v1.36.12.zip",
+      "module_h1": "h1:pJOKDDOyeXErUroCihFAd5LQuwXBSpVnKGrj5o/fwxc=",
+      "sha256": "e34dacd7cd4ce5034e240ae7a6587bf88682ba7a2906f5abd31e8b01cb15efc2",
+      "bytes": 511,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright 2008 Google Inc.  All rights reserved.": [
+          "types/known/anypb/any.pb.go",
+          "types/known/durationpb/duration.pb.go",
+          "types/known/emptypb/empty.pb.go",
+          "types/known/timestamppb/timestamp.pb.go"
+        ],
+        "// Copyright 2018 The Go Authors. All rights reserved.": [
+          "encoding/prototext/decode.go",
+          "encoding/prototext/encode.go",
+          "encoding/protowire/wire.go",
+          "internal/descfmt/stringer.go",
+          "internal/detrand/rand.go",
+          "internal/encoding/defval/default.go",
+          "internal/encoding/json/decode.go",
+          "internal/encoding/json/decode_number.go",
+          "internal/encoding/json/decode_string.go",
+          "internal/encoding/json/encode.go",
+          "internal/encoding/tag/tag.go",
+          "internal/encoding/text/decode.go",
+          "internal/encoding/text/decode_string.go",
+          "internal/encoding/text/decode_token.go",
+          "internal/encoding/text/encode.go",
+          "internal/errors/errors.go",
+          "internal/filedesc/desc_list_gen.go",
+          "internal/impl/api_export.go",
+          "internal/impl/codec_gen.go",
+          "internal/impl/convert.go",
+          "internal/impl/convert_list.go",
+          "internal/impl/convert_map.go",
+          "internal/impl/legacy_enum.go",
+          "internal/impl/legacy_extension.go",
+          "internal/impl/legacy_file.go",
+          "internal/impl/legacy_message.go",
+          "internal/impl/merge_gen.go",
+          "internal/impl/message.go",
+          "internal/impl/message_opaque_gen.go",
+          "internal/impl/message_reflect_field.go",
+          "internal/impl/message_reflect_field_gen.go",
+          "internal/impl/message_reflect_gen.go",
+          "internal/impl/pointer_unsafe.go",
+          "internal/set/ints.go",
+          "internal/strs/strings_unsafe.go",
+          "proto/decode.go",
+          "proto/decode_gen.go",
+          "proto/encode_gen.go",
+          "proto/proto.go",
+          "proto/size_gen.go",
+          "reflect/protoreflect/proto.go",
+          "reflect/protoreflect/value.go",
+          "reflect/protoreflect/value_union.go",
+          "reflect/protoreflect/value_unsafe.go",
+          "reflect/protoregistry/registry.go"
+        ],
+        "// Copyright 2019 The Go Authors. All rights reserved.": [
+          "encoding/protojson/decode.go",
+          "encoding/protojson/encode.go",
+          "encoding/protojson/well_known_types.go",
+          "internal/encoding/json/decode_token.go",
+          "internal/encoding/messageset/messageset.go",
+          "internal/filedesc/build.go",
+          "internal/filedesc/desc.go",
+          "internal/filedesc/desc_init.go",
+          "internal/filedesc/desc_lazy.go",
+          "internal/filedesc/desc_list.go",
+          "internal/filedesc/placeholder.go",
+          "internal/filetype/build.go",
+          "internal/impl/checkinit.go",
+          "internal/impl/codec_extension.go",
+          "internal/impl/codec_field.go",
+          "internal/impl/codec_map.go",
+          "internal/impl/codec_message.go",
+          "internal/impl/codec_tables.go",
+          "internal/impl/codec_unsafe.go",
+          "internal/impl/decode.go",
+          "internal/impl/encode.go",
+          "internal/impl/enum.go",
+          "internal/impl/extension.go",
+          "internal/impl/legacy_export.go",
+          "internal/impl/message_reflect.go",
+          "internal/impl/validate.go",
+          "internal/strs/strings.go",
+          "proto/checkinit.go",
+          "proto/encode.go",
+          "proto/equal.go",
+          "proto/merge.go",
+          "proto/messageset.go",
+          "proto/proto_methods.go",
+          "proto/reset.go",
+          "proto/size.go",
+          "reflect/protoreflect/source.go",
+          "reflect/protoreflect/source_gen.go"
+        ],
+        "// Copyright 2020 The Go Authors. All rights reserved.": [
+          "internal/impl/merge.go",
+          "internal/order/order.go",
+          "internal/order/range.go"
+        ],
+        "// Copyright 2022 The Go Authors. All rights reserved.": [
+          "reflect/protoreflect/value_equal.go"
+        ],
+        "// Copyright 2023 The Go Authors. All rights reserved.": [
+          "protoadapt/convert.go"
+        ],
+        "// Copyright 2024 The Go Authors. All rights reserved.": [
+          "internal/filedesc/editions.go",
+          "internal/impl/api_export_opaque.go",
+          "internal/impl/codec_field_opaque.go",
+          "internal/impl/codec_message_opaque.go",
+          "internal/impl/equal.go",
+          "internal/impl/lazy.go",
+          "internal/impl/message_opaque.go",
+          "internal/impl/pointer_unsafe_opaque.go",
+          "internal/impl/presence.go",
+          "internal/protolazy/bufferreader.go",
+          "internal/protolazy/lazy.go",
+          "internal/protolazy/pointer_unsafe.go"
+        ],
+        "// Copyright 2025 The Go Authors. All rights reserved.": [
+          "internal/filedesc/presence.go"
+        ],
+        "// copyright notice, this list of conditions and the following disclaimer": [
+          "types/known/anypb/any.pb.go",
+          "types/known/durationpb/duration.pb.go",
+          "types/known/emptypb/empty.pb.go",
+          "types/known/timestamppb/timestamp.pb.go"
+        ]
+      },
+      "section": "Text 075",
+      "offset": 174712
+    },
+    {
+      "module": "google.golang.org/protobuf",
+      "version": "v1.36.12",
+      "path": "types/known/anypb/any.pb.go [leading full licence comment]",
+      "url": "https://proxy.golang.org/google.golang.org/protobuf/@v/v1.36.12.zip",
+      "module_h1": "h1:pJOKDDOyeXErUroCihFAd5LQuwXBSpVnKGrj5o/fwxc=",
+      "sha256": "87a95acbb870e296243a71b67631984702e6e55e9057deaf01018f0bad4ca4e0",
+      "bytes": 1575,
+      "kind": "source text",
+      "section": "Text 045",
+      "offset": 114393
+    },
+    {
+      "module": "rsc.io/qr",
+      "version": "v0.2.0",
+      "path": "LICENSE",
+      "url": "https://proxy.golang.org/rsc.io/qr/@v/v0.2.0.zip",
+      "module_h1": "h1:6vBLea5/NRMVTz8V66gipeLycZMl/+UlFmk8DvqQ6WY=",
+      "sha256": "2d36597f7117c38b006835ae7f537487207d8ec407aa9d9980794b2030cbc067",
+      "bytes": 1479,
+      "kind": "source text",
+      "section": "Text 018",
+      "offset": 85604
+    },
+    {
+      "module": "rsc.io/qr",
+      "version": "v0.2.0",
+      "path": "linked-source copyright lines (excerpts)",
+      "url": "https://proxy.golang.org/rsc.io/qr/@v/v0.2.0.zip",
+      "module_h1": "h1:6vBLea5/NRMVTz8V66gipeLycZMl/+UlFmk8DvqQ6WY=",
+      "sha256": "54f9b859cb9a3f93f28d7d68f0336cd7b6d2d391a31d2d19bacde2c891370d70",
+      "bytes": 112,
+      "kind": "attribution excerpts",
+      "line_sources": {
+        "// Copyright 2010 The Go Authors.  All rights reserved.": [
+          "gf256/gf256.go"
+        ],
+        "// Copyright 2011 The Go Authors.  All rights reserved.": [
+          "coding/qr.go",
+          "png.go",
+          "qr.go"
+        ]
+      },
+      "section": "Text 032",
+      "offset": 100628
+    }
+  ],
+  "application_licenses": [
+    {
+      "source_path": "LICENSE",
+      "installed_file": "LICENSE",
+      "sha256": "57764ebae827c1c96dc5c1b74e2579ff34d3abcaabb54f5e5498fb2f612330cc",
+      "bytes": 1066
+    }
+  ]
+}
