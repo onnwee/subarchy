@@ -8,11 +8,11 @@
 pkgbase=nvidia-580xx-utils
 pkgname=('nvidia-580xx-utils' 'opencl-nvidia-580xx' 'nvidia-580xx-dkms')
 pkgver=580.196.07
-# Subarchy: 2, not the AUR's 1. Gitea's Arch registry finds a file by
-# substring, and "nvidia-580xx-utils-580.196.07-1-x86_64.pkg.tar.zst" is part
+# Subarchy: 4, not the AUR's 1. The OpenCL output now carries its notice.
+# Gitea's Arch registry finds a file by substring, and "nvidia-580xx-utils-580.196.07-1-x86_64.pkg.tar.zst" is part
 # of the lib32 package's file name; with both at -1 the registry answers 404
 # for this one. Keep this pkgrel different from lib32-nvidia-580xx-utils'.
-pkgrel=2
+pkgrel=4
 arch=('x86_64')
 url="http://www.nvidia.com/"
 license=('custom')
@@ -107,8 +107,7 @@ package_opencl-nvidia-580xx() {
 
     create_links
 
-    mkdir -p "${pkgdir}/usr/share/licenses"
-    ln -s nvidia-utils "${pkgdir}/usr/share/licenses/opencl-nvidia"
+    install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
 }
 
 package_nvidia-580xx-dkms() {

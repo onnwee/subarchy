@@ -99,6 +99,7 @@ smoke: build
 	tools/test/installer-check-test.sh
 	tools/test/gpu-test.sh
 	tools/test/nvidia-license-test.sh
+	tools/test/package-license-test.sh
 	tools/test/cursor-test.sh $(BUILD)/subcult-cursor
 	tools/test/fontconfig-test.sh
 	tools/test/hypr-theme-test.sh

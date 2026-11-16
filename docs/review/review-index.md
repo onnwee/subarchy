@@ -27,6 +27,8 @@ review can be a yes/no pass.
 | [[shell-display-findings\|Shell and display finding acceptance]] | #98 evidence, remaining physical-monitor check and the parent's next frame-attribution probe |
 | [[pult-app-targets\|Pult application targets]] | Package checks and remaining native acceptance for swayimg, VS Code and Obsidian (#78) |
 
+| [[release-licence-notices\|Release licence notice audit]] | #241 notice repair, checked package bytes and remaining final-image/owner limits under #84 |
+
 ## How to review
 
 1. Start with [[next-decisions]]: it lists everything still open.

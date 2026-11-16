@@ -101,7 +101,7 @@ done
 for path in usr/share/sddm/themes/subarchy/DepartureMono-Regular.woff2 usr/share/subcult/lock/DepartureMono-Regular.woff2 usr/share/licenses/subarchy/DepartureMono-OFL.txt; do
   grep -qx "$path" <<<"$list" || fail "missing greeter font or licence $path"
 done
-for f in README.md Omarchy-MIT.txt SUBCULT-rice-MIT.txt SUBCULT-rice-ASSETS.txt; do
+for f in README.md Omarchy-MIT.txt SUBCULT-rice-MIT.txt SUBCULT-rice-ASSETS.txt Go-BSD-3-Clause.txt TOML-MIT.txt; do
   bsdtar -xOf "$pkg" "usr/share/licenses/subarchy/$f" | cmp - "$root/LICENSES/$f" ||
     fail "third-party notice $f is missing or changed"
 done
