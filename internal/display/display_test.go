@@ -1,6 +1,7 @@
 package display
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -113,6 +114,82 @@ func TestPlanIdenticalMonitorsByConnector(t *testing.T) {
 	steps, _ = Plan(p, ms)
 	if !strings.Contains(steps[0].Lua, `output = "DP-10"`) || !strings.Contains(steps[1].Lua, `output = "DP-9"`) {
 		t.Errorf("an old profile keeps connector-name order: %s | %s", steps[0].Lua, steps[1].Lua)
+	}
+}
+
+func TestPlanIdenticalMonitorsFollowSerialAcrossConnectorSwap(t *testing.T) {
+	ms, err := ParseMonitors([]byte(`[
+ {"name":"DP-9","description":"ONN pair","serial":"portrait","transform":1},
+ {"name":"DP-10","description":"ONN pair","serial":"landscape","transform":0}
+]`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := Capture("pair", ms, []Workspace{{ID: 5, Monitor: "DP-9"}, {ID: 8, Monitor: "DP-10"}})
+	raw, err := json.Marshal(p)
+	if err != nil || !strings.Contains(string(raw), `"serial":"portrait"`) {
+		t.Fatalf("capture must retain the hardware serial: %s, %v", raw, err)
+	}
+	p = Profile{}
+	if err := json.Unmarshal(raw, &p); err != nil {
+		t.Fatal(err)
+	}
+	ms[0].Name, ms[1].Name = ms[1].Name, ms[0].Name
+	steps, missing := Plan(p, ms)
+	if len(missing) != 0 || len(steps) != 4 {
+		t.Fatalf("plan = %+v, missing %v", steps, missing)
+	}
+	if !strings.Contains(steps[0].Lua, `output = "DP-10"`) || !strings.Contains(steps[0].Lua, `transform = 1`) ||
+		!strings.Contains(steps[1].Lua, `output = "DP-9"`) ||
+		!strings.Contains(steps[2].Lua, `workspace = "5", monitor = "DP-10"`) ||
+		!strings.Contains(steps[3].Lua, `workspace = "8", monitor = "DP-9"`) {
+		t.Fatalf("layouts and workspaces must follow the physical monitors: %+v", steps)
+	}
+}
+
+func TestPlanAmbiguousSerialsUseSavedConnectors(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		saved [2]string
+		live  [2]string
+	}{
+		{"empty", [2]string{"", ""}, [2]string{"", ""}},
+		{"blank", [2]string{" ", " "}, [2]string{" ", " "}},
+		{"duplicate live", [2]string{"portrait", "landscape"}, [2]string{"portrait", "portrait"}},
+		{"duplicate saved", [2]string{"shared", "shared"}, [2]string{"shared", "other"}},
+		{"unmatched", [2]string{"old-portrait", "old-landscape"}, [2]string{"new-portrait", "new-landscape"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			ms := []Monitor{
+				{Name: "DP-9", Description: "ONN pair", Serial: tc.saved[0], Transform: 1},
+				{Name: "DP-10", Description: "ONN pair", Serial: tc.saved[1]},
+			}
+			p := Capture("pair", ms, nil)
+			ms[0].Serial, ms[1].Serial = tc.live[0], tc.live[1]
+			steps, missing := Plan(p, ms)
+			if len(missing) != 0 || len(steps) != 2 ||
+				!strings.Contains(steps[0].Lua, `output = "DP-9"`) ||
+				!strings.Contains(steps[0].Lua, `transform = 1`) ||
+				!strings.Contains(steps[1].Lua, `output = "DP-10"`) {
+				t.Fatalf("ambiguous serials must not override saved connectors: %+v, missing %v", steps, missing)
+			}
+		})
+	}
+}
+
+func TestPlanReservesSerialBeforeConnectorFallback(t *testing.T) {
+	ms := []Monitor{
+		{Name: "DP-9", Description: "ONN pair"},
+		{Name: "DP-10", Description: "ONN pair", Serial: "portrait", Transform: 1},
+	}
+	p := Capture("pair", ms, nil)
+	ms[0].Name, ms[1].Name = ms[1].Name, ms[0].Name
+	steps, missing := Plan(p, ms)
+	if len(missing) != 0 || len(steps) != 2 ||
+		!strings.Contains(steps[0].Lua, `output = "DP-10"`) ||
+		!strings.Contains(steps[1].Lua, `output = "DP-9"`) ||
+		!strings.Contains(steps[1].Lua, `transform = 1`) {
+		t.Fatalf("connector fallback must not steal the serial match: %+v, missing %v", steps, missing)
 	}
 }
 

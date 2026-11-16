@@ -1,7 +1,8 @@
 // Package display saves and applies monitor layouts (rice port: dock and
 // monitor profiles). A profile records the connected monitors by their
 // description (make, model, serial) and which workspaces live on each. The
-// connector is kept only to tell identical monitors apart.
+// unique serial identifies otherwise identical monitors across connector
+// changes; the saved connector is a fallback when no unique serial exists.
 // `subcult display watch` reacts to Hyprland's monitor events (no polling)
 // and applies the profile for the connected set after a short debounce;
 // `subcult display profile apply` does it by hand. Changes go through
@@ -26,6 +27,7 @@ import (
 type Monitor struct {
 	Name        string  `json:"name"`
 	Description string  `json:"description"`
+	Serial      string  `json:"serial"`
 	Width       int     `json:"width"`
 	Height      int     `json:"height"`
 	RefreshRate float64 `json:"refreshRate"`
@@ -102,6 +104,7 @@ func sameIdentity(a, b []string) bool {
 // ProfileMonitor is one monitor's saved layout.
 type ProfileMonitor struct {
 	Description string  `json:"description"`
+	Serial      string  `json:"serial,omitempty"`
 	Connector   string  `json:"connector,omitempty"` // tells identical monitors apart
 	Mode        string  `json:"mode"`                // "2560x1440@144"
 	Position    string  `json:"position"`
@@ -166,6 +169,7 @@ func Capture(name string, monitors []Monitor, workspaces []Workspace) Profile {
 		}
 		pm := ProfileMonitor{
 			Description: m.Description,
+			Serial:      m.Serial,
 			Connector:   m.Name,
 			Mode:        fmt.Sprintf("%dx%d@%s", m.Width, m.Height, trimFloat(m.RefreshRate)),
 			Position:    fmt.Sprintf("%dx%d", m.X, m.Y),
@@ -232,8 +236,9 @@ type Step struct {
 
 // Plan maps the profile's monitors onto the connected ones by description
 // and returns the steps: monitor rules first, then the workspace moves.
-// Identical monitors go to the connector each was saved on when it is
-// connected, the rest in connector-name order. A profile monitor that is
+// Identical monitors follow a nonempty serial unique in both the saved and
+// connected sets. Saved connectors take precedence for the remaining
+// entries, then connector-name order. A profile monitor that is
 // not connected is skipped and named in the returned list.
 func Plan(p Profile, monitors []Monitor) ([]Step, []string) {
 	byDesc := map[string][]Monitor{}
@@ -243,11 +248,36 @@ func Plan(p Profile, monitors []Monitor) ([]Step, []string) {
 	for d := range byDesc {
 		sort.Slice(byDesc[d], func(i, j int) bool { return byDesc[d][i].Name < byDesc[d][j].Name })
 	}
-	// Saved connectors first, so a fallback pick cannot take a monitor a
-	// later profile entry was saved on.
 	used := map[string]bool{} // by connector
 	picked := make([]*Monitor, len(p.Monitors))
+	// Reserve every unambiguous serial match before considering connectors.
+	// Empty or duplicated serials do not identify a physical monitor.
 	for i, pm := range p.Monitors {
+		if strings.TrimSpace(pm.Serial) == "" {
+			continue
+		}
+		saved, live := 0, 0
+		var candidate *Monitor
+		for _, other := range p.Monitors {
+			if other.Description == pm.Description && other.Serial == pm.Serial {
+				saved++
+			}
+		}
+		for j, m := range byDesc[pm.Description] {
+			if m.Serial == pm.Serial {
+				live++
+				candidate = &byDesc[pm.Description][j]
+			}
+		}
+		if saved == 1 && live == 1 && !used[candidate.Name] {
+			picked[i], used[candidate.Name] = candidate, true
+		}
+	}
+	// Reserve saved connectors before a fallback can take another entry's.
+	for i, pm := range p.Monitors {
+		if picked[i] != nil {
+			continue
+		}
 		for j, m := range byDesc[pm.Description] {
 			if pm.Connector != "" && m.Name == pm.Connector && !used[m.Name] {
 				picked[i], used[m.Name] = &byDesc[pm.Description][j], true
