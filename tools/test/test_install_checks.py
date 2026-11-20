@@ -251,13 +251,15 @@ class QuietestMinute(unittest.TestCase):
             return left.pop(0)
         return sample
 
-    def test_a_quiet_first_minute_is_the_only_one_taken(self):
-        self.assertEqual(install_test.quietest_minute(self.samples((1, 40), (0, 0))), (1, 40))
-        self.assertEqual(self.taken, 1)
+    def test_every_minute_is_taken_so_the_headroom_shows(self):
+        # A first minute within budget no longer ends the sample: the
+        # quietest of the three is reported (issue #289).
+        self.assertEqual(install_test.quietest_minute(self.samples((14, 40), (11, 35), (13, 38))), (11, 35))
+        self.assertEqual(self.taken, 3)
 
     def test_a_noisy_minute_is_sampled_again_and_the_quietest_judged(self):
-        self.assertEqual(install_test.quietest_minute(self.samples((900, 950), (2, 30))), (2, 30))
-        self.assertEqual(self.taken, 2)
+        self.assertEqual(install_test.quietest_minute(self.samples((900, 950), (2, 30), (5, 31))), (2, 30))
+        self.assertEqual(self.taken, 3)
 
     def test_a_shell_that_wakes_every_minute_is_still_reported_over_budget(self):
         main, total = install_test.quietest_minute(self.samples((900, 950), (800, 990), (850, 900)))
@@ -268,6 +270,18 @@ class QuietestMinute(unittest.TestCase):
     def test_a_failed_reading_is_a_failure(self):
         self.assertEqual(install_test.quietest_minute(self.samples(None)), (-1, -1))
         self.assertFalse(install_test.idle_ok(-1))
+
+
+class SessionProcesses(unittest.TestCase):
+    """The per-process list behind the session memory sum (issue #289)."""
+
+    def test_largest_first_with_names_that_have_spaces(self):
+        ps = " 1200 Hyprland\n  300 xdg-desktop-portal\n90000 .quickshell-wrap\n 4500 Isolated Web Co\n"
+        self.assertEqual(install_test.session_processes(ps, 3),
+                         [(90000, ".quickshell-wrap"), (4500, "Isolated Web Co"), (1200, "Hyprland")])
+
+    def test_serial_noise_is_left_out(self):
+        self.assertEqual(install_test.session_processes("$ ps -u 1000\n 512 zsh\n\nrss\n"), [(512, "zsh")])
 
 
 

@@ -106,14 +106,16 @@ def thread_wakeups(before: str, after: str) -> int | None:
 
 
 def quietest_minute(sample, attempts: int = 3) -> tuple[int, int]:
-    """The quietest of up to `attempts` idle minutes, as (main thread, all threads).
+    """The quietest of `attempts` idle minutes, as (main thread, all threads).
 
     `sample()` waits a minute and returns both counts, or None when they
     could not be read. Something else waking the shell (a D-Bus signal, a
     job still finishing after the tests before) only ever adds to a minute:
     runs of the same build read 11 to 16 against a limit of 15. A timer or
-    a polling loop shows in every minute, so the quietest one is judged,
-    and sampling stops at the first minute within budget.
+    a polling loop shows in every minute, so the quietest one is judged.
+    Every minute is sampled, so the reported value is the quietest one and
+    shows the headroom (issue #289): stopping at the first minute within
+    budget reported 13 to 15 for builds whose quietest minute was lower.
     """
     best = (-1, -1)
     for _ in range(attempts):
@@ -122,9 +124,22 @@ def quietest_minute(sample, attempts: int = 3) -> tuple[int, int]:
             return (-1, -1)
         if best[0] < 0 or got[0] < best[0]:
             best = got
-        if idle_ok(best[0]):
-            break
     return best
+
+
+def session_processes(ps: str, count: int = 15) -> list[tuple[int, str]]:
+    """The largest `count` processes of `ps -o rss=,comm=` output, as (KiB, name).
+
+    The memory budget is the sum over every process of the user; this list
+    says which processes make it up (issue #289). Lines that are not a
+    number and a name (serial noise) are left out.
+    """
+    rows = []
+    for line in ps.splitlines():
+        parts = line.split(None, 1)
+        if len(parts) == 2 and parts[0].isdigit():
+            rows.append((int(parts[0]), parts[1].strip()))
+    return sorted(rows, key=lambda row: -row[0])[:count]
 
 
 def write_config() -> None:
@@ -999,6 +1014,8 @@ finally:
         threads = ("for t in /proc/%s/task/*; do echo \"${t##*/}"
                    " $(awk '/^voluntary_ctxt_switches/ {print $2}' $t/status 2>/dev/null)\"; done" % pid)
 
+        minutes = []
+
         def idle_minute():
             if not pid.isdigit():
                 return None
@@ -1008,13 +1025,17 @@ finally:
             total = thread_wakeups(before_all, after_all)
             if not (before.isdigit() and after.isdigit()) or total is None:
                 return None
+            minutes.append(int(after) - int(before))
             return int(after) - int(before), total
         results["idle"], results["idle_all"] = quietest_minute(idle_minute)
+        results["idle_minutes"] = minutes
         # Idle resident memory of the whole session (every process of the
         # user: compositor, shell, portals, agents) in KiB, taken after the
-        # quiet minute, and the installed package count (ADR 0054 budgets).
+        # quiet minutes, and the installed package count (ADR 0054 budgets).
+        # The per-process list says what makes up the sum (issue #289).
         mem = serial.run("ps -u $(id -u) -o rss= | awk '{s += $1} END {print s + 0}'").strip()
         results["mem"] = int(mem) if mem.isdigit() else -1
+        results["mem_processes"] = serial.run("ps -u $(id -u) -o rss=,comm=")
         pkgs = serial.run("pacman -Qq | wc -l").strip()
         results["packages"] = int(pkgs) if pkgs.isdigit() else -1
         # A catalog theme recolours the bar through Pult alone (issue #76);
@@ -1281,7 +1302,11 @@ finally:
     if r["shell_errors"].strip():
         print("install-test: shell errors:\n" + r["shell_errors"].strip())
     print(f"install-test: shell idle: {r['idle']} main-thread wake-ups in the quietest 60 s sampled, {r['idle_all']} over all threads (budget file {IDLE_BUDGET})")
+    print(f"install-test: shell idle minutes sampled (main thread): {' '.join(map(str, r['idle_minutes'])) or 'none'}")
     print(f"install-test: session idle memory: {r['mem']} KiB resident; packages installed: {r['packages']}")
+    (VM / "session-processes.txt").write_text(r["mem_processes"])
+    print("install-test: largest session processes (KiB resident, name; all in "
+          f"{VM / 'session-processes.txt'}):\n" + "\n".join(f"  {kib:>8} {name}" for kib, name in session_processes(r["mem_processes"])))
     print(f"install-test: screenshots {VM / 'greeter.png'}, {VM / 'session.png'}, {VM / 'bar.png'}"
           f" ({r['greeter_colours']} and {r['session_colours']} colours)")
     if r["failed"].strip():
