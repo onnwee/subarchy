@@ -17,7 +17,11 @@ built with archiso.
   and shows the live medium's and systemd's status lines while the image
   starts. Before 2026-11-12 the serial console came last and a laptop
   showed a black screen for about 30 seconds. The serial console still
-  gets the kernel's errors and its own root login, which the tests drive.
+  gets the kernel's errors and its own root login, which the tests drive;
+- build a smaller initramfs (#330): no `archiso_pxe_*` hooks, and
+  `subarchy_kms` (`airootfs/etc/initcpio/install/`) in place of `kms`, which
+  leaves out nouveau and radeon. The image holds no `autodetect` hook, so
+  it carries every storage and filesystem driver by design.
 
 The installer, `subarchy-setup`, starts by itself on the first console
 (`airootfs/root/.zlogin`). That console's autologin prints no banner, and

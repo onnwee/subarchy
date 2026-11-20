@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# The `kms` hook minus the nouveau and radeon drivers. On the 2026-11-16 image
+# nouveau's GSP firmware (nvidia/ga102 and tu102, two firmware versions each)
+# was 105 MB of the 251 MB initramfs and radeon added 3 MB, for display
+# drivers the live medium loads from the squashfs a moment later anyway. The
+# other GPU drivers stay, so a laptop with an Intel, AMD or virtual GPU still
+# gets its display early. Issue #330.
+
+build() {
+    local major minor
+
+    # AGP and DRM modules for GPUs, except nouveau and radeon
+    add_checked_modules '/drivers/char/agp/'
+    add_checked_modules -f '/drivers/gpu/drm/(nouveau|radeon)/' '/drivers/gpu/drm/'
+
+    # modules that implement the privacy screen interface
+    IFS=.- read -r major minor _ <<<"$KERNELVERSION"
+    if (( major > 5 || (major == 5 && minor >= 17) )); then
+        add_checked_modules_from_symbol 'drm_privacy_screen_register' '=drivers/platform'
+    fi
+}
+
+help() {
+    cat <<HELPEOF
+Adds the AGP, DRM and privacy screen drivers to the initramfs image, without
+nouveau and radeon and the firmware they pull in. Used on the live image only.
+HELPEOF
+}
