@@ -29,6 +29,7 @@ review can be a yes/no pass.
 | [[pult-app-targets\|Pult application targets]] | Package checks and remaining native acceptance for swayimg, VS Code and Obsidian (#78) |
 | [[go-application-notices\|Go application notice retention]] | #243 package retention, later xlab licence evidence, and remaining #84 source-delivery/image gates |
 | [[release-licence-notices\|Release licence notice audit]] | #241 notice repair, checked package bytes and remaining final-image/owner limits under #84 |
+| [[release-notes-0.0.0\|Release notes 0.0.0]] | Draft for #84 (checklist Q21): tested hardware, untested ports, limitations and what is not in the release; tag-time fields still empty |
 
 ## How to review
 
