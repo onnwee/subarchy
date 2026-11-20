@@ -153,7 +153,7 @@ state() {
       active=$mode
       printf '{"available": true, "modes": '
       json_list "${modes[@]}"
-      [[ -n $custom ]] && printf ', "custom": %s' "$custom"
+      if [[ -n $custom ]]; then printf ', "custom": %s' "$custom"; fi
       printf '}'
     else
       printf '{"available": false}'
@@ -163,7 +163,7 @@ state() {
     echo "profile: $active (${profiles[*]})"
     if charging_available; then
       echo "charging: ${mode:-unknown} (${modes[*]})"
-      [[ -n $custom ]] && echo "custom: $custom"
+      if [[ -n $custom ]]; then echo "custom: $custom"; fi
     else
       echo "charging: no controls"
     fi

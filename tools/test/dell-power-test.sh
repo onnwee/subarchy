@@ -53,6 +53,17 @@ assert [m["id"] for m in d["charging"]["modes"] if m["active"]] == ["adaptive"],
 assert d["charging"]["custom"] == {"start": 50, "stop": 80, "startMin": 50, "startMax": 95, "stopMin": 55, "stopMax": 100, "step": 5}, d
 ' "$st" || fail "state --json: $st"
 
+# Firmware with the charging mode but no custom thresholds: text state
+# prints both lines and exits 0.
+mode="$work/mode/class"
+mkdir -p "$mode/platform-profile/platform-profile-0" "$mode/firmware-attributes/dell-wmi-sysman/attributes/PrimaryBattChargeCfg"
+cp "$dell/platform-profile/platform-profile-0/"{name,choices,profile} "$mode/platform-profile/platform-profile-0/"
+echo Standard >"$mode/firmware-attributes/dell-wmi-sysman/attributes/PrimaryBattChargeCfg/current_value"
+echo "Adaptive;Standard;Express" >"$mode/firmware-attributes/dell-wmi-sysman/attributes/PrimaryBattChargeCfg/possible_values"
+st=$(run mode state) || fail "mode-only state exited $?: $st"
+[[ $st == *"profile: balanced"* && $st == *"charging: standard"* && $st != *custom:* ]] || fail "mode-only state: $st"
+run mode state --json >/dev/null || fail "mode-only state --json failed"
+
 [[ $(run dell set quiet) == "set quiet (power-profiles-daemon: power-saver)" ]] || fail "set quiet"
 [[ $(<"$dell/platform-profile/platform-profile-0/profile") == quiet && $(<"$work/ppd") == power-saver ]] || fail "quiet did not reach the firmware and the daemon"
 run dell set performance >/dev/null
