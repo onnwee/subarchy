@@ -26,8 +26,8 @@ jobs:
     timeout-minutes: 20
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version-file: go.mod
           cache: false
@@ -38,12 +38,16 @@ jobs:
           fi
       - name: make verify
         run: make verify
+      - name: Pinned Pult package and app targets
+        run: tools/test/pult-package-test.sh
 
   package:
     timeout-minutes: 30
     runs-on: ubuntu-latest
     container:
-      image: archlinux:latest
+      # Pinned by digest; this was the `latest` tag on 2026-11-20. To move it,
+      # resolve the tag's current digest and change both jobs together.
+      image: archlinux:latest@sha256:d4594bb2300cba11f41c2f27923eb56f63d9988909c402f9c95517d1e362c899
       # Reap orphaned package-hook processes and leave room for build/render
       # threads. The runner default of 512 prevented even checkout from forking.
       options: --init --pids-limit=1024
@@ -54,13 +58,13 @@ jobs:
         run: |
           cat /sys/fs/cgroup/pids.current /sys/fs/cgroup/pids.max
           ps -eLo comm= | sort | uniq -c | sort -nr | head -10
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Build and check the package as a normal user
         run: |
           useradd -m builder
           git config --global --add safe.directory "$PWD"
           chown -R builder: "$PWD"
-          su builder -c "git config --global --add safe.directory '$PWD' && make package"
+          su builder -c "git config --global --add safe.directory '$PWD' && tools/ci/check-package-names.sh && make package"
       - name: Checks the Ubuntu verify job skips
         # Hyprland, Neovim, zsh, lua and the role fonts exist only here; each
         # of these tests skips without its tool, so a skip fails this step.
@@ -77,7 +81,7 @@ jobs:
     timeout-minutes: 20
     runs-on: ubuntu-latest
     container:
-      image: archlinux:latest
+      image: archlinux:latest@sha256:d4594bb2300cba11f41c2f27923eb56f63d9988909c402f9c95517d1e362c899
       # Reap orphaned package-hook processes and leave room for build/render
       # threads. The runner default of 512 prevented even checkout from forking.
       options: --init --pids-limit=1024
@@ -88,7 +92,7 @@ jobs:
           # Arch gives sway cap_sys_nice as a file capability, which a container
           # may not grant; without it the binary cannot start at all.
           setcap -r /usr/bin/sway
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Model tests, lint and widget index
         run: |
           git config --global --add safe.directory "$PWD"
@@ -97,7 +101,7 @@ jobs:
           make shell-test shell-lint shell-index-check shell-native-test
       - name: Keep native greeter and panel previews
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3.2.1
         with:
           name: shell-previews
           path: build/*-preview/
@@ -110,7 +114,7 @@ jobs:
           su runner -c "git config --global --add safe.directory '$PWD' && tools/test/shell-headless.sh shell"
       - name: Keep headless shell and lock diagnostics
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3.2.1
         with:
           name: shell-headless-logs
           path: build/shell-headless-logs/

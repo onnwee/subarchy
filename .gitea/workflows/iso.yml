@@ -30,7 +30,7 @@ jobs:
         run: test "$(df -B1 --output=avail / | tail -1)" -ge 60000000000
       - name: Install checkout tools
         run: pacman -Syu --noconfirm --needed git nodejs
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -42,7 +42,7 @@ jobs:
         run: tools/ci/install-test.sh
       - name: Keep the build logs
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3.2.1
         with:
           name: iso-logs
           path: |
@@ -55,7 +55,7 @@ jobs:
           if-no-files-found: warn
       # Only when a run is started by hand: the image is 4.6 GB, and the
       # upload took the runner 45 minutes in which no other job could start.
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3.2.1
         if: github.event_name == 'workflow_dispatch'
         with:
           name: subarchy-iso

@@ -13,6 +13,12 @@
 # the snapshot does not know are then dropped from pacman's records (their
 # shared files now belong to the snapshot's packages; this container is
 # thrown away after the job).
+#
+# The first `pacman -Syu` stays (checked 2026-11-20). The Arch image ships no
+# sync databases, so nothing can be installed before one sync; the snapshot
+# date is in the checkout, which needs git and nodejs first; and `-Sy` alone
+# would be a partial upgrade. The image is pinned by digest in the Gitea
+# workflows, which bounds how far that first sync starts from.
 set -euo pipefail
 
 root=$(git rev-parse --show-toplevel)
