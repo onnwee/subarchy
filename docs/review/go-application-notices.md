@@ -2,9 +2,9 @@
 title: "Go application notice retention"
 type: review
 status: draft
-review: pending
+review: done
 created: 2026-11-16
-updated: 2026-11-16
+updated: 2026-11-20
 tags: [review, packaging, licence]
 ---
 

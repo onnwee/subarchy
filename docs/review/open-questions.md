@@ -4,7 +4,7 @@ type: review
 status: active
 review: done
 created: 2026-11-06
-updated: 2026-11-13
+updated: 2026-11-20
 tags: [review]
 ---
 
@@ -93,5 +93,13 @@ Answer inline and move answered items to the bottom with the date.
 - **17. OmaSSH and Fleetbar**: removed on purpose.
 
 All open questions are answered.
+
+Dated notes, 2026-11-20:
+
+- Item 6 ("not a concern while private") is out of date: the GitHub
+  repository has been public since 2026-11-13 ([[0053-licence|ADR 0053]],
+  progress). The licence gate is open as #261; see [[pending-decisions]].
+- Backups use restic, not borg ([[0060-backups|ADR 0060]], revised
+  2026-11-07).
 
 Related: [[0001-fork-strategy|ADR 0001]] · [[brand-identity|Brand identity]] · [[roadmap|Roadmap]]

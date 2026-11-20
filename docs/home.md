@@ -3,7 +3,7 @@ title: "Subarchy documentation"
 type: index
 status: active
 created: 2026-11-06
-updated: 2026-11-13
+updated: 2026-11-20
 tags: [index]
 aliases: [Docs home, Home]
 ---
@@ -24,8 +24,8 @@ issues; Gitea is a fast-forward mirror ([[0051-hosting-ci|ADR 0051]]).
 | [[inventory-index\|Inventory]] | Upstream Omarchy and the additions on `sputnik`, observed on 2026-11-06 with Omarchy 4.5.0-3; rerun `python3 tools/inventory/collect.py` for current numbers | Hand-written summaries; `generated/` is script output |
 | [[decisions-index\|Decisions]] | Architecture decision records | Hand-written, one note per decision |
 | [[brand-identity\|Brand identity]] | Name, palette, marks and voice | Hand-written draft |
-| [[review-index\|Review]] | Items waiting on an owner decision | Hand-written checklists |
-| [[roadmap\|Roadmap]] | Phases from inventory to installable image | Hand-written |
+| [[review-index\|Review]] | Items waiting on an owner decision; start with [[pending-decisions]] | Hand-written checklists |
+| [[roadmap\|Roadmap]] | Phases from inventory to installable image; tracker is #250 | Hand-written |
 | [[ci-runner\|KVM CI runner]] | Runner limits, capability check and recovery | Hand-written |
 | [[package-publishing\|Package publishing]] | Main-only uploads, signature checks and credential rotation | Hand-written |
 | [[key-rotation\|Key rotation and revocation]] | Draft, untested: replacing or revoking the registry key and the owner's release key | Hand-written |
@@ -40,7 +40,7 @@ issues; Gitea is a fast-forward mirror ([[0051-hosting-ci|ADR 0051]]).
 ```dataview
 TASK
 FROM "docs"
-WHERE !completed
+WHERE !completed AND !contains(file.folder, "plans")
 GROUP BY file.link
 ```
 

@@ -4,12 +4,20 @@ type: review
 status: active
 review: done
 created: 2026-11-07
-updated: 2026-11-07
+updated: 2026-11-20
 tags: [review, plan]
 aliases: [Decision backlog, Remaining decisions]
 ---
 
 # Next decisions
+
+> **Status note, 2026-11-20.** This note is frozen at its 2026-11-07 text and
+> kept as history. The decisions still open are in [[pending-decisions]].
+> Two entries below are out of date: backups are **restic**, not borg
+> ([[0060-backups|ADR 0060]], revised 2026-11-07, the same day this note was
+> written), and the repository has been **public since 2026-11-13**
+> ([[0053-licence|ADR 0053]], progress), so "not a concern while the
+> repository is private" no longer holds.
 
 Everything still open after the decision map was completed, gathered
 2026-11-07 from the ADRs, [[open-questions|open questions]] and the

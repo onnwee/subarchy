@@ -2,9 +2,9 @@
 title: "Pult application targets"
 type: review
 status: active
-review: pending
+review: done
 created: 2026-11-16
-updated: 2026-11-16
+updated: 2026-11-20
 tags: [review, theming, pult]
 ---
 

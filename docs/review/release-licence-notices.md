@@ -4,7 +4,7 @@ type: review
 status: active
 review: pending
 created: 2026-11-16
-updated: 2026-11-16
+updated: 2026-11-20
 tags: [review, release, legal]
 ---
 
@@ -46,6 +46,15 @@ that link with an independent vendor notice and bumps the 64-bit recipe
 to `580.196.07-4`, distinct from lib32's `-3` registry filenames. All 32 cached Neovim plugin directories
 carry licence files, alongside the starter licence and Subarchy NOTICE.
 Presence alone does not establish all redistribution conditions.
+
+## Current candidate, 2026-11-20
+
+The audit above was written against main `702f9e0` and core `0.0.0-634`.
+The candidate now under qualification is main `9e32591` with core
+`0.0.0-638` (published to stable and edge in Gitea run 23109, 2026-11-16,
+per the #84 comment). Main is held there until the tag ([[pending-decisions]],
+#258). The licence gate is open as #261; the remaining notice checks are
+#283. Nothing in this note was rechecked against `0.0.0-638`.
 
 ## Remaining limits
 

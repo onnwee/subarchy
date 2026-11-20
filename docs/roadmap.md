@@ -1,9 +1,9 @@
 ---
 title: "Roadmap"
 type: plan
-status: draft
+status: active
 created: 2026-11-06
-updated: 2026-11-16
+updated: 2026-11-20
 tags: [plan]
 aliases: []
 ---
@@ -15,15 +15,24 @@ Built from scratch ([[0001-fork-strategy|ADR 0001]]), in the order of the
 runs and is checked in CI.
 
 The active tracker is
-[roadmap issue #230](https://github.com/subculture-collective/subarchy/issues/230):
-finish desktop qualification and ship the first stable release. It carries
-the remaining work and release dependencies. The phases below retain the
-original implementation history; their older checkboxes are not a current
-issue-status report. The numbers after each item are GitHub issue numbers.
+[roadmap issue #250](https://github.com/subculture-collective/subarchy/issues/250):
+ship the first release and plan what follows. It replaces
+[#230](https://github.com/subculture-collective/subarchy/issues/230), which
+tracked desktop qualification; #5 is retired as well.
+`tools/roadmap/subarchy-roadmap.json` is #5's historical plan; do not
+republish it over #250. Record new scope and qualification on the existing
+work issues under #250. The phases below retain the original implementation
+history; their checkboxes were brought up to date on 2026-11-20 against the
+closed issues named in each line. The numbers after each item are GitHub
+issue numbers. The owner's open decisions are in [[pending-decisions]].
 
-Roadmap #5 is retired. `tools/roadmap/subarchy-roadmap.json` is its historical
-plan; do not republish it over #230. Record new scope and qualification on
-the existing work issues under #230.
+Still open on 2026-11-20 (each issue state read that day):
+
+- #195: the NVIDIA GPU never reaches runtime D3 in Intel mode.
+- #249: false USB-C charging and UPower external-power state on battery.
+- #98: minor review findings from Epic A, deferred.
+- #89: Google calendars in the sync; no real-account run yet.
+- #51 (reopened) and #84: hardware results on `sputnik` and the first release.
 
 ## Phase 0: inventory and decisions
 
@@ -87,9 +96,9 @@ Plymouth, NetworkManager with the DNS trust policy, PipeWire, ufw.
         notification replacement and plain text, overlay placement, polkit
         focus; qualified by the full VM install test on 2026-11-08 (62
         checks, main-thread idle budget)
-  - [ ] Check the polkit wrong-password flow on `sputnik` (A15 #85)
+  - [x] Check the polkit wrong-password flow on `sputnik` (A15 #85, closed 2026-11-15)
   - [x] Plan 2: weather with `linecast` (#54, #62), Soma (#63), n8n (#64)
-  - [ ] Plan 2: HT3 widget and panel (#65) and its controls (#153)
+  - [x] Plan 2: HT3 widget and panel (#65) and its controls (#153), closed 2026-11-15
   - [x] Plan 3: calendar sync and widget (#46, #66)
   - [ ] Plan 3: Google calendars in the sync (#89)
 - [x] Shell stage 2: a panel per widget (#41, #60, #61)
@@ -98,7 +107,7 @@ Plymouth, NetworkManager with the DNS trust policy, PipeWire, ufw.
 - [x] Launcher (#37, #47, #69, #70, #71, #92; [[0057-launcher|ADR 0057]])
 - [x] Standalone QML lock program with the screensaver until input, and
       hypridle (#22, #23, #72; [[0036-shell-components|ADR 0036]])
-- [ ] Unlock with a fingerprint on supported readers (#93)
+- [x] Unlock with a fingerprint on supported readers (#93, closed 2026-11-15)
 - [x] Ported rice features ([[rice-port-review|rice port review]]): dock and
       monitor profiles, reduced motion on battery, battery and thermal alerts,
       privacy indicator, settings panel, destructive-action confirmation,
@@ -109,8 +118,8 @@ Plymouth, NetworkManager with the DNS trust policy, PipeWire, ufw.
 - [x] Pult packaged with the SUBCULT palette, applied to Hyprland, the
       shell and the lock, and system-level apply for SDDM, Plymouth and
       Limine (#48, #56, #76, #79)
-- [ ] Pult themes Qt and GTK apps (#77) and editors, CLI tools and
-      Chromium (#78)
+- [x] Pult themes Qt and GTK apps (#77) and editors, CLI tools and
+      Chromium (#78), both closed 2026-11-16 ([[pult-app-targets]])
 - [x] App installer and default picker reading the app list (`subcult app`,
       2026-11-07), and web apps with Discord preinstalled (#80)
 - [x] LazyVim starter and branding layer (#50, #97;
@@ -123,10 +132,10 @@ Plymouth, NetworkManager with the DNS trust policy, PipeWire, ufw.
 - [x] Port Omarchy's x86 hardware fixes, marked untested until run on real
       hardware (#42, #57, #58, #81, #82, #83;
       [[0050-hardware-support|ADR 0050]])
-- [ ] Install on `sputnik`'s empty second drive (`nvme0n1`), keeping Omarchy on
-      `nvme1n1` as the fallback, and record the hardware results (#51;
-      installed 2026-11-08, [[first-install|first install]];
-      [[0049-installer|ADR 0049]])
+- [x] Install on `sputnik`'s empty second drive (`nvme0n1`), keeping Omarchy on
+      `nvme1n1` as the fallback (installed 2026-11-08, reinstalled 2026-11-16;
+      [[first-install|first install]]; [[0049-installer|ADR 0049]])
+- [ ] Record the hardware results (#51, reopened; #195, #249 and #89 above)
 - [ ] First release on the stable channel (#84)
 
 Related: [[decision-map|Decision map]] · [[0001-fork-strategy|ADR 0001]] · [[open-questions|Open questions]]

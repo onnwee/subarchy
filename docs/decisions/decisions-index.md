@@ -3,7 +3,7 @@ title: "Decisions"
 type: index
 status: active
 created: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-20
 tags: [index, decision]
 aliases: [ADR index]
 ---
@@ -20,8 +20,9 @@ Each record's `status` property holds its state. Create a new record from
 
 ![[decisions.base]]
 
-The [[decision-map|decision map]] lists every decision still to take, in
-order.
+The [[decision-map|decision map]] is the order the decisions were taken in
+(2026-11-06 to 2026-11-07); it is no longer a list of what is left. The
+open owner decisions are in [[pending-decisions]].
 
 | ADR | Title |
 |---|---|

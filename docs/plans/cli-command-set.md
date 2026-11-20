@@ -3,7 +3,7 @@ title: "Distribution CLI: the Bash command set"
 type: plan
 status: accepted
 created: 2026-11-08
-updated: 2026-11-14
+updated: 2026-11-20
 tags: [plan, cli]
 aliases: [CLI command set, E1]
 ---
@@ -12,6 +12,14 @@ aliases: [CLI command set, E1]
 
 Implemented under Epic E (GitHub #10), 2026-11-13. The command lists below are as
 of 2026-11-08.
+
+**Status, 2026-11-20.** The list below is an uncut proposal, not what ships.
+The 2026-11-20 brief on
+[#270](https://github.com/subculture-collective/subarchy/issues/270) found nine
+of the proposed commands built (read from `tools/site/commands.json` and `bin/`
+at `9e32591`) and counted 47 individual commands unbuilt; table rows group
+several commands, so the counts differ from the row count. #270 holds the
+decision on which are kept; its suggested defaults are in [[pending-decisions]].
 
 GitHub #24 (E1), under Epic E #10. [[0046-distribution-cli|ADR 0046]]
 puts stateful logic in Go and thin glue in Bash under one dispatcher,

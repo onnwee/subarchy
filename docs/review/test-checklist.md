@@ -308,21 +308,41 @@ Run the installer on tty1 with the dock unplugged, so Ethernet is off.
 ## 13 Decisions for the owner
 
 Each one needs an answer, recorded on the issue or ADR named. IDs stay
-stable: Q17, Q23 and Q24 were settled by #185, #184 and #183.
+stable. [[pending-decisions]] lists the open ones once, with the issue that
+holds each and a default (2026-11-20).
+
+Settled, with the evidence checked on 2026-11-20:
+
+- **Q7** noise mode and HT3-only volume: #153 closed as completed on
+  2026-11-15; the owner confirmed on the real headphones that all three
+  noise modes and the volume control worked ([[first-install]], "HT3
+  controls"). EQ was scoped out as separate work and is now in #256.
+- **Q13** Pult and Dolphin: Pult PR #34 (KDE apps through a colour scheme)
+  merged 2026-11-13; #77 closed 2026-11-16 with Pult 0.4.1 packaged
+  (#225), and an ISO run showed Dolphin in Dracula's colours after
+  `pult apply` ([[0037-theming|ADR 0037]]). `packaging/pult` now pins a
+  later commit ([[pult-app-targets]]).
+- **Q17, Q23, Q24** settled by PRs #185, #184 and #183, merged 2026-11-13.
+  The question text is no longer in this file, so the PR titles are the
+  only record here: #185 site theme and key commands, #184 linecast
+  install, #183 timers kept out of the greeter.
+- **Q4**, in part: installing beside another OS is deferred past the first
+  release (PR #233, [[guided-installer-scope]]; the rest is in #272).
+  Still open: the read-only LUKS unlock and the visible 2 s boot menu.
 
 - [ ] **Q1** (decision) Secure Boot key custody and recovery, and the TPM PCR policy and recovery, before F12 and F13. (ADR 0010, ADR 0012, #51)
 - [ ] **Q2** (decision) Keep or drop Omarchy's "Limine" firmware entry. Subarchy's own entry is labelled "Subarchy" from #197 on. (#140)
 - [ ] **Q3** (decision) Whether online installs stay on the stable snapshot and the live root follows it, so the installed kernel is never older than the stick's. (ADR 0049)
-- [ ] **Q4** (decision) Installer: offer to unlock a LUKS partition read-only while browsing; support installing beside another OS (reuse its EFI partition or add one, minimum free space, Limine chainload; changes ADR 0009); keep the visible 2 s boot menu with a beep and the static mark. (#124, #143)
+- [ ] **Q4** (decision, same-disk install settled: deferred, #233) Installer: offer to unlock a LUKS partition read-only while browsing; support installing beside another OS (reuse its EFI partition or add one, minimum free space, Limine chainload; changes ADR 0009); keep the visible 2 s boot menu with a beep and the static mark. (#124, #143)
 - [ ] **Q5** (decision) If I13 or I14 look faint by eye: pad the focused button, or draw the progress track in a muted colour.
 - [ ] **Q6** (decision) The 1.5 s of black before the shutdown splash, and whether to hide its progress bar; a sign once the lock's password passes 16 characters.
-- [ ] **Q7** (decision) HT3 panel controls: noise mode, HT3-only volume, EQ. #181 added the first two; EQ is left. (#153)
+- [x] **Q7** (settled 2026-11-15) HT3 panel controls: noise mode and HT3-only volume shipped in #181 and were confirmed on the headphones (#153). EQ is a separate decision in #256.
 - [ ] **Q8** (decision) Confirm or change the Tailscale policy (active session connects, signs in, picks exit nodes and sends files without a password) and the starting list of actions that skip sudo or polkit. (ADR 0062)
 - [ ] **Q9** (decision) Bind or autostart voxtype dictation. The screenshot and recording keys now ship (D6). (ADR 0056)
 - [ ] **Q10** (decision) Default apps: ship `/etc/xdg/mimeapps.list` or run `subcult app default` at install; vendor or unmark the six missing "preinstalled" apps; add CUPS per ADR 0022 or change the ADR; the 1010-package budget. (#168, #172, ADR 0054)
 - [ ] **Q11** (decision) Finish the app list review: overlaps (Bitwarden CLI and Proton Pass, browsers, PDF, archive), sputnik apps left out, more web apps, chatgpt-desktop. Then set [[app-list]] to `review: done`. (ADR 0044)
 - [ ] **Q12** (decision) Cursor colour: kitty's Subcult Ink cursor now uses the palette's #FFFFFF (#173). Confirm it or ask for #00FF88, and say whether Subcult Ink stays a separate scheme. (#4)
-- [ ] **Q13** (decision) Sign a Pult release with pult#34 so Dolphin follows catalog themes, and bump `packaging/pult`. (#77)
+- [x] **Q13** (settled 2026-11-16) Pult with pult#34 so Dolphin follows catalog themes, packaged as Pult 0.4.1 and later (#77, #225).
 - [ ] **Q14** (decision) Approve the 25 upscaled wallpapers in `~/Pictures/subcult-wallpapers-4k/` and decide on the other 84. (ADR 0038)
 - [ ] **Q15** (decision) Switch the installer, boot, greeter and lock from the SUBCULT mark to the Subarchy identity; where `Documentation=`, polkit `vendor_url` and PKGBUILD `url=` should point. (ADR 0052, #178)
 - [ ] **Q16** (decision) Restic backup target: a repository on Dozor over SFTP. (ADR 0060)

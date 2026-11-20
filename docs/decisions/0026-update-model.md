@@ -128,5 +128,11 @@ delays stable updates rather than breaking them.
   fwupd's "nothing to do" (exit 2) is not reported as a failure, and
   `--yes` passes fwupd `--assume-yes --no-reboot-check`; the report then
   says that staged firmware updates apply at the next reboot.
+- 2026-11-20: the line under Consequences that stable users run Arch packages
+  "about two weeks old" is out of date. The snapshot timer advances stable
+  weekly, after the ISO build and VM install test pass on the new date
+  (`docs/package-publishing.md`). Separately, what stable follows after the
+  first tag is undecided (#260, [[pending-decisions]]). The timer is disabled
+  until the tag (#258).
 
 Related: [[decision-map|Decision map]] · [[0025-package-repository|ADR 0025]] · [[0011-snapshots|ADR 0011]]
