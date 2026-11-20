@@ -150,6 +150,8 @@ package() {
   install -Dm644 "$sys/sysctl-hardening.conf" "$pkgdir/usr/lib/sysctl.d/90-subarchy-hardening.conf"
   install -Dm644 "$sys/resolved-dns.conf" "$pkgdir/usr/lib/systemd/resolved.conf.d/50-subarchy.conf"
   install -Dm644 "$sys/networkmanager-dns.conf" "$pkgdir/usr/lib/NetworkManager/conf.d/50-subarchy-dns.conf"
+  # New and never-switched connections start untrusted (ADR 0020).
+  install -Dm755 "$sys/networkmanager-dns-dispatcher.sh" "$pkgdir/usr/lib/NetworkManager/dispatcher.d/50-subarchy-dns"
   install -Dm644 "$sys/coredump.conf" "$pkgdir/usr/lib/systemd/coredump.conf.d/50-subarchy.conf"
   install -Dm644 "$sys/logind-power-key.conf" "$pkgdir/usr/lib/systemd/logind.conf.d/50-subarchy-power-key.conf"
   # Daily update check (ADR 0026) and power profile by power source (ADR 0021).

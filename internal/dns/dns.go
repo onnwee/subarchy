@@ -15,11 +15,13 @@
 // routing domains; a longer domain such as a tailnet name still wins over
 // "~.".
 //
-// The package changes NetworkManager connection settings only. Nothing here
-// makes a newly joined network untrusted or handles captive portals; those
-// need the dispatcher the ADR describes. A connection never switched reads
-// as "not set"; resolved sends its lookups to both the network's servers
-// and the global Quad9 servers and returns the first answer.
+// Untrusted is the default. ApplyDefault, which the NetworkManager
+// dispatcher script runs when a connection comes up, turns on
+// ignore-auto-dns for a Wi-Fi or Ethernet connection that is in neither
+// mode. NetworkManager.conf cannot set that default itself:
+// ipv4/ipv6.ignore-auto-dns are not among the properties its [connection]
+// section accepts (NetworkManager.conf(5), NetworkManager 1.52). Captive
+// portals are not handled here.
 package dns
 
 import (
@@ -42,11 +44,11 @@ type Mode string
 const (
 	Untrusted Mode = "untrusted"
 	Trusted   Mode = "trusted"
-	// Unset is a connection subcult dns has not switched: NetworkManager
-	// gives it the network's DNS and marks its link as a default route
-	// (DefaultRoute=yes, no "~." domain), so lookups go to the network's
-	// servers and the global servers alike. It is reported, never accepted
-	// as input.
+	// Unset is a connection in neither mode: one the untrusted default has
+	// not reached yet (it has the network's DNS until ApplyDefault runs) or
+	// one whose DNS servers were set by hand. Its link is a default route
+	// with no "~." domain, so lookups go to its servers and the global
+	// servers alike. It is reported, never accepted as input.
 	Unset Mode = "not set"
 )
 
@@ -159,12 +161,60 @@ func Active(ctx context.Context, r update.Runner) ([]string, error) {
 		if i < 0 {
 			continue
 		}
-		switch line[i+1:] {
-		case "802-11-wireless", "802-3-ethernet", "wifi", "ethernet":
+		if wifiOrEthernet(line[i+1:]) {
 			names = append(names, line[:i])
 		}
 	}
 	return names, nil
+}
+
+// wifiOrEthernet reports whether a NetworkManager connection type is one the
+// trust setting applies to. WireGuard, VPN, tun (Tailscale) and every other
+// type keep their own DNS (ADR 0020).
+func wifiOrEthernet(typ string) bool {
+	switch typ {
+	case "802-11-wireless", "802-3-ethernet", "wifi", "ethernet":
+		return true
+	}
+	return false
+}
+
+// ApplyDefault makes a Wi-Fi or Ethernet connection untrusted when it is in
+// neither mode and still takes the network's DNS. It sets
+// ipv4/ipv6.ignore-auto-dns, which drops the network's servers and search
+// domains, then reapplies the profile to device so the running link loses
+// them too. It leaves the other trust properties alone, so servers set by
+// hand stay. It reports whether it changed the profile.
+//
+// The dispatcher runs it on "up", after NetworkManager has passed the
+// network's servers to resolved. On a connection's first activation the
+// network's server can therefore get lookups, under the global strict
+// DNS-over-TLS, until the reapply; every later activation starts untrusted.
+func ApplyDefault(ctx context.Context, r update.Runner, uuid, device string) (bool, error) {
+	if uuid == "" || device == "" {
+		return false, fmt.Errorf("%w: a connection UUID and a device are required", ErrInvalid)
+	}
+	out, err := r.Output(ctx, "nmcli", "-e", "no", "-g", "connection.type", "connection", "show", uuid)
+	if err != nil {
+		return false, fmt.Errorf("read the type of connection %s: %w", uuid, err)
+	}
+	if !wifiOrEthernet(strings.TrimSpace(out)) {
+		return false, nil
+	}
+	p, err := Read(ctx, r, uuid)
+	if err != nil {
+		return false, err
+	}
+	if ModeOf(p) != Unset || (p.Values[0] == "yes" && p.Values[1] == "yes") {
+		return false, nil
+	}
+	if err := r.Run(ctx, "nmcli", "connection", "modify", uuid, "ipv4.ignore-auto-dns", "yes", "ipv6.ignore-auto-dns", "yes"); err != nil {
+		return false, fmt.Errorf("make connection %s untrusted: %w", uuid, err)
+	}
+	if err := r.Run(ctx, "nmcli", "device", "reapply", device); err != nil {
+		return true, fmt.Errorf("connection %s is untrusted from its next activation, but reapplying it to %s failed: %w", uuid, device, err)
+	}
+	return true, nil
 }
 
 func modifyArgs(name string, values []string) []string {
@@ -318,10 +368,10 @@ func Status(ctx context.Context, r update.Runner) (string, error) {
 		switch {
 		case m == Untrusted:
 			detail = "network DNS ignored, system resolver"
-		case m == Unset:
-			detail = "network DNS; not switched with subcult dns"
 		case p.Values[2] != "" || p.Values[3] != "":
 			detail = "servers " + strings.Trim(p.Values[2]+","+p.Values[3], ",")
+		case m == Unset:
+			detail = "network DNS; the untrusted default has not reached it yet"
 		}
 		tls := tlsNames[p.Values[4]]
 		if tls == "" {

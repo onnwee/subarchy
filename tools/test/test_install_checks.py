@@ -462,7 +462,10 @@ class Budgets(unittest.TestCase):
 # The DNS step's output as systemd 257's resolvectl prints it, written by
 # hand from resolvectl(1); not captured from a VM.
 DNS_GOOD = """DEV=ens3
-NEVER_SWITCHED_QUERY_EXIT=1
+Wired connection 1: untrusted (network DNS ignored, system resolver), DNS-over-TLS default (resolved's setting)
+Link 2 (ens3):
+NEVER_SWITCHED_QUERY_EXIT=0
+NEVER_SWITCHED_LINK_QUERY_EXIT=1
 ---
 DNS: untrusted for Wired connection 1
 UNTRUSTED_EXIT=0
@@ -496,10 +499,20 @@ SEARCH="""
 
 
 class DNSTrust(unittest.TestCase):
-    def test_good_output_passes_all_three(self):
+    def test_good_output_passes_all_four(self):
+        self.assertTrue(install_test.dns_never_switched_ok(DNS_GOOD))
         self.assertTrue(install_test.dns_untrusted_ok(DNS_GOOD))
         self.assertTrue(install_test.dns_trusted_ok(DNS_GOOD))
         self.assertTrue(install_test.dns_back_ok(DNS_GOOD))
+
+    def test_never_switched_needs_untrusted_no_link_servers_and_global_answer(self):
+        # Before the dispatcher default, the first-boot link kept QEMU's
+        # 10.0.2.3 and status read "not set".
+        for old, new in (("Link 2 (ens3):\nNEVER", "Link 2 (ens3): 10.0.2.3\nNEVER"),
+                         (": untrusted (network DNS ignored", ": not set (network DNS"),
+                         ("NEVER_SWITCHED_QUERY_EXIT=0", "NEVER_SWITCHED_QUERY_EXIT=1"),
+                         ("NEVER_SWITCHED_LINK_QUERY_EXIT=1", "NEVER_SWITCHED_LINK_QUERY_EXIT=0")):
+            self.assertFalse(install_test.dns_never_switched_ok(DNS_GOOD.replace(old, new, 1)), old)
 
     def test_global_routing_domain_fails_untrusted(self):
         # A global ~. would tie with a trusted link's ~. (the bug this replaced).

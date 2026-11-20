@@ -366,6 +366,70 @@ func TestActiveConnections(t *testing.T) {
 	}
 }
 
+// The reads ApplyDefault makes for a connection with UUID u1.
+const (
+	typeU1 = "nmcli -e no -g connection.type connection show u1"
+	readU1 = "nmcli -e no -g ipv4.ignore-auto-dns,ipv6.ignore-auto-dns,ipv4.dns,ipv6.dns,connection.dns-over-tls,ipv4.dns-search,ipv6.dns-search connection show u1"
+)
+
+func TestApplyDefault(t *testing.T) {
+	setU1 := "nmcli connection modify u1 ipv4.ignore-auto-dns yes ipv6.ignore-auto-dns yes"
+	reapply := "nmcli device reapply wlan0"
+	tests := []struct {
+		name, typ, profile string
+		want               bool
+	}{
+		{"new Wi-Fi with the network's DNS", "802-11-wireless", homeProfile, true},
+		{"new Ethernet with a search domain on the profile", "802-3-ethernet", "no\nno\n\n\n-1\nlan\n\n", true},
+		{"only IPv4 ignored", "802-11-wireless", "yes\nno\n\n\n-1\n\n\n", true},
+		{"already untrusted", "802-11-wireless", untrustedProfile, false},
+		{"trusted, network DNS", "802-11-wireless", "no\nno\n\n\n0\n~.\n~.\n", false},
+		{"trusted, own servers", "802-3-ethernet", "yes\nyes\n10.0.0.200\n\n0\n~.\n~.\n", false},
+		{"own servers set by hand", "802-3-ethernet", "yes\nyes\n10.0.0.200\n\n0\n\n\n", false},
+		{"WireGuard", "wireguard", homeProfile, false},
+		{"VPN", "vpn", homeProfile, false},
+		{"Tailscale", "tun", homeProfile, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := &fake{answers: map[string]string{typeU1: tt.typ + "\n", readU1: tt.profile}}
+			got, err := ApplyDefault(context.Background(), f, "u1", "wlan0")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got != tt.want {
+				t.Errorf("changed = %v, want %v", got, tt.want)
+			}
+			var want []string
+			if tt.want {
+				want = []string{setU1, reapply}
+			}
+			if !slices.Equal(f.runs, want) {
+				t.Errorf("runs = %q, want %q", f.runs, want)
+			}
+		})
+	}
+}
+
+func TestApplyDefaultLeavesWhatItCannotRead(t *testing.T) {
+	f := &fake{answers: map[string]string{typeU1: "802-11-wireless\n"}}
+	if _, err := ApplyDefault(context.Background(), f, "u1", "wlan0"); err == nil || len(f.runs) != 0 {
+		t.Errorf("err %v, runs %q: want an error and no change", err, f.runs)
+	}
+	if _, err := ApplyDefault(context.Background(), f, "", "wlan0"); !errors.Is(err, ErrInvalid) {
+		t.Errorf("no UUID: err %v, want ErrInvalid", err)
+	}
+}
+
+func TestApplyDefaultReportsAFailedReapply(t *testing.T) {
+	f := &fake{answers: map[string]string{typeU1: "802-11-wireless\n", readU1: homeProfile},
+		fail: map[string]error{"nmcli device reapply": errors.New("not active")}}
+	changed, err := ApplyDefault(context.Background(), f, "u1", "wlan0")
+	if !changed || err == nil || !strings.Contains(err.Error(), "next activation") {
+		t.Errorf("changed %v, err %v", changed, err)
+	}
+}
+
 func TestStatusNamesTheModeOfEachConnection(t *testing.T) {
 	f := &fake{answers: map[string]string{
 		"nmcli -t -e no -f NAME,TYPE connection show --active": "Home:802-3-ethernet\nCafe:802-11-wireless\nNew:802-11-wireless\n",

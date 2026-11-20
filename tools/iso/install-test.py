@@ -791,8 +791,9 @@ def boot(disk: Path, vars_file: Path) -> bool:
             ),
             "power_key": serial.run("busctl get-property org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager HandlePowerKey;"
                                     " busctl get-property org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager HandlePowerKeyLongPress"),
-            # DNS trust (ADR 0020), self-contained: first a lookup on the
-            # connection as first boot left it (never switched), then untrusted
+            # DNS trust (ADR 0020), self-contained: first the connection as
+            # first boot left it (never switched, so untrusted by the
+            # NetworkManager dispatcher), then untrusted
             # (global Quad9 only), trusted with QEMU's resolver as the
             # user's server (its link is the default route and answers),
             # and back to untrusted, which the later checks run under.
@@ -1230,10 +1231,10 @@ finally:
         and "missing:" not in r["desktop_apps"],
         "power button: a short press is left to the session, a long press powers off": r["power_key"].split()
         == ["s", '"ignore"', "s", '"poweroff"'],
-        # Without a global ~. the never-switched link (DefaultRoute=yes, no
-        # ~.) and the global Quad9 servers both get the lookup; the link's
-        # 10.0.2.3 fails under strict TLS and Quad9 answers.
-        "DNS: a connection never switched still resolves": "NEVER_SWITCHED_QUERY_EXIT=0" in dns_parts(r["dns"])[0],
+        # The dispatcher made the first-boot connection untrusted, so it has
+        # no servers of its own (not QEMU's 10.0.2.3) and Quad9 answers.
+        "DNS: a connection never switched is untrusted: no servers of its own, lookups through the global servers":
+            dns_never_switched_ok(r["dns"]),
         "DNS: an untrusted connection has no servers of its own and resolves through Quad9 over strict TLS":
             dns_untrusted_ok(r["dns"]),
         "DNS: subcult dns set trusted --dns 10.0.2.3 makes the link the default route with that server, and it answers":
@@ -1589,7 +1590,9 @@ DNS_STEPS = (
     "(export SYSTEMD_COLORS=0 SYSTEMD_PAGER=cat;"
     " conn=$(nmcli -t -e no -f NAME,TYPE connection show --active | sed -n 's/:802-3-ethernet$//p' | head -n1);"
     " dev=$(nmcli -e no -g GENERAL.DEVICES connection show \"$conn\"); echo \"DEV=$dev\";"
-    " resolvectl query --cache=no archlinux.org >/dev/null 2>&1; echo NEVER_SWITCHED_QUERY_EXIT=$?; echo ---;"
+    " subcult dns | grep -F \"$conn: \" | head -n1; resolvectl dns \"$dev\";"
+    " resolvectl query --cache=no archlinux.org >/dev/null 2>&1; echo NEVER_SWITCHED_QUERY_EXIT=$?;"
+    " resolvectl query --cache=no -i \"$dev\" archlinux.org >/dev/null 2>&1; echo NEVER_SWITCHED_LINK_QUERY_EXIT=$?; echo ---;"
     " {sudo} subcult dns set untrusted --connection \"$conn\"; echo UNTRUSTED_EXIT=$?;"
     " resolvectl status | sed -n '/^Global/,/^$/p'; resolvectl dns \"$dev\";"
     " resolvectl query --cache=no archlinux.org; echo QUERY_EXIT=$?;"
@@ -1604,6 +1607,20 @@ DNS_STEPS = (
 def dns_parts(out: str) -> list[str]:
     """The DNS step's output in its four parts (fewer when it was cut short)."""
     return [p.strip() for p in out.split("---")]
+
+
+def dns_never_switched_ok(out: str) -> bool:
+    """Never switched: the NetworkManager dispatcher made the first-boot
+    connection untrusted, so `subcult dns` says so, the link lists no
+    servers, a lookup succeeds and one restricted to the link cannot."""
+    part = dns_parts(out)[0]
+    link_dns = re.search(r"^Link \d+ \([^)]*\):(.*)$", part, re.M)
+    return (
+        re.search(r"^.+: untrusted \(", part, re.M) is not None
+        and link_dns is not None and link_dns.group(1).strip() == ""
+        and "NEVER_SWITCHED_QUERY_EXIT=0" in part
+        and re.search(r"^NEVER_SWITCHED_LINK_QUERY_EXIT=[1-9]", part, re.M) is not None
+    )
 
 
 def dns_untrusted_ok(out: str) -> bool:

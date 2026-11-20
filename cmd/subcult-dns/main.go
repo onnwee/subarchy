@@ -4,6 +4,9 @@
 //
 //	subcult dns                                show the policy
 //	subcult dns set <untrusted|trusted> [--connection NAME] [--dns ADDR[#NAME],...] [--no-check]
+//
+// `subcult-dns apply-default UUID DEVICE` is for the NetworkManager
+// dispatcher only: it makes a new or never-switched connection untrusted.
 package main
 
 import (
@@ -56,6 +59,9 @@ func run(ctx context.Context, args []string, e env) int {
 		fmt.Fprint(e.stdout, out)
 		return 0
 	}
+	if args[0] == "apply-default" {
+		return applyDefault(ctx, args[1:], e)
+	}
 	if args[0] != "set" {
 		fmt.Fprintf(e.stderr, "subcult dns: unknown command %q\n", args[0])
 		return 2
@@ -96,6 +102,25 @@ func run(ctx context.Context, args []string, e env) int {
 		return report(e, err)
 	}
 	fmt.Fprintf(e.stdout, "DNS: %s for %s\n", mode, strings.Join(names, ", "))
+	return 0
+}
+
+// applyDefault serves the NetworkManager dispatcher script
+// (/usr/lib/NetworkManager/dispatcher.d/50-subarchy-dns), which passes the
+// connection's UUID and device when a connection comes up. It is not a
+// `subcult` route.
+func applyDefault(ctx context.Context, args []string, e env) int {
+	if len(args) != 2 {
+		fmt.Fprintln(e.stderr, "Usage: subcult-dns apply-default <connection-uuid> <device>")
+		return 2
+	}
+	changed, err := dns.ApplyDefault(ctx, e.runner, args[0], args[1])
+	if err != nil {
+		return report(e, err)
+	}
+	if changed {
+		fmt.Fprintf(e.stdout, "DNS: connection %s on %s is now untrusted (the default)\n", args[0], args[1])
+	}
 	return 0
 }
 

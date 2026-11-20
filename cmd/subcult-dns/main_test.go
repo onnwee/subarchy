@@ -36,6 +36,8 @@ func (r *fakeRunner) Output(_ context.Context, argv ...string) (string, error) {
 		return "Home:802-3-ethernet\ntailscale0:tun\n", nil
 	case argv[0] == "nmcli" && strings.Contains(strings.Join(argv, " "), "GENERAL.DEVICES"):
 		return "eth0\n", nil
+	case argv[0] == "nmcli" && strings.Contains(strings.Join(argv, " "), "connection.type"):
+		return "802-3-ethernet\n", nil
 	case argv[0] == "nmcli":
 		return "no\nno\n\n\n-1\n\n\n", nil
 	case strings.Join(argv, " ") == "resolvectl dns eth0":
@@ -60,6 +62,18 @@ func TestMetadataListsBothRoutes(t *testing.T) {
 	}
 	if len(got) != 2 || strings.Join(got[0].Words, " ") != "dns" || strings.Join(got[1].Words, " ") != "dns set" {
 		t.Errorf("routes = %+v", got)
+	}
+}
+
+func TestApplyDefaultMakesANewConnectionUntrusted(t *testing.T) {
+	r := &fakeRunner{}
+	code, out, _ := runDNS(r, "apply-default", "u1", "eth0")
+	want := []string{"nmcli connection modify u1 ipv4.ignore-auto-dns yes ipv6.ignore-auto-dns yes", "nmcli device reapply eth0"}
+	if code != 0 || !strings.Contains(out, "untrusted") || strings.Join(r.runs, "|") != strings.Join(want, "|") {
+		t.Errorf("code %d, output %q, runs %q", code, out, r.runs)
+	}
+	if code, _, _ := runDNS(&fakeRunner{}, "apply-default", "u1"); code != 2 {
+		t.Errorf("missing device: code %d, want 2", code)
 	}
 }
 
