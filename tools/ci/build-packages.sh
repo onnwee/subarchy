@@ -36,14 +36,17 @@ for dir in "$root"/packaging/*/ "$root"/packaging/aur/*/; do
   [[ -n $file_list ]] || { echo "build-packages: empty package list for $dir" >&2; exit 1; }
   mapfile -t files <<<"$file_list"
   # Published package versions are immutable. Always build the core and
-  # keyring; otherwise reuse a version only if both channels' databases
-  # list every package the PKGBUILD makes.
+  # keyring; otherwise reuse a version only if both channels have every
+  # package the PKGBUILD makes. A database lists only the newest version of
+  # each package, so for one it does not list, ask for the exact file.
   cached=1
   for file in "${files[@]}"; do
     entry=$(basename "$file" .pkg.tar.zst)
     entry=${entry%-*}
     for channel in stable edge; do
-      grep -qxF "$channel $entry" <<<"$published" || cached=0
+      grep -qxF "$channel $entry" <<<"$published" && continue
+      answer=$(python3 "$root/tools/ci/publish-packages.py" --served "$channel" "$file")
+      [[ $answer == yes ]] || cached=0
     done
   done
   if ((cached)) && [[ $dir != "$root/packaging/subarchy/" && $dir != "$root/packaging/subarchy-keyring/" ]]; then

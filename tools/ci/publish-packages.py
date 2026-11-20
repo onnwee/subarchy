@@ -62,6 +62,39 @@ def published(channel):
         return {name.removesuffix("/desc") for name in database.getnames() if name.endswith("/desc")}
 
 
+def served(channel, package):
+    """Whether the channel serves this exact package file. A database lists
+    one version of each package, the newest, so an older version still in
+    the registry is missing from it: on 2026-11-16 yay 13.1.0-3, uploaded
+    ahead of its merge, hid 13.1.0-2 from the run for the commit before, and
+    re-uploading -2 failed with HTTP 409. The registry finds a file by
+    substring, so only an answer that names the requested file counts."""
+    for attempt in range(ATTEMPTS):
+        # The CDN keeps a 404 for a file for four hours (seen 2026-11-20), so
+        # without the query a file uploaded since would still look absent.
+        request = urllib.request.Request(
+            f"{REGISTRY}/{channel}/x86_64/{package.name}?ci-check={time.time_ns()}",
+            headers={"User-Agent": "subarchy-ci/1"},
+            method="HEAD",
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=60) as response:
+                return response.headers.get_filename() == package.name
+        except urllib.error.HTTPError as error:
+            error.close()
+            if error.code == 404:
+                return False
+            if not transient(error):
+                raise RuntimeError(f"registry lookup returned HTTP {error.code} for {package.name}") from None
+        except (urllib.error.URLError, TimeoutError, ConnectionError, http.client.HTTPException):
+            pass
+        retry(f"registry lookup for {channel}/{package.name}", attempt)
+
+
+def present(channel, package, listed):
+    return entry(package) in listed or served(channel, package)
+
+
 def collisions(names):
     """Pairs of package file names where one contains the other. The registry
     finds a file by substring, so with both present it answers 404 for the
@@ -71,7 +104,7 @@ def collisions(names):
 
 def publish(package, channel, token, listed):
     url = f"{REGISTRY}/{channel}"
-    if entry(package) in listed:
+    if present(channel, package, listed):
         print(f"already published: {channel}/{package.name}")
         return
     # Stream the file, with credentials only in the request header. Never
@@ -109,7 +142,7 @@ def publish(package, channel, token, listed):
             pass
         # A lost response does not prove the server rejected the upload.
         # Resolve the exact immutable version before deciding to resend it.
-        if entry(package) in published(channel):
+        if present(channel, package, published(channel)):
             print(f"already published: {channel}/{package.name} (after interrupted upload)")
             return
         retry(f"upload of {channel}/{package.name}", attempt)
@@ -137,6 +170,10 @@ if __name__ == "__main__":
             for channel in CHANNELS:
                 for name in sorted(published(channel)):
                     print(channel, name)
+        elif sys.argv[1:2] == ["--served"] and len(sys.argv) == 4:
+            # Read-only, for the builder, when the database does not list a
+            # version: "yes" if the channel still serves the exact file.
+            print("yes" if served(sys.argv[2], Path(sys.argv[3])) else "no")
         elif sys.argv[1:2] == ["--check-names"]:
             # For the builder, before it builds: file names the registry
             # could not serve side by side.

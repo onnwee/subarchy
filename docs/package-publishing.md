@@ -77,9 +77,20 @@ the registry answered one for `nvidia-580xx-utils-…` with
 `lib32-nvidia-580xx-utils-…`, so the 64-bit package and
 `opencl-nvidia-580xx` were skipped as published and never uploaded, and
 every publication on `main` failed its verification (found 2026-11-09).
+A database lists only one version of each package, the newest, while older
+versions stay in the registry. So when the database does not list a version,
+both ask the channel for the exact file and count it as present only if the
+answer names that file. The request carries a fresh query string because the
+CDN keeps a 404 for a file path for four hours (seen 2026-11-20). Without this check, a version uploaded ahead of its
+merge hid the previous one from runs for older commits: on 2026-11-16 the
+databases listed yay `13.1.0-3` (uploaded 15:34 UTC) and not `13.1.0-2`, so
+the run for the commit before rebuilt `13.1.0-2` and its upload failed with
+HTTP 409 (job 44220); cliamp `2.4.1-1` failed the same way behind `2.4.1-2`
+(job 44184). A 409 still fails the job: the registry refused a file it did
+not serve under that name.
 Transient DNS, connection, timeout and HTTP 408/429/500/502/503/504 failures
 get up to three attempts, with one- and two-second delays. Each interrupted
-upload first refreshes the channel database: a committed version is skipped;
+upload first checks the channel again: a committed version is skipped;
 an absent version is retried with a newly opened package stream. Permanent
 HTTP failures, including authentication errors and the 100 MB limit below,
 fail immediately. If recovery cannot establish the registry state or exhausts
@@ -123,8 +134,9 @@ ssh -f -N -L 127.0.0.1:43833:"$ip":3000 almaz
 ssh -O cancel -L 127.0.0.1:43833:"$ip":3000 almaz
 ```
 
-The next run on `main` then finds the version in the database, skips it and
-uploads the rest. Downloads are not limited.
+The next run on `main` then finds the version in the registry, skips it and
+uploads the rest. Runs for commits before the PKGBUILD change still find the
+older version, although the database now lists the new one. Downloads are not limited.
 
 ## Signing and client verification
 
