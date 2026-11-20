@@ -20,6 +20,28 @@ OVMF_VARS = Path("/usr/share/edk2/x64/OVMF_VARS.4m.fd")
 PROMPT = re.compile(rb"SUBARCHY-READY> ")
 ANSI = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(\x07|\x1b\\)|\x1b[()][0-9A-B]|\r")
 
+# Units that may be failed on a booted image without failing the test. Each
+# entry needs a reason. Empty on 2026-11-20: the five green main runs of
+# 2026-11-16 (iso.yml, boot and install) all reported `running`, with no
+# failed unit listed.
+ALLOWED_FAILED_UNITS: dict[str, str] = {}
+
+
+def failed_units(listing: str) -> list[str]:
+    """Unit names from `systemctl --failed --no-legend --plain | awk '{print $1}'`."""
+    return listing.split()
+
+
+def system_state_ok(state: str, failed_listing: str, allowed: dict[str, str] | None = None) -> bool:
+    """`running` passes. `degraded` passes only when every failed unit is allowlisted."""
+    allowed = ALLOWED_FAILED_UNITS if allowed is None else allowed
+    if state == "running":
+        return True
+    if state == "degraded":
+        failed = failed_units(failed_listing)
+        return bool(failed) and all(u in allowed for u in failed)
+    return False
+
 
 def screendump(qmp_socket: Path, out: Path, timeout: float = 10) -> None:
     """Save the guest display as a PNG through QEMU's QMP socket."""

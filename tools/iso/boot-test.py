@@ -2,8 +2,9 @@
 """Boot a Subarchy ISO in QEMU (UEFI, headless) and check it from the serial console.
 
 Passes when the live system boots to a root shell, /etc/os-release says
-Subarchy, systemd reports a running (or only degraded) system, and the
-boot's messages go to the screen rather than only the serial port.
+Subarchy, systemd reports a running system (degraded only by units on the
+allowlist in vmlib.py), and the boot's messages go to the screen rather
+than only the serial port.
 
 Usage: tools/iso/boot-test.py path/to/subarchy.iso [--timeout 300] [--log FILE]
 
@@ -22,7 +23,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from vmlib import OVMF_CODE, OVMF_VARS, Serial, qemu_command, screendump
+from vmlib import OVMF_CODE, OVMF_VARS, Serial, qemu_command, screendump, system_state_ok
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -92,7 +93,7 @@ def main() -> int:
         "os-release ID=subarchy": "ID=subarchy" in osr,
         "os-release NAME=Subarchy": 'NAME="Subarchy"' in osr,
         "kernel is linux-zen": "zen" in kernel,
-        "system running or degraded": state in ("running", "degraded"),
+        "system running, or degraded only by allowlisted units": system_state_ok(state, failed),
         "installer on the image": "Subarchy installer" in installer,
         # Boot progress shows on the screen, and the serial console is
         # still a console (its getty is what this test logs in on).

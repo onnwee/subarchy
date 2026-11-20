@@ -29,7 +29,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from vmlib import ANSI, OVMF_CODE, OVMF_VARS, Serial, colours_in, distinct_colours, has_colour, qemu_command, screendump, send_keys, type_text
+from vmlib import ANSI, OVMF_CODE, OVMF_VARS, Serial, colours_in, distinct_colours, has_colour, qemu_command, screendump, send_keys, system_state_ok, type_text
 
 ROOT = Path(__file__).resolve().parents[2]
 VM = ROOT / "build" / "vm"
@@ -1180,7 +1180,7 @@ finally:
         "update took a snapshot": "subcult update" in r["update"].split("UPDATE_EXIT")[-1],
         "marker created after the snapshots": "MARKED" in r["marker"],
         "@factory snapshot": any(line.endswith(" path @factory") for line in r["subvols"].splitlines()),
-        "system running or degraded": state in ("running", "degraded"),
+        "system running, or degraded only by allowlisted units": system_state_ok(state, r["failed"]),
         "hardware packages: microcode for the guest's CPU, no firmware in a VM": hw_ok(r["hw"]),
         "GPU hook installed, silent without hybrid graphics": r["gpu"].split()[:2] == ["HOOK", "0"]
         and "chosen:  intel" in r["gpu"],

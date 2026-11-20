@@ -16,6 +16,7 @@ import unittest
 
 ISO = Path(__file__).parents[1] / "iso"
 sys.path.insert(0, str(ISO))
+import vmlib
 spec = importlib.util.spec_from_file_location("install_test", ISO / "install-test.py")
 install_test = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(install_test)
@@ -24,6 +25,31 @@ def probe(vendor: str, installed: list[str]) -> str:
     """What the guest prints: the installed hardware packages, then `subcult hw info`."""
     return ("".join(p + "\n" for p in installed)
             + f"CPU:       {vendor}\nVM:        QEMU\nHybrid:    false\nMatches:   \n")
+
+
+class SystemState(unittest.TestCase):
+    ok = staticmethod(vmlib.system_state_ok)
+
+    def test_running_passes(self):
+        self.assertTrue(self.ok("running", ""))
+
+    def test_degraded_fails_for_a_unit_not_on_the_list(self):
+        self.assertFalse(self.ok("degraded", "foo.service\n"))
+        self.assertFalse(self.ok("degraded", "foo.service\nbar.service\n", {"foo.service": "known"}))
+
+    def test_degraded_passes_when_every_failed_unit_is_listed(self):
+        self.assertTrue(self.ok("degraded", "foo.service\n", {"foo.service": "known"}))
+
+    def test_degraded_with_no_failed_unit_named_fails(self):
+        self.assertFalse(self.ok("degraded", "", {"foo.service": "known"}))
+
+    def test_other_states_fail(self):
+        for state in ("starting", "maintenance", "stopping", ""):
+            self.assertFalse(self.ok(state, ""))
+
+    def test_the_shipped_allowlist_gives_every_entry_a_reason(self):
+        for unit, reason in vmlib.ALLOWED_FAILED_UNITS.items():
+            self.assertTrue(reason.strip(), unit)
 
 
 class ThreadWakeups(unittest.TestCase):
