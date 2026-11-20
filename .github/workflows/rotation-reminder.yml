@@ -1,0 +1,76 @@
+name: Rotation reminder
+
+# Opens one issue when the package registry token is close to its rotation
+# date, so the date does not depend on anyone remembering it (issue #263).
+# The token and its rotation steps are in docs/package-publishing.md under
+# "Credential custody and rotation"; docs/key-rotation.md explains this
+# reminder.
+#
+# After each rotation, set DUE and REMIND_FROM to the next dates in the pull
+# request that updates docs/package-publishing.md. The issue title contains
+# DUE, so a new date makes a new issue and an old, closed issue stays closed.
+#
+# GitHub runs schedules only from the default branch and turns them off after
+# 60 days without repository activity.
+'on':
+  schedule:
+    - cron: '17 9 * * 1'
+  workflow_dispatch:
+    inputs:
+      open_now:
+        description: Open the issue now, even before REMIND_FROM
+        type: boolean
+        default: false
+
+permissions:
+  issues: write
+
+concurrency:
+  group: rotation-reminder
+  cancel-in-progress: false
+
+jobs:
+  remind:
+    name: Package token rotation
+    if: github.repository == 'subculture-collective/subarchy'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Open the reminder issue once it is due
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          DUE: '2027-02-06'
+          REMIND_FROM: '2027-01-06'
+          OPEN_NOW: ${{ inputs.open_now }}
+        run: |
+          set -euo pipefail
+          today=$(date -u +%F)
+          title="Rotate SUBARCHY_PACKAGE_TOKEN by $DUE"
+          # ISO dates compare correctly as text.
+          if [[ $OPEN_NOW != true && $today < $REMIND_FROM ]]; then
+            echo "Today is $today; the reminder opens from $REMIND_FROM."
+            exit 0
+          fi
+          # Search matches words, so compare the titles exactly. Closed
+          # issues count: a finished rotation must not be reopened weekly.
+          found=$(gh issue list --state all --limit 100 \
+            --search "\"SUBARCHY_PACKAGE_TOKEN\" \"$DUE\" in:title" \
+            --json number,title \
+            --jq "[.[] | select(.title == \"$title\") | .number] | first // empty")
+          if [[ -n $found ]]; then
+            echo "Issue #$found already tracks this rotation."
+            exit 0
+          fi
+          body="The Gitea package token behind the repository secret \`SUBARCHY_PACKAGE_TOKEN\` is due for rotation by **$DUE**.
+
+          Follow \"Credential custody and rotation\" in \`docs/package-publishing.md\`:
+
+          - [ ] Create a new token for \`subcult-agent\` scoped only to \`write:package\`.
+          - [ ] Store it as the Gitea repository secret through private standard input. Never put it in a URL, command argument, issue or file.
+          - [ ] Run a publication on \`main\` and check that its signed client verification passes.
+          - [ ] Revoke the old token by name.
+          - [ ] In one pull request, update the dates in \`docs/package-publishing.md\` and \`DUE\` and \`REMIND_FROM\` in \`.github/workflows/rotation-reminder.yml\`.
+
+          Opened by \`.github/workflows/rotation-reminder.yml\` on $today."
+          gh issue create --title "$title" --body "$body"

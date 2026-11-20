@@ -4,7 +4,7 @@ type: decision
 status: accepted
 adr: 25
 created: 2026-11-06
-updated: 2026-11-13
+updated: 2026-11-20
 tags: [decision, adr, packages]
 aliases: [ADR 0025, P1, Package repository]
 ---
@@ -86,5 +86,16 @@ keyring release.
   100 MB upload limit and are added after their files are uploaded through
   the origin ([[package-publishing|Package publishing]]); `proton-pass-bin`
   followed once its file was in both channels.
+- 2026-11-20: a draft rotation and revocation procedure for the owner's
+  release-image key and the registry key is in
+  [[key-rotation|Key rotation and revocation]] (#263). It answers the
+  "rotation plan is still needed" consequence on paper only: no step in it
+  has been run, and it lists what must be learned about Gitea's key
+  storage first. The owner's confirmation that a second copy of the
+  signing key exists is **still pending on #263**; until it is given, the
+  record stays as in Consequences (one copy, on `soyuz`, stated
+  2026-11-07). A weekly GitHub workflow now opens an issue ahead of the
+  package token's 2027-02-06 rotation date
+  ([[package-publishing#Credential custody and rotation|Package publishing]]).
 
 Related: [[decision-map|Decision map]] · [[0026-update-model|ADR 0026]] · [[0027-third-party-software|ADR 0027]]

@@ -28,6 +28,7 @@ issues; Gitea is a fast-forward mirror ([[0051-hosting-ci|ADR 0051]]).
 | [[roadmap\|Roadmap]] | Phases from inventory to installable image | Hand-written |
 | [[ci-runner\|KVM CI runner]] | Runner limits, capability check and recovery | Hand-written |
 | [[package-publishing\|Package publishing]] | Main-only uploads, signature checks and credential rotation | Hand-written |
+| [[key-rotation\|Key rotation and revocation]] | Draft, untested: replacing or revoking the registry key and the owner's release key | Hand-written |
 | [[vault-conventions\|Vault conventions]] | Properties, links, views, templates and plugins | Hand-written |
 
 ## Waiting on review

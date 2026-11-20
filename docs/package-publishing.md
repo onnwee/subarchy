@@ -3,7 +3,7 @@ title: "Package publishing"
 type: guide
 status: active
 created: 2026-11-08
-updated: 2026-11-16
+updated: 2026-11-20
 tags: [guide, ci, packages]
 ---
 
@@ -107,6 +107,9 @@ CCE8B0F3BCDD601D909773E4466AA6E8241453D2
 ```
 
 The owner's release-image key is separate and never enters this workflow.
+Replacing or revoking either key, and how installed systems get a new
+keyring, is in [[key-rotation|Key rotation and revocation]] (a draft, not
+yet tested).
 See [Gitea's Arch registry documentation](https://docs.gitea.com/usage/packages/arch/)
 for its upload and client interface.
 
@@ -177,4 +180,10 @@ device/service credentials. If the replacement fails, correct it or issue
 another package-only replacement and verify publication before cleanup.
 Never put either token in a URL, command argument, issue or Git file.
 
-Related: [[0025-package-repository|Package repository and signing]] · [[ci-runner|KVM CI runner]] · [[0066-versioning|Versioning]]
+The date does not depend on memory: `.github/workflows/rotation-reminder.yml`
+opens an issue from 2027-01-06 (added 2026-11-20; its scheduled run is
+untested until it is on `main`). After a rotation, change the dates in this
+section and `DUE` and `REMIND_FROM` in that workflow in one pull request.
+See [[key-rotation#Package token reminder|the reminder's limits]].
+
+Related: [[0025-package-repository|Package repository and signing]] · [[key-rotation|Key rotation and revocation]] · [[ci-runner|KVM CI runner]] · [[0066-versioning|Versioning]]

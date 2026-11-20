@@ -327,7 +327,7 @@ stable: Q17, Q23 and Q24 were settled by #185, #184 and #183.
 - [ ] **Q15** (decision) Switch the installer, boot, greeter and lock from the SUBCULT mark to the Subarchy identity; where `Documentation=`, polkit `vendor_url` and PKGBUILD `url=` should point. (ADR 0052, #178)
 - [ ] **Q16** (decision) Restic backup target: a repository on Dozor over SFTP. (ADR 0060)
 - [ ] **Q18** (decision) Build a factory-reset command with a keep-home mode. (ADR 0056)
-- [ ] **Q19** (decision) Signing key: confirm the second copy exists and whether a rotation procedure is wanted, then update ADR 0025. (#87)
+- [ ] **Q19** (decision) Signing key: confirm the second copy exists and whether a rotation procedure is wanted, then update ADR 0025. (#87) 2026-11-20: a draft procedure is in [[key-rotation]]; this stays open until the owner confirms the second copy on #263.
 - [ ] **Q20** (decision) Licence gate: SUBCULT assets under `ASSETS_LICENSE.md`, origin headers on borrowed files, redistribution of displaylink and nvidia-580xx. (ADR 0053, #84)
 - [ ] **Q21** (decision) After the #51 results are in: review the release notes' tested-hardware list and tag the first release on stable. (ADR 0066, #84)
 - [ ] **Q22** (decision) The black gap before the Plymouth prompt (F2): once F2 shows the cause, choose a fix, for example leaving the NVIDIA modules out of the initrd or booting with `plymouth.use-simpledrm`. No issue tracks it yet.
