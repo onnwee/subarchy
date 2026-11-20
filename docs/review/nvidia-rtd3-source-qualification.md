@@ -4,7 +4,7 @@ type: review
 status: draft
 review: pending
 created: 2026-11-16
-updated: 2026-11-16
+updated: 2026-11-20
 tags: [review, gpu, power]
 aliases: [NVIDIA 1512 preflight]
 ---
@@ -18,6 +18,13 @@ result: Zen `7.3.4-zen2-2-zen` failed P9; LTS `6.18.63-3-lts` passed with
 the same NVIDIA `620.70.06`, `DynamicPowerManagement=2` and PCI
 `power/control=auto`. The dated readings are in [[first-install#NVIDIA runtime power (#195, P9)]].
 They do not establish which kernel operation failed on Sputnik.
+
+Later on November 16 a candidate was built for both kernels and booted in
+a disposable VM; see [[#Candidate builds and VM boots, November 16]]. The
+candidate has not been installed on Sputnik, and the November 17 battery
+test on the stock driver failed again on Zen. Upstream PR #1512 has a newer
+head than the one examined here; a comparison recorded on #195 on November
+20 found it makes the same change as the candidate's patch.
 
 This November 16 investigation on Kvant checks source applicability and
 dependencies. It does not qualify a patched driver. Keep the installed LTS
@@ -229,5 +236,133 @@ The current blocker is an exact-target, fully built and qualified driver
 candidate, followed by the owner's physical battery test. PR #1512 is still
 unmerged, and no such candidate was built or installed in this investigation.
 A readback with AC or powered USB online does not replace that battery test.
+
+The section below records what happened after this investigation. Steps 1
+to 3 of the list above now have evidence from a disposable fixture. Steps 4
+and 5 are still open.
+
+## Candidate builds and VM boots, November 16
+
+Copied from the dated comments on #195, all observed on Kvant on November
+16, 2026 UTC. Nothing here was rerun to write this section, and nothing
+was installed or loaded on Sputnik. The receipts are private files on
+Kvant and are not in this repository.
+
+**Target headers (06:55 UTC).** Both exact header trees were readable on
+Sputnik. Zen `7.3.4-zen2-2-zen` has a valid `Module.symvers` with
+`userspace_init_fs` exported GPL-only; LTS `6.18.63-3-lts` has a valid
+table without that symbol. This fills the gap noted under
+[[#Conftest and kernel dependencies]].
+
+**Builds (07:30 UTC).** Full candidate builds passed for both kernels with
+the context-only #1512 backport on NVIDIA `620.70.06`. All five modules per
+kernel passed modpost, version, vermagic and BTF inspection. The Zen core
+imports `userspace_init_fs`; the LTS core does not. The presence and GPL
+conftest results were `1/1` on Zen and `0/0` on LTS. The private DKMS
+source package SHA-256 is
+`28dd80064a9d2b5ef28f18a2084b3add3dca57acf0fc2869ed41110fa7a9ec0c`; the
+patch is the `039aa613…` one recorded above. Both builds emitted 11,874
+objtool naked-return warnings. A control build with the unpatched
+interface produced the same warnings, so the backport did not add them;
+what they mean at run time is not established.
+
+**Package transaction and reversal (08:22 UTC).** In a disposable
+container, pacman replaced the stock package with the candidate and back
+again for both kernels. The core srcversion went
+`5B0BEF94704B2BE1D8BB68B` → `09EE8438341EA13E4C2D987` → back. The source
+tree, all ten modules, both initramfs images and both UKIs returned byte
+for byte to the baseline. No dependency was skipped and no hook
+suppressed. A second review found no blocker. These UKIs used a synthetic
+root and were not booted.
+
+**VM boots.** The fixture is a disposable VM with an encrypted root and no
+NVIDIA PCI device.
+
+| Boot | Reported (UTC) | Result |
+|---|---|---|
+| Candidate, Zen `7.3.4-zen2-2-zen` | 10:31 | Passed: UEFI boot and LUKS root unlock; selected UKI, kernel, five modules and firmware checked |
+| Candidate, LTS `6.18.63-3-lts` | 10:31 | Passed, same checks |
+| Restored stock driver, Zen | 15:13 | Passed: UEFI boot, LUKS2 root unlock, Secure Boot enabled in the guest, no failed units |
+| Restored stock driver, LTS | 15:13 | Passed, same checks |
+
+After the restore, the core srcversion was the stock
+`5B0BEF94704B2BE1D8BB68B` again, all ten saved modules matched their
+recorded hashes, and the two 4,051-file source hash lists were equal.
+
+**Memory-pressure caveat.** The first reversal did not finish. The stock
+package was reinstalled and both DKMS and depmod calls returned zero, but
+the Limine and initcpio post-hook was suspended for shutdown when shared
+memory headroom on Kvant fell below the reserve. The EFI files generated up
+to that point were not verified. A continuation at 10:30 UTC measured
+2,375.7 MiB of headroom against a 2,816 MiB minimum and refused to start.
+The reversal and both restored boots were completed in a later run,
+reported at 15:13 UTC. The guest logged soft-lockup messages during the
+pressure; they were recorded as happening at the same time, not as caused
+by the driver. The final report says measurable shared-host pressure
+occurred and makes no quiet-host or performance claim.
+
+**What this does and does not show.** It shows the candidate builds for
+both exact kernels, installs and uninstalls cleanly through pacman and
+DKMS, and leaves both kernels able to boot and unlock an encrypted root.
+Because the VM has no NVIDIA device, it shows nothing about driver
+initialization, RTD3, offload or suspend. A read-only check of Sputnik
+reported at 07:30 UTC found `LocalFileSigLevel=Optional`, lockdown and
+module signature enforcement off, and unsigned installed NVIDIA modules,
+so signing was not an extra requirement on that development install. That
+was the November 14 installation; it has not been re-read since the
+reinstall.
+
+**Still open on #195 as of November 20.** Fallback custody bound to the
+November 16 reinstall, which has a new encrypted root and ESP; activating
+the candidate on Sputnik; the battery-only Zen test; offload wake and
+return to suspend; suspend and resume; and the LTS control. On November 17
+at 02:28 UTC the stock driver on core `0.0.0-638` failed P9 on Zen again
+([[first-install#Results on core 638]]).
+
+## Upstream PR #1512 has a newer head
+
+Copied from the [#195 comment of November 20, 2026](https://github.com/subculture-collective/subarchy/issues/195#issuecomment-7033748537),
+checked on Kvant at 07:51–07:53 UTC from the public GitHub API, public
+source files and the private candidate directory. Nothing was built or
+installed, and Sputnik was not contacted. Nothing was rerun to write this
+section.
+
+[PR #1512](https://github.com/NVIDIA/open-gpu-kernel-modules/pull/1512) is
+still open and unmerged. Its head is now
+[`c66b7b8abd779011b34ea6285487f0d1f5aa1f5a`](https://github.com/NVIDIA/open-gpu-kernel-modules/commit/c66b7b8abd779011b34ea6285487f0d1f5aa1f5a):
+one commit, author date October 26, committer date November 17 at 17:11
+UTC, and GitHub reports it mergeable and clean. Its parent is
+`e6a2e01579fb`, the `620.70.06` tag. The source check and the candidate
+above used the earlier head `369378dc1552ae46f7f95a598a085c0025e464b3`,
+which sat on `ca2d03e6fafd` (`615.78.08`) and which GitHub reported as
+conflicting on November 16. The author rebased the same commit onto
+`620.70.06`.
+
+**The candidate already carries the current fix.** The comparison found:
+
+- The added and removed lines of the old and new heads are identical. Only
+  `index` lines, hunk line numbers and three context lines differ, and
+  those three are the ones the candidate's context-only correction
+  replaced on November 16.
+- Applying the candidate patch (`039aa613…`) and the new head's diff to
+  pristine `620.70.06` gives byte-identical files: `nv-pci.c`
+  `b045946dd05faa0cad310a70b48744e55a922369c94f754eaf477153a6d8e2e6` and
+  `nvidia.Kbuild`
+  `24499e466a7a3570be5d86291fb1418c00b77c15a2f779b3578645ed7b147898`.
+  The retained candidate build trees and DKMS source hold `nv-pci.c` with
+  that hash. No module was rebuilt for the comparison.
+- No release carries the fix. The newest tag, `620.73.04` (published
+  November 18), has the same `nv-pci.c` and `nvidia.Kbuild` as `620.70.06`.
+  Arch moved to `nvidia-open-dkms 620.73.04-1` and `linux-zen 7.3.5.zen1-1`
+  on November 19 without the patch. Reports by other users that
+  `620.73.04` with #1512 reaches fine-grained RTD3 were read, not checked.
+
+The comment's advice is not to rebuild now. The candidate matches the
+driver and kernels in the pinned snapshot `2026/11/15`. Rebuild from the
+current upstream head, against the exact new headers, only if that
+snapshot advances or Sputnik's installed NVIDIA or kernel versions
+otherwise stop matching the candidate; then repeat the build, transaction
+and boot checks. The comparison changes none of the open items on #195
+listed above.
 
 Related: [[0006-gpu-drivers|ADR 0006]] · [[0004-kernel|ADR 0004]] · [[first-install]] · [[test-checklist]] · [[review-index]]

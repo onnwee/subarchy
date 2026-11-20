@@ -4,7 +4,7 @@ type: decision
 status: accepted
 adr: 36
 created: 2026-11-06
-updated: 2026-11-15
+updated: 2026-11-20
 tags: [decision, adr, shell, security]
 aliases: [ADR 0036, D3, D4, Lock screen, Idle]
 ---
@@ -147,5 +147,17 @@ be drawn by the lock screen, which hyprlock cannot do.
   `Password:` became the retry error. Classifying the message first fixes
   it; the graphical regression test now asks for a response before
   refusing, and checks the retry message.
+
+- 2026-11-20, from the record, nothing retested: #93 closed on 2026-11-15
+  on a real-reader pass on `sputnik` (core `0.0.0-616`, Goodix reader
+  `27c6:63ac`, `fprintd 1.94.5-2`). The owner enrolled a finger; a touch
+  unlocked the real lock without a password; on a second lock a wrong then
+  a correct password unlocked. This replaces "Physical fingerprint
+  acceptance remains pending on #93" in the 2026-11-15 note above. Still
+  untested on a real reader: fprintd after suspend and resume, a wrong
+  finger, and Escape while a check waits (checklist K11). The owner
+  reinstalled on 2026-11-16, which erased the enrolment, so the pass has
+  not been repeated on core `0.0.0-638`. Dated record:
+  [[first-install#Fingerprint unlock (#93)]].
 
 Related: [[decision-map|Decision map]] · [[0034-shell-toolkit|ADR 0034]] · [[0035-plugin-api|ADR 0035]]

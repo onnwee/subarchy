@@ -4,7 +4,7 @@ type: review
 status: draft
 review: pending
 created: 2026-11-07
-updated: 2026-11-16
+updated: 2026-11-20
 tags: [review, installer]
 aliases: [First install, Install runbook]
 ---
@@ -21,6 +21,13 @@ below. Subarchy is running for owner testing.
 **Reinstall, November 14:** the owner reinstalled from an image built
 at main `e157cc3`. Its readback, gaps and open owner checks are in
 [[#Reinstall on November 14]].
+
+**Reinstall, November 16:** the owner reinstalled again from the
+qualified candidate, core `0.0.0-638`. This is the installation now on the
+laptop. Its dated results from #51, #195 and #249, and the earlier passes
+it reset, are in [[#Reinstall on November 16 (core 638)]]. The sections
+between here and there describe earlier installations and are kept as
+history.
 
 **Latest resume result, November 9 CST:** the owner completed a fresh lid
 close/open cycle with a visible lock, working password input and no Hyprland
@@ -777,5 +784,207 @@ Zen runtime-D3 failure in #195. Raw renderer/exit logs and sample records
 are retained privately on Kvant and Sputnik under the dated release-check
 evidence directories. The historical November 9 inconclusive result above
 is retained as history.
+
+## November 16: checks before the reinstall
+
+These ran on the November 14 installation on November 16 UTC, before the
+owner reinstalled. They are copied from #51.
+
+- **06:34 UTC** ([#51 comment](https://github.com/subculture-collective/subarchy/issues/51#issuecomment-6909270594)):
+  core `0.0.0-616`, Zen `7.3.4-zen2-2-zen`, LTS `6.18.63-3`, NVIDIA
+  `620.70.06`. No failed system units. Secure Boot disabled; `bootctl` saw
+  TPM2 and a measured UKI. The dGPU read `Runtime D3 status: Not supported`
+  and runtime active on AC with powered USB, so it was not a P9 test. The
+  failed user document portal recovered at 06:43 UTC after a normal D-Bus
+  call; the cause of its earlier exit 21 was not established.
+- **14:35–14:49 UTC** ([#51 comment](https://github.com/subculture-collective/subarchy/issues/51#issuecomment-6919821181)),
+  after the owner updated: core `0.0.0-634`, Pult `0.4.1.r2.g7a703f1-2`,
+  cliamp `2.4.1-2`. Ten Pult and cliamp files and four greeter files matched
+  the reviewed sources byte for byte; SDDM's `Theme.Current` was `subarchy`.
+  The displayed greeter was not observed.
+- **Dock layout, receipt 16:25 UTC**
+  ([#51 comment](https://github.com/subculture-collective/subarchy/issues/51#issuecomment-6923587683)):
+  at the owner's request the dock was laid out left to right as DVI-I-2
+  portrait at 1×, DP-3 (LG 2560×1440) at 1.25×, DP-2 (ONN 1080p) at 1×, and
+  the laptop at 2× on the far right when open. A personal
+  `~/.config/subcult/shell/bar.json` override made DP-3 the primary bar.
+  With the lid physically closed, compositor and shell IPC showed eDP-1
+  disabled, three external outputs active, DP-3 focused, 23 widgets on its
+  full bar and two on each ONN's minimal bar. Both ONN panels report the
+  same serial `0x01010101`, so they cannot be told apart by serial.
+  Undock and reconnect, cable swaps, and a physical reopen after the last
+  bar change were not observed.
+
+## Reinstall on November 16 (core 638)
+
+The owner reinstalled Subarchy on the SPCC disk on November 16, 2026 from
+the qualified candidate: source `9e32591610362a6ee017879f63d100951ff01ddf`,
+core `0.0.0-638`, ISO SHA-256
+`4fc180fc1615a255f1e48bc4013c7a5acefabbe16dfb94b996fa45d5f4d1ff90`. All
+7,099,686,912 image bytes were read back from the USB stick before it was
+ejected. The owner reported finishing the install and reaching the desktop;
+that report was recorded at 20:11 UTC
+([#51 comment](https://github.com/subculture-collective/subarchy/issues/51#issuecomment-6927921652)).
+
+Everything in this section is copied from dated comments on #51, #195 and
+#249. Nothing was retested to write it. The readbacks ran from Kvant over
+SSH after the owner checked the new host key at the laptop.
+
+### What the reinstall reset
+
+The install erased the SPCC disk, so the system has a new encrypted root,
+ESP (#195, November 16, 21:08 UTC) and a new SSH host key (#51, November
+16, 20:38 UTC). Results recorded on the earlier installations stand as
+dated history. Issue numbers in this section are GitHub's; older sections
+of this note use the Gitea numbers of the time, so the suspend issue is
+#101 here and #213 above, and the Dell permission issue is #107 here and
+#226 above. They have not been
+repeated on core 638 unless the tables below say so:
+
+| Earlier result | Recorded on | State on core 638 |
+|---|---|---|
+| P9 pass on LTS `6.18.63-3-lts` | November 15, 03:36 UTC, November 14 install | Not repeated. The LTS entry has not been booted on this install |
+| Fingerprint enrolment and unlock (#93) | November 15, core 616 | Not repeated. The enrolment was stored on the erased disk |
+| Three offloaded Kitty windows (#106) | November 15, core 616 | Not repeated. One offloaded OpenGL context passed on November 16 |
+| HT3 noise modes, volume and battery (#153, #65) | November 14 CST | Not repeated. No Bluetooth peripheral has been paired on this install |
+| Dock layout, lid-closed bar and personal overrides | November 16, receipt 16:25 UTC, November 14 install | Not repeated. The overrides were under the erased home; no DisplayLink device was enumerated at 21:07 UTC |
+| Greeter installed-file readback | November 16, 14:35 UTC, core 634 | Not repeated on core 638 |
+| Standalone `systemctl suspend` (#101) | November 9, core 448, first install | Not repeated. Only the lid cycle has been run |
+| Dell label following plug and unplug; permission service at boot (#107) | November 9, cores 425 and 438 | Not repeated. Thresholds read 50/85 on November 17 |
+| Omarchy recovery boot from the Crucial disk | November 8, first install | Not repeated. A Crucial firmware entry is present |
+
+That the fingerprint enrolment, Bluetooth pairings and personal display
+overrides are gone follows from the disk being erased. No comment records
+anyone checking for them afterwards.
+
+### Results on core 638
+
+| When (UTC) | Source | Result |
+|---|---|---|
+| Nov 16, 20:11 | [#51](https://github.com/subculture-collective/subarchy/issues/51#issuecomment-6927921652) | Owner reports the install finished and the desktop came up. SSH from Kvant timed out, so nothing was read back yet |
+| Nov 16, 20:38 | [#51](https://github.com/subculture-collective/subarchy/issues/51#issuecomment-6928690350) | Installed-system readback, below |
+| Nov 16, 21:07 | [#51](https://github.com/subculture-collective/subarchy/issues/51#issuecomment-6929359466), [#195](https://github.com/subculture-collective/subarchy/issues/195#issuecomment-6929383535) | Extended checks, below. GPU sampled on AC only |
+| Nov 17, 00:31 | [#51](https://github.com/subculture-collective/subarchy/issues/51#issuecomment-6933854721) | Owner: lid closed about 10 s, reopened, unlocked. "Passed: woke, unlocked, desktop returned." No suspend markers were captured for this cycle |
+| Nov 17, 01:58 | [#51](https://github.com/subculture-collective/subarchy/issues/51#issuecomment-6935670883) | **Pass:** instrumented lid cycle with s2idle, below |
+| Nov 17, 02:28 | [#195](https://github.com/subculture-collective/subarchy/issues/195#issuecomment-6936334494), [#51](https://github.com/subculture-collective/subarchy/issues/51#issuecomment-6936334862) | **Fail:** P9 on Zen, on battery, below |
+| Nov 17, 02:28 | [#249](https://github.com/subculture-collective/subarchy/issues/249) | **Fault found:** UCSI and UPower report external power on battery, below |
+
+**Installed system, November 16 at 20:38 UTC.** Core `subarchy 0.0.0-638`,
+Pult `0.4.1.r2.g7a703f1-2`, cliamp `2.4.1-2`. Running kernel
+`7.3.4-zen2-2-zen`; installed LTS `6.18.63-3`. Root is btrfs subvolume `@`
+through the `root` LUKS mapping on the SPCC disk, serial
+`AA231221NV01KG05237`. No failed system or user units. SSH, SDDM,
+NetworkManager, Bluetooth, UFW and AppArmor active; Hyprland, Quickshell,
+PipeWire and WirePlumber running; Wi-Fi connected. UEFI boot; Secure Boot
+disabled; TPM unlock not exercised. Loaded NVIDIA module is stock
+`620.70.06`, core srcversion `5B0BEF94704B2BE1D8BB68B`. Pacman reports no
+`[subarchy]` sync database: the installer removes the unsigned bootstrap
+database and leaves the next sync to fetch the signed one
+([`install/subarchy-install` at `9e32591`](https://github.com/subculture-collective/subarchy/blob/9e32591610362a6ee017879f63d100951ff01ddf/install/subarchy-install#L405-L410)).
+`yay` and `tzupdate` are absent; neither is in this revision's default
+install lists.
+
+**Extended checks, November 16 at 21:07 UTC.**
+
+- OpenGL: the default context reported accelerated direct rendering on
+  Intel Iris Xe; an explicitly offloaded context reported direct rendering
+  on the RTX 3050 Ti with driver `620.70.06`. Two context paths, not every
+  GPU mode.
+- Speakers: a two-note playback exited zero and the owner confirmed
+  hearing both notes. No microphone recording was made.
+- Shell: no Hyprland configuration errors; 23 widgets loaded, 18 shown on
+  the laptop panel. The panel is 3456×2160 at scale 2, so scale 1.6 is
+  still untested. No DisplayLink USB device was enumerated.
+- Wi-Fi: `iwlwifi` connected; a short sample showed zero RX/TX errors and
+  no increase in drops. Bluetooth is powered and answers; nothing was
+  paired.
+- Boot and encryption: NVIDIA DKMS is installed for both the Zen and LTS
+  targets. Subarchy is the current firmware entry and a Crucial entry
+  remains. LUKS has one keyslot and no enrolled tokens. One TPM device is
+  present. No LTS boot, Omarchy boot or TPM unlock was performed.
+- Kernel log from this boot: no NVIDIA Xid, kernel BUG or Oops,
+  missing-firmware or NVIDIA thunk messages.
+- Notices: all 16 checked core, Pult and cliamp licence and provenance
+  files match the intended bytes, root-owned, mode 0644.
+- Signed repository, read from the laptop: stable's database and detached
+  signature verify against `CCE8B0F3BCDD601D909773E4466AA6E8241453D2`.
+  Published core is `0.0.0-638`, SHA-256
+  `02597970e20baf2c5aabf6561e58849b641c2ac9d2b52ff69d9abb7c0148f577`.
+  Pacman's installed sync database was not changed.
+- Power: on AC and powered USB, charging, profile `balanced`; three
+  profiles available, switching not tested. NVIDIA `power/control=auto`,
+  runtime status active, suspended time zero. This is not a battery test.
+
+**Lid, suspend and unlock, November 17 at 01:58 UTC: pass.** The owner
+repeated the lid cycle while an observer watched the ACPI lid state and
+power-management events. ACPI read open, closed, open. logind logged "Lid
+closed." and "Lid opened.". The kernel logged `PM: suspend entry (s2idle)`
+at 01:58:37.212 and `PM: suspend exit` at 01:58:48.996, about 11.8 seconds
+apart. The owner unlocked and returned to the desktop. Afterwards there
+were no failed system or user units; SSH, the display manager and
+NetworkManager were active; core `0.0.0-638` on `7.3.4-zen2-2-zen`. The
+comment does not say whether the laptop was on AC or battery for this
+cycle. A standalone suspend command has not been run on this install.
+
+**NVIDIA runtime power on Zen, November 17 at 02:28:34–02:29:04 UTC: fail
+(#195, P9).** The owner confirmed every USB-C port empty. AC online was 0
+and `BAT0` was discharging through a 90-second settle and four passive
+samples. All four showed `runtime_status=active`,
+`runtime_suspended_time=0` and `power/control=auto`; the driver reported
+`Runtime D3 status: Not supported` and video memory active. The loaded
+module was stock `620.70.06` with `DynamicPowerManagement=2`. No
+`nvidia-smi` or graphics workload ran during sampling, and no candidate
+driver was installed. The LTS control was not repeated. #195 stays open.
+
+**False external-power state, same samples (#249).** With AC offline and
+`BAT0` discharging at 74%, one `ucsi-source-psy-USBC000:003` supply still
+read `online=1`, `status=Charging`, and UPower reported `OnBattery=false`
+with profile `balanced`. Hardware and versions: Dell XPS 15 9520, BIOS
+1.44.0, UPower 1.91.5-1, systemd 262.2-1. An earlier Type-C readback also
+showed a PD partner on `port2` in sink role, but it was taken before the
+owner confirmed the ports empty. Whether resume causes this is unproven,
+and no common cause with the active GPU is established. After the owner
+reconnected power, AC online read 1 and `BAT0` read Not charging at 71%
+with thresholds 50/85; no threshold or profile was changed.
+
+A source diagnosis was posted on #249 on November 20
+([comment](https://github.com/subculture-collective/subarchy/issues/249#issuecomment-7033753978)).
+It is research over these same readings; no new physical test ran. What it
+records:
+
+- The four samples list the supplies without names. The name
+  `USBC000:003` comes from two other snapshots in the same session that
+  carry no timestamp.
+- The wrong value is already in the kernel's raw sysfs output for the UCSI
+  supply. UPower and `subcult-power-auto` repeat it, so the fault is at or
+  below the kernel's UCSI connector state. Whether the firmware answered
+  wrongly or the kernel missed an event is not resolved.
+- On November 15, on the earlier install and the same Zen kernel version,
+  all three UCSI supplies read offline after unplugging, twice. The lid
+  suspend of November 17 is the more likely trigger; the comment calls
+  that an inference from order, not a finding.
+- No code change is proposed. The fresh-boot, connect and post-suspend
+  controls it defines need the owner at the laptop and have not been run.
+
+### #51 criteria on core 638
+
+| Check | Result on core 638 |
+|---|---|
+| Boots from SPCC | Passed, November 16 |
+| Omarchy still boots | Not observed on this install; a Crucial firmware entry remains |
+| NVIDIA modes | Intel and offloaded OpenGL contexts passed November 16. Session mode switch untested. P9 fails on Zen (November 17); LTS not repeated |
+| Wi-Fi | Connected with clean counters, November 16. Reconnect after reboot not recorded |
+| SOF audio | Speakers heard by the owner, November 16. Microphone and headphones untested |
+| Bluetooth | Adapter powered. No peripheral paired |
+| Suspend | Standalone suspend untested |
+| Lid | Passed with s2idle evidence, November 17 |
+| Battery profile switching | Untested. UPower reports the wrong power source (#249) |
+| Graphical splash | Not observed |
+| Secure Boot | Disabled; untested |
+| TPM unlock | No token enrolled; untested |
+| DisplayLink | No device attached; untested |
+| Shell at scale 1.6 | Untested; the panel runs at scale 2 |
+
+#51, #195 and #249 are open as of November 20, 2026.
 
 Related: [[0049-installer|ADR 0049]] · [[0050-hardware-support|Hardware support]] · [[package-publishing|Package publishing]] · [[roadmap|Roadmap]] · [[review-index|Review index]]

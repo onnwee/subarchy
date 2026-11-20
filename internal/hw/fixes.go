@@ -157,7 +157,7 @@ var catalogue = []Fix{
 				`ACTION=="add|bind", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x040300", TEST=="power/control", ATTR{power/control}="auto"` + "\n" +
 				`ACTION=="unbind", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x030[02]00", TEST=="power/control", ATTR{power/control}="on"` + "\n",
 		},
-		Note:    "untested: on sputnik, check that /sys/bus/pci/devices/0000:01:00.0/power/runtime_status reaches suspended in Intel mode, and checklist P9 (#195)",
+		Note:    "on sputnik with driver 620.70.06 on battery, checklist P9 passed on linux-lts 6.18.63 (2026-11-15) and failed on linux-zen 7.3.4 (2026-11-15 and 2026-11-17): the card stayed active with Runtime D3 status Not supported; boot the LTS entry until #195 is fixed",
 		applies: func(m Machine) bool { return m.nvidiaOpen() && m.Hybrid() && matches(m, "laptop") },
 	},
 	// Vendors (issue #82): ASUS, Dell, Framework, Lenovo, Tuxedo.

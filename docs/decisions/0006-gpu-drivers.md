@@ -4,7 +4,7 @@ type: decision
 status: accepted
 adr: 6
 created: 2026-11-06
-updated: 2026-11-14
+updated: 2026-11-20
 tags: [decision, adr, foundation, gpu]
 aliases: [ADR 0006, F5, GPU drivers]
 ---
@@ -159,5 +159,24 @@ Implementation notes:
   but that source fix has not been tested on Sputnik. Use the installed
   LTS boot entry as the tested workaround; no driver patch or boot-default
   change was made. See [[first-install]] for the dated comparison.
+
+- 2026-11-20, from the comments on #195 and #51, nothing retested: the
+  RTD3 result is unchanged. After the owner reinstalled `sputnik` on
+  2026-11-16 (core `0.0.0-638`), a battery test on 2026-11-17 at 02:28 UTC
+  with every USB-C port empty failed again on Zen `7.3.4-zen2-2-zen`: four
+  passive samples showed `runtime_status=active`, suspended time zero and
+  `Runtime D3 status: Not supported`, with the stock driver `620.70.06`,
+  `DynamicPowerManagement=2` and `power/control=auto`. The LTS pass of
+  2026-11-15 was on the earlier installation and has not been repeated on
+  this one. So the `nvidia-runtime-pm` fix is applied and tested: it is
+  enough on LTS and not enough on Zen 7.3. In the same samples UPower
+  reported external power while on battery (#249); no common cause is
+  established. A context-only backport of upstream #1512 was built for
+  both kernels on 2026-11-16 and booted in a VM without an NVIDIA device;
+  it has not been installed on `sputnik`. #1512 has a newer head since
+  2026-11-17; a comparison recorded on #195 on 2026-11-20 found it makes
+  the same change as the candidate's patch, and no NVIDIA release carries
+  it. Details: [[nvidia-rtd3-source-qualification]]. #195 stays
+  open; LTS remains the tested workaround.
 
 Related: [[decision-map|Decision map]] · [[0004-kernel|ADR 0004]] · [[0005-firmware|ADR 0005]]
