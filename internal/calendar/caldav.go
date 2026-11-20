@@ -79,6 +79,10 @@ func (f HTTPFetcher) fetchTexts(ctx context.Context, s Source, password string, 
 	return ParseMultistatus(body)
 }
 
+// maxResponse caps a feed or REPORT body. A larger one fails the fetch
+// rather than being parsed cut short.
+var maxResponse int64 = 32 << 20
+
 func (f HTTPFetcher) do(req *http.Request) ([]byte, error) {
 	req.Header.Set("User-Agent", "subcult-calendar/1")
 	resp, err := f.client().Do(req)
@@ -86,9 +90,12 @@ func (f HTTPFetcher) do(req *http.Request) ([]byte, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 32<<20))
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxResponse+1))
 	if err != nil {
 		return nil, err
+	}
+	if int64(len(body)) > maxResponse {
+		return nil, fmt.Errorf("%s: response larger than %d MiB", req.URL.Host, maxResponse>>20)
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return nil, fmt.Errorf("%s: HTTP %d", req.URL.Host, resp.StatusCode)

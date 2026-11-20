@@ -190,6 +190,35 @@ func TestDue(t *testing.T) {
 	if !Due(fresh, now, true, true) || !Due(Cache{}, now, true, false) {
 		t.Error("forced, or no cache yet")
 	}
+	// A cache written while the clock was ahead is stale once the clock
+	// is stepped back.
+	future := Cache{SyncedAt: now.Add(time.Hour)}
+	if !Due(future, now, false, false) || !Due(future, now, true, false) {
+		t.Error("a cache from the future: due on AC and on battery")
+	}
+}
+
+// A feed larger than the response limit fails the sync instead of being
+// cut short and stored as complete; the source keeps its previous events.
+func TestOversizedFeedFailsTheSync(t *testing.T) {
+	defer func(n int64) { maxResponse = n }(maxResponse)
+	maxResponse = 64
+	feed := "BEGIN:VEVENT\nUID:a\nDTSTART:20261108T120000Z\nDURATION:PT1H\nEND:VEVENT\n" +
+		"BEGIN:VEVENT\nUID:b\nDTSTART:20261108T140000Z\nDURATION:PT1H\nEND:VEVENT\n"
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, feed)
+	}))
+	defer server.Close()
+	cfg := Config{Sources: []Source{{Name: "big", Kind: "ical", URL: server.URL}}}
+	now := time.Date(2026, 11, 8, 10, 0, 0, 0, time.UTC)
+	prev := Cache{Events: []Event{{ID: "old", Calendar: "big", Title: "Old"}}}
+	cache := Sync(context.Background(), cfg, prev, now, HTTPFetcher{Client: server.Client()}, fakeSecrets{})
+	if cache.Sources[0].OK || !strings.Contains(cache.Sources[0].Error, "larger than") {
+		t.Fatalf("want a too-large error, got %+v", cache.Sources)
+	}
+	if len(cache.Events) != 1 || cache.Events[0].ID != "old" {
+		t.Errorf("want the previous events kept, got %+v", cache.Events)
+	}
 }
 
 type fakeFetch struct {

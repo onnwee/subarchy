@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -78,10 +77,9 @@ func Discover(dirs []string) (*Registry, error) {
 				continue
 			}
 			words := strings.Split(strings.TrimPrefix(name, Prefix), "-")
-			bin, err := isBinary(path)
-			if err != nil {
-				return nil, err
-			}
+			// A file that cannot be read is listed without metadata
+			// rather than failing every subcult command.
+			bin, _ := isBinary(path)
 			if bin {
 				if described := probe(path, words); len(described) > 0 {
 					for _, d := range described {
@@ -102,10 +100,7 @@ func Discover(dirs []string) (*Registry, error) {
 					continue
 				}
 			}
-			meta, err := ReadMetadata(path)
-			if err != nil {
-				return nil, fmt.Errorf("metadata for %s: %w", name, err)
-			}
+			meta, _ := ReadMetadata(path)
 			reg.byBinary[name] = Command{
 				Words:    words,
 				Route:    "subcult " + strings.Join(words, " "),
@@ -224,7 +219,7 @@ func levenshtein(a, b string) int {
 func isBinary(path string) (bool, error) {
 	f, err := os.Open(path)
 	if err != nil {
-		return false, fmt.Errorf("open %s: %w", path, err)
+		return false, err
 	}
 	defer f.Close()
 	head := make([]byte, 512)

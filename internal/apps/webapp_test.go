@@ -158,3 +158,41 @@ func TestWebappRemovesInstalledIconFormats(t *testing.T) {
 		})
 	}
 }
+
+// Remove touches only a web app's own entry and icons: a hand-made desktop
+// entry of the same id is refused, and icons that only share the id's
+// first dot-separated part (reverse-DNS names) are kept.
+func TestWebappRemoveLeavesOtherEntriesAlone(t *testing.T) {
+	dir := t.TempDir()
+	appsDir, iconsDir := filepath.Join(dir, "applications"), filepath.Join(dir, "icons")
+	iconDir := filepath.Join(iconsDir, "hicolor", "256x256", "apps")
+	if err := os.MkdirAll(appsDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(iconDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	firefox := filepath.Join(appsDir, "firefox.desktop")
+	if err := os.WriteFile(firefox, []byte("[Desktop Entry]\nType=Application\nName=Firefox\nExec=firefox --private-window %u\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := WebappRemovePlan(appsDir, iconsDir, "Firefox"); err == nil {
+		t.Error("removing a desktop entry that is not a web app must fail")
+	}
+	if err := os.WriteFile(filepath.Join(appsDir, "org.desktop"), []byte(WebappDesktop("Org", "https://org.test", "org")), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"org.png", "org.gnome.Foo.png"} {
+		if err := os.WriteFile(filepath.Join(iconDir, name), []byte("icon"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	remove, err := WebappRemovePlan(appsDir, iconsDir, "Org")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"rm", "-f", filepath.Join(appsDir, "org.desktop"), filepath.Join(iconDir, "org.png")}
+	if len(remove) != 1 || strings.Join(remove[0].Argv, " ") != strings.Join(want, " ") {
+		t.Errorf("remove = %v, want %v", remove, want)
+	}
+}

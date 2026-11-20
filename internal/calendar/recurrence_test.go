@@ -181,3 +181,46 @@ func TestBadEventDoesNotDropTheFeed(t *testing.T) {
 		t.Errorf("want only the good event, got %+v", events)
 	}
 }
+
+// A yearly rule with BYMONTH, BYDAY or BYMONTHDAY picks its days in each
+// listed month, as a monthly rule does, instead of repeating DTSTART's date.
+func TestYearlyByMonthAndDay(t *testing.T) {
+	series := func(dtstart, rrule string) string {
+		return "BEGIN:VEVENT\nUID:x\nSUMMARY:x\nDTSTART" + dtstart + "\nRRULE:" + rrule + "\nEND:VEVENT\n"
+	}
+	tests := []struct {
+		name, ics string
+		from, to  time.Time
+		want      []string
+	}{
+		{"US Thanksgiving", series(";VALUE=DATE:20201126", "FREQ=YEARLY;BYMONTH=11;BYDAY=4TH"),
+			day(2026, 11, 1), day(2027, 12, 1),
+			[]string{"2026-11-26 00:00", "2027-11-25 00:00"}},
+		{"without BYMONTH, BYDAY counts within the year (RFC 5545 example)", series(":19970519T090000", "FREQ=YEARLY;BYDAY=20MO"),
+			day(1997, 1, 1), day(2000, 1, 1),
+			[]string{"1997-05-19 09:00", "1998-05-18 09:00", "1999-05-17 09:00"}},
+		{"the last Monday of the year", series(";VALUE=DATE:20201228", "FREQ=YEARLY;BYDAY=-1MO"),
+			day(2027, 1, 1), day(2028, 1, 1),
+			[]string{"2027-12-27 00:00"}},
+		{"without BYMONTH, BYMONTHDAY applies to every month", series(":20260115T120000", "FREQ=YEARLY;BYMONTHDAY=15;COUNT=3"),
+			day(2026, 1, 1), day(2027, 1, 1),
+			[]string{"2026-01-15 12:00", "2026-02-15 12:00", "2026-03-15 12:00"}},
+		{"BYSETPOS counts within the year", series(":20260105T090000", "FREQ=YEARLY;BYMONTH=1,7;BYDAY=MO;BYSETPOS=-1"),
+			day(2026, 1, 1), day(2027, 1, 1),
+			[]string{"2026-07-27 09:00"}},
+		{"two months a year", series(":20260110T120000", "FREQ=YEARLY;BYMONTH=1,7"),
+			day(2026, 1, 1), day(2028, 1, 1),
+			[]string{"2026-01-10 12:00", "2026-07-10 12:00", "2027-01-10 12:00", "2027-07-10 12:00"}},
+		{"COUNT counts the generated days", series(":20260110T120000", "FREQ=YEARLY;BYMONTH=1,7;COUNT=3"),
+			day(2026, 1, 1), day(2029, 1, 1),
+			[]string{"2026-01-10 12:00", "2026-07-10 12:00", "2027-01-10 12:00"}},
+		{"every other year", series(";VALUE=DATE:20201126", "FREQ=YEARLY;INTERVAL=2;BYMONTH=11;BYDAY=4TH"),
+			day(2026, 1, 1), day(2030, 1, 1),
+			[]string{"2026-11-26 00:00", "2028-11-23 00:00"}},
+	}
+	for _, tc := range tests {
+		if got := starts(occurrencesIn(t, tc.ics, tc.from, tc.to)); !equal(got, tc.want) {
+			t.Errorf("%s: got %v, want %v", tc.name, got, tc.want)
+		}
+	}
+}

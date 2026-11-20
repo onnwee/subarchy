@@ -69,6 +69,12 @@ func (a *app) run(args []string) int {
 		fmt.Fprintln(a.stdout, idle.Summary(s))
 		return 0
 	case fs.Arg(0) == "run":
+		// No fallback to the shared temporary directory: another user
+		// could plant the directory or the file there.
+		if a.runtimeDir == "" {
+			fmt.Fprintln(a.stderr, "subcult idle: XDG_RUNTIME_DIR is not set; run the idle service from a logged-in session")
+			return 1
+		}
 		path := filepath.Join(a.runtimeDir, "subcult", "hypridle.conf")
 		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 			fmt.Fprintf(a.stderr, "subcult idle: %v\n", err)
@@ -93,14 +99,10 @@ func main() {
 	if config == "" {
 		config = filepath.Join(os.Getenv("HOME"), ".config")
 	}
-	runtime := os.Getenv("XDG_RUNTIME_DIR")
-	if runtime == "" {
-		runtime = os.TempDir()
-	}
 	a := &app{
 		stdout: os.Stdout, stderr: os.Stderr,
 		settingsPath: filepath.Join(config, "subcult", "idle.json"),
-		runtimeDir:   runtime,
+		runtimeDir:   os.Getenv("XDG_RUNTIME_DIR"),
 		exec: func(argv []string) error {
 			path, err := exec.LookPath(argv[0])
 			if err != nil {

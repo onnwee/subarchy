@@ -50,6 +50,19 @@ func TestShowConfigApplyRun(t *testing.T) {
 	}
 }
 
+// Without XDG_RUNTIME_DIR, `idle run` refuses rather than writing the
+// config under the shared temporary directory; the other commands still work.
+func TestRunNeedsARuntimeDir(t *testing.T) {
+	a, out, execd, _ := newApp(t)
+	a.runtimeDir = ""
+	if code := a.run([]string{"run"}); code != 1 || *execd != nil || !strings.Contains(out.String(), "XDG_RUNTIME_DIR") {
+		t.Errorf("run: %d %v %q", code, *execd, out.String())
+	}
+	if code := a.run([]string{"config"}); code != 0 {
+		t.Errorf("config: %d", code)
+	}
+}
+
 func TestBrokenSettingsUseDefaults(t *testing.T) {
 	a, out, _, _ := newApp(t)
 	os.WriteFile(a.settingsPath, []byte("{ no"), 0o644)

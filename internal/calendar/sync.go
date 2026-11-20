@@ -37,9 +37,10 @@ const (
 
 // Due reports whether a sync should run now: always when forced or when no
 // cache exists, else when the cache is older than the interval for the
-// power source.
+// power source. A cache stamped later than now (written while the clock
+// was ahead) counts as stale.
 func Due(c Cache, now time.Time, onBattery, force bool) bool {
-	if force || c.SyncedAt.IsZero() {
+	if force || c.SyncedAt.IsZero() || c.SyncedAt.After(now) {
 		return true
 	}
 	interval := IntervalAC

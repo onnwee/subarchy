@@ -103,6 +103,27 @@ func TestDiscoverAndResolve(t *testing.T) {
 	}
 }
 
+// A subcult-* file that cannot be read (execute-only, or on a mount that
+// denies reads) is listed without metadata; it does not fail the scan.
+func TestDiscoverSurvivesAnUnreadableCommand(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("root reads any file")
+	}
+	dir := t.TempDir()
+	writeCmd(t, dir, "subcult-theme-list", "#!/bin/bash\n# subcult:summary=List themes\n", 0o755)
+	writeCmd(t, dir, "subcult-x", "#!/bin/bash\n# subcult:summary=Unreadable\n", 0o111)
+	reg, err := Discover([]string{dir})
+	if err != nil {
+		t.Fatalf("Discover: %v", err)
+	}
+	if c, _, ok := reg.Resolve([]string{"theme", "list"}); !ok || c.Summary != "List themes" {
+		t.Errorf("readable command: got %+v, %v", c, ok)
+	}
+	if c, _, ok := reg.Resolve([]string{"x"}); !ok || c.Summary != "" {
+		t.Errorf("unreadable command: want it listed without metadata, got %+v, %v", c, ok)
+	}
+}
+
 func run(t *testing.T, args ...string) (int, string, string, []string) {
 	t.Helper()
 	reg, err := Discover(fixture(t))

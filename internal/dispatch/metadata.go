@@ -45,7 +45,7 @@ type Metadata struct {
 func ReadMetadata(path string) (Metadata, error) {
 	f, err := os.Open(path)
 	if err != nil {
-		return Metadata{}, fmt.Errorf("open %s: %w", path, err)
+		return Metadata{}, err
 	}
 	defer f.Close()
 	return ParseMetadata(f)

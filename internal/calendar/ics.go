@@ -258,7 +258,9 @@ func parseDuration(s string) (time.Duration, bool) {
 // Occurrences expands the events into the window: single events as they
 // are, recurring ones by their RRULE (daily and weekly with BYDAY, weeks
 // starting on WKST, Monday by default; monthly by day of month or by
-// BYDAY, BYMONTHDAY, BYMONTH and BYSETPOS; yearly; INTERVAL, COUNT, UNTIL,
+// BYDAY, BYMONTHDAY, BYMONTH and BYSETPOS; yearly by date, or by BYMONTH,
+// BYDAY, BYMONTHDAY and BYSETPOS, with BYDAY counting within each BYMONTH
+// month or, without BYMONTH, within the year; INTERVAL, COUNT, UNTIL,
 // EXDATE). A series steps through the calendar of
 // the zone its DTSTART was written in. Overridden occurrences
 // (RECURRENCE-ID) replace the generated one.
@@ -421,6 +423,41 @@ func expand(e vevent, w Window) []time.Time {
 			}
 		}
 	case "YEARLY":
+		if rule["BYMONTH"] != "" || rule["BYDAY"] != "" || rule["BYMONTHDAY"] != "" {
+			january := 1 - int(e.start.Month()) // months from DTSTART's to its January
+			for n := 0; ; n += interval {
+				year := monthStart(e.start, 12*n+january)
+				if !year.Before(until) {
+					break
+				}
+				// With BYMONTH, each listed month picks its days as a
+				// monthly rule does (2TU the month's second Tuesday).
+				// Without it, BYDAY counts within the year (20MO the
+				// twentieth Monday) and BYMONTHDAY applies to every
+				// month. BYSETPOS counts within the year (RFC 5545).
+				var days []time.Time
+				if months := intList(rule["BYMONTH"]); len(months) > 0 {
+					for m := 0; m < 12; m++ {
+						if first := monthStart(e.start, 12*n+january+m); slices.Contains(months, int(first.Month())) {
+							days = append(days, periodDays(e.start, first, first.AddDate(0, 1, 0), rule)...)
+						}
+					}
+				} else {
+					days = periodDays(e.start, year, year.AddDate(1, 0, 0), rule)
+				}
+				done := false
+				for _, t := range setPositions(days, rule) {
+					if !t.Before(e.start) && !emit(t) {
+						done = true
+						break
+					}
+				}
+				if done {
+					break
+				}
+			}
+			break
+		}
 		// A date a year lacks (February 29) skips that year (RFC 5545).
 		for n := 0; ; n += interval {
 			t := e.start.AddDate(n, 0, 0)
@@ -459,8 +496,18 @@ func monthDays(start, first time.Time, rule map[string]string) []time.Time {
 	if months := intList(rule["BYMONTH"]); len(months) > 0 && !slices.Contains(months, int(first.Month())) {
 		return nil
 	}
-	last := first.AddDate(0, 1, -1).Day()
-	on := func(d int) time.Time { return first.AddDate(0, 0, d-1) }
+	return setPositions(periodDays(start, first, first.AddDate(0, 1, 0), rule), rule)
+}
+
+// periodDays lists the days from first up to end that BYDAY and
+// BYMONTHDAY pick, as monthDays describes, before BYSETPOS. A BYDAY
+// ordinal counts that weekday within the period; BYMONTHDAY counts within
+// each day's own month.
+func periodDays(start, first, end time.Time, rule map[string]string) []time.Time {
+	var all []time.Time
+	for t := first; t.Before(end); t = first.AddDate(0, 0, len(all)) {
+		all = append(all, t)
+	}
 	byday, monthdays := rule["BYDAY"], intList(rule["BYMONTHDAY"])
 	picked := map[int]bool{}
 	for _, entry := range strings.Split(byday, ",") {
@@ -470,16 +517,16 @@ func monthDays(start, first time.Time, rule map[string]string) []time.Time {
 			continue
 		}
 		var matches []int
-		for d := 1; d <= last; d++ {
-			if on(d).Weekday() == wd {
-				matches = append(matches, d)
+		for i, t := range all {
+			if t.Weekday() == wd {
+				matches = append(matches, i)
 			}
 		}
 		ordinal, _ := strconv.Atoi(strings.TrimSuffix(entry, code))
 		switch {
 		case ordinal == 0:
-			for _, d := range matches {
-				picked[d] = true
+			for _, i := range matches {
+				picked[i] = true
 			}
 		case ordinal > 0 && ordinal <= len(matches):
 			picked[matches[ordinal-1]] = true
@@ -487,57 +534,63 @@ func monthDays(start, first time.Time, rule map[string]string) []time.Time {
 			picked[matches[len(matches)+ordinal]] = true
 		}
 	}
-	onMonthday := map[int]bool{}
-	for _, n := range monthdays {
-		if n < 0 {
-			n = last + 1 + n
+	onMonthday := func(t time.Time) bool {
+		last := time.Date(t.Year(), t.Month()+1, 0, 0, 0, 0, 0, time.UTC).Day()
+		for _, n := range monthdays {
+			if n < 0 {
+				n = last + 1 + n
+			}
+			if n == t.Day() {
+				return true
+			}
 		}
-		if n >= 1 && n <= last {
-			onMonthday[n] = true
-		}
+		return false
 	}
-	var set []int
-	for d := 1; d <= last; d++ {
+	var set []time.Time
+	for i, t := range all {
 		switch {
 		case byday != "" && len(monthdays) > 0:
-			if picked[d] && onMonthday[d] {
-				set = append(set, d)
+			if picked[i] && onMonthday(t) {
+				set = append(set, t)
 			}
 		case byday != "":
-			if picked[d] {
-				set = append(set, d)
+			if picked[i] {
+				set = append(set, t)
 			}
 		case len(monthdays) > 0:
-			if onMonthday[d] {
-				set = append(set, d)
+			if onMonthday(t) {
+				set = append(set, t)
 			}
-		case d == start.Day():
-			set = append(set, d)
+		case t.Day() == start.Day():
+			set = append(set, t)
 		}
 	}
-	if positions := intList(rule["BYSETPOS"]); len(positions) > 0 {
-		keep := map[int]bool{}
-		for _, pos := range positions {
-			switch {
-			case pos > 0 && pos <= len(set):
-				keep[set[pos-1]] = true
-			case pos < 0 && -pos <= len(set):
-				keep[set[len(set)+pos]] = true
-			}
-		}
-		kept := set[:0]
-		for _, d := range set {
-			if keep[d] {
-				kept = append(kept, d)
-			}
-		}
-		set = kept
+	return set
+}
+
+// setPositions keeps the BYSETPOS positions of a set of days (1 the
+// first, -1 the last), or the whole set without BYSETPOS.
+func setPositions(set []time.Time, rule map[string]string) []time.Time {
+	positions := intList(rule["BYSETPOS"])
+	if len(positions) == 0 {
+		return set
 	}
-	days := make([]time.Time, len(set))
-	for i, d := range set {
-		days[i] = on(d)
+	keep := map[int]bool{}
+	for _, pos := range positions {
+		switch {
+		case pos > 0 && pos <= len(set):
+			keep[pos-1] = true
+		case pos < 0 && -pos <= len(set):
+			keep[len(set)+pos] = true
+		}
 	}
-	return days
+	var kept []time.Time
+	for i, t := range set {
+		if keep[i] {
+			kept = append(kept, t)
+		}
+	}
+	return kept
 }
 
 // intList reads a comma-separated list of integers, skipping what is not

@@ -123,22 +123,44 @@ func WebappPlan(appsDir, iconsDir, name, rawURL, iconFile string) ([]Step, error
 }
 
 // WebappRemovePlan returns the steps that remove a web app the user
-// installed.
+// installed. It refuses a desktop entry of that id that is not a web app
+// (one whose Exec does not open chromium --app=), and removes only icons
+// named id.<ext>, not other names that begin with "id.".
 func WebappRemovePlan(appsDir, iconsDir, name string) ([]Step, error) {
 	id, err := WebappID(name)
 	if err != nil {
 		return nil, err
 	}
-	argv := []string{"rm", "-f", filepath.Join(appsDir, id+".desktop")}
+	desktop := filepath.Join(appsDir, id+".desktop")
+	if data, err := os.ReadFile(desktop); err == nil {
+		if !isWebappEntry(string(data)) {
+			return nil, fmt.Errorf("%s is not a web app entry; not removing it", desktop)
+		}
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return nil, err
+	}
+	argv := []string{"rm", "-f", desktop}
 	dir := filepath.Join(iconsDir, "hicolor", "256x256", "apps")
 	entries, err := os.ReadDir(dir)
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return nil, err
 	}
 	for _, entry := range entries {
-		if !entry.IsDir() && strings.HasPrefix(entry.Name(), id+".") {
+		ext, ok := strings.CutPrefix(entry.Name(), id+".")
+		if !entry.IsDir() && ok && ext != "" && !strings.Contains(ext, ".") {
 			argv = append(argv, filepath.Join(dir, entry.Name()))
 		}
 	}
 	return []Step{{Argv: argv}}, nil
+}
+
+// isWebappEntry reports whether a desktop entry is one WebappDesktop
+// writes: its Exec opens chromium with --app=.
+func isWebappEntry(entry string) bool {
+	for _, line := range strings.Split(entry, "\n") {
+		if exec, ok := strings.CutPrefix(strings.TrimSpace(line), "Exec="); ok {
+			return strings.HasPrefix(exec, "chromium ") && strings.Contains(exec, "--app=")
+		}
+	}
+	return false
 }
