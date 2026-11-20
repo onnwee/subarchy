@@ -344,6 +344,29 @@
    "dangerous": false
   },
   {
+   "route": "subcult dns",
+   "group": "dns",
+   "args": "",
+   "summary": "Show each active connection's DNS trust and the DNS servers in use",
+   "examples": [
+    "subcult dns"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
+   "route": "subcult dns set",
+   "group": "dns",
+   "args": "<untrusted|trusted> [--connection <name>] [--dns <addr[#tls-name],...>] [--no-check]",
+   "summary": "Switch connections between untrusted (Quad9 over TLS) and trusted (the network's DNS or your own)",
+   "examples": [
+    "subcult dns set untrusted",
+    "subcult dns set trusted --connection Home --dns 10.0.0.200,10.0.0.57"
+   ],
+   "requires_sudo": false,
+   "dangerous": false
+  },
+  {
    "route": "subcult docker sudoless",
    "group": "docker",
    "args": "",

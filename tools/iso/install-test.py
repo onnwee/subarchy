@@ -791,7 +791,12 @@ def boot(disk: Path, vars_file: Path) -> bool:
             ),
             "power_key": serial.run("busctl get-property org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager HandlePowerKey;"
                                     " busctl get-property org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager HandlePowerKeyLongPress"),
-            "dns": serial.run("resolvectl status | grep -i -m1 dnsovertls; resolvectl query archlinux.org", timeout=60),
+            # DNS trust (ADR 0020), self-contained: first a lookup on the
+            # connection as first boot left it (never switched), then untrusted
+            # (global Quad9 only), trusted with QEMU's resolver as the
+            # user's server (its link is the default route and answers),
+            # and back to untrusted, which the later checks run under.
+            "dns": serial.run(DNS_STEPS.format(sudo=sudo), timeout=240),
             "services": serial.run("systemctl is-active avahi-daemon power-profiles-daemon; systemctl is-enabled bluetooth"),
             # Exercise the CLI even without a battery: the auto-profile
             # service otherwise exits before importing its Python bindings.
@@ -1225,7 +1230,15 @@ finally:
         and "missing:" not in r["desktop_apps"],
         "power button: a short press is left to the session, a long press powers off": r["power_key"].split()
         == ["s", '"ignore"', "s", '"poweroff"'],
-        "DNS over TLS resolves": "+DNSOverTLS" in r["dns"] and "archlinux.org:" in r["dns"],
+        # Without a global ~. the never-switched link (DefaultRoute=yes, no
+        # ~.) and the global Quad9 servers both get the lookup; the link's
+        # 10.0.2.3 fails under strict TLS and Quad9 answers.
+        "DNS: a connection never switched still resolves": "NEVER_SWITCHED_QUERY_EXIT=0" in dns_parts(r["dns"])[0],
+        "DNS: an untrusted connection has no servers of its own and resolves through Quad9 over strict TLS":
+            dns_untrusted_ok(r["dns"]),
+        "DNS: subcult dns set trusted --dns 10.0.2.3 makes the link the default route with that server, and it answers":
+            dns_trusted_ok(r["dns"]),
+        "DNS: back to untrusted clears the connection's ~. routing domain": dns_back_ok(r["dns"]),
         "avahi, power-profiles, bluetooth": r["services"].split() == ["active", "active", "enabled"],
         # Graphical splash is not checked: with console=ttyS0 (needed to
         # drive the test) Plymouth falls back to its text mode.
@@ -1567,6 +1580,73 @@ def theme_system_ok(out: str) -> bool:
         and "no initramfs rebuild" in second and "wrote" not in second
         and files.splitlines()[-6:-1] == ["1", "1", "1", "1", "subarchy-user"] and files.splitlines()[-1] == "1"
     )
+
+
+# The DNS step's shell script. The VM's wired connection is the one
+# NetworkManager made at first boot; QEMU's user network answers DNS on
+# 10.0.2.3 in plaintext.
+DNS_STEPS = (
+    "(export SYSTEMD_COLORS=0 SYSTEMD_PAGER=cat;"
+    " conn=$(nmcli -t -e no -f NAME,TYPE connection show --active | sed -n 's/:802-3-ethernet$//p' | head -n1);"
+    " dev=$(nmcli -e no -g GENERAL.DEVICES connection show \"$conn\"); echo \"DEV=$dev\";"
+    " resolvectl query --cache=no archlinux.org >/dev/null 2>&1; echo NEVER_SWITCHED_QUERY_EXIT=$?; echo ---;"
+    " {sudo} subcult dns set untrusted --connection \"$conn\"; echo UNTRUSTED_EXIT=$?;"
+    " resolvectl status | sed -n '/^Global/,/^$/p'; resolvectl dns \"$dev\";"
+    " resolvectl query --cache=no archlinux.org; echo QUERY_EXIT=$?;"
+    " resolvectl query --cache=no -i \"$dev\" archlinux.org >/dev/null 2>&1; echo LINK_QUERY_EXIT=$?; echo ---;"
+    " {sudo} subcult dns set trusted --connection \"$conn\" --dns 10.0.2.3; echo TRUSTED_EXIT=$?;"
+    " resolvectl status \"$dev\"; resolvectl query --cache=no -i \"$dev\" archlinux.org; echo LINK_QUERY_EXIT=$?; echo ---;"
+    " {sudo} subcult dns set untrusted --connection \"$conn\"; echo BACK_EXIT=$?;"
+    " echo \"SEARCH=$(nmcli -e no -g ipv4.dns-search,ipv6.dns-search connection show \"$conn\" | tr -d '\\n')\")"
+)
+
+
+def dns_parts(out: str) -> list[str]:
+    """The DNS step's output in its four parts (fewer when it was cut short)."""
+    return [p.strip() for p in out.split("---")]
+
+
+def dns_untrusted_ok(out: str) -> bool:
+    """Untrusted: the switch worked, the global servers are Quad9 with strict
+    DNS-over-TLS and no routing domain, the link lists no servers, a lookup
+    succeeds and one restricted to the link cannot."""
+    parts = dns_parts(out)
+    if len(parts) < 2:
+        return False
+    part = parts[1]
+    glob = part.split("\nLink ", 1)[0]
+    link_dns = re.search(r"^Link \d+ \([^)]*\):(.*)$", part, re.M)
+    return (
+        "UNTRUSTED_EXIT=0" in part
+        and "+DNSOverTLS" in glob and "9.9.9.9#dns.quad9.net" in glob and "~." not in glob
+        and link_dns is not None and link_dns.group(1).strip() == ""
+        and "archlinux.org:" in part and "QUERY_EXIT=0" in part.split("LINK_QUERY_EXIT")[0]
+        and re.search(r"^LINK_QUERY_EXIT=[1-9]", part, re.M) is not None
+    )
+
+
+def dns_trusted_ok(out: str) -> bool:
+    """Trusted with 10.0.2.3: the switch (and its own link lookup) worked;
+    resolved shows the link as default route with that server and `~.`; a
+    lookup restricted to the link answers."""
+    parts = dns_parts(out)
+    if len(parts) < 3:
+        return False
+    part = parts[2]
+    return (
+        "TRUSTED_EXIT=0" in part
+        and ("+DefaultRoute" in part or re.search(r"Default Route: yes", part) is not None)
+        and re.search(r"^\s*DNS Servers: 10\.0\.2\.3\s*$", part, re.M) is not None
+        and re.search(r"^\s*DNS Domain: .*~\.", part, re.M) is not None
+        and "archlinux.org:" in part and "LINK_QUERY_EXIT=0" in part
+    )
+
+
+def dns_back_ok(out: str) -> bool:
+    """Back to untrusted: the switch worked and the profile has no search or
+    routing domains left."""
+    parts = dns_parts(out)
+    return len(parts) >= 4 and "BACK_EXIT=0" in parts[3] and parts[3].splitlines()[-1:] == ["SEARCH="]
 
 
 def channel_ok(out: str) -> bool:

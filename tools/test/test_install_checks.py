@@ -459,5 +459,75 @@ class Budgets(unittest.TestCase):
         self.assertEqual(json.loads((self.dir / "budgets.json").read_text()), {"packages": 121, "session_rss_kb": 4000})
 
 
+# The DNS step's output as systemd 257's resolvectl prints it, written by
+# hand from resolvectl(1); not captured from a VM.
+DNS_GOOD = """DEV=ens3
+NEVER_SWITCHED_QUERY_EXIT=1
+---
+DNS: untrusted for Wired connection 1
+UNTRUSTED_EXIT=0
+Global
+           Protocols: -LLMNR -mDNS +DNSOverTLS DNSSEC=allow-downgrade/supported
+    resolv.conf mode: stub
+  Current DNS Server: 9.9.9.9#dns.quad9.net
+         DNS Servers: 9.9.9.9#dns.quad9.net 149.112.112.112#dns.quad9.net
+
+Link 2 (ens3):
+archlinux.org: 95.217.163.246
+
+-- Information acquired via protocol DNS in 20.1ms.
+QUERY_EXIT=0
+LINK_QUERY_EXIT=1
+---
+DNS: trusted for Wired connection 1
+TRUSTED_EXIT=0
+Link 2 (ens3)
+    Current Scopes: DNS
+         Protocols: +DefaultRoute -LLMNR -mDNS -DNSOverTLS DNSSEC=allow-downgrade/supported
+Current DNS Server: 10.0.2.3
+       DNS Servers: 10.0.2.3
+        DNS Domain: ~.
+archlinux.org: 95.217.163.246                  -- link: ens3
+LINK_QUERY_EXIT=0
+---
+DNS: untrusted for Wired connection 1
+BACK_EXIT=0
+SEARCH="""
+
+
+class DNSTrust(unittest.TestCase):
+    def test_good_output_passes_all_three(self):
+        self.assertTrue(install_test.dns_untrusted_ok(DNS_GOOD))
+        self.assertTrue(install_test.dns_trusted_ok(DNS_GOOD))
+        self.assertTrue(install_test.dns_back_ok(DNS_GOOD))
+
+    def test_global_routing_domain_fails_untrusted(self):
+        # A global ~. would tie with a trusted link's ~. (the bug this replaced).
+        out = DNS_GOOD.replace("149.112.112.112#dns.quad9.net\n", "149.112.112.112#dns.quad9.net\n          DNS Domain: ~.\n", 1)
+        self.assertFalse(install_test.dns_untrusted_ok(out))
+
+    def test_link_servers_fail_untrusted(self):
+        self.assertFalse(install_test.dns_untrusted_ok(DNS_GOOD.replace("Link 2 (ens3):\n", "Link 2 (ens3): 10.0.2.3\n")))
+
+    def test_link_answering_fails_untrusted(self):
+        self.assertFalse(install_test.dns_untrusted_ok(DNS_GOOD.replace("LINK_QUERY_EXIT=1", "LINK_QUERY_EXIT=0")))
+
+    def test_plaintext_global_fails_untrusted(self):
+        self.assertFalse(install_test.dns_untrusted_ok(DNS_GOOD.replace("+DNSOverTLS", "-DNSOverTLS", 1)))
+
+    def test_trusted_needs_default_route_server_and_answer(self):
+        for old, new in (("+DefaultRoute", "-DefaultRoute"), ("DNS Servers: 10.0.2.3", "DNS Servers: 9.9.9.9"),
+                         ("DNS Domain: ~.", "DNS Domain: lan"), ("LINK_QUERY_EXIT=0", "LINK_QUERY_EXIT=1"),
+                         ("TRUSTED_EXIT=0", "TRUSTED_EXIT=1")):
+            self.assertFalse(install_test.dns_trusted_ok(DNS_GOOD.replace(old, new)), old)
+
+    def test_routing_domain_left_behind_fails_back(self):
+        self.assertFalse(install_test.dns_back_ok(DNS_GOOD.replace("SEARCH=", "SEARCH=~.~.")))
+
+    def test_cut_short_fails(self):
+        cut = DNS_GOOD.split("---")[0]
+        self.assertFalse(install_test.dns_untrusted_ok(cut) or install_test.dns_trusted_ok(cut) or install_test.dns_back_ok(cut))
+
+
 if __name__ == "__main__":
     unittest.main()

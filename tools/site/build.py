@@ -60,7 +60,7 @@ DOCS = [
 
 # Command groups on the commands page: heading, id, groups.
 COMMAND_SECTIONS = [
-    ("System and updates", "system", ["update", "channel", "system", "lock", "idle", "power"]),
+    ("System and updates", "system", ["update", "channel", "system", "lock", "idle", "power", "dns"]),
     ("Look", "look", ["theme", "font", "cursor", "display", "screensaver"]),
     ("Apps", "apps", ["app", "capture", "clipboard", "calendar", "agent"]),
     ("Hardware", "hardware", ["hw", "gpu", "thermal", "disk", "secureboot", "setup", "dell", "ht3"]),

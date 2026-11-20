@@ -176,7 +176,7 @@ AUR packages Subarchy ships are rebuilt into its repository).
 | `menu-clipboard`, `menu-emoji`, `menu-keybindings`, `menu-file` | the launcher (ADR 0057) |
 | `audio-*`, `brightness-*`, `osd`, `notification-*`, `monitor-state`, `network-status`, `battery-*`, `weather-*` | the shell's widgets and IPC |
 | `webapp-*`, `tui-install`, `pkg-install` | `subcult app` |
-| `dns` | `subcult dns` (Go, ADR 0020, not written yet) |
+| `dns` | `subcult dns` (Go, ADR 0020) |
 | `hw-*`, `n1x-probe` | `subcult hw` (ADR 0050) |
 | `agent*`, `default-agent` | `subcult agent`, the app list's agent role (ADR 0047) |
 | `setup-direct-boot`, `refresh-limine` | Limine and the UKIs the installer writes (ADR 0007, 0008) |
