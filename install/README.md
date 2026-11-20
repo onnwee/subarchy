@@ -175,9 +175,10 @@ edge` follows the mirrors directly (ADR 0026).
 
 With no network the install runs from the repository on the image alone,
 which carries the whole install set (`make iso` downloads it); with network
-the Arch mirrors come first and the image's copies serve as a cache. If the
-install from the mirrors fails (an old image cannot verify packages signed
-with newer keys), it is tried once more from the image alone.
+Arch packages come from the Arch Linux Archive at the same snapshot date the
+new system then follows, and the image's copies serve as a cache. If the
+install from the archive fails (a dropped network, a package signed with a
+key the image's keyring lacks), it is tried once more from the image alone.
 
 The two Limine tools are AUR packages, and the prebuilt Neovim is Subarchy's
 own package (`packaging/subarchy-nvim`), rebuilt locally into `build/repo` by

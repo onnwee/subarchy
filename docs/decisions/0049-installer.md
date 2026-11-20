@@ -185,5 +185,17 @@ Decision map item R2. Accepted 2026-11-06.
   ([[ci-runner|KVM CI runner]]). Written with the change: neither image
   had been built or installed from at that point. The first main run gives
   the net image's measured size.
+- 2026-11-20, later: an online install from the full image no longer takes
+  Arch packages from the rolling mirrors (review finding of that day). The
+  2026-11-08 note above had the mirrors win so newer packages won; that
+  predates the archive-pinned stable channel ([[0026-update-model|ADR
+  0026]]), and the installer then set the new system to an older snapshot
+  than the packages it had installed. Both images now read the snapshot
+  date before the disk is touched, probe the Arch Linux Archive at that
+  date, and install Arch's packages from it; the full image's repository
+  stays a cache and, offline or when that install fails, the only source.
+  Checked with `tools/test/installer-check-test.sh` only: the full image's
+  online path has not run in a VM or on hardware, since CI's full job
+  installs with the network off.
 
 Related: [[decision-map|Decision map]] · [[0050-hardware-support|ADR 0050]]

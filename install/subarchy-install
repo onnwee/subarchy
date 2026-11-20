@@ -73,8 +73,10 @@ read_config() {
   [[ ${conf[USERNAME]} =~ ^[a-z_][a-z0-9_-]{0,31}$ ]] || die "USERNAME: not a valid user name"
   # useradd refuses a name that is already a group (it would make a user
   # group of that name); the live image shares the target's base groups.
-  # docker and realtime come only with the target's packages.
-  if [[ ${conf[USERNAME]} == @(docker|realtime) ]] ||
+  # These groups and accounts come only with the target's packages, so the
+  # live image's getent does not know them (reservedUsers in internal/setup
+  # lists them for the guided install).
+  if [[ ${conf[USERNAME]} == @(docker|realtime|sddm|git|avahi|rtkit|polkitd|tss|cups|cups-browsed|nvidia-persistenced) ]] ||
     getent group "${conf[USERNAME]}" >/dev/null || getent passwd "${conf[USERNAME]}" >/dev/null; then
     die "USERNAME: ${conf[USERNAME]} is a system account or group"
   fi
@@ -325,23 +327,22 @@ archive_server() {
   printf 'https://archive.archlinux.org/repos/%s/$repo/os/$arch' "$snapshot"
 }
 
-# The Arch mirrors answer, or the install runs from the image's repository
-# alone (ADR 0049). OFFLINE=1 in the config skips the probe. Without a
-# repository on the image, the servers it installs from must answer: the
-# archive at the snapshot date and, unless it is a local path, the
-# [subarchy] repository. Those are asked for one byte: not every server
-# answers HEAD.
+# The Arch Linux Archive at the snapshot date answers, or the full image
+# installs from its repository alone (ADR 0049). OFFLINE=1 in the config
+# skips the probe. Without a repository on the image, the [subarchy]
+# repository must answer too, unless it is a local path. Both are asked
+# for one byte: not every server answers HEAD.
 mirrors_reachable() {
   [[ ${conf[OFFLINE]} == 1 ]] && return 1
-  if image_has_repo; then
-    curl -sfI --max-time 8 -o /dev/null "https://geo.mirror.pkgbuild.com/core/os/x86_64/core.db"
-    return
-  fi
   local core repo=${conf[SUBARCHY_REPO]}
   core=$(archive_server)
   core=${core//\$repo/core}
   unreachable="the Arch Linux Archive (${core//\$arch/x86_64}/core.db)"
   curl -sf --max-time 8 -r 0-0 -o /dev/null "${core//\$arch/x86_64}/core.db" || return 1
+  if image_has_repo; then
+    unreachable=""
+    return 0
+  fi
   unreachable="Subarchy's package server (${repo//\$arch/x86_64}/subarchy.db)"
   [[ $repo == file://* ]] || curl -sf --max-time 8 -r 0-0 -o /dev/null "${repo//\$arch/x86_64}/subarchy.db" || return 1
   unreachable=""
@@ -350,19 +351,22 @@ mirrors_reachable() {
 # check_sources: the network-install image carries no packages (#329), so
 # without the servers it installs from the install cannot finish. When one
 # of them does not answer, it stops here, before the disk is touched, and
-# names it. The full image can always go on.
+# names it. The full image can always go on. Both images read the snapshot
+# date: online, Arch's packages come from that snapshot, the one the
+# installed system then follows (ADR 0026).
 check_sources() {
-  image_has_repo && return 0
-  [[ ${conf[OFFLINE]} != 1 ]] || die "OFFLINE=1 needs the full image: this one carries no packages and installs from the network"
   snapshot=$(cat "$snapshot_file" 2>/dev/null) || true
   [[ $snapshot =~ ^[0-9]{4}/[0-9]{2}/[0-9]{2}$ ]] || die "no Arch snapshot date in $snapshot_file"
+  image_has_repo && return 0
+  [[ ${conf[OFFLINE]} != 1 ]] || die "OFFLINE=1 needs the full image: this one carries no packages and installs from the network"
   mirrors_reachable ||
     die "no answer from ${unreachable:-the package servers}, and this image carries no packages. Connect to the internet (a cable, or Wi-Fi on the installer's network page) and run the install again. Nothing on ${conf[DISK]} was changed."
 }
 
-# pacman's configuration for the install. With the mirrors ($1 = 1) they
-# come first, so a newer package wins over the image's copy; the repository
-# supplies Subarchy's own packages and, without the mirrors, everything.
+# pacman's configuration for the install. Online ($1 = 1), Arch's packages
+# come from the archive at the snapshot date: the stable channel the
+# installed system then follows (ADR 0026), not the rolling mirrors. The
+# repository supplies Subarchy's own packages and, offline, everything.
 pacman_conf() {
   sed '/^\[core\]/,$d' /etc/pacman.conf
   if [[ -n ${conf[PACKAGE_CACHE]} ]]; then
@@ -381,13 +385,11 @@ pacman_conf() {
   # `mkinitcpio -P` finds nothing to build; Subarchy's tools rebuild with
   # limine-mkinitcpio.
   echo "HookDir = $target/etc/pacman.d/hooks/"
-  if (($1)) && ! image_has_repo; then
+  if (($1)); then
     # The archive stalls single connections longer than pacman's ten-second
     # low-speed limit when hundreds of files are fetched (tools/ci/pin-snapshot.sh).
     echo "DisableDownloadTimeout"
     printf '\n[core]\nServer = %s\n\n[extra]\nServer = %s\n\n' "$(archive_server)" "$(archive_server)"
-  elif (($1)); then
-    printf '[core]\nInclude = /etc/pacman.d/mirrorlist\n\n[extra]\nInclude = /etc/pacman.d/mirrorlist\n\n'
   fi
   # A local repository is the build's own and unsigned. The registry signs
   # its database and packages with the key subarchy-keyring carries, which
@@ -425,8 +427,8 @@ pacstrap_packages() {
   local -a cache=()
   [[ -n ${conf[PACKAGE_CACHE]} ]] && cache=(-c)
   pacstrap -C "$conf_file" -K "${cache[@]}" "$target" "${pkgs[@]}" && return
-  # The mirrors roll on while the image's keyring stays as built: months
-  # later a package signed with a newer key fails here, after the disk was
+  # A download from the archive can fail here (a dropped network, a package
+  # signed with a key newer than the image's keyring) after the disk was
   # wiped. The image carries a complete set of its own, so use that.
   ((online)) && image_has_repo && [[ ${conf[SUBARCHY_REPO]} == file://* ]] || return 1
   echo "subarchy-install: installing from the mirrors failed; trying again from the image's repository alone" >&2

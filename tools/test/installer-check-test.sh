@@ -85,7 +85,10 @@ conf[SUBARCHY_REPO]=file:///run/archiso/bootmnt/subarchy/repo
 : >"$calls"
 # The full image never stops for want of a network.
 conf[OFFLINE]=1
+snapshot_file=$(mktemp)
+echo 2026/11/15 >"$snapshot_file"
 (check_sources) 2>/dev/null || fail "the full image refused OFFLINE=1"
+rm -f -- "$snapshot_file"
 conf[OFFLINE]=""
 
 # The network-install image (#329): no repository on the image. Sourced
@@ -144,6 +147,43 @@ out=$(pacstrap_packages 2>&1) && fail "a failed network install was reported as 
 [[ $(tr '\n' ' ' <"$calls") == "mirrors " ]] || fail "network install pacstrap calls: $(tr '\n' ' ' <"$calls")"
 [[ $out == *"installing from the network: Subarchy's packages from https://git.subcult.tv/"*"snapshot of 2026/11/15"* ]] ||
   fail "network install message: $out"
+# The full image online installs from the same snapshot the system then
+# follows (ADR 0026), not from the rolling mirrors: it reads the snapshot
+# date too, asks the archive, and its repository stays a cache.
+image_repo=$(mktemp -d)
+echo db >"$image_repo/subarchy.db"
+conf[SUBARCHY_REPO]=file:///run/archiso/bootmnt/subarchy/repo
+snapshot=""
+check_sources || fail "the full image refused an install with a snapshot date"
+[[ $snapshot == 2026/11/15 ]] || fail "the full image did not read the snapshot date: ${snapshot:-none}"
+# A full image with no snapshot date stops before the disk is touched.
+echo nonsense >"$snapshot_file"
+out=$( (check_sources) 2>&1) && fail "the full image accepted a bad snapshot date"
+[[ $out == *"no Arch snapshot date"* ]] || fail "full image snapshot message: $out"
+full_repo=$image_repo
+unset -f mirrors_reachable
+# shellcheck source=/dev/null
+source "$root/install/subarchy-install"
+set +e
+image_repo=$full_repo
+step() { :; }
+snapshot=2026/11/15
+conf[SUBARCHY_REPO]=file:///run/archiso/bootmnt/subarchy/repo
+: >"$asked"
+curl() { echo "${@: -1}" >>"$asked"; }
+mirrors_reachable || fail "the full image found no archive"
+[[ $(tr '\n' ' ' <"$asked") == "https://archive.archlinux.org/repos/2026/11/15/core/os/x86_64/core.db " ]] ||
+  fail "full image asked: $(tr '\n' ' ' <"$asked")"
+pc=$(pacman_conf 1 2>/dev/null)
+for line in 'Server = https://archive.archlinux.org/repos/2026/11/15/$repo/os/$arch' DisableDownloadTimeout \
+  'CacheDir = /run/archiso/bootmnt/subarchy/repo'; do
+  grep -qxF -- "$line" <<<"$pc" || fail "full online pacman.conf lacks $line: $pc"
+done
+[[ $(grep -c '^Server = https://archive' <<<"$pc") == 2 && $pc != *mirrorlist* ]] || fail "full online pacman.conf: $pc"
+# Offline, the image's repository alone.
+pc=$(pacman_conf 0 2>/dev/null)
+[[ $pc != *"[core]"* && $pc != *archive* ]] || fail "full offline pacman.conf: $pc"
+rm -rf -- "$full_repo"
 unset -f curl
 rm -f -- "$calls" "$asked" "$snapshot_file"
 
@@ -260,16 +300,37 @@ getent() { [[ $1 == group && $2 == video ]]; }
 out=$( (read_config "$cfg") 2>&1) && fail "USERNAME=video was accepted"
 [[ $out == *"video is a system account or group"* ]] || fail "user name message: $out"
 unset -f getent
-# docker and realtime are groups only on the installed system, so the live
-# image's getent does not know them.
+# docker and realtime are groups, and sddm, git and the others accounts,
+# only on the installed system, so the live image's getent does not know them.
 getent() { return 2; }
-for name in docker realtime; do
+for name in docker realtime sddm git avahi rtkit polkitd tss cups cups-browsed nvidia-persistenced; do
   sed -i "s/^USERNAME=.*/USERNAME=$name/" "$cfg"
   out=$( (read_config "$cfg") 2>&1) && fail "USERNAME=$name was accepted"
   [[ $out == *"$name is a system account or group"* ]] || fail "user name message: $out"
 done
 unset -f getent
 rm -f -- "$cfg"
+
+# /etc/default/limine is not sourced: limine-entry-tool (ConfigReader.java,
+# 1.40.0) takes everything after `=`, strips one pair of surrounding double
+# quotes and keeps the quotes inside as they are. A quote, $ or backtick in
+# KERNEL_CMDLINE_EXTRA reaches the kernel unchanged that way; shell quoting
+# such as '...' would become part of the command line.
+boot=$(mktemp -d)
+target=$boot
+mkdir -p "$target/boot"
+unset -f subcult-hw
+luks_uuid=1234
+conf[KERNEL_CMDLINE_EXTRA]='acpi_osi="!Windows 2015" x=$HOME y=`id`'
+write_boot_config >/dev/null 2>&1 || fail "write_boot_config failed"
+got=$(sed -n 's/^KERNEL_CMDLINE\[default\]=//p' "$target/etc/default/limine")
+[[ $got == \"*\" ]] || fail "limine command line is not in double quotes: $got"
+got=${got#\"} got=${got%\"}
+[[ $got == *' acpi_osi="!Windows 2015" x=$HOME y=`id`' && $got == "rd.luks.name=1234=root "* ]] ||
+  fail "limine command line: $got"
+[[ $(<"$target/etc/kernel/cmdline") == "$got" ]] || fail "the two command lines differ: $(<"$target/etc/kernel/cmdline")"
+conf[KERNEL_CMDLINE_EXTRA]=""
+rm -rf -- "$boot"
 
 # --help lists every config key.
 help=$(bash "$root/install/subarchy-install" --help)
