@@ -2,7 +2,9 @@
 #
 # Builds the core Subarchy package from this source checkout (two levels
 # above this file), so CI and local builds test exactly what is committed.
-# Release builds will switch to a tagged source archive.
+# A release build is the same checkout at a tag: tools/ci/set-core-version.sh
+# refuses one whose commit or tracked files differ from the tag, and records
+# the tag as the build below.
 
 pkgname=subarchy
 pkgver=0.0.0
@@ -17,8 +19,31 @@ optdepends=('fprintd: fingerprint unlock on the lock screen (subcult setup finge
 options=('!debug')
 backup=(etc/xdg/gtk-3.0/settings.ini etc/xdg/gtk-4.0/settings.ini etc/xdg/kdeglobals etc/chromium/policies/managed/color.json etc/xdg/kitty/kitty.conf etc/xdg/kitty/subcult-ink.conf etc/pam.d/subcult-lock etc/pam.d/subcult-lock-fingerprint)
 
+# Which build this is; tools/ci/set-core-version.sh sets it in CI: the tag
+# (v$pkgver) for a release, dev.<commits>.g<commit> for a main build. "dev"
+# is a local build.
+_build=dev
+
 _root() {
   realpath "$startdir/../.."
+}
+
+# What `subcult --version` and os-release's VERSION show: the bare version
+# for the release built from tag v$pkgver, otherwise the version with the
+# build as semantic-version build metadata (0.0.0+dev.640.g1a2b3c4d5e6f).
+_version() {
+  if [[ $_build == "v$pkgver" ]]; then
+    printf '%s\n' "$pkgver"
+  else
+    printf '%s+%s\n' "$pkgver" "$_build"
+  fi
+}
+
+# /etc/os-release (ADR 0052). VERSION_ID stays the semantic version (ADR
+# 0066); VERSION and BUILD_ID tell a release from a development build.
+_os_release() {
+  sed -e "s/@VERSION_ID@/${pkgver}/" -e "s/@VERSION@/$(_version)/" -e "s/@BUILD_ID@/${_build}/" \
+    "$(_root)/branding/os-release.in"
 }
 
 build() {
@@ -27,7 +52,7 @@ build() {
   cd "$root"
   export CGO_ENABLED=0 GOFLAGS="-trimpath -mod=readonly"
   mkdir -p "$srcdir/bin"
-  go build -ldflags "-X git.subcult.tv/subculture-collective/subarchy/internal/dispatch.Version=${pkgver}" \
+  go build -ldflags "-X git.subcult.tv/subculture-collective/subarchy/internal/dispatch.Version=$(_version)" \
     -o "$srcdir/bin/" ./cmd/...
   # The default cursor, lavender (shell and look design, "Cursor").
   "$srcdir/bin/subcult-cursor" build --role lavender --palette "$root/default/theme/palette.json" \
@@ -89,8 +114,7 @@ package() {
 
   # OS identity (ADR 0052). /etc/os-release takes precedence over the
   # filesystem package's /usr/lib/os-release.
-  sed "s/@VERSION@/${pkgver}/" "$root/branding/os-release.in" |
-    install -Dm644 /dev/stdin "$pkgdir/etc/os-release"
+  _os_release | install -Dm644 /dev/stdin "$pkgdir/etc/os-release"
 
   # System defaults (ADR 0048): app catalogue, Hyprland and SDDM defaults.
   (

@@ -80,6 +80,7 @@ build:
 
 smoke: build
 	tools/test/dispatcher-smoke.sh $(BUILD)/subcult
+	tools/test/core-version-test.sh
 	tools/test/power-auto-test.sh
 	tools/test/secureboot-test.sh
 	tools/test/migration-luks-tries-test.sh

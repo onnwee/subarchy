@@ -22,7 +22,8 @@ spec.loader.exec_module(publisher)
 
 class PublishTests(unittest.TestCase):
     def test_pr_and_non_main_push_refuse_before_any_request(self):
-        for event, ref in (("pull_request", "refs/heads/main"), ("push", "refs/heads/topic")):
+        for event, ref in (("pull_request", "refs/heads/main"), ("push", "refs/heads/topic"),
+                           ("push", "refs/tags/v0.0.0")):
             with self.subTest(event=event, ref=ref), patch.dict(
                 os.environ,
                 {"GITHUB_EVENT_NAME": event, "GITHUB_REF": ref, "SUBARCHY_PACKAGE_TOKEN": "unused"},

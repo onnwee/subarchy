@@ -30,8 +30,9 @@ mapfile -t deps < <(cd "$root/packaging/subarchy" && runuser -u builder -- makep
   awk '$1 ~ /^(make)?depends$/ {print $3}' | sort -u)
 pacman -S --noconfirm --needed "${deps[@]}"
 
-# The same version the packages workflow publishes for this commit.
-sed -i "s/^pkgrel=.*/pkgrel=$(git rev-list --count HEAD)/" "$root/packaging/subarchy/PKGBUILD"
+# The same version the packages workflow builds for this commit, or for the
+# tag when the run was started on one.
+"$root/tools/ci/set-core-version.sh"
 
 # The pinned rebuilds, by exact package version through pacman with signatures
 # required. An older published version must not qualify a new source pin.

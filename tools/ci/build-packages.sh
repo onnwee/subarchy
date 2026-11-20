@@ -13,7 +13,8 @@ runuser -u builder -- git config --global --add safe.directory "$root"
 
 # Keep VERSION_ID semantic (ADR 0066); order main builds by Git history in
 # pkgrel so a new commit never tries to replace an immutable registry version.
-sed -i "s/^pkgrel=.*/pkgrel=$(git rev-list --count HEAD)/" "$root/packaging/subarchy/PKGBUILD"
+# A tag push builds the release from the tag (set-core-version.sh).
+"$root/tools/ci/set-core-version.sh"
 export MAKEFLAGS=-j4
 export JAVA_TOOL_OPTIONS=-XX:ActiveProcessorCount=4
 export GRADLE_OPTS='-Dorg.gradle.workers.max=2 -Dorg.gradle.daemon=false -Xmx512m'

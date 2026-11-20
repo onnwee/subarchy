@@ -1,8 +1,12 @@
 name: packages
 
+# A push to main builds and publishes. A version tag (v0.0.0) builds the
+# release from the tag and publishes nothing: the publish job and
+# publish-packages.py accept only main.
 on:
   push:
     branches: [main]
+    tags: ['v*']
 
 permissions:
   contents: read
@@ -32,6 +36,13 @@ jobs:
         run: |
           git config --global --add safe.directory "$PWD"
           tools/ci/build-packages.sh
+      - name: Read back the core package's version
+        run: |
+          core=$(find build/packages -name 'subarchy-[0-9]*.pkg.tar.zst')
+          mkdir /tmp/core
+          bsdtar -xf "$core" -C /tmp/core .PKGINFO etc/os-release usr/bin/subcult
+          grep -E '^(VERSION|VERSION_ID|BUILD_ID)=' /tmp/core/etc/os-release
+          tools/ci/check-core-version.sh /tmp/core
       - uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3.2.1
         with:
           name: packages

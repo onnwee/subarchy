@@ -132,12 +132,13 @@ if grep -qx etc/sudoers.d/50-subarchy-update <<<"$list"; then
 fi
 
 osr=$(bsdtar -xOf "$pkg" etc/os-release)
-for want in 'NAME="Subarchy"' 'ID=subarchy' 'ID_LIKE=arch' 'VERSION_ID=0.0.0'; do
+# A local build is "dev"; CI builds set the build (tools/ci/set-core-version.sh).
+for want in 'NAME="Subarchy"' 'ID=subarchy' 'ID_LIKE=arch' 'VERSION_ID=0.0.0' 'VERSION="0.0.0+dev"' 'BUILD_ID=dev'; do
   grep -qx "$want" <<<"$osr" || fail "os-release lacks $want"
 done
 
 mkdir "$work/root"
-bsdtar -xf "$pkg" -C "$work/root" usr
+bsdtar -xf "$pkg" -C "$work/root" usr .PKGINFO etc/os-release
 cmp "$work/root/usr/share/sddm/themes/subarchy/lockup-dark.png" \
   "$work/root/usr/share/subcult/screens/subcult/login.png" || fail "the greeter artwork is not the subcult login set's"
 cmp "$root/site/fonts/DepartureMono-Regular.woff2" \
@@ -200,7 +201,8 @@ if grep -rlE -- '--operator(=|[[:space:]]|$)' "$work/root/usr/lib/subcult" "$wor
   "$work/root/usr/share/subcult/migrations" 2>/dev/null; then
   fail "a packaged file sets tailscaled's operator"
 fi
-"$work/root/usr/bin/subcult" --version | grep -qx 'subcult 0.0.0' || fail "subcult --version"
+"$work/root/usr/bin/subcult" --version | grep -qx 'subcult 0.0.0+dev' || fail "subcult --version"
+"$root/tools/ci/check-core-version.sh" "$work/root" || fail "version read-back"
 "$work/root/usr/bin/subcult-app" validate "$work/root/usr/share/subcult/default/apps.toml" >/dev/null ||
   fail "shipped app catalogue does not validate"
 
