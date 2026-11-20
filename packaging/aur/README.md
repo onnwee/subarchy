@@ -66,3 +66,5 @@ Package checks can read the checkout's `tools/` and `default/` directories
 through read-only mounts; the recipe retains its `packaging/` parent layout.
 To update a package, review the new AUR PKGBUILD diff, copy it here and
 update this table.
+
+A weekly job (`.github/workflows/outdated-pins.yml`, `tools/ci/report-outdated-pins.py`) compares these pins, Pult, linecast and the Neovim lock with upstream and keeps one issue titled "Outdated pins" up to date. It changes no pin.

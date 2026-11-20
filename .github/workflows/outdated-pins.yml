@@ -1,0 +1,42 @@
+name: Outdated pins
+
+# Once a week, compares the pinned upstream versions with their upstreams and
+# writes the result into one issue titled "Outdated pins" (issue #290):
+# opens it when something is behind, rewrites it when the list changes and
+# closes it when nothing is behind. It changes no pin. The pins checked are
+# the vendored AUR packages, Pult, linecast and the Neovim starter and plugin
+# lock; the logic and its tests are in tools/ci/report-outdated-pins.py and
+# tools/test/test_outdated_pins.py.
+#
+# To try it without writing an issue, run the script with --dry-run.
+#
+# GitHub runs schedules only from the default branch and turns them off after
+# 60 days without repository activity.
+'on':
+  schedule:
+    - cron: '41 9 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: outdated-pins
+  cancel-in-progress: false
+
+jobs:
+  report:
+    name: Report outdated pins
+    if: github.repository == 'subculture-collective/subarchy'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Write or update the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: python3 tools/ci/report-outdated-pins.py

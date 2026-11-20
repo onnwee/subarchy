@@ -119,6 +119,7 @@ docs-check:
 	python3 tools/obsidian/check-vault.py
 	python3 tools/test/go-app-notices-test.py
 	python3 tools/test/test_package_publish.py
+	python3 tools/test/test_outdated_pins.py
 	python3 tools/test/test_iso_package_pins.py
 	python3 tools/test/test_install_checks.py
 	python3 tools/portal/test_file_chooser.py
@@ -127,7 +128,7 @@ docs-check:
 	python3 tools/theme/gen-palette.py --check
 	python3 tools/site/build.py --check
 	python3 tools/test/site-check.py
-	python3 -m py_compile tools/inventory/collect.py tools/obsidian/check-vault.py tools/obsidian/install-plugins.py tools/iso/boot-test.py tools/iso/install-test.py tools/iso/vmlib.py tools/test/palette-test.py tools/test/test_install_checks.py tools/theme/gen-palette.py tools/portal/file-chooser.py tools/test/apps-preinstalled-test.py tools/test/site-check.py tools/site/build.py
+	python3 -m py_compile tools/inventory/collect.py tools/obsidian/check-vault.py tools/obsidian/install-plugins.py tools/iso/boot-test.py tools/iso/install-test.py tools/iso/vmlib.py tools/test/palette-test.py tools/test/test_install_checks.py tools/ci/report-outdated-pins.py tools/theme/gen-palette.py tools/portal/file-chooser.py tools/test/apps-preinstalled-test.py tools/test/site-check.py tools/site/build.py
 
 # Checks the Hyprland Lua defaults where Hyprland is installed; CI runs it in
 # the Arch package job.
