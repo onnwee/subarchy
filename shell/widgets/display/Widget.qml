@@ -1,6 +1,7 @@
 import QtQuick
 import qs.Commons
 import qs.Ui
+import "Model.js" as Model
 import "../../Commons/Glyphs.js" as Glyphs
 
 // A monitor glyph naming this output; shown on Minimal bars too, as on
@@ -15,6 +16,6 @@ BarWidget {
     anchors.verticalCenter: parent.verticalCenter
     glyph: Glyphs.display
     color: Theme.subtext
-    tooltip: root.screen ? root.screen.name : ""
+    tooltip: Model.tooltip(root.screen)
   }
 }

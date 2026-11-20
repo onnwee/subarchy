@@ -2,12 +2,13 @@ import QtQuick
 import Quickshell.Hyprland
 import qs.Commons
 import qs.Ui
+import "Model.js" as Model
 
 // The focused window's title, elided. Hidden when nothing is focused.
 BarWidget {
   id: root
 
-  readonly property string title: Hyprland.activeToplevel ? Hyprland.activeToplevel.title : ""
+  readonly property string title: Model.title(Hyprland.activeToplevel)
 
   hidden: title === ""
   implicitWidth: Math.min(label.implicitWidth, 320)

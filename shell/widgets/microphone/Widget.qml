@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell.Services.Pipewire
 import qs.Commons
 import qs.Ui
+import "Model.js" as Model
 import "../../Commons/Glyphs.js" as Glyphs
 
 // The default input. Click mutes; a muted microphone shows in the warning
@@ -24,7 +25,7 @@ BarWidget {
     anchors.verticalCenter: parent.verticalCenter
     glyph: root.audio ? Glyphs.microphone(root.audio.muted) : ""
     color: root.audio && root.audio.muted ? Theme.warning : Theme.subtext
-    tooltip: root.audio ? (root.source.description || root.source.name) + (root.audio.muted ? " (muted)" : "") : ""
+    tooltip: root.audio ? Model.tooltip(root.source, root.audio.muted) : ""
     onClicked: if (root.audio) root.audio.muted = !root.audio.muted
   }
 }

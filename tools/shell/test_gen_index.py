@@ -13,11 +13,14 @@ from pathlib import Path
 GEN = Path(__file__).resolve().parent / "gen-index.py"
 
 
-def write_widget(root: Path, folder: str, manifest: dict) -> None:
+def write_widget(root: Path, folder: str, manifest: dict, own_test: bool = True) -> None:
     d = root / "widgets" / folder
     d.mkdir(parents=True)
     (d / "manifest.json").write_text(json.dumps(manifest))
     (d / "Widget.qml").write_text("import QtQuick\nItem {}\n")
+    if own_test:
+        (d / "tests").mkdir()
+        (d / "tests" / f"tst_{folder}.qml").write_text("import QtTest\nTestCase {}\n")
 
 
 def run(root: Path, *extra: str) -> subprocess.CompletedProcess:
@@ -61,6 +64,35 @@ class GenIndexTest(unittest.TestCase):
                 self.assertEqual(r.returncode, 1)
                 self.assertIn(folder, r.stderr)
                 self.assertFalse((root / "widgets" / "index.json").exists(), "no index written on error")
+
+    def test_index_lists_covering_tests(self):
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            (root / "tests").mkdir()
+            (root / "tests" / "tst_shared.qml").write_text("import QtTest\nTestCase {}\n")
+            write_widget(root, "clock", dict(GOOD, tests=["tests/tst_shared.qml"]), own_test=False)
+            write_widget(root, "weather", WEATHER)
+            self.assertEqual(run(root).returncode, 0)
+            widgets = json.loads((root / "widgets" / "index.json").read_text())["widgets"]
+            self.assertEqual(widgets["subcult.clock"]["tests"], ["tests/tst_shared.qml"])
+            self.assertEqual(widgets["subcult.weather"]["tests"], ["widgets/weather/tests/tst_weather.qml"])
+
+    def test_widget_without_a_test_is_an_error(self):
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            write_widget(root, "clock", GOOD, own_test=False)
+            r = run(root)
+            self.assertEqual(r.returncode, 1)
+            self.assertIn("clock: no covering test", r.stderr)
+
+    def test_named_test_must_exist(self):
+        for named in (["tests/tst_missing.qml"], ["../outside.qml"], "tests/tst_x.qml", [5]):
+            with self.subTest(named), tempfile.TemporaryDirectory() as t:
+                root = Path(t)
+                write_widget(root, "clock", dict(GOOD, tests=named), own_test=False)
+                r = run(root)
+                self.assertEqual(r.returncode, 1)
+                self.assertNotIn("Traceback", r.stderr)
 
     def test_duplicate_id(self):
         with tempfile.TemporaryDirectory() as t:

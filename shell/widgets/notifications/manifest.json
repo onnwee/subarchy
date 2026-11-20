@@ -4,5 +4,8 @@
   "version": "1.0.0",
   "api": 0,
   "kind": "bar-widget",
-  "panel": true
+  "panel": true,
+  "tests": [
+    "tests/tst_notifications.qml"
+  ]
 }

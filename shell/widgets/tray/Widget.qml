@@ -4,6 +4,7 @@ import Quickshell.Services.SystemTray
 import Quickshell.Widgets
 import qs.Commons
 import qs.Ui
+import "Model.js" as Model
 
 // Status icons from apps (StatusNotifierItem). Left click activates, or
 // opens the menu of an item that only has a menu (nm-applet); middle click
@@ -13,7 +14,7 @@ import qs.Ui
 BarWidget {
   id: root
 
-  readonly property var items: SystemTray.items ? SystemTray.items.values.filter(i => i.status !== Status.Passive) : [] // qmllint disable missing-property
+  readonly property var items: SystemTray.items ? Model.visible(SystemTray.items.values, Status.Passive) : [] // qmllint disable missing-property
 
   hidden: items.length === 0
   implicitWidth: row.implicitWidth
@@ -47,9 +48,10 @@ BarWidget {
           acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
           onClicked: (mouse) => {
             const item = slot.modelData
-            if (item.hasMenu && (mouse.button === Qt.RightButton || (mouse.button === Qt.LeftButton && item.onlyMenu)))
+            const action = Model.action(item, mouse.button)
+            if (action === "menu")
               menu.open()
-            else if (mouse.button === Qt.MiddleButton)
+            else if (action === "secondary")
               item.secondaryActivate()
             else
               item.activate()

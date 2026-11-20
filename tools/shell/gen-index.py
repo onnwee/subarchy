@@ -60,6 +60,28 @@ def validate(m) -> list[str]:
     return errors
 
 
+def covering_tests(shell: Path, folder: Path, m: dict) -> tuple[list[str], list[str]]:
+    """The tests that cover a widget, as paths under the shell folder.
+
+    Its own tests/tst_*.qml, plus the shell-level tests its manifest names in
+    "tests" (for a widget whose logic lives in shell/Commons or shell/services).
+    A widget with neither is an error: every widget names a covering test.
+    """
+    tests = sorted(p.relative_to(shell).as_posix() for p in (folder / "tests").glob("tst_*.qml"))
+    named = m.get("tests", [])
+    if not isinstance(named, list) or not all(isinstance(t, str) for t in named):
+        return tests, ["tests must be a list of paths"]
+    errors = []
+    for t in named:
+        if not t.startswith("tests/") or not (shell / t).is_file():
+            errors.append(f"tests entry {t} is not a file under shell/tests")
+        elif t not in tests:
+            tests.append(t)
+    if not tests and not errors:
+        errors.append("no covering test: add tests/tst_*.qml or name a shell-level one in the manifest's tests")
+    return tests, errors
+
+
 def build(shell: Path) -> tuple[dict, list[str]]:
     widgets, errors = {}, []
     for manifest_path in sorted((shell / "widgets").glob("*/manifest.json")):
@@ -74,9 +96,11 @@ def build(shell: Path) -> tuple[dict, list[str]]:
             errs.append("no Widget.qml")
         if not errs and m["id"] in widgets:
             errs.append(f"id {m['id']} is also used by {widgets[m['id']]['dir']}")
+        tests, test_errs = covering_tests(shell, manifest_path.parent, m)
+        errs += test_errs
         errors += [f"{folder}: {e}" for e in errs]
         if not errs:
-            widgets[m["id"]] = {"dir": folder, "manifest": m}
+            widgets[m["id"]] = {"dir": folder, "tests": tests, "manifest": m}
     index = {"api": API, "widgets": dict(sorted(widgets.items()))}
     return index, errors
 

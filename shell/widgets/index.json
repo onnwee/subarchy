@@ -3,6 +3,9 @@
   "widgets": {
     "subcult.active-window": {
       "dir": "active-window",
+      "tests": [
+        "widgets/active-window/tests/tst_active_window.qml"
+      ],
       "manifest": {
         "id": "subcult.active-window",
         "name": "Active window",
@@ -13,6 +16,9 @@
     },
     "subcult.agents": {
       "dir": "agents",
+      "tests": [
+        "widgets/agents/tests/tst_agents.qml"
+      ],
       "manifest": {
         "id": "subcult.agents",
         "name": "Agents usage",
@@ -39,6 +45,9 @@
     },
     "subcult.audio": {
       "dir": "audio",
+      "tests": [
+        "widgets/audio/tests/tst_audio.qml"
+      ],
       "manifest": {
         "id": "subcult.audio",
         "name": "Audio",
@@ -50,6 +59,9 @@
     },
     "subcult.auto-wallpaper": {
       "dir": "auto-wallpaper",
+      "tests": [
+        "widgets/auto-wallpaper/tests/tst_wallpaper.qml"
+      ],
       "manifest": {
         "id": "subcult.auto-wallpaper",
         "name": "Auto wallpaper",
@@ -74,6 +86,9 @@
     },
     "subcult.battery": {
       "dir": "battery",
+      "tests": [
+        "widgets/battery/tests/tst_battery.qml"
+      ],
       "manifest": {
         "id": "subcult.battery",
         "name": "Battery and power profile",
@@ -89,6 +104,9 @@
     },
     "subcult.bluetooth": {
       "dir": "bluetooth",
+      "tests": [
+        "widgets/bluetooth/tests/tst_bluetooth.qml"
+      ],
       "manifest": {
         "id": "subcult.bluetooth",
         "name": "Bluetooth",
@@ -100,6 +118,9 @@
     },
     "subcult.calendar": {
       "dir": "calendar",
+      "tests": [
+        "widgets/calendar/tests/tst_calendar.qml"
+      ],
       "manifest": {
         "id": "subcult.calendar",
         "name": "Calendar",
@@ -111,16 +132,25 @@
     },
     "subcult.clock": {
       "dir": "clock",
+      "tests": [
+        "tests/tst_clock.qml"
+      ],
       "manifest": {
         "id": "subcult.clock",
         "name": "Clock",
         "version": "1.0.0",
         "api": 0,
-        "kind": "bar-widget"
+        "kind": "bar-widget",
+        "tests": [
+          "tests/tst_clock.qml"
+        ]
       }
     },
     "subcult.dell-power": {
       "dir": "dell-power",
+      "tests": [
+        "widgets/dell-power/tests/tst_dell-power.qml"
+      ],
       "manifest": {
         "id": "subcult.dell-power",
         "name": "Dell power",
@@ -132,6 +162,9 @@
     },
     "subcult.display": {
       "dir": "display",
+      "tests": [
+        "widgets/display/tests/tst_display.qml"
+      ],
       "manifest": {
         "id": "subcult.display",
         "name": "Display",
@@ -142,6 +175,9 @@
     },
     "subcult.downloads": {
       "dir": "downloads",
+      "tests": [
+        "widgets/downloads/tests/tst_downloads.qml"
+      ],
       "manifest": {
         "id": "subcult.downloads",
         "name": "Downloads",
@@ -157,6 +193,9 @@
     },
     "subcult.ht3": {
       "dir": "ht3",
+      "tests": [
+        "widgets/ht3/tests/tst_ht3.qml"
+      ],
       "manifest": {
         "id": "subcult.ht3",
         "name": "HT3 headphones",
@@ -168,6 +207,9 @@
     },
     "subcult.indicators": {
       "dir": "indicators",
+      "tests": [
+        "widgets/indicators/tests/tst_indicators.qml"
+      ],
       "manifest": {
         "id": "subcult.indicators",
         "name": "Indicators",
@@ -178,6 +220,9 @@
     },
     "subcult.keyboard-layout": {
       "dir": "keyboard-layout",
+      "tests": [
+        "widgets/keyboard-layout/tests/tst_layout.qml"
+      ],
       "manifest": {
         "id": "subcult.keyboard-layout",
         "name": "Keyboard layout",
@@ -188,6 +233,9 @@
     },
     "subcult.media": {
       "dir": "media",
+      "tests": [
+        "widgets/media/tests/tst_media.qml"
+      ],
       "manifest": {
         "id": "subcult.media",
         "name": "Media",
@@ -199,6 +247,9 @@
     },
     "subcult.menu": {
       "dir": "menu",
+      "tests": [
+        "widgets/menu/tests/tst_settings.qml"
+      ],
       "manifest": {
         "id": "subcult.menu",
         "name": "Menu",
@@ -210,6 +261,9 @@
     },
     "subcult.microphone": {
       "dir": "microphone",
+      "tests": [
+        "widgets/microphone/tests/tst_microphone.qml"
+      ],
       "manifest": {
         "id": "subcult.microphone",
         "name": "Microphone",
@@ -220,6 +274,9 @@
     },
     "subcult.n8n": {
       "dir": "n8n",
+      "tests": [
+        "widgets/n8n/tests/tst_n8n.qml"
+      ],
       "manifest": {
         "id": "subcult.n8n",
         "name": "n8n",
@@ -243,6 +300,9 @@
     },
     "subcult.network": {
       "dir": "network",
+      "tests": [
+        "widgets/network/tests/tst_network.qml"
+      ],
       "manifest": {
         "id": "subcult.network",
         "name": "Network",
@@ -254,17 +314,26 @@
     },
     "subcult.notifications": {
       "dir": "notifications",
+      "tests": [
+        "tests/tst_notifications.qml"
+      ],
       "manifest": {
         "id": "subcult.notifications",
         "name": "Notifications",
         "version": "1.0.0",
         "api": 0,
         "kind": "bar-widget",
-        "panel": true
+        "panel": true,
+        "tests": [
+          "tests/tst_notifications.qml"
+        ]
       }
     },
     "subcult.soma": {
       "dir": "soma",
+      "tests": [
+        "widgets/soma/tests/tst_soma.qml"
+      ],
       "manifest": {
         "id": "subcult.soma",
         "name": "SomaFM",
@@ -291,6 +360,9 @@
     },
     "subcult.tailscale": {
       "dir": "tailscale",
+      "tests": [
+        "widgets/tailscale/tests/tst_tailscale.qml"
+      ],
       "manifest": {
         "id": "subcult.tailscale",
         "name": "Tailscale",
@@ -311,6 +383,9 @@
     },
     "subcult.tray": {
       "dir": "tray",
+      "tests": [
+        "widgets/tray/tests/tst_tray.qml"
+      ],
       "manifest": {
         "id": "subcult.tray",
         "name": "Tray",
@@ -321,6 +396,9 @@
     },
     "subcult.updates": {
       "dir": "updates",
+      "tests": [
+        "widgets/updates/tests/tst_updates.qml"
+      ],
       "manifest": {
         "id": "subcult.updates",
         "name": "Update count",
@@ -331,6 +409,9 @@
     },
     "subcult.weather": {
       "dir": "weather",
+      "tests": [
+        "widgets/weather/tests/tst_weather.qml"
+      ],
       "manifest": {
         "id": "subcult.weather",
         "name": "Weather",
@@ -374,6 +455,9 @@
     },
     "subcult.workspaces": {
       "dir": "workspaces",
+      "tests": [
+        "widgets/workspaces/tests/tst_workspaces.qml"
+      ],
       "manifest": {
         "id": "subcult.workspaces",
         "name": "Workspaces",
@@ -384,6 +468,9 @@
     },
     "subcult.world-clock": {
       "dir": "world-clock",
+      "tests": [
+        "widgets/world-clock/tests/tst_world_clock.qml"
+      ],
       "manifest": {
         "id": "subcult.world-clock",
         "name": "World clock",

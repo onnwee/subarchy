@@ -309,6 +309,7 @@ chmod +x "$work/bin/powerprofilesctl"
 mkdir -p "$shell/widgets/test-probe"
 cat >"$shell/widgets/test-probe/manifest.json" <<'EOF'
 {"id": "subcult.test-probe", "name": "Test probe", "version": "0.0.0", "api": 0, "kind": "bar-widget",
+ "tests": ["tests/tst_clock.qml"],
  "cost": {"timers": [{"name": "tick", "ac": 60, "battery": 300}]}}
 EOF
 cat >"$shell/widgets/test-probe/Widget.qml" <<'EOF'
