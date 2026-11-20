@@ -107,7 +107,7 @@ func TestUpdateYes(t *testing.T) {
 	}
 	// Authorization precedes every root step, even with --yes.
 	if len(r.ran) < 3 || r.ran[0] != "sudo true" ||
-		r.ran[1] != "sudo /usr/bin/subcult-channel refresh --quiet" ||
+		r.ran[1] != "sudo /usr/bin/subcult-channel refresh --quiet --exit-changed" ||
 		r.ran[2] != "sudo /usr/bin/subcult-update privileged upgrade --noconfirm" {
 		t.Errorf("ran %q", r.ran)
 	}

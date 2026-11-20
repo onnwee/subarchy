@@ -57,6 +57,26 @@ func TestSDDMConfAndFallback(t *testing.T) {
 	}
 }
 
+// Fallback says it is subcult-minimal, so each of its roles must be that
+// palette's colour, in the packaged default and in the catalog copy.
+func TestFallbackIsSubcultMinimal(t *testing.T) {
+	for _, file := range []string{"palette.json", "subcult-minimal.json"} {
+		data, err := os.ReadFile(filepath.Join("..", "..", "default", "theme", file))
+		if err != nil {
+			t.Fatal(err)
+		}
+		p, err := ParsePalette(data)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for role, c := range Fallback {
+			if p.Colors[role] != c {
+				t.Errorf("Fallback %s = %s, %s has %s", role, c, file, p.Colors[role])
+			}
+		}
+	}
+}
+
 func TestLimineConf(t *testing.T) {
 	p, _ := ParsePalette([]byte(sample))
 	existing := "timeout: 3\ndefault_entry: 2\nserial: yes\ninterface_branding: SUBCULT // Subarchy\ninterface_branding_colour: 8b5cf6\n\n/+Subarchy\n    //linux-zen\n        protocol: linux\n"

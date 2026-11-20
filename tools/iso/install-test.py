@@ -854,7 +854,7 @@ def boot(disk: Path, vars_file: Path) -> bool:
                 "subcult channel; echo ---; sudo subcult channel set edge; subcult channel; echo ---;"
                 " grep -c 'Include = /etc/pacman.d/mirrorlist' /etc/pacman.d/subcult-mirrorlist; echo ---;"
                 " sudo subcult channel set stable; echo ---; grep -c archive.archlinux.org /etc/pacman.d/subcult-mirrorlist;"
-                " grep -c subcult-mirrorlist /etc/pacman.conf",
+                " grep -c subcult-mirrorlist /etc/pacman.conf; grep -A1 -x '\\[multilib\\]' /etc/pacman.conf",
                 timeout=60,
             ),
             # The repository key is trusted (ADR 0025, subarchy-keyring).
@@ -1687,7 +1687,8 @@ def dns_back_ok(out: str) -> bool:
 
 
 def channel_ok(out: str) -> bool:
-    """`subcult channel` output: stable first, edge with Arch's mirrorlist, back with the warning."""
+    """`subcult channel` output: stable first, edge with Arch's mirrorlist, back with the warning,
+    and multilib enabled on the channel's mirrorlist."""
     parts = [p.strip() for p in out.split("---")]
     if len(parts) < 5:
         return False
@@ -1697,7 +1698,9 @@ def channel_ok(out: str) -> bool:
         and edge.splitlines()[-1].startswith("edge")
         and include.splitlines()[-1] == "1"
         and "newer than the snapshot" in back
-        and stable.splitlines()[0] == "1" and stable.splitlines()[-1] == "2"
+        # core, extra and multilib (ADR 0006) follow the channel.
+        and stable.splitlines()[:2] == ["1", "3"]
+        and stable.splitlines()[2:] == ["[multilib]", "Include = /etc/pacman.d/subcult-mirrorlist"]
     )
 
 

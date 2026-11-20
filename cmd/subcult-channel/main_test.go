@@ -72,6 +72,16 @@ func TestShowSetRefresh(t *testing.T) {
 	if code := a.run([]string{"--root", r, "refresh"}); code != 0 || !strings.Contains(out.String(), "moved to stable (snapshot 2026/12/01)") {
 		t.Errorf("refresh: %d %q", code, out.String())
 	}
+	// subcult update asks for an exit code that says the date moved.
+	if code := a.run([]string{"--root", r, "refresh", "--quiet", "--exit-changed"}); code != 0 {
+		t.Errorf("refresh with nothing to move: %d", code)
+	}
+	if err := os.WriteFile(filepath.Join(r, channel.SnapshotPath), []byte("2026/12/08\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if code := a.run([]string{"--root", r, "refresh", "--quiet", "--exit-changed"}); code != channel.ChangedExit {
+		t.Errorf("refresh that moved the date: %d, want %d", code, channel.ChangedExit)
+	}
 }
 
 func TestSudoReexec(t *testing.T) {

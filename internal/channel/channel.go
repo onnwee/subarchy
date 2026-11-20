@@ -28,6 +28,11 @@ const (
 	RepoPath       = "etc/pacman.d/subcult-repo"
 	PacmanConf     = "etc/pacman.conf"
 
+	// ChangedExit is the exit code of `subcult-channel refresh
+	// --exit-changed` when it moved the snapshot date; `subcult update`
+	// then upgrades again.
+	ChangedExit = 3
+
 	archive  = "https://archive.archlinux.org/repos/%s/$repo/os/$arch"
 	registry = "https://git.subcult.tv/api/packages/subculture-collective/arch/%s/$arch"
 )
@@ -37,6 +42,8 @@ var (
 	headerRe   = regexp.MustCompile(`(?m)^# subcult channel: (stable|edge)(?: \(snapshot (\d{4}/\d{2}/\d{2})\))?$`)
 	includeRe  = regexp.MustCompile(`(?m)^(\s*Include\s*=\s*)/etc/pacman\.d/mirrorlist\s*$`)
 	repoRe     = regexp.MustCompile(`(?m)^[\t ]*\[subarchy\][\t ]*(?:#.*)?$`)
+	// multilibRe is the stock pacman.conf's commented-out [multilib] block.
+	multilibRe = regexp.MustCompile(`(?m)^#[\t ]*\[multilib\][\t ]*\n#[\t ]*(Include\s*=\s*/etc/pacman\.d/mirrorlist)[\t ]*$`)
 )
 
 // Valid reports whether name is a channel.
@@ -165,9 +172,12 @@ func Refresh(root string) (changed bool, err error) {
 	return true, write(filepath.Join(root, MirrorlistPath), Mirrorlist(Stable, snapshot))
 }
 
-// pointIncludes turns every `Include = /etc/pacman.d/mirrorlist` in
-// pacman.conf into the channel's mirrorlist and registers Subarchy's signed
-// repository on a fresh system. An existing Subarchy section is left intact.
+// pointIncludes enables the [multilib] repository that the stock
+// pacman.conf leaves commented out (ADR 0006: Steam, Wine and Lutris need
+// its 32-bit libraries), turns every `Include = /etc/pacman.d/mirrorlist`
+// in pacman.conf into the channel's mirrorlist and registers Subarchy's
+// signed repository on a fresh system. An existing Subarchy section is left
+// intact.
 func pointIncludes(path string) error {
 	b, err := os.ReadFile(path)
 	if errors.Is(err, os.ErrNotExist) {
@@ -176,7 +186,8 @@ func pointIncludes(path string) error {
 	if err != nil {
 		return err
 	}
-	out := includeRe.ReplaceAllString(string(b), "${1}/etc/pacman.d/subcult-mirrorlist")
+	out := multilibRe.ReplaceAllString(string(b), "[multilib]\n${1}")
+	out = includeRe.ReplaceAllString(out, "${1}/etc/pacman.d/subcult-mirrorlist")
 	if !repoRe.MatchString(out) {
 		out = strings.TrimRight(out, "\n") + "\n\n[subarchy]\nSigLevel = Required\nInclude = /etc/pacman.d/subcult-repo\n"
 	}

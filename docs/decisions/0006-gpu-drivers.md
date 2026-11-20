@@ -179,4 +179,14 @@ Implementation notes:
   it. Details: [[nvidia-rtd3-source-qualification]]. #195 stays
   open; LTS remains the tested workaround.
 
+- 2026-11-20, later: "The `multilib` repository stays enabled" was not
+  true on installed systems. The installed `pacman.conf` is the stock one,
+  with `[multilib]` commented out, so `subcult app install steam` could not
+  find `steam`. `subcult channel set` now enables `[multilib]` and points it
+  at the channel's mirrorlist, like core and extra; the installer already
+  runs it, and migration `1795206595` runs it again on earlier installs and
+  syncs the new database. Checked by `internal/channel` tests and
+  `tools/test/migration-multilib-test.sh`; the VM install test checks it on
+  the next main run. Installing Steam on an installed system is untested.
+
 Related: [[decision-map|Decision map]] · [[0004-kernel|ADR 0004]] · [[0005-firmware|ADR 0005]]

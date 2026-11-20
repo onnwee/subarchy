@@ -59,7 +59,9 @@ var routes = []dispatch.Described{
 }
 
 type env struct {
-	home           string
+	home string
+	// config is XDG_CONFIG_HOME; empty means ~/.config.
+	config         string
 	runner         update.Runner
 	stdin          io.Reader
 	stdout, stderr io.Writer
@@ -69,7 +71,7 @@ type env struct {
 
 func main() {
 	home, _ := os.UserHomeDir()
-	e := env{home: home, stdin: os.Stdin, stdout: os.Stdout, stderr: os.Stderr, releaseBase: releaseBase,
+	e := env{home: home, config: os.Getenv("XDG_CONFIG_HOME"), stdin: os.Stdin, stdout: os.Stdout, stderr: os.Stderr, releaseBase: releaseBase,
 		runner: update.ExecRunner{Stdin: os.Stdin, Stdout: os.Stdout, Stderr: os.Stderr}}
 	os.Exit(run(context.Background(), os.Args[1:], e))
 }
@@ -179,8 +181,14 @@ func withOneName(rest []string, fn func(string) error) error {
 	return fn(rest[0])
 }
 
+// confPath is the role file under XDG_CONFIG_HOME, where fontconfig and
+// the shell read it.
 func confPath(e env) string {
-	return filepath.Join(e.home, font.UserConfPath)
+	config := e.config
+	if config == "" {
+		config = filepath.Join(e.home, ".config")
+	}
+	return filepath.Join(config, font.UserConfPath)
 }
 
 // loadConf reads the role file. A missing file is an empty one; the

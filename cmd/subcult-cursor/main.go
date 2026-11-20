@@ -36,9 +36,12 @@ var routes = []dispatch.Described{
 
 type env struct {
 	home, system string
-	runner       update.Runner
-	stdout       io.Writer
-	stderr       io.Writer
+	// config is XDG_CONFIG_HOME, where subcult theme reads the user's
+	// palette; empty means ~/.config.
+	config string
+	runner update.Runner
+	stdout io.Writer
+	stderr io.Writer
 }
 
 func main() {
@@ -47,7 +50,7 @@ func main() {
 	if system == "" {
 		system = "/usr/share/subcult"
 	}
-	e := env{home: home, system: system, stdout: os.Stdout, stderr: os.Stderr,
+	e := env{home: home, system: system, config: os.Getenv("XDG_CONFIG_HOME"), stdout: os.Stdout, stderr: os.Stderr,
 		runner: update.ExecRunner{Stdout: io.Discard, Stderr: os.Stderr}}
 	os.Exit(run(context.Background(), os.Args[1:], e))
 }
@@ -81,9 +84,13 @@ func run(ctx context.Context, args []string, e env) int {
 		// The system palette underneath, the user's valid roles on top, so a
 		// broken theme file never stops the cursor.
 		var warnings []string
+		config := e.config
+		if config == "" {
+			config = filepath.Join(e.home, ".config")
+		}
 		palette, warnings, err = cursor.LoadLayered(
 			filepath.Join(e.system, "default", "theme", "palette.json"),
-			filepath.Join(e.home, ".config", "subcult", "theme", "palette.json"))
+			filepath.Join(config, "subcult", "theme", "palette.json"))
 		for _, w := range warnings {
 			fmt.Fprintf(e.stderr, "subcult cursor: warning: %s\n", w)
 		}

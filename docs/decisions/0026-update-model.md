@@ -4,7 +4,7 @@ type: decision
 status: accepted
 adr: 26
 created: 2026-11-06
-updated: 2026-11-13
+updated: 2026-11-20
 tags: [decision, adr, packages, updates]
 aliases: [ADR 0026, P3, Update model, Channels]
 ---
@@ -134,5 +134,18 @@ delays stable updates rather than breaking them.
   (`docs/package-publishing.md`). Separately, what stable follows after the
   first tag is undecided (#260, [[pending-decisions]]). The timer is disabled
   until the tag (#258).
+- 2026-11-20, later: `subcult update` refreshes the stable mirrorlist again
+  after the upgrade. Before, the update that installed a `subarchy`
+  package with a new snapshot date left core and extra at the old date,
+  while Subarchy's own packages, built on the new date, were already
+  installed; Arch's side moved only on the next update. Now `subcult-channel
+  refresh --exit-changed` exits 3 when it moves the date, and the same run
+  upgrades again. Checked by `internal/update` tests only; not yet run on
+  an installed system across a real snapshot advance.
+- 2026-11-20, later: `subcult channel set` also enables `[multilib]`, which
+  the stock `pacman.conf` leaves commented out, and points it at the
+  channel's mirrorlist with core and extra, as the section above says. A
+  migration sets the current channel again on earlier installs. See
+  [[0006-gpu-drivers|ADR 0006]].
 
 Related: [[decision-map|Decision map]] · [[0025-package-repository|ADR 0025]] · [[0011-snapshots|ADR 0011]]

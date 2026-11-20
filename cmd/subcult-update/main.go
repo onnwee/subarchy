@@ -161,7 +161,7 @@ func (a *app) update(ctx context.Context, yes, noSnapshot, dryRun bool) int {
 		Yes: yes, NoSnapshot: noSnapshot || dryRun, Version: dispatch.Version,
 		ModulesDir: "/usr/lib/modules", ProcDir: procDir, Migrations: m, Stdin: a.stdin, Stdout: a.stdout,
 		Privileged:      []string{"sudo", selfPath, "privileged"},
-		ChannelRefresh:  []string{"sudo", "/usr/bin/subcult-channel", "refresh", "--quiet"},
+		ChannelRefresh:  []string{"sudo", "/usr/bin/subcult-channel", "refresh", "--quiet", "--exit-changed"},
 		HyprlandSession: os.Getenv("HYPRLAND_INSTANCE_SIGNATURE") != "",
 	}}
 	rep, err := u.Run(ctx)

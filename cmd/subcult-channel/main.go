@@ -27,7 +27,7 @@ var routes = []dispatch.Described{
 		Examples: []string{"subcult channel set edge", "subcult channel set stable"}}},
 	{Words: []string{"channel", "refresh"}, Metadata: dispatch.Metadata{
 		Summary: "Move the stable mirrorlist to the shipped snapshot date (run by subcult update)",
-		Args:    "[--quiet]", Hidden: true, RequiresSudo: true}},
+		Args:    "[--quiet] [--exit-changed]", Hidden: true, RequiresSudo: true}},
 }
 
 // selfPath is what sudo re-runs for the root steps.
@@ -51,6 +51,7 @@ func (a *app) run(args []string) int {
 	fs.SetOutput(a.stderr)
 	root := fs.String("root", "/", "the filesystem root (tests, the installer's chroot)")
 	quiet := fs.Bool("quiet", false, "say nothing unless something is wrong")
+	exitChanged := fs.Bool("exit-changed", false, "refresh: exit 3 when the date moved (for subcult update)")
 	// Flags may follow the words (`channel set stable --quiet`).
 	flags, rest := splitFlags(args)
 	if err := fs.Parse(flags); err != nil {
@@ -99,6 +100,9 @@ func (a *app) run(args []string) int {
 		if changed && !*quiet {
 			st, _ := channel.Current(*root)
 			fmt.Fprintln(a.stdout, "moved to", st)
+		}
+		if changed && *exitChanged {
+			return channel.ChangedExit
 		}
 		return 0
 	}

@@ -48,7 +48,7 @@ ShellRoot {
   // ThemeModel.js is the shell's copy: Quickshell refuses imports outside
   // the program's directory, and `make shell-index-check` keeps them equal.
   readonly property string systemPalette: (Quickshell.env("SUBCULT_PATH") || "/usr/share/subcult") + "/default/theme/palette.json"
-  readonly property string userPalette: Quickshell.env("HOME") + "/.config/subcult/theme/palette.json"
+  readonly property string userPalette: (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/subcult/theme/palette.json"
   property var fallback: ({})
   property var user: ({})
   readonly property var theme: ThemeModel.tokens(user, fallback)

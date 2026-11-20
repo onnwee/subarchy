@@ -130,6 +130,28 @@ func TestSetWritesRoleAndRefreshes(t *testing.T) {
 	}
 }
 
+// fontconfig reads subcult/fonts.conf from XDG_CONFIG_HOME
+// (44-subarchy-roles.conf, prefix="xdg"), so the file goes there when it is
+// set, and under ~/.config when it is not.
+func TestSetWritesUnderXDGConfigHome(t *testing.T) {
+	r := installedFont("JetBrainsMono Nerd Font", nerdLine)
+	e, _, errb := newEnv(t, r)
+	e.config = filepath.Join(t.TempDir(), "cfg")
+	if code := run(context.Background(), []string{"set", "JetBrainsMono Nerd Font"}, e); code != 0 {
+		t.Fatalf("exit %d: %s", code, errb)
+	}
+	if _, err := os.Stat(filepath.Join(e.config, "subcult", "fonts.conf")); err != nil {
+		t.Errorf("not written under XDG_CONFIG_HOME: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(e.home, ".config", "subcult", "fonts.conf")); !os.IsNotExist(err) {
+		t.Errorf("written under ~/.config with XDG_CONFIG_HOME set: %v", err)
+	}
+	e.config = ""
+	if got, want := confPath(e), filepath.Join(e.home, ".config", "subcult", "fonts.conf"); got != want {
+		t.Errorf("without XDG_CONFIG_HOME: %s, want %s", got, want)
+	}
+}
+
 func TestSetRefusesInterfaceOnlyForMonospace(t *testing.T) {
 	r := installedFont("Noto Sans", propLine)
 	e, _, _ := newEnv(t, r)

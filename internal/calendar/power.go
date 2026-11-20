@@ -6,8 +6,9 @@ import (
 	"strings"
 )
 
-// OnBattery reads the power source from sysfs: no mains adapter online
-// while a battery is present. A desktop (no battery) counts as AC.
+// OnBattery reads the power source from sysfs: no mains or USB supply
+// online while a battery is present, the rule subcult-power-auto uses. A
+// desktop (no battery) counts as AC.
 func OnBattery(powerSupply string) bool {
 	entries, _ := os.ReadDir(powerSupply)
 	mainsOnline, battery := false, false
@@ -15,7 +16,7 @@ func OnBattery(powerSupply string) bool {
 		dir := filepath.Join(powerSupply, e.Name())
 		typ, _ := os.ReadFile(filepath.Join(dir, "type"))
 		switch strings.TrimSpace(string(typ)) {
-		case "Mains":
+		case "Mains", "USB":
 			online, _ := os.ReadFile(filepath.Join(dir, "online"))
 			if strings.TrimSpace(string(online)) == "1" {
 				mainsOnline = true

@@ -40,7 +40,8 @@ Singleton {
   }
 
   WatchedFile {
-    path: Quickshell.env("HOME") + "/.config/subcult/fonts.conf"
+    // Where `subcult font set` writes it and fontconfig reads it.
+    path: (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/subcult/fonts.conf"
     onChanged: (live) => {
       if (live)
         root.resolve()

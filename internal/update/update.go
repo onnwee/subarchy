@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"git.subcult.tv/subculture-collective/subarchy/internal/channel"
 )
 
 // Options controls one update run.
@@ -31,8 +33,12 @@ type Options struct {
 	// authentication (ADR 0069).
 	Privileged []string
 	// ChannelRefresh rewrites the stable channel's mirrorlist from the
-	// snapshot date the installed package ships, so a snapshot advance
-	// applies on the next update (ADR 0026). Empty skips it.
+	// snapshot date the installed package ships (ADR 0026). It exits
+	// channel.ChangedExit when it moved the date. It runs before the
+	// upgrade and again after it: when the upgrade installed a subarchy
+	// package with a new date, the packages are upgraded again in the same
+	// run, so Arch's packages catch up with Subarchy's, which were built on
+	// the new date. Empty skips it.
 	ChannelRefresh []string
 	// HyprlandSession is true when the caller has a Hyprland instance
 	// signature. Never reload another session from a TTY or SSH update.
@@ -119,11 +125,7 @@ func (u *Updater) Run(ctx context.Context) (Report, error) {
 		rep.Snapshot = strings.TrimSpace(num)
 	}
 
-	if len(u.O.ChannelRefresh) > 0 {
-		if err := u.R.Run(ctx, u.O.ChannelRefresh...); err != nil {
-			fmt.Fprintf(u.O.Stdout, "warning: the channel's mirrorlist was not refreshed: %v\n", err)
-		}
-	}
+	u.refreshChannel(ctx)
 	shellBefore := u.pkgVersion(ctx, "subarchy")
 	restoreReload, paused, err := u.pauseReload(ctx)
 	if err != nil {
@@ -137,6 +139,12 @@ func (u *Updater) Run(ctx context.Context) (Report, error) {
 	}
 	if err := u.R.Run(ctx, args...); err != nil {
 		return rep, fmt.Errorf("packages: %w", err)
+	}
+	if u.refreshChannel(ctx) {
+		say("the snapshot date moved: upgrading packages to it")
+		if err := u.R.Run(ctx, args...); err != nil {
+			return rep, fmt.Errorf("packages: %w", err)
+		}
 	}
 
 	if u.R.Has("dkms") {
@@ -263,6 +271,23 @@ func (u *Updater) Run(ctx context.Context) (Report, error) {
 		return rep, &MigrationError{migErr}
 	}
 	return rep, nil
+}
+
+// refreshChannel runs ChannelRefresh and reports whether it moved the
+// snapshot date. A failure is a warning: the update goes on.
+func (u *Updater) refreshChannel(ctx context.Context) bool {
+	if len(u.O.ChannelRefresh) == 0 {
+		return false
+	}
+	err := u.R.Run(ctx, u.O.ChannelRefresh...)
+	var ec interface{ ExitCode() int }
+	if errors.As(err, &ec) && ec.ExitCode() == channel.ChangedExit {
+		return true
+	}
+	if err != nil {
+		fmt.Fprintf(u.O.Stdout, "warning: the channel's mirrorlist was not refreshed: %v\n", err)
+	}
+	return false
 }
 
 // cleanup offers to remove orphaned packages and prunes the package cache.

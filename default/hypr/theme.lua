@@ -17,7 +17,7 @@ hl.config({
 
 -- A broken user theme must not stop the rest of the defaults (bindings,
 -- autostart) from loading, so it runs protected and only logs its error.
-local user_theme = os.getenv("HOME") .. "/.config/subcult/theme/hyprland.lua"
+local user_theme = (os.getenv("XDG_CONFIG_HOME") or (os.getenv("HOME") .. "/.config")) .. "/subcult/theme/hyprland.lua"
 local f = io.open(user_theme, "r")
 if f then
   f:close()

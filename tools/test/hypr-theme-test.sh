@@ -13,6 +13,6 @@ mkdir -p "$home/.config/subcult/theme" "$home/.config/hypr"
 printf 'hl.config({ general = {\n' >"$home/.config/subcult/theme/hyprland.lua"
 printf 'hl.env("XCURSOR_SIZE",\n' >"$home/.config/subcult/cursor-env.lua"
 
-out=$(HOME=$home SUBCULT_PATH=$root Hyprland --verify-config -c "$root/default/hypr/user-hyprland.lua" 2>&1) || true
+out=$(HOME=$home XDG_CONFIG_HOME=$home/.config SUBCULT_PATH=$root Hyprland --verify-config -c "$root/default/hypr/user-hyprland.lua" 2>&1) || true
 grep -qx 'config ok' <<<"$out" || fail "a broken user theme breaks the config: $(tail -3 <<<"$out")"
 echo "hypr-theme-test: ok"

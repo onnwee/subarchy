@@ -374,7 +374,7 @@ cat >"$work/session-bus.conf" <<EOF
 EOF
 
 start_shell() { # home log
-  HOME=$1 SUBCULT_PATH=$root QS_NO_RELOAD_POPUP=1 \
+  HOME=$1 XDG_CONFIG_HOME=$1/.config SUBCULT_PATH=$root QS_NO_RELOAD_POPUP=1 \
     dbus-run-session --config-file="$work/session-bus.conf" -- quickshell -p "$shell" >"$2" 2>&1 &
   pids+=($!)
   sleep 5

@@ -54,6 +54,14 @@ echo 0 >"$ps/AC/online"
 echo Discharging >"$ps/BAT0/status"
 [[ $(run) == "3 gated false" ]] || fail "auto on battery: $(run)"
 
+# Charging over USB-C: the mains adapter offline, a USB supply online. AC,
+# as subcult-power-auto and subcult-gpu-env count it.
+supply ucsi-source-psy-USBC000:001 USB online 1
+[[ $(run) == "2 open true" ]] || fail "auto on USB-C power: $(run)"
+echo 0 >"$ps/ucsi-source-psy-USBC000:001/online"
+[[ $(run) == "3 gated false" ]] || fail "auto with USB-C unplugged: $(run)"
+rm -r "$ps/ucsi-source-psy-USBC000:001"
+
 # The setting wins over the power source.
 printf '{"mode": "on"}\n' >"$home/.config/subcult/motion.json"
 [[ $(run) == "2 open true" ]] || fail "on while on battery: $(run)"

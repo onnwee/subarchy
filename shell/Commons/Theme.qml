@@ -12,7 +12,7 @@ Singleton {
   id: root
 
   readonly property string systemPath: (Quickshell.env("SUBCULT_PATH") || "/usr/share/subcult") + "/default/theme/palette.json"
-  readonly property string userPath: Quickshell.env("HOME") + "/.config/subcult/theme/palette.json"
+  readonly property string userPath: (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/subcult/theme/palette.json"
 
   property var fallback: ({})
   property var user: ({})

@@ -71,6 +71,28 @@ func TestBrokenUserPaletteFallsBackToSystem(t *testing.T) {
 	}
 }
 
+// The user's palette is read under XDG_CONFIG_HOME, where subcult theme,
+// the shell and the lock screen read it.
+func TestUserPaletteUnderXDGConfigHome(t *testing.T) {
+	e, errb := testEnv(t, `{"colors": `)
+	systemTree(t, &e)
+	e.config = t.TempDir()
+	if code := run(context.Background(), []string{"set", "--role", "nonsense"}, e); code != 2 || strings.Contains(errb.String(), "warning") {
+		t.Fatalf("the palette under ~/.config was read with XDG_CONFIG_HOME set: exit %d, %q", code, errb)
+	}
+	p := filepath.Join(e.config, "subcult", "theme", "palette.json")
+	if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(p, []byte(`{"colors": `), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	errb.Reset()
+	if code := run(context.Background(), []string{"set", "--role", "nonsense"}, e); code != 2 || !strings.Contains(errb.String(), "warning") {
+		t.Errorf("the palette under XDG_CONFIG_HOME was not read: exit %d, %q", code, errb)
+	}
+}
+
 func TestSetRejectsBadSize(t *testing.T) {
 	e, _ := testEnv(t, "")
 	systemTree(t, &e)

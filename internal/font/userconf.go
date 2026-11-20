@@ -9,10 +9,11 @@ import (
 	"strings"
 )
 
-// UserConfPath is the user's role file, relative to $HOME. The system roles
-// file (44-subarchy-roles.conf) includes subcult/fonts.conf from
-// XDG_CONFIG_HOME ahead of its own rules, so the user's families win.
-const UserConfPath = ".config/subcult/fonts.conf"
+// UserConfPath is the user's role file, relative to XDG_CONFIG_HOME
+// (~/.config when unset). The system roles file (44-subarchy-roles.conf)
+// includes subcult/fonts.conf from XDG_CONFIG_HOME ahead of its own rules,
+// so the user's families win.
+const UserConfPath = "subcult/fonts.conf"
 
 // followsMarker precedes a match written because a role follows monospace
 // (the interface role by default) rather than being set on its own.

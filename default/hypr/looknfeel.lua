@@ -84,8 +84,9 @@ local function read_line(path)
   return line
 end
 
--- On AC: a mains supply reports online, or there is no battery at all. A
--- battery without a mains device counts as AC unless it is discharging.
+-- On AC: a mains or USB supply reports online (the rule subcult-power-auto
+-- uses), or there is no battery at all. A battery without a mains device
+-- counts as AC unless it is discharging.
 local function on_ac()
   local dir = (os.getenv("SUBCULT_SYS") or "/sys") .. "/class/power_supply"
   local list = io.popen("ls -1 '" .. dir:gsub("'", "'\\''") .. "' 2>/dev/null")
@@ -100,6 +101,8 @@ local function on_ac()
       if read_line(dir .. "/" .. name .. "/online") == "1" then
         online = true
       end
+    elseif kind == "USB" and read_line(dir .. "/" .. name .. "/online") == "1" then
+      online = true
     elseif kind == "Battery" and read_line(dir .. "/" .. name .. "/status") == "Discharging"
       -- A peripheral's battery (mouse, headset) has scope Device.
       and read_line(dir .. "/" .. name .. "/scope") ~= "Device" then
@@ -107,7 +110,7 @@ local function on_ac()
     end
   end
   list:close()
-  if mains then
+  if online or mains then
     return online
   end
   return not discharging

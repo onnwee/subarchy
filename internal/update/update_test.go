@@ -19,6 +19,7 @@ type fake struct {
 	series  map[string][]string // joined argv -> one output per call, in order
 	fail    map[string]bool     // joined argv -> error
 	errs    map[string]error    // joined argv -> this error, from Run
+	runs    map[string][]error  // joined argv -> one Run result per call, in order
 	ran     []string
 }
 
@@ -36,6 +37,10 @@ func (f *fake) Run(ctx context.Context, argv ...string) error {
 	}
 	if err := f.errs[key]; err != nil {
 		return err
+	}
+	if s := f.runs[key]; len(s) > 0 {
+		f.runs[key] = s[1:]
+		return s[0]
 	}
 	if f.fail[key] {
 		return errors.New("failed")
@@ -111,6 +116,50 @@ func TestRunOrder(t *testing.T) {
 	}
 	if !strings.Contains(rep.Summary(), "Snapshot 7") || !strings.Contains(rep.Summary(), "No reboot needed") {
 		t.Errorf("summary = %q", rep.Summary())
+	}
+}
+
+const refreshCmd = "sudo /usr/bin/subcult-channel refresh --quiet --exit-changed"
+const upgradeCmd = "sudo /usr/bin/subcult-update privileged upgrade --noconfirm"
+
+// The upgrade that installs a subarchy package with a new snapshot date
+// would leave core and extra at the old date while Subarchy's packages are
+// built on the new one. The refresh after it moves the mirrorlist, and the
+// same run upgrades again.
+func TestSnapshotAdvanceUpgradesAgain(t *testing.T) {
+	for _, tt := range []struct {
+		name   string
+		second error
+		want   []string
+	}{
+		{"date moved", exitCode(3), []string{refreshCmd, upgradeCmd, refreshCmd, upgradeCmd}},
+		{"date unchanged", nil, []string{refreshCmd, upgradeCmd, refreshCmd}},
+		{"refresh failed", exitCode(1), []string{refreshCmd, upgradeCmd, refreshCmd}},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			f := &fake{runs: map[string][]error{refreshCmd: {nil, tt.second}}}
+			u, out := newUpdater(t, f, true)
+			u.O.ChannelRefresh = strings.Fields(refreshCmd)
+			if _, err := u.Run(context.Background()); err != nil {
+				t.Fatal(err)
+			}
+			if !slices.Equal(f.ran, tt.want) {
+				t.Errorf("ran %q, want %q", f.ran, tt.want)
+			}
+			if warned := strings.Contains(out.String(), "not refreshed"); warned != (tt.second == exitCode(1)) {
+				t.Errorf("warning %v:\n%s", warned, out)
+			}
+		})
+	}
+	// A first refresh that moves the date is not a failure.
+	f := &fake{runs: map[string][]error{refreshCmd: {exitCode(3), nil}}}
+	u, out := newUpdater(t, f, true)
+	u.O.ChannelRefresh = strings.Fields(refreshCmd)
+	if _, err := u.Run(context.Background()); err != nil || strings.Contains(out.String(), "not refreshed") {
+		t.Errorf("first refresh moved the date: %v\n%s", err, out)
+	}
+	if want := []string{refreshCmd, upgradeCmd, refreshCmd}; !slices.Equal(f.ran, want) {
+		t.Errorf("ran %q, want %q", f.ran, want)
 	}
 }
 

@@ -12,8 +12,10 @@ func root(t *testing.T, snapshot string) string {
 	r := t.TempDir()
 	for p, c := range map[string]string{
 		SnapshotPath: snapshot + "\n",
-		PacmanConf: "[options]\nHoldPkg = pacman glibc\n\n[core]\nInclude = /etc/pacman.d/mirrorlist\n\n[extra]\nInclude = /etc/pacman.d/mirrorlist\n\n" +
-			"#[multilib]\n#Include = /etc/pacman.d/mirrorlist\n",
+		// The repository part of the pacman package's stock pacman.conf.
+		PacmanConf: "[options]\nHoldPkg = pacman glibc\n\n#[core-testing]\n#Include = /etc/pacman.d/mirrorlist\n\n" +
+			"[core]\nInclude = /etc/pacman.d/mirrorlist\n\n[extra]\nInclude = /etc/pacman.d/mirrorlist\n\n" +
+			"#[multilib-testing]\n#Include = /etc/pacman.d/mirrorlist\n\n#[multilib]\n#Include = /etc/pacman.d/mirrorlist\n",
 	} {
 		full := filepath.Join(r, p)
 		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
@@ -51,7 +53,12 @@ func TestSetStableThenEdgeAndBack(t *testing.T) {
 		t.Error("stable repo server")
 	}
 	conf := read(t, filepath.Join(r, PacmanConf))
-	if strings.Count(conf, "Include = /etc/pacman.d/subcult-mirrorlist") != 2 || !strings.Contains(conf, "#Include = /etc/pacman.d/mirrorlist") {
+	// core, extra and multilib (ADR 0006) follow the channel; the testing
+	// repositories stay off.
+	if strings.Count(conf, "Include = /etc/pacman.d/subcult-mirrorlist") != 3 ||
+		!strings.Contains(conf, "\n[multilib]\nInclude = /etc/pacman.d/subcult-mirrorlist\n") ||
+		strings.Count(conf, "#Include = /etc/pacman.d/mirrorlist") != 2 ||
+		!strings.Contains(conf, "#[core-testing]\n") || !strings.Contains(conf, "#[multilib-testing]\n") {
 		t.Errorf("pacman.conf includes:\n%s", conf)
 	}
 	st, err := Current(r)
@@ -131,6 +138,24 @@ func TestSetKeepsCustomSubarchyRepository(t *testing.T) {
 	conf := read(t, path)
 	if strings.Count(conf, "[subarchy]") != 1 || !strings.HasSuffix(conf, custom) {
 		t.Fatalf("custom repository changed or duplicated:\n%s", conf)
+	}
+}
+
+// A [multilib] already enabled by hand still points at Arch's mirrorlist;
+// Set moves it to the channel's like core and extra, and adds no second one.
+func TestSetMovesEnabledMultilib(t *testing.T) {
+	r := root(t, "2026/11/08")
+	path := filepath.Join(r, PacmanConf)
+	conf := strings.Replace(read(t, path), "#[multilib]\n#Include", "[multilib]\nInclude", 1)
+	if err := os.WriteFile(path, []byte(conf), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Set(r, Stable); err != nil {
+		t.Fatal(err)
+	}
+	if got := read(t, path); strings.Count(got, "\n[multilib]\n") != 1 ||
+		!strings.Contains(got, "\n[multilib]\nInclude = /etc/pacman.d/subcult-mirrorlist\n") {
+		t.Errorf("multilib:\n%s", got)
 	}
 }
 

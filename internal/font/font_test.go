@@ -174,7 +174,7 @@ func TestRenderUserConfEscapes(t *testing.T) {
 }
 
 func TestUserConfPath(t *testing.T) {
-	if UserConfPath != ".config/subcult/fonts.conf" {
+	if UserConfPath != "subcult/fonts.conf" {
 		t.Errorf("UserConfPath = %s; the system roles file includes subcult/fonts.conf from XDG_CONFIG_HOME", UserConfPath)
 	}
 }

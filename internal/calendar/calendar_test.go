@@ -341,6 +341,17 @@ func TestOnBattery(t *testing.T) {
 	if !OnBattery(ps) {
 		t.Error("mains offline with a battery is battery")
 	}
+	// Charging over USB-C: the mains adapter is offline and a USB supply
+	// is online. subcult-power-auto and subcult-gpu-env count this as AC.
+	put("ucsi-source-psy-USBC000:001", "type", "USB")
+	put("ucsi-source-psy-USBC000:001", "online", "1")
+	if OnBattery(ps) {
+		t.Error("a USB supply online is AC")
+	}
+	put("ucsi-source-psy-USBC000:001", "online", "0")
+	if !OnBattery(ps) {
+		t.Error("a USB supply offline is not AC")
+	}
 	desktop := t.TempDir()
 	if OnBattery(desktop) {
 		t.Error("no battery is AC")
