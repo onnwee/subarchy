@@ -7,8 +7,8 @@ apart from the desktop shell, so a shell crash cannot unlock the session.
 - `shell.qml` locks the session as it starts (`WlSessionLock`), checks the
   password through PAM (`/etc/pam.d/subcult-lock`; `SUBCULT_LOCK_PAM` and
   `SUBCULT_LOCK_PAM_DIR` point the tests at a permit stack) and quits once
-  unlocked. `subcult.lock status` over IPC reports the state; nothing
-  unlocks over IPC.
+  unlocked. `subcult.lock status` over IPC reports the state, with nothing
+  about the password typed (not even its length); nothing unlocks over IPC.
 - `LockView.qml` is one output's surface: the SUBCULT lockup, the clock, and
   the prompt that opens on keyboard or pointer input. Until then it plays
   a pre-rendered SUBCULT loop, or shows its still on battery or with motion

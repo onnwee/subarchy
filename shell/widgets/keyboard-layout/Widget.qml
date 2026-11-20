@@ -26,12 +26,28 @@ BarWidget {
     tooltip: "Keyboard layout"
   }
 
+  // A change during a read reads again after it: that read may have
+  // started before the change.
+  function read() {
+    if (query.running)
+      query.again = true
+    else
+      query.running = true
+  }
+
   Process {
     id: query
+    property bool again: false
     running: true
     command: ["hyprctl", "devices", "-j"]
     stdout: StdioCollector {
       onStreamFinished: root.code = Model.fromDevices(text, root.eventKeyboard)
+    }
+    onExited: {
+      if (query.again) {
+        query.again = false
+        Qt.callLater(root.read)
+      }
     }
   }
 
@@ -40,9 +56,9 @@ BarWidget {
     function onRawEvent(event) {
       if (event.name === "activelayout") {
         root.eventKeyboard = Model.eventKeyboard(event.data)
-        query.running = true
+        root.read()
       } else if (event.name === "configreloaded") {
-        query.running = true
+        root.read()
       }
     }
   }

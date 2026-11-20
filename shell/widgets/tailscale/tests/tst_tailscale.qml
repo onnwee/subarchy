@@ -144,4 +144,12 @@ TestCase {
     compare(Model.sendCommand({ name: "", ip: "", ipv6: "", dnsName: "x.tail1234.ts.net" }),
       ["subcult-tailscale-send", "--name", "x.tail1234.ts.net", "x.tail1234.ts.net"])
   }
+
+  // Two full bars each run a refresh timer; the second one within half the
+  // interval skips the read.
+  function test_stale() {
+    verify(Model.stale(0, 30000, 1000000), "never read")
+    verify(!Model.stale(990000, 30000, 1000000))
+    verify(Model.stale(960000, 30000, 1000000))
+  }
 }

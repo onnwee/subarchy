@@ -18,6 +18,8 @@ Singleton {
   id: root
 
   property var status: null
+  // When the last status read finished (epoch ms).
+  property double statusAt: 0
   // The saved accounts, one of them selected: tailscale connects one at a
   // time.
   property var accounts: []
@@ -45,6 +47,16 @@ Singleton {
   // One function each: Qt.callLater runs a function queued twice only once.
   function readStatus() {
     root.read(query)
+  }
+
+  // A bar's own refresh. With two full bars (a docked laptop) each bar has
+  // its own timer and clock handler, and both fire together: the second
+  // skips the read while the first runs, and a timer, which passes half its
+  // interval, also skips within that age of the last read.
+  function readStatusIfOlder(minAgeMs) {
+    if (query.running || !Model.stale(root.statusAt, minAgeMs, Date.now()))
+      return
+    root.readStatus()
   }
 
   function readAccounts() {
@@ -188,6 +200,7 @@ Singleton {
       const s = Model.parse(queryOut.text)
       root.daemonDown = s === null && Model.daemonDown(queryErr.text)
       root.status = s
+      root.statusAt = Date.now()
       if (query.again) {
         query.again = false
         Qt.callLater(root.readStatus)

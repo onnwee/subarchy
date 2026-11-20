@@ -27,7 +27,7 @@ BarWidget {
     timerName: "refresh"
     running: false
     repeat: true
-    onTriggered: Tailscale.readStatus()
+    onTriggered: Tailscale.readStatusIfOlder(refreshTimer.interval / 2)
   }
 
   // Share the clock's minute boundary, so a status refresh and clock
@@ -36,7 +36,7 @@ BarWidget {
     target: Clock
     enabled: !refreshTimer.running
     function onNowChanged() {
-      Tailscale.readStatus()
+      Tailscale.readStatusIfOlder(0)
       refreshTimer.start()
     }
   }

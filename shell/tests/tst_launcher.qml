@@ -133,6 +133,15 @@ TestCase {
     compare(Model.move(0, 1, 0), -1)
   }
 
+  // The per-open reads assign only a changed value, so a row picked before
+  // they finish stays picked.
+  function test_same() {
+    verify(Model.same([{ id: "a" }], [{ id: "a" }]))
+    verify(!Model.same([{ id: "a" }], [{ id: "b" }]))
+    verify(Model.same(null, null))
+    verify(!Model.same(null, { id: "x", name: "X" }))
+  }
+
   // --- Commands, calculator and web search
 
   readonly property string commandsJson: JSON.stringify({ ok: true, commands: [

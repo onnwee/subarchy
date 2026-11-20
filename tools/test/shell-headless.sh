@@ -1254,6 +1254,8 @@ if command -v wtype >/dev/null; then
   wtype -s 150 'secret' -k Return
   for _ in $(seq 20); do lk=$(lockst); [[ $lk == *'finger on the reader'* ]] && break; sleep 0.25; done
   [[ $lk == *'"checking":true'* && $lk == *'"message":"Place your finger on the reader"'* ]] || fail "the lock did not show what PAM said during a check: $lk"
+  # The status carries nothing about the password, not even its length.
+  [[ $lk != *'"typed"'* ]] || fail "the lock status reports the password's length: $lk"
   wtype -s 150 -k Escape
   sleep 1
   lk=$(lockst)

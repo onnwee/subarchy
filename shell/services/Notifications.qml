@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Services.Notifications
 import qs.Commons
 import "NotificationsModel.js" as Model
+import "notifications"
 
 // The notification daemon (org.freedesktop.Notifications). Live
 // notifications pop up; plain records go to a history of 100, saved to
@@ -12,10 +13,12 @@ import "NotificationsModel.js" as Model
 // and shown as capped plain text only (no markup, no images): bodies and
 // summaries come from any app or web page.
 //
-// Each popup has an entry here that owns its timer: the app's timeout
-// (within 2..30 s, 5 s by default, critical ones stay), paused while the
-// pointer is over the card, restarted when the app replaces the
-// notification (replaces_id), which also updates its history record.
+// Each popup has an entry (notifications/Entry.qml) that owns its timer:
+// the app's timeout (within 2..30 s, 5 s by default, critical ones stay),
+// paused while the pointer is over the card, restarted when the app
+// replaces the notification (replaces_id), which also updates its history
+// record. A replacement under the pointer starts its timeout once the
+// pointer leaves.
 // Transient notifications (the freedesktop hint, used for volume or
 // progress) pop up but stay out of the history.
 Singleton {
@@ -40,43 +43,6 @@ Singleton {
   // Popup entries by notification id.
   property var entries: ({})
   readonly property int unread: Model.unread(history)
-
-  component Entry: QtObject {
-    id: entry
-    required property var n
-    property real due: 0 // epoch ms when it expires; 0 while it stays
-    property int remaining: 0 // ms left while paused
-
-    signal expired(var n)
-
-    readonly property Timer timer: Timer {
-      repeat: false
-      onTriggered: entry.expired(entry.n)
-    }
-
-    function arm(ms) {
-      if (ms <= 0) {
-        entry.timer.stop()
-        entry.due = 0
-        return
-      }
-      entry.due = Date.now() + ms
-      entry.timer.interval = ms
-      entry.timer.restart()
-    }
-
-    function pause() {
-      if (entry.due > 0 && entry.timer.running) {
-        entry.remaining = Math.max(1000, entry.due - Date.now())
-        entry.timer.stop()
-      }
-    }
-
-    function resume() {
-      if (entry.due > 0 && !entry.timer.running)
-        entry.arm(entry.remaining)
-    }
-  }
 
   Component {
     id: entryComponent

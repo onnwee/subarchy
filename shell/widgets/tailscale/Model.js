@@ -190,3 +190,9 @@ function exitNodeCommand(p) {
 function sendCommand(p) {
   return ["subcult-tailscale-send", "--name", p.name || address(p), address(p)]
 }
+
+// Whether a status read at `at` (epoch ms, 0 for never) is older than
+// `maxAgeMs` now.
+function stale(at, maxAgeMs, now) {
+  return !at || now - at > maxAgeMs
+}

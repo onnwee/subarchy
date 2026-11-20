@@ -2,6 +2,7 @@ import QtQuick
 import QtTest
 
 import "../services/NotificationsModel.js" as Model
+import "../services/notifications"
 
 TestCase {
   name: "Notifications"
@@ -150,5 +151,33 @@ TestCase {
 
   function test_buttonActions() {
     compare(Model.buttonActions([{ identifier: "default" }, { identifier: "reply" }]).map(a => a.identifier), ["reply"])
+  }
+
+  Component {
+    id: entryComponent
+    Entry {}
+  }
+
+  // A card's timer: a replacement (a download's progress) that arrives
+  // while the pointer is on the card waits for the pointer to leave, then
+  // runs the full new timeout.
+  function test_entryHeldThroughReplacement() {
+    const e = entryComponent.createObject(null, { n: { id: 1 } }) as Entry
+    e.arm(8000)
+    verify(e.timer.running)
+    e.pause()
+    verify(!e.timer.running, "hovering pauses the timer")
+    e.arm(8000)
+    verify(!e.timer.running, "a replacement while held does not restart the timer")
+    e.resume()
+    verify(e.timer.running, "leaving the card starts the timer")
+    compare(e.timer.interval, 8000, "with the replacement's full timeout")
+    e.pause()
+    e.arm(0)
+    verify(!e.timer.running, "a replacement that stays does not run")
+    compare(e.due, 0)
+    e.resume()
+    verify(!e.timer.running, "and still stays after the pointer leaves")
+    e.destroy()
   }
 }

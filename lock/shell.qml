@@ -366,7 +366,7 @@ ShellRoot {
     function status(): string {
       return JSON.stringify({
         locked: lock.locked, secure: lock.secure, prompt: root.lockState.prompt, checking: root.lockState.checking,
-        attempts: root.lockState.attempts, message: root.lockState.message, typed: root.lockState.password.length,
+        attempts: root.lockState.attempts, message: root.lockState.message,
         base: String(root.theme.base || ""), screensaver: !root.lockState.prompt,
         motion: root.animate, playing: root.playing, effect: root.effect, artDir: root.artDir,
         fingerprint: root.fingerprint, fingerprintChecking: root.fingerprintRunning

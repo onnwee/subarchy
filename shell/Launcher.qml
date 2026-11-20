@@ -527,7 +527,11 @@ PanelWindow { // qmllint disable uncreatable-type
     running: true
     command: ["subcult", "app", "ask", "--json"]
     stdout: StdioCollector {
-      onStreamFinished: launcher.agent = Model.agent(text)
+      onStreamFinished: {
+        const a = Model.agent(text)
+        if (!Model.same(a, launcher.agent))
+          launcher.agent = a
+      }
     }
   }
 
@@ -577,7 +581,11 @@ PanelWindow { // qmllint disable uncreatable-type
     running: true
     command: ["subcult", "commands", "--json"]
     stdout: StdioCollector {
-      onStreamFinished: launcher.commands = Model.commands(text)
+      onStreamFinished: {
+        const c = Model.commands(text)
+        if (!Model.same(c, launcher.commands))
+          launcher.commands = c
+      }
     }
   }
 
@@ -587,7 +595,11 @@ PanelWindow { // qmllint disable uncreatable-type
     running: true
     command: ["sh", "-c", 'for f in "$1"/*; do [ -f "$f" ] && [ -x "$f" ] || continue; printf "\\036%s\\n" "$f"; head -n 40 -- "$f"; done', "sh", launcher.scriptDir]
     stdout: StdioCollector {
-      onStreamFinished: launcher.scripts = Model.scripts(text)
+      onStreamFinished: {
+        const s = Model.scripts(text)
+        if (!Model.same(s, launcher.scripts))
+          launcher.scripts = s
+      }
     }
   }
 

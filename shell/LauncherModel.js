@@ -121,6 +121,13 @@ function move(index, step, count) {
   return Math.max(0, Math.min(count - 1, index + step))
 }
 
+// Whether two parsed reads hold the same content. The reads made on each
+// open assign only a changed value: a new one recomputes the results,
+// which moves the selection back to the first row.
+function same(a, b) {
+  return JSON.stringify(a) === JSON.stringify(b)
+}
+
 // --- Commands, calculator and web search ---------------------------------
 
 // The visible source navigation and slash menu share these destinations.
