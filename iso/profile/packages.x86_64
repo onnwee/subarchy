@@ -103,6 +103,7 @@ smartmontools
 sof-firmware
 squashfs-tools
 subarchy
+subarchy-keyring
 sudo
 systemd-resolvconf
 tcpdump

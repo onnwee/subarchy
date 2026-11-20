@@ -126,8 +126,14 @@ secret files (mode 600) under `/run/subarchy-setup` and runs
 `subarchy-install`. When that finishes it says how long the install took
 and offers to reboot; when it fails it shows the end of the log and a menu
 (view the log, shell, reboot, power off). `--batch` leaves out the browse,
-the reboot offer and the menu, for the VM test. Subarchy's own
-packages come from the repository on the image, `/opt/subarchy/repo`.
+the reboot offer and the menu, for the VM test. On the full image,
+Subarchy's own packages come from the repository on the image,
+`/opt/subarchy/repo`. The network-install image has no such repository
+(#329): `subarchy-setup` points the install at the stable channel's
+registry, and `subarchy-install` takes Arch packages from the Arch Linux
+Archive at the shipped snapshot date. It checks that those servers answer
+before it touches the disk, and stops with a message saying so if they do
+not.
 
 ## `subarchy-install`
 

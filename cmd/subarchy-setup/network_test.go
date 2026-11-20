@@ -332,6 +332,51 @@ func TestScreensNetworkSkip(t *testing.T) {
 	}
 }
 
+// On the network-install image (#329) the page says the install needs a
+// network, its skip choice says the install then stops, and the install
+// comes from the stable channel's registry.
+func TestScreensNetworkInstall(t *testing.T) {
+	e := testEnv(t)
+	e.netInstall = true
+	f := newFakeIwd(t)
+	e.wifi = f.wifi(t.TempDir())
+	s, g, out := testScreens(t, "English (US)", "English (US)", networkSkipNet,
+		"UTC", "pat", "secret-one", "secret-one", "box", "", "<row:/dev/vda>", "Install here", "", "")
+	pickRows(t, s)
+	e.screens = s
+	dir := filepath.Join(t.TempDir(), "conf")
+	var stdout bytes.Buffer
+	if code := run([]string{"--dir", dir, "--dry-run"}, strings.NewReader(""), &stdout, e, nil, nil); code != 0 {
+		t.Fatalf("exit %d:\n%s", code, stdout.String())
+	}
+	screen := ansi.ReplaceAllString(out.String(), "")
+	if !strings.Contains(screen, networkBodyNet[0]) || strings.Contains(screen, networkBody[1]) {
+		t.Errorf("network page text:\n%s", screen)
+	}
+	if !strings.Contains(callText(g), networkSkipNet) || strings.Contains(callText(g), networkSkip) {
+		t.Errorf("skip choice: %s", callText(g))
+	}
+	conf, _ := os.ReadFile(filepath.Join(dir, "install.conf"))
+	if want := "SUBARCHY_REPO=https://git.subcult.tv/api/packages/subculture-collective/arch/stable/$arch\n"; !strings.Contains(string(conf), want) {
+		t.Errorf("config lacks %q:\n%s", want, conf)
+	}
+}
+
+func TestHasRepo(t *testing.T) {
+	dir := t.TempDir()
+	if hasRepo(dir) {
+		t.Error("an empty directory is a repository")
+	}
+	os.WriteFile(filepath.Join(dir, "subarchy.db"), nil, 0o644)
+	if hasRepo(dir) {
+		t.Error("an empty database is a repository")
+	}
+	os.WriteFile(filepath.Join(dir, "subarchy.db"), []byte("db"), 0o644)
+	if !hasRepo(dir) {
+		t.Error("a repository was not found")
+	}
+}
+
 // With a link up the page is not shown, and Escape from the step after it
 // goes on back to the keyboard rather than stopping at the skipped page.
 func TestScreensNetworkSkippedBothWays(t *testing.T) {

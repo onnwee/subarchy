@@ -19,6 +19,7 @@ import (
 
 	"golang.org/x/term"
 
+	"git.subcult.tv/subculture-collective/subarchy/internal/channel"
 	"git.subcult.tv/subculture-collective/subarchy/internal/setup"
 )
 
@@ -137,6 +138,19 @@ type env struct {
 	// lookupZone returns the time zone of the network's location, or ""
 	// offline; nil means no lookup.
 	lookupZone func() string
+	// netInstall is true on the network-install image, which carries no
+	// package repository (#329): the install comes from the stable
+	// channel's servers, so it needs a network.
+	netInstall bool
+}
+
+// imageRepo is where the full image carries its package repository.
+const imageRepo = "/opt/subarchy/repo"
+
+// hasRepo reports whether dir holds a package repository.
+func hasRepo(dir string) bool {
+	st, err := os.Stat(filepath.Join(dir, "subarchy.db"))
+	return err == nil && st.Size() > 0
 }
 
 // collect asks every question and returns the answers.
@@ -364,7 +378,11 @@ func failed(p *prompter, e env, cause error) {
 func run(args []string, stdin io.Reader, stdout io.Writer, e env, secret func() (string, error), exec func(conf string, quiet bool) error) int {
 	fs := flag.NewFlagSet("subarchy-setup", flag.ContinueOnError)
 	fs.SetOutput(stdout)
-	repo := fs.String("repo", "file:///opt/subarchy/repo", "pacman Server URL of the [subarchy] repository")
+	defaultRepo := "file://" + imageRepo
+	if e.netInstall {
+		defaultRepo = channel.RepoServer(channel.Stable)
+	}
+	repo := fs.String("repo", defaultRepo, "pacman Server URL of the [subarchy] repository")
 	cmdlineExtra := fs.String("cmdline-extra", "", "appended to the kernel command line")
 	dir := fs.String("dir", "/run/subarchy-setup", "where the config and secret files are written")
 	dryRun := fs.Bool("dry-run", false, "write the config and stop")
@@ -389,6 +407,9 @@ func run(args []string, stdin io.Reader, stdout io.Writer, e env, secret func() 
 	}
 	if *batch {
 		e.browse, e.action, e.screens, e.wifi, e.lookupZone = nil, nil, nil, nil, nil
+	}
+	if e.wifi != nil {
+		e.wifi.netInstall = e.netInstall
 	}
 	var a setup.Answers
 	var err error
@@ -482,6 +503,7 @@ func main() {
 			}
 			return lookupZone(httpGet)
 		},
+		netInstall: !hasRepo(imageRepo),
 	}
 	if onConsole() {
 		prepareConsole(os.Stdout)

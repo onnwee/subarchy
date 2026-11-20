@@ -4,7 +4,8 @@
 # replaces the programs it asks.
 # The functions and variables below stand in for programs and state the
 # sourced installer reads.
-# shellcheck disable=SC2317,SC2329,SC2034
+# pacman's own $repo and $arch placeholders are written literally.
+# shellcheck disable=SC2317,SC2329,SC2034,SC2016
 set -euo pipefail
 
 root=$(git rev-parse --show-toplevel)
@@ -58,6 +59,9 @@ rm -f -- "$gen"
 # An install from the mirrors that fails (an old image, a package signed with
 # a key newer than its keyring) is tried again from the image's repository
 # alone; a repository that is not on the image has no second try.
+# This is the full image: it carries a repository.
+image_repo=$(mktemp -d)
+echo db >"$image_repo/subarchy.db"
 step() { :; }
 mirrors_reachable() { return 0; }
 subcult-hw() { echo amd-ucode; }
@@ -78,7 +82,70 @@ mirrors_reachable() { return 1; }
 conf[SUBARCHY_REPO]=file:///run/archiso/bootmnt/subarchy/repo
 (pacstrap_packages) >/dev/null 2>&1 || fail "an offline install failed"
 [[ $(tr '\n' ' ' <"$calls") == "image " ]] || fail "an offline install asked the mirrors: $(tr '\n' ' ' <"$calls")"
-rm -f -- "$calls"
+: >"$calls"
+# The full image never stops for want of a network.
+conf[OFFLINE]=1
+(check_sources) 2>/dev/null || fail "the full image refused OFFLINE=1"
+conf[OFFLINE]=""
+
+# The network-install image (#329): no repository on the image. Sourced
+# again for the real mirrors_reachable; pacstrap and subcult-hw stay stubbed.
+rm -rf -- "$image_repo"
+# shellcheck source=/dev/null
+source "$root/install/subarchy-install"
+set +e
+image_repo=/nonexistent
+step() { :; }
+snapshot_file=$(mktemp)
+echo 2026/11/15 >"$snapshot_file"
+conf[DISK]=/dev/vda
+conf[SUBARCHY_REPO]='https://git.subcult.tv/api/packages/subculture-collective/arch/stable/$arch'
+# No server answers: it stops with a clear message before the disk is touched.
+curl() { return 7; }
+out=$( (check_sources) 2>&1) && fail "a network install with no server was accepted"
+[[ $out == *"no answer from the Arch Linux Archive (https://archive.archlinux.org/repos/2026/11/15/core/os/x86_64/core.db)"*"Nothing on /dev/vda was changed."* ]] ||
+  fail "no-server message: $out"
+# It asks the archive at the snapshot date and the registry.
+asked=$(mktemp)
+curl() { echo "${@: -1}" >>"$asked"; }
+(check_sources) || fail "a network install with the servers answering was refused"
+[[ $(tr '\n' ' ' <"$asked") == "https://archive.archlinux.org/repos/2026/11/15/core/os/x86_64/core.db https://git.subcult.tv/api/packages/subculture-collective/arch/stable/x86_64/subarchy.db " ]] ||
+  fail "servers asked: $(tr '\n' ' ' <"$asked")"
+# The archive alone answering is not enough.
+curl() { [[ ${*: -1} == https://archive.* ]]; }
+out=$( (check_sources) 2>&1) && fail "a network install was accepted with the registry not answering"
+[[ $out == *"no answer from Subarchy's package server (https://git.subcult.tv/"*"/stable/x86_64/subarchy.db)"* ]] ||
+  fail "registry message: $out"
+# A local [subarchy] repository (the VM test's own build) needs only the archive.
+conf[SUBARCHY_REPO]=file:///run/src/build/repo
+(check_sources) || fail "a local [subarchy] repository needed the registry"
+# OFFLINE=1 cannot work without packages on the image.
+conf[OFFLINE]=1
+out=$( (check_sources) 2>&1) && fail "OFFLINE=1 was accepted on the network-install image"
+[[ $out == *"OFFLINE=1 needs the full image"* ]] || fail "OFFLINE message: $out"
+conf[OFFLINE]=""
+# No snapshot date, no install.
+echo nonsense >"$snapshot_file"
+out=$( (check_sources) 2>&1) && fail "a bad snapshot date was accepted"
+[[ $out == *"no Arch snapshot date"* ]] || fail "snapshot message: $out"
+echo 2026/11/15 >"$snapshot_file"
+# pacman's configuration: Arch from the archive at the snapshot, the
+# registry with signatures required, no mirrorlist; no second try.
+snapshot=2026/11/15
+conf[SUBARCHY_REPO]='https://git.subcult.tv/api/packages/subculture-collective/arch/stable/$arch'
+pc=$(pacman_conf 1 2>/dev/null)
+for line in 'Server = https://archive.archlinux.org/repos/2026/11/15/$repo/os/$arch' '[subarchy]' 'SigLevel = Required' \
+  'Server = https://git.subcult.tv/api/packages/subculture-collective/arch/stable/$arch' DisableDownloadTimeout; do
+  grep -qxF -- "$line" <<<"$pc" || fail "network pacman.conf lacks $line: $pc"
+done
+[[ $(grep -c '^Server = https://archive' <<<"$pc") == 2 && $pc != *mirrorlist* ]] || fail "network pacman.conf: $pc"
+mirrors_reachable() { fail "asked the mirrors again after check_sources"; }
+out=$(pacstrap_packages 2>&1) && fail "a failed network install was reported as done"
+[[ $(tr '\n' ' ' <"$calls") == "mirrors " ]] || fail "network install pacstrap calls: $(tr '\n' ' ' <"$calls")"
+[[ $out == *"installing from the network: Subarchy's packages from https://git.subcult.tv/"*"snapshot of 2026/11/15"* ]] ||
+  fail "network install message: $out"
+unset -f curl
+rm -f -- "$calls" "$asked" "$snapshot_file"
 
 # All keyboard drivers go into the initramfs: the hook before autodetect,
 # which would keep only those of the keyboards present during the install.

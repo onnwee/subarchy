@@ -76,8 +76,11 @@ func Mirrorlist(name, snapshot string) string {
 // Repo is the content of subcult-repo for a channel: the Subarchy
 // repository's server on git.subcult.tv (ADR 0025).
 func Repo(name string) string {
-	return fmt.Sprintf("# subcult channel: %s\n# Subarchy's own packages for this channel (ADR 0025).\nServer = "+registry+"\n", name, name)
+	return fmt.Sprintf("# subcult channel: %s\n# Subarchy's own packages for this channel (ADR 0025).\nServer = %s\n", name, RepoServer(name))
 }
+
+// RepoServer is the Subarchy repository's pacman Server URL for a channel.
+func RepoServer(name string) string { return fmt.Sprintf(registry, name) }
 
 // State is what the installed files say.
 type State struct {

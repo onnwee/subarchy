@@ -10,7 +10,7 @@ QT6BIN ?= /usr/lib/qt6/bin
 QT6QML ?= /usr/lib/qt6/qml
 .DEFAULT_GOAL := verify
 
-.PHONY: verify fmt-check vet test build smoke shellcheck docs-check package iso iso-test install-test hypr-check shell-test shell-lint shell-index-check shell-native-test site-commands
+.PHONY: verify fmt-check vet test build smoke shellcheck docs-check package iso iso-test install-test install-test-offline install-test-net hypr-check shell-test shell-lint shell-index-check shell-native-test site-commands
 
 # Quickshell shell (shell and look design). Pure JavaScript models are tested
 # with Qt 6's qmltestrunner; QML files are linted. Needs qt6-declarative and,
@@ -144,19 +144,29 @@ hypr-check:
 package:
 	tools/test/package-test.sh
 
-# Live ISO: needs archiso and sudo (see iso/README.md).
+# Live ISO: needs archiso and sudo (see iso/README.md). Builds the full and
+# the network-install image; ISO_EDITIONS=net builds one.
+ISO_EDITIONS ?= full net
 iso:
-	tools/iso/build.sh
+	SUBARCHY_ISO_EDITIONS="$(ISO_EDITIONS)" tools/iso/build.sh
+
+# The newest image of one edition (full or net).
+ISO_EDITION ?= full
+newest_iso = $$(ls -t $(BUILD)/iso/subarchy-$(1)-*.iso | head -1)
 
 # Boots the newest ISO in QEMU and checks it over the serial console.
 iso-test:
-	python3 tools/iso/boot-test.py "$$(ls -t $(BUILD)/iso/subarchy-*.iso | head -1)"
+	python3 tools/iso/boot-test.py "$(call newest_iso,$(ISO_EDITION))"
 
 # Installs from the newest ISO into a VM disk, then boots and checks it.
 install-test:
-	python3 tools/iso/install-test.py "$$(ls -t $(BUILD)/iso/subarchy-*.iso | head -1)"
+	python3 tools/iso/install-test.py "$(call newest_iso,$(ISO_EDITION))"
 
 # The same through the image's own setup with the guest's network off: the
 # install must come from the repository on the image alone (ADR 0049).
 install-test-offline:
-	python3 tools/iso/install-test.py --guided --offline "$$(ls -t $(BUILD)/iso/subarchy-*.iso | head -1)"
+	python3 tools/iso/install-test.py --guided --offline "$(call newest_iso,full)"
+
+# The network-install image's own setup, online (#329).
+install-test-net:
+	python3 tools/iso/install-test.py --guided --net "$(call newest_iso,net)"

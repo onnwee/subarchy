@@ -24,7 +24,8 @@
 #   XKB_VARIANT           its variant, such as dvorak (default none)
 #   SUBARCHY_REPO         pacman Server URL for the [subarchy] repository (required)
 #   PACKAGE_CACHE         pacman cache directory to reuse (optional)
-#   OFFLINE               1 to skip the mirrors and install from SUBARCHY_REPO alone (optional)
+#   OFFLINE               1 to skip the mirrors and install from SUBARCHY_REPO alone;
+#                         the full image only, which carries every package (optional)
 #   KERNEL_CMDLINE_EXTRA  appended to the kernel command line (optional)
 #   WIFI_SSID             Wi-Fi network the installed system joins (optional)
 #   WIFI_PSK_FILE         file holding its passphrase; none for an open network
@@ -33,6 +34,15 @@ set -euo pipefail
 here=$(dirname "$(realpath "$0")")
 target=/mnt
 log=/var/log/subarchy-install.log
+# The repository the full image carries: every package the install may need
+# (ADR 0049). The network-install image has none (#329) and installs from
+# the stable channel: Subarchy's registry and the Arch snapshot of the date
+# the subarchy package ships (ADR 0026).
+image_repo=${SUBARCHY_IMAGE_REPO:-/opt/subarchy/repo}
+snapshot_file=${SUBARCHY_SNAPSHOT_FILE:-/usr/share/subcult/default/pacman/snapshot}
+snapshot=""
+# The server that did not answer, for check_sources' message.
+unreachable=""
 
 # die stops the install. "error:" marks the message that ends a run, which
 # subarchy-setup shows as the reason; the other subarchy-install lines are
@@ -305,11 +315,49 @@ interface_branding_colour: 8b5cf6
 EOF
 }
 
+image_has_repo() { [[ -s $image_repo/subarchy.db ]]; }
+
+# archive_server: the Arch Linux Archive at the snapshot date, as the URL of
+# a pacman Server line (ADR 0026).
+archive_server() {
+  # Pacman expands its own repository and architecture placeholders.
+  # shellcheck disable=SC2016
+  printf 'https://archive.archlinux.org/repos/%s/$repo/os/$arch' "$snapshot"
+}
+
 # The Arch mirrors answer, or the install runs from the image's repository
-# alone (ADR 0049). OFFLINE=1 in the config skips the probe.
+# alone (ADR 0049). OFFLINE=1 in the config skips the probe. Without a
+# repository on the image, the servers it installs from must answer: the
+# archive at the snapshot date and, unless it is a local path, the
+# [subarchy] repository. Those are asked for one byte: not every server
+# answers HEAD.
 mirrors_reachable() {
   [[ ${conf[OFFLINE]} == 1 ]] && return 1
-  curl -sfI --max-time 8 -o /dev/null "https://geo.mirror.pkgbuild.com/core/os/x86_64/core.db"
+  if image_has_repo; then
+    curl -sfI --max-time 8 -o /dev/null "https://geo.mirror.pkgbuild.com/core/os/x86_64/core.db"
+    return
+  fi
+  local core repo=${conf[SUBARCHY_REPO]}
+  core=$(archive_server)
+  core=${core//\$repo/core}
+  unreachable="the Arch Linux Archive (${core//\$arch/x86_64}/core.db)"
+  curl -sf --max-time 8 -r 0-0 -o /dev/null "${core//\$arch/x86_64}/core.db" || return 1
+  unreachable="Subarchy's package server (${repo//\$arch/x86_64}/subarchy.db)"
+  [[ $repo == file://* ]] || curl -sf --max-time 8 -r 0-0 -o /dev/null "${repo//\$arch/x86_64}/subarchy.db" || return 1
+  unreachable=""
+}
+
+# check_sources: the network-install image carries no packages (#329), so
+# without the servers it installs from the install cannot finish. When one
+# of them does not answer, it stops here, before the disk is touched, and
+# names it. The full image can always go on.
+check_sources() {
+  image_has_repo && return 0
+  [[ ${conf[OFFLINE]} != 1 ]] || die "OFFLINE=1 needs the full image: this one carries no packages and installs from the network"
+  snapshot=$(cat "$snapshot_file" 2>/dev/null) || true
+  [[ $snapshot =~ ^[0-9]{4}/[0-9]{2}/[0-9]{2}$ ]] || die "no Arch snapshot date in $snapshot_file"
+  mirrors_reachable ||
+    die "no answer from ${unreachable:-the package servers}, and this image carries no packages. Connect to the internet (a cable, or Wi-Fi on the installer's network page) and run the install again. Nothing on ${conf[DISK]} was changed."
 }
 
 # pacman's configuration for the install. With the mirrors ($1 = 1) they
@@ -333,14 +381,32 @@ pacman_conf() {
   # `mkinitcpio -P` finds nothing to build; Subarchy's tools rebuild with
   # limine-mkinitcpio.
   echo "HookDir = $target/etc/pacman.d/hooks/"
-  (($1)) && printf '[core]\nInclude = /etc/pacman.d/mirrorlist\n\n[extra]\nInclude = /etc/pacman.d/mirrorlist\n\n'
-  printf '[subarchy]\nSigLevel = Optional TrustAll\nServer = %s\n' "${conf[SUBARCHY_REPO]}"
+  if (($1)) && ! image_has_repo; then
+    # The archive stalls single connections longer than pacman's ten-second
+    # low-speed limit when hundreds of files are fetched (tools/ci/pin-snapshot.sh).
+    echo "DisableDownloadTimeout"
+    printf '\n[core]\nServer = %s\n\n[extra]\nServer = %s\n\n' "$(archive_server)" "$(archive_server)"
+  elif (($1)); then
+    printf '[core]\nInclude = /etc/pacman.d/mirrorlist\n\n[extra]\nInclude = /etc/pacman.d/mirrorlist\n\n'
+  fi
+  # A local repository is the build's own and unsigned. The registry signs
+  # its database and packages with the key subarchy-keyring carries, which
+  # the live image trusts (ADR 0025).
+  local siglevel="Optional TrustAll"
+  [[ ${conf[SUBARCHY_REPO]} == file://* ]] || siglevel=Required
+  printf '[subarchy]\nSigLevel = %s\nServer = %s\n' "$siglevel" "${conf[SUBARCHY_REPO]}"
 }
 
 pacstrap_packages() {
   step "installing packages"
   local conf_file=/tmp/subarchy-pacman.conf online=1
-  mirrors_reachable || { online=0; echo "no mirror reachable: installing from the image's repository alone"; }
+  if ! image_has_repo; then
+    # check_sources found the servers before the disk was touched.
+    echo "installing from the network: Subarchy's packages from ${conf[SUBARCHY_REPO]}, Arch's from the snapshot of $snapshot"
+  elif ! mirrors_reachable; then
+    online=0
+    echo "no mirror reachable: installing from the image's repository alone"
+  fi
   pacman_conf "$online" >"$conf_file"
   local -a pkgs
   mapfile -t pkgs < <(sed 's/#.*//; /^[[:space:]]*$/d' "$here/packages/base.txt" "$here/packages/desktop.txt" "$here/packages/cli.txt")
@@ -362,7 +428,7 @@ pacstrap_packages() {
   # The mirrors roll on while the image's keyring stays as built: months
   # later a package signed with a newer key fails here, after the disk was
   # wiped. The image carries a complete set of its own, so use that.
-  ((online)) && [[ ${conf[SUBARCHY_REPO]} == file://* ]] || return 1
+  ((online)) && image_has_repo && [[ ${conf[SUBARCHY_REPO]} == file://* ]] || return 1
   echo "subarchy-install: installing from the mirrors failed; trying again from the image's repository alone" >&2
   pacman_conf 0 >"$conf_file"
   pacstrap -C "$conf_file" -K "${cache[@]}" "$target" "${pkgs[@]}"
@@ -590,6 +656,7 @@ main() {
   read_config "$config"
   check_disk
   ((yes)) || die "this wipes ${conf[DISK]}; pass --yes to continue"
+  check_sources
 
   exec > >(tee -a "$log") 2>&1
   trap 'rc=$?; ((rc == 0)) || close_after_failure' EXIT

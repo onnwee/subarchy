@@ -20,7 +20,7 @@ and the acceptance table in [[first-install]].
 **What to test.** The qualified candidate: main `9e32591`, core
 `0.0.0-638`, which stays frozen until the release tag (#258). It was
 installed on sputnik on 2026-11-16 from the stick described in B1. Gitea's
-`iso` workflow keeps its `subarchy-iso` artifact for 2 days, so the artifact
+`iso` workflow keeps its image artifacts (now `subarchy-iso-full` and `subarchy-iso-net`) for 2 days, so the artifact
 from the candidate's run has expired; do not look for it there. #183, #184
 and #185, which F7, D20 and C2 expect, are in the candidate.
 

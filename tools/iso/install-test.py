@@ -11,7 +11,14 @@
 The disk, its OVMF variables and the test credentials stay in build/vm/.
 They are throwaway test values for a VM, not secrets.
 
+With --guided the image's own subarchy-setup answers instead. --offline
+installs from the full image with the guest's network off; --net installs
+from the network-install image (#329) online, with Arch packages from the
+snapshot archive and Subarchy's own from this checkout's build/repo, so
+the installed system is this commit's and not what the registry holds.
+
 Usage: tools/iso/install-test.py ISO [--skip-install] [--timeout-install 2400]
+       [--guided [--offline | --net]]
 """
 
 from __future__ import annotations
@@ -227,7 +234,7 @@ def wait_console(serial: Serial, vt: int, text: str, timeout: float, unless: str
 NETWORK_PAGE = "Let's get you online."
 
 
-def guided(serial: Serial, qmp: Path, timeout: float) -> str:
+def guided(serial: Serial, qmp: Path, timeout: float, net: bool = False) -> str:
     """Install through subarchy-setup's full screens, as a user would: keys
     go to the virtual console through QMP, and what it shows is read back
     from /dev/vcs over the serial shell."""
@@ -245,6 +252,7 @@ def guided(serial: Serial, qmp: Path, timeout: float) -> str:
     serial.run(
         "TERM=linux openvt -c 2 -s -f -- subarchy-setup"
         " --cmdline-extra 'console=tty0 console=ttyS0,115200' --package-cache /run/pkgcache"
+        + (" --repo file:///run/src/build/repo" if net else "")
     )
     steps = [
         ("Press Return to start the install", ["ret"]),
@@ -342,7 +350,8 @@ def guided(serial: Serial, qmp: Path, timeout: float) -> str:
     return log + "\n" + screen + ("\nEXIT=0" if done else "\nEXIT=1")
 
 
-def install(iso: Path, disk: Path, vars_file: Path, timeout: float, guided_setup: bool = False, offline: bool = False) -> bool:
+def install(iso: Path, disk: Path, vars_file: Path, timeout: float, guided_setup: bool = False, offline: bool = False,
+            net: bool = False) -> bool:
     disk.unlink(missing_ok=True)
     subprocess.run(["qemu-img", "create", "-q", "-f", "qcow2", str(disk), "24G"], check=True)
     shutil.copy(OVMF_VARS, vars_file)
@@ -387,9 +396,15 @@ def install(iso: Path, disk: Path, vars_file: Path, timeout: float, guided_setup
             " efibootmgr --quiet -c -d /dev/vda -p 1 -L Limine -l '\\EFI\\limine\\limine_x64.efi' && echo STALE_MADE;"
             " efibootmgr -v | grep -ci '^Boot[0-9A-F]*\\*\\? *limine'", timeout=60)
         print(f"install-test: {'ok  ' if 'STALE_MADE' in stale else 'FAIL'} a leftover Limine boot entry was planted before the install")
+        if net:
+            # The network-install image carries no repository (#329).
+            bare = "NO_IMAGE_REPO" in serial.run("test -e /opt/subarchy/repo || echo NO_IMAGE_REPO")
+            print(f"install-test: {'ok  ' if bare else 'FAIL'} the network-install image carries no package repository")
+            if not bare:
+                return False
         if guided_setup:
             # The image's own subarchy-setup, installer and repository.
-            out = guided(serial, qmp, timeout)
+            out = guided(serial, qmp, timeout, net)
         else:
             out = serial.run(
                 "/run/src/install/subarchy-install --config /run/src/build/vm/install.conf --yes; echo EXIT=$?",
@@ -404,6 +419,11 @@ def install(iso: Path, disk: Path, vars_file: Path, timeout: float, guided_setup
             offline_ok = "no mirror reachable" in out
             print(f"install-test: {'ok  ' if offline_ok else 'FAIL'} installer ran from the image's repository with no network")
             ok = ok and offline_ok
+        if net:
+            # Online, from the snapshot archive, with no repository to fall back on.
+            net_ok = "installing from the network" in out and "no mirror reachable" not in out
+            print(f"install-test: {'ok  ' if net_ok else 'FAIL'} installer ran from the network on the network-install image")
+            ok = ok and net_ok
         print(f"install-test: installer {'finished' if ok else 'FAILED'} after {time.monotonic() - started:.0f}s")
         if not ok:
             print("\n".join(out.splitlines()[-40:]), file=sys.stderr)
@@ -1688,16 +1708,19 @@ def main() -> int:
     ap.add_argument("--guided", action="store_true", help="install by answering subarchy-setup from the image")
     ap.add_argument("--timeout-install", type=float, default=2400)
     ap.add_argument("--offline", action="store_true", help="install with the guest's network off (needs --guided)")
+    ap.add_argument("--net", action="store_true", help="install from the network-install image, online (needs --guided)")
     args = ap.parse_args()
     if args.offline and not args.guided:
         ap.error("--offline needs --guided: the image's own setup and repository")
+    if args.net and (not args.guided or args.offline):
+        ap.error("--net needs --guided and cannot be combined with --offline")
     for f in (args.iso, OVMF_CODE, OVMF_VARS, ROOT / "build" / "repo" / "subarchy.db"):
         if not f.exists():
             print(f"install-test: missing {f} (run make iso first)", file=sys.stderr)
             return 2
     disk, vars_file = VM / "disk.qcow2", VM / "OVMF_VARS.fd"
     write_config()
-    if not args.skip_install and not install(args.iso, disk, vars_file, args.timeout_install, args.guided, args.offline):
+    if not args.skip_install and not install(args.iso, disk, vars_file, args.timeout_install, args.guided, args.offline, args.net):
         return 1
     # A failed check in one stage does not skip the others.
     ok = boot(disk, vars_file)

@@ -97,5 +97,13 @@ keyring release.
   2026-11-07). A weekly GitHub workflow now opens an issue ahead of the
   package token's 2027-02-06 rotation date
   ([[package-publishing#Credential custody and rotation|Package publishing]]).
+- 2026-11-20: release images come in two kinds (#329,
+  [[0049-installer|ADR 0049]]). The net image, expected at about 1.6 GB
+  but not yet measured, is meant to fit a GitHub release asset (2 GiB per
+  file) and be the main download. The full offline image (7.1 GB on
+  2026-11-16) cannot, and goes to whichever host #259 chooses. What #259
+  decides about checksums and signing applies to both. The live images
+  now carry `subarchy-keyring`, so the net install requires the registry's
+  signatures (`SigLevel = Required`).
 
 Related: [[decision-map|Decision map]] · [[0026-update-model|ADR 0026]] · [[0027-third-party-software|ADR 0027]]

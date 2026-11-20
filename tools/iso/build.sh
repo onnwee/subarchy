@@ -4,9 +4,16 @@
 #   2. copies iso/profile, pointing its [subarchy] repository at that path;
 #   3. runs mkarchiso (needs root) with a work directory outside the checkout.
 #
+# One profile, two images (#329), each built by its own mkarchiso run:
+#   full  subarchy-full-<date>-x86_64.iso: the whole install set in
+#         /opt/subarchy/repo, so it installs with no network (ADR 0049);
+#   net   subarchy-net-<date>-x86_64.iso: no repository; it installs from
+#         the stable channel's servers.
+#
 # Usage: tools/iso/build.sh [out-dir]       (default: build/iso)
 #        tools/iso/build.sh --package-only  (step 1 only, for make install-test)
-# Env:   SUBARCHY_ISO_WORK  mkarchiso work dir (default /var/tmp/subarchy-iso-work)
+# Env:   SUBARCHY_ISO_WORK      mkarchiso work dir (default /var/tmp/subarchy-iso-work)
+#        SUBARCHY_ISO_EDITIONS  the images to build (default "full net")
 set -euo pipefail
 
 root=$(git rev-parse --show-toplevel)
@@ -19,6 +26,16 @@ out=$(realpath -m "${1:-$root/build/iso}")
 work=${SUBARCHY_ISO_WORK:-/var/tmp/subarchy-iso-work}
 repo="$root/build/repo"
 profile="$root/build/iso-profile"
+read -ra editions <<<"${SUBARCHY_ISO_EDITIONS:-full net}"
+((${#editions[@]})) || { echo "build.sh: SUBARCHY_ISO_EDITIONS names no image" >&2; exit 1; }
+full=0
+for edition in "${editions[@]}"; do
+  case $edition in
+    full) full=1 ;;
+    net) ;;
+    *) echo "build.sh: unknown image $edition (full or net)" >&2; exit 1 ;;
+  esac
+done
 
 ((package_only)) || command -v mkarchiso >/dev/null || { echo "build.sh: mkarchiso not found (pacman -S archiso)" >&2; exit 1; }
 
@@ -61,15 +78,17 @@ done
 ((${#missing[@]} == 0)) || { echo "build.sh: not in build/repo: ${missing[*]} (run packaging/aur/build.sh ${missing[*]})" >&2; exit 1; }
 ((package_only)) && exit 0
 
-echo ">> downloading the install set into the repository"
-# Everything the installer may pacstrap (ADR 0049): the install lists and
-# every hardware package `subcult hw` can pick, with their dependencies,
-# from the mirrors into the same repository, so the image installs with no
-# network. A private database makes pacman resolve the whole closure;
-# files already in build/repo are not fetched again.
-offline_db="$root/build/offline-db"
-mkdir -p "$offline_db"
-cat >"$root/build/offline-pacman.conf" <<EOF
+if ((full)); then
+  echo ">> downloading the install set into the repository"
+  # Everything the installer may pacstrap (ADR 0049): the install lists and
+  # every hardware package `subcult hw` can pick, with their dependencies,
+  # from the mirrors into the same repository, so the full image installs
+  # with no network. A private database makes pacman resolve the whole
+  # closure; files already in build/repo are not fetched again. The net
+  # image does not need them.
+  offline_db="$root/build/offline-db"
+  mkdir -p "$offline_db"
+  cat >"$root/build/offline-pacman.conf" <<EOF
 [options]
 Architecture = auto
 SigLevel = Required DatabaseOptional
@@ -87,47 +106,59 @@ Include = /etc/pacman.d/mirrorlist
 [extra]
 Include = /etc/pacman.d/mirrorlist
 EOF
-download_log="$root/build/offline-download.log"
-if ! { sudo pacman --config "$root/build/offline-pacman.conf" -Syw --noconfirm "${install_set[@]}"; } >"$download_log" 2>&1; then
-  tail -20 "$download_log" >&2
-  echo "build.sh: downloading the install set failed" >&2
-  exit 1
-fi
-sudo chown -R "$(id -u):$(id -g)" "$repo" "$offline_db"
-repo-add --quiet "$repo/subarchy.db.tar.gz" "$repo"/*.pkg.tar.zst >/dev/null
-echo "   $(find "$repo" -name '*.pkg.tar.zst' | wc -l) packages, $(du -sh "$repo" | cut -f1)"
-
-echo ">> preparing the profile"
-mkdir -p "$profile"
-cp -a --no-preserve=ownership "$root/iso/profile/." "$profile/"
-sed -i "s|@LOCAL_REPO@|$repo|" "$profile/pacman.conf"
-# The installer and its package lists, run as `subarchy-install` on the image.
-lib="$profile/airootfs/usr/local/lib/subarchy-install"
-mkdir -p "$lib" "$profile/airootfs/usr/local/bin"
-cp -a --no-preserve=ownership "$root/install/subarchy-install" "$root/install/packages" "$lib/"
-ln -sfn ../lib/subarchy-install/subarchy-install "$profile/airootfs/usr/local/bin/subarchy-install"
-# The repository: Subarchy's own packages and the whole install set, so
-# the image installs with no network (ADR 0049); subarchy-setup points
-# SUBARCHY_REPO here and the installer uses it as a package cache online.
-mkdir -p "$profile/airootfs/opt/subarchy/repo"
-cp -L "$repo"/*.pkg.tar.zst "$repo"/subarchy.db "$repo"/subarchy.files "$profile/airootfs/opt/subarchy/repo/"
-
-# mksquashfs sizes itself from the machine: a thread per CPU and a quarter of
-# the RAM. In a container limited below that (the CI runner: 4 of 24 CPUs,
-# 8 of 60 GiB) it is killed for memory, so it gets the container's limits.
-memory_limit=$(cat /sys/fs/cgroup/memory.max 2>/dev/null || echo max)
-if [[ $memory_limit =~ ^[0-9]+$ ]]; then
-  printf "airootfs_image_tool_options+=('-processors' '%s' '-mem' '%sM')\n" \
-    "$(nproc)" "$((memory_limit / 4 / 1048576))" >>"$profile/profiledef.sh"
+  download_log="$root/build/offline-download.log"
+  if ! { sudo pacman --config "$root/build/offline-pacman.conf" -Syw --noconfirm "${install_set[@]}"; } >"$download_log" 2>&1; then
+    tail -20 "$download_log" >&2
+    echo "build.sh: downloading the install set failed" >&2
+    exit 1
+  fi
+  sudo chown -R "$(id -u):$(id -g)" "$repo" "$offline_db"
+  repo-add --quiet "$repo/subarchy.db.tar.gz" "$repo"/*.pkg.tar.zst >/dev/null
+  echo "   $(find "$repo" -name '*.pkg.tar.zst' | wc -l) packages, $(du -sh "$repo" | cut -f1)"
 fi
 
-echo ">> running mkarchiso (work: $work, out: $out)"
 mkdir -p "$out"
-# A work directory left by a failed build makes mkarchiso skip the steps
-# it had done, with the pacman.conf and packages of that build.
-if [[ -d $work ]]; then
-  sudo rm -rf -- "$work"
-fi
-sudo mkarchiso -v -r -w "$work" -o "$out" "$profile"
+for edition in "${editions[@]}"; do
+  echo ">> preparing the profile ($edition)"
+  # A fresh copy each time: the net image must not keep the full one's repository.
+  rm -rf -- "$profile"
+  mkdir -p "$profile"
+  cp -a --no-preserve=ownership "$root/iso/profile/." "$profile/"
+  sed -i "s|@LOCAL_REPO@|$repo|" "$profile/pacman.conf"
+  # The file name says which image it is.
+  printf 'iso_name="subarchy-%s"\n' "$edition" >>"$profile/profiledef.sh"
+  # The installer and its package lists, run as `subarchy-install` on the image.
+  lib="$profile/airootfs/usr/local/lib/subarchy-install"
+  mkdir -p "$lib" "$profile/airootfs/usr/local/bin"
+  cp -a --no-preserve=ownership "$root/install/subarchy-install" "$root/install/packages" "$lib/"
+  ln -sfn ../lib/subarchy-install/subarchy-install "$profile/airootfs/usr/local/bin/subarchy-install"
+  # The repository: Subarchy's own packages and the whole install set, so
+  # the full image installs with no network (ADR 0049); subarchy-setup
+  # points SUBARCHY_REPO here and the installer uses it as a package cache
+  # online. Without it, subarchy-setup and the installer take the image for
+  # the net one.
+  if [[ $edition == full ]]; then
+    mkdir -p "$profile/airootfs/opt/subarchy/repo"
+    cp -L "$repo"/*.pkg.tar.zst "$repo"/subarchy.db "$repo"/subarchy.files "$profile/airootfs/opt/subarchy/repo/"
+  fi
+
+  # mksquashfs sizes itself from the machine: a thread per CPU and a quarter of
+  # the RAM. In a container limited below that (the CI runner: 4 of 24 CPUs,
+  # 8 of 60 GiB) it is killed for memory, so it gets the container's limits.
+  memory_limit=$(cat /sys/fs/cgroup/memory.max 2>/dev/null || echo max)
+  if [[ $memory_limit =~ ^[0-9]+$ ]]; then
+    printf "airootfs_image_tool_options+=('-processors' '%s' '-mem' '%sM')\n" \
+      "$(nproc)" "$((memory_limit / 4 / 1048576))" >>"$profile/profiledef.sh"
+  fi
+
+  echo ">> running mkarchiso for the $edition image (work: $work, out: $out)"
+  # A work directory left by a failed build makes mkarchiso skip the steps
+  # it had done, with the pacman.conf and packages of that build; the
+  # image built before this one left its own.
+  if [[ -d $work ]]; then
+    sudo rm -rf -- "$work"
+  fi
+  sudo mkarchiso -v -r -w "$work" -o "$out" "$profile"
+done
 sudo chown "$(id -u):$(id -g)" "$out"/*.iso
 ls -l "$out"/*.iso

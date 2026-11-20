@@ -4,7 +4,7 @@ type: decision
 status: accepted
 adr: 49
 created: 2026-11-06
-updated: 2026-11-16
+updated: 2026-11-20
 tags: [decision, adr, delivery]
 aliases: [ADR 0049, R2, Installer, ISO]
 ---
@@ -168,5 +168,22 @@ Decision map item R2. Accepted 2026-11-06.
   behavior change. Earlier VM and hardware observations retain their dates;
   the three post-#155 field checks remain unobserved here. No ISO build,
   VM run or device change was performed for this reconciliation.
+
+- 2026-11-20: two images from one profile (#329, the owner's choice of
+  option 3 that day). The **full** image is the image above, unchanged:
+  the whole install set in `/opt/subarchy/repo`, installing with no
+  network. **The offline installer stays in the builds.** The **net**
+  image leaves out that repository, which made up 4.8 GiB of the
+  7,099,686,912-byte image of 2026-11-16, so it should be about 1.6 GB
+  (an estimate from those parts, not a measured build). It installs from
+  the stable channel: Subarchy's registry and the Arch Linux Archive at the
+  shipped snapshot date ([[0026-update-model|ADR 0026]]). Its network page
+  says the install needs the internet, and `subarchy-install` stops before
+  touching the disk when the archive or the registry does not answer. CI tests `net` on every main
+  push and `full` on release tags and runs started by hand, because both on
+  every push would hold the single KVM slot for about 100 minutes
+  ([[ci-runner|KVM CI runner]]). Written with the change: neither image
+  had been built or installed from at that point. The first main run gives
+  the net image's measured size.
 
 Related: [[decision-map|Decision map]] · [[0050-hardware-support|ADR 0050]]

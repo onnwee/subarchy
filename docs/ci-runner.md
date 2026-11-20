@@ -33,7 +33,10 @@ signature`, which reads like a keyring fault and is not one.
 The label uses an Arch container. `.gitea/workflows/iso.yml` checks at
 least 60 GB free on its filesystem, builds the live ISO and boots it on this
 runner with KVM (#60), then installs from it into a VM disk and checks the
-installed system (#68). A separate KVM
+installed system (#68). Since #329 it builds two images: the
+network-install one on every main push, and the full offline one on
+release tags and runs started by hand, because both per push would take
+about 100 minutes of the single slot. A separate KVM
 smoke workflow ran on every main push until 2026-11-13; the ISO run already
 needs KVM, so it was removed to free the runner's single slot.
 

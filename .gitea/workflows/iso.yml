@@ -1,14 +1,25 @@
 name: iso
 
-# Builds the live ISO, boots it in QEMU (issue #60), then installs from it
-# into a VM disk and checks the installed system (issue #68). On pushes to main
-# and on demand. Pull requests are turned off on Gitea and are verified on
-# GitHub (.github/workflows/mirror-ci.yml), which has no ISO or VM job. Every
-# branch is mirrored here, so an image or harness change can run before it
-# merges: start this workflow by hand (workflow_dispatch) on its branch.
+# Builds the live ISOs, boots each in QEMU (issue #60), then installs from it
+# into a VM disk and checks the installed system (issue #68). Two images
+# from one profile (#329): `net`, which installs from the network, and
+# `full`, which carries every package and installs offline (ADR 0049).
+#
+# `net` runs on every push to main; `full` runs on release tags and on
+# demand. Both on every push did not fit: one run of the full image took
+# 47 to 53 minutes on 2026-11-16 (docs/ci-runner.md), so two would hold the
+# runner's single slot for about 100 minutes per main push, against a
+# 120-minute job limit and the packages workflow waiting for the same slot.
+# A run started by hand builds and tests both, each as its own job.
+#
+# Pull requests are turned off on Gitea and are verified on GitHub
+# (.github/workflows/mirror-ci.yml), which has no ISO or VM job. Every branch
+# is mirrored here, so an image or harness change can run before it merges:
+# start this workflow by hand (workflow_dispatch) on its branch.
 on:
   push:
     branches: [main]
+    tags: ['v*']
   workflow_dispatch:
 
 permissions:
@@ -22,7 +33,7 @@ env:
   GOMAXPROCS: "4"
 
 jobs:
-  build:
+  net:
     runs-on: subarchy-kvm
     timeout-minutes: 120
     steps:
@@ -34,31 +45,76 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Build the ISO and boot it
+      - name: Build the network-install ISO and boot it
         run: |
           git config --global --add safe.directory "$PWD"
-          tools/ci/build-iso.sh
-      - name: Install from the ISO and check the installed system
-        run: tools/ci/install-test.sh
+          tools/ci/build-iso.sh net
+      - name: Install from the ISO online and check the installed system
+        run: tools/ci/install-test.sh net
       - name: Keep the build logs
         if: always()
         uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3.2.1
         with:
-          name: iso-logs
+          name: iso-logs-net
           path: |
             build/makepkg.log
-            build/offline-download.log
             build/iso-boot.log
+            build/iso/*.sha256
             build/vm/*-serial.log
             build/vm/*.png
           retention-days: 7
           if-no-files-found: warn
-      # Only when a run is started by hand: the image is 4.6 GB, and the
-      # upload took the runner 45 minutes in which no other job could start.
+      # Only when a run is started by hand: uploading the full image held the
+      # runner for 45 minutes in which no other job could start.
       - uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3.2.1
         if: github.event_name == 'workflow_dispatch'
         with:
-          name: subarchy-iso
-          path: build/iso/*.iso
+          name: subarchy-iso-net
+          path: |
+            build/iso/*.iso
+            build/iso/*.sha256
+          retention-days: 2
+          if-no-files-found: error
+
+  full:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
+    runs-on: subarchy-kvm
+    timeout-minutes: 120
+    steps:
+      - name: Check disk reserve
+        run: test "$(df -B1 --output=avail / | tail -1)" -ge 60000000000
+      - name: Install checkout tools
+        run: pacman -Syu --noconfirm --needed git nodejs
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Build the full ISO and boot it
+        run: |
+          git config --global --add safe.directory "$PWD"
+          tools/ci/build-iso.sh full
+      - name: Install from the ISO offline and check the installed system
+        run: tools/ci/install-test.sh full
+      - name: Keep the build logs
+        if: always()
+        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3.2.1
+        with:
+          name: iso-logs-full
+          path: |
+            build/makepkg.log
+            build/offline-download.log
+            build/iso-boot.log
+            build/iso/*.sha256
+            build/vm/*-serial.log
+            build/vm/*.png
+          retention-days: 7
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3.2.1
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          name: subarchy-iso-full
+          path: |
+            build/iso/*.iso
+            build/iso/*.sha256
           retention-days: 2
           if-no-files-found: error

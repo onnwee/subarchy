@@ -29,13 +29,41 @@ The installer, `subarchy-setup`, starts by itself on the first console
 the motd first, so the installer is the first thing on the screen after
 boot and units still starting do not print over it.
 
+## Two images
+
+One profile builds two images (#329; owner's decision 2026-11-20):
+
+- **full**, `subarchy-full-<date>-x86_64.iso`: carries Subarchy's own
+  packages and the whole install set in `/opt/subarchy/repo`, so it installs
+  with no network (`OFFLINE=1`, or no mirror answering), as every image did
+  before. It stays in the builds.
+- **net**, `subarchy-net-<date>-x86_64.iso`: the same live system without
+  `/opt/subarchy/repo`. `subarchy-setup` then points the install at the
+  stable channel's registry, and `subarchy-install` takes Arch packages from
+  the Arch Linux Archive at the snapshot date the `subarchy` package ships
+  (ADR 0026). The network page says the install needs the internet. If the
+  archive or the registry does not answer, the installer stops before it
+  touches the disk and says which one.
+
+Both live images carry `subarchy-keyring`, so the live system trusts the
+registry's key and the net install can require signed packages.
+
+The net image's size is not measured yet. From the parts of the
+2026-11-16 image measured on 2026-11-20 (#329: 4.8 GiB of offline
+repository in a 7,099,686,912-byte image), it should be about 1.6 GB,
+under GitHub's 2 GiB per-file limit. The first build on main will give the
+real number.
+
 ## Build and test
 
 Needs `archiso`, `qemu-base` and `edk2-ovmf`, and sudo for `mkarchiso`.
 
 ```bash
-make iso        # tools/iso/build.sh: package -> local repo (+ the install set, downloaded) -> mkarchiso -> build/iso/
-make iso-test   # tools/iso/boot-test.py: UEFI boot in QEMU, checks over the serial console
+make iso                    # tools/iso/build.sh: package -> local repo (+ the install set, downloaded) -> mkarchiso, once per image -> build/iso/
+make iso ISO_EDITIONS=net   # one image only
+make iso-test               # tools/iso/boot-test.py: UEFI boot in QEMU (ISO_EDITION=net for the net image)
+make install-test-offline   # the full image, guided, network off
+make install-test-net       # the net image, guided, online
 ```
 
 The boot test passes when the image reaches a root shell, `/etc/os-release`
@@ -46,22 +74,31 @@ The first passing run (2026-11-07, `sputnik` with KVM): systemd
 greeting after 12 s, shell after 34 s, state `running`, no failed units.
 The image was 1.6 GB then.
 
-CI builds and boots the image in `.gitea/workflows/iso.yml` on the
+CI builds and boots the images in `.gitea/workflows/iso.yml` on the
 `subarchy-kvm` runner, whose job containers are privileged and have
-`/dev/kvm` ([KVM CI runner](../docs/ci-runner.md)): on pushes to `main` and
-on demand (`workflow_dispatch`). Pull requests are turned off on Gitea and
+`/dev/kvm` ([KVM CI runner](../docs/ci-runner.md)). The `net` job runs on
+every push to `main`; the `full` job runs on release tags (`v*`) and on
+demand (`workflow_dispatch`), which also runs `net`. Running both on every
+push would hold the runner's one slot for about 100 minutes: one full run
+took 47 to 53 minutes on 2026-11-16. Pull requests are turned off on Gitea and
 are verified on GitHub (`.github/workflows/mirror-ci.yml`), which has no ISO
 or VM job ([ADR 0051](../docs/decisions/0051-hosting-ci.md)). Every branch is
 mirrored to Gitea, so a change to the image or the test harness can run
 before it merges: start the workflow by hand on that branch.
-`tools/ci/build-iso.sh` builds the core package from the checkout,
-takes the pinned rebuilds from the signed stable registry and the install
-set from Subarchy's Arch snapshot, then runs `make iso` and the boot test.
-`tools/ci/install-test.sh` then installs from that image into a VM disk and
-runs every check of `tools/iso/install-test.py` (#68): the guided, offline
-install, so the result comes from the image's own setup command, installer
-and repository. A failed check fails the job; the serial logs and
-screendumps are kept in the `iso-logs` artifact either way.
-A run started by hand keeps the image as the `subarchy-iso` artifact for
-2 days. Other runs do not: the image is 4.6 GB and its upload held the
-runner's only job slot for 45 minutes.
+`tools/ci/build-iso.sh full|net` builds the core package from the
+checkout, takes the pinned rebuilds from the signed stable registry and,
+for `full`, the install set from Subarchy's Arch snapshot, then runs
+`make iso` for that one image, prints its size and SHA-256 (and writes the
+sum beside it as `<image>.sha256`), and runs the boot test.
+`tools/ci/install-test.sh full|net` then installs from that image into a
+VM disk and runs every check of `tools/iso/install-test.py` (#68). For
+`full` it is the guided, offline install, so the result comes from the
+image's own setup command, installer and repository. For `net` it is the
+guided install online: Arch packages from the snapshot archive, and
+Subarchy's own from the checkout's `build/repo` (`--repo`), so the
+installed system is this commit's rather than whatever the registry holds
+when the job runs. A failed check fails the job; the serial logs,
+screendumps and sums are kept in the `iso-logs-net` or `iso-logs-full`
+artifact either way. A run started by hand keeps each image and its sum as
+`subarchy-iso-net` and `subarchy-iso-full` for 2 days. Other runs do not:
+the full image's upload held the runner's only job slot for 45 minutes.

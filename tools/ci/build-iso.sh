@@ -7,7 +7,12 @@
 # not rebuilt: pacman takes them from the signed stable registry, which the
 # packages workflow fills. The install set comes from Subarchy's Arch snapshot, so
 # the image installs what the stable channel serves (ADR 0026).
+#
+# Usage: build-iso.sh [full|net]   (default full; #329)
 set -euo pipefail
+
+edition=${1:-full}
+[[ $edition == full || $edition == net ]] || { echo "build-iso: unknown image $edition (full or net)" >&2; exit 1; }
 
 root=$(git rev-parse --show-toplevel)
 registry=https://git.subcult.tv/api/packages/subculture-collective/arch/stable
@@ -92,8 +97,12 @@ rm -f -- "$repo"/*.sig
 chown -R builder: "$root/build"
 
 cd "$root"
-runuser -u builder -- make iso
+runuser -u builder -- make iso ISO_EDITIONS="$edition"
+isos=("$root"/build/iso/subarchy-"$edition"-*.iso)
+# The size and SHA-256 go to the run's output, and the sum beside the image,
+# so a kept artifact can be checked against the run that made it.
+ls -l "${isos[0]}"
+(cd "${isos[0]%/*}" && sha256sum "${isos[0]##*/}" | tee "${isos[0]##*/}.sha256")
 # As root: the builder user cannot open /dev/kvm here. The serial log is
 # kept for the workflow's artifact.
-isos=("$root"/build/iso/subarchy-*.iso)
 python3 tools/iso/boot-test.py --log "$root/build/iso-boot.log" "${isos[0]}"

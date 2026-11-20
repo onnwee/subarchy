@@ -2,7 +2,8 @@ package main
 
 // The network page: with no wired or Wi-Fi link up, the installer lists
 // the Wi-Fi networks the live image's iwd sees and joins one, or the user
-// skips it and installs offline. Whatever Wi-Fi network the live session
+// skips it and installs offline (on the network-install image, which carries
+// no packages, the install then stops). Whatever Wi-Fi network the live session
 // is on when the questions end, joined here or by hand with iwctl, goes to
 // the installed system as a NetworkManager connection (ADR 0016, 0049).
 //
@@ -83,6 +84,9 @@ type wifi struct {
 	sleep func(time.Duration)
 	// typed holds the passphrase typed here for each network joined.
 	typed map[string]string
+	// netInstall is true on the network-install image (#329): skipping
+	// the page leaves the install without its packages.
+	netInstall bool
 }
 
 // variant is a D-Bus variant in busctl's JSON.
@@ -345,6 +349,24 @@ var networkBody = []string{
 	"the network you pick here.",
 }
 
+// On the network-install image the page says the install needs a network,
+// and skipping it says what happens then.
+const networkSkipNet = "Skip (the install stops without a network)"
+
+var networkBodyNet = []string{
+	"No wired or Wi-Fi connection is up. This medium downloads Subarchy as it",
+	"installs, so it needs the internet: pick a Wi-Fi network to join, or plug in",
+	"a cable and then skip. The installed system joins the network you pick here.",
+}
+
+// text is the page's body and skip choice for this image.
+func (w *wifi) text() (body []string, skip string) {
+	if w.netInstall {
+		return networkBodyNet, networkSkipNet
+	}
+	return networkBody, networkSkip
+}
+
 // validTyped checks a passphrase typed on the page. The 64-digit key,
 // which NetworkManager also takes, is refused here: iwd joins only with
 // the passphrase itself.
@@ -389,7 +411,8 @@ func (s *screens) network(w *wifi) error {
 	if !w.needed() {
 		return errSkip
 	}
-	body := func(extra ...string) []string { return append(append([]string{}, networkBody...), extra...) }
+	text, skip := w.text()
+	body := func(extra ...string) []string { return append(append([]string{}, text...), extra...) }
 	selected := ""
 	for {
 		s.page(networkTitle, body("", "Looking for Wi-Fi networks...")...)
@@ -403,13 +426,13 @@ func (s *screens) network(w *wifi) error {
 		} else {
 			s.page(networkTitle, body()...)
 		}
-		row, err := s.choose("Wi-Fi network", append(rows, networkScan, networkSkip), selected)
+		row, err := s.choose("Wi-Fi network", append(rows, networkScan, skip), selected)
 		if err != nil {
 			return err
 		}
 		selected = row
 		switch row {
-		case networkSkip:
+		case skip:
 			return nil
 		case networkScan:
 			continue
@@ -454,8 +477,13 @@ func (p *prompter) network(w *wifi) error {
 	if !w.needed() {
 		return nil
 	}
+	text, _ := w.text()
+	skip := "to install offline"
+	if w.netInstall {
+		skip = "to skip; the install then stops"
+	}
 	fmt.Fprintln(p.out, "\n"+networkTitle)
-	for _, l := range networkBody {
+	for _, l := range text {
 		fmt.Fprintln(p.out, l)
 	}
 	for {
@@ -471,7 +499,7 @@ func (p *prompter) network(w *wifi) error {
 			fmt.Fprintln(p.out, "  No Wi-Fi networks were found.")
 		}
 		var n wifiNetwork
-		answer, err := p.ask("Network number (r to look again, s to install offline)", "s", func(s string) error {
+		answer, err := p.ask("Network number (r to look again, s "+skip+")", "s", func(s string) error {
 			if s == "r" || s == "s" {
 				return nil
 			}
