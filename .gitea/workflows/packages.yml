@@ -2,7 +2,8 @@ name: packages
 
 # A push to main builds and publishes. A version tag (v0.0.0) builds the
 # release from the tag and publishes nothing: the publish job and
-# publish-packages.py accept only main.
+# publish-packages.py accept only main. On main, the iso-net job then
+# builds and installs the network-install ISO from what was just published.
 on:
   push:
     branches: [main]
@@ -84,3 +85,55 @@ jobs:
           # an install made by the installer has none before subarchy lands.
           pacman --config /tmp/pacman-stable.conf -S --noconfirm --overwrite /etc/os-release subarchy
           subcult --version
+
+  # The network-install ISO for this commit, after its packages are in
+  # stable: build-iso.sh downloads every pin at its exact source version, so
+  # an ISO built before the publish fails on a new pin (#264). Running it
+  # here, in the same run and concurrency group, also stops ISO jobs from
+  # taking the single slot between build and publish (2026-11-20). Keep these
+  # steps the same as iso.yml's `net` job, which runs on tags and by hand;
+  # tools/test/test_ci_workflows.py checks that they match.
+  iso-net:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: publish
+    runs-on: subarchy-kvm
+    timeout-minutes: 120
+    steps:
+      - name: Check disk reserve
+        run: test "$(df -B1 --output=avail / | tail -1)" -ge 60000000000
+      - name: Install checkout tools
+        run: pacman -Syu --noconfirm --needed git nodejs
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Build the network-install ISO and boot it
+        run: |
+          git config --global --add safe.directory "$PWD"
+          tools/ci/build-iso.sh net
+      - name: Install from the ISO online and check the installed system
+        run: tools/ci/install-test.sh net
+      - name: Keep the build logs
+        if: always()
+        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3.2.1
+        with:
+          name: iso-logs-net
+          path: |
+            build/makepkg.log
+            build/iso-boot.log
+            build/iso/*.sha256
+            build/vm/*-serial.log
+            build/vm/*.png
+          retention-days: 7
+          if-no-files-found: warn
+      # Only when a run is started by hand: uploading the full image held the
+      # runner for 45 minutes in which no other job could start.
+      - uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3.2.1
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          name: subarchy-iso-net
+          path: |
+            build/iso/*.iso
+            build/iso/*.sha256
+          retention-days: 2
+          if-no-files-found: error

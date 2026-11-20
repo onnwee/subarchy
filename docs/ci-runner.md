@@ -36,7 +36,9 @@ runner with KVM (#60), then installs from it into a VM disk and checks the
 installed system (#68). Since #329 it builds two images: the
 network-install one on every main push, and the full offline one on
 release tags and runs started by hand, because both per push would take
-about 100 minutes of the single slot. A separate KVM
+about 100 minutes of the single slot. Since 2026-11-20 the main-push
+network-install ISO runs in `packages.yml` instead, as described under
+[[#Build, publish, then ISO on a main push]]. A separate KVM
 smoke workflow ran on every main push until 2026-11-13; the ISO run already
 needs KVM, so it was removed to free the runner's single slot.
 
@@ -70,12 +72,41 @@ therefore says nothing about the skipped commits before it.
 **Pull requests get no ISO or VM job.** Pull requests are checked on GitHub
 by `.github/workflows/mirror-ci.yml` (`make verify`, a package build and
 headless shell tests, on GitHub-hosted runners). It has no ISO build, no boot and no install test.
-Gitea has pull requests turned off, and `iso.yml` and `packages.yml` run
-only on pushes to main and, for `iso.yml`, by hand. So a change to the image,
+Gitea has pull requests turned off; `packages.yml` runs on pushes to main
+(and its ISO job with it) and `iso.yml` on tags and by hand. So a change to the image,
 the packages or the install harness merges without the ISO run, and a break
 shows up after the merge. To test such a change first, start `iso.yml` by
 hand on the mirrored branch (`workflow_dispatch`). That uses the one slot, and
 a manual run on a branch sits in the queue behind main's runs.
+
+## Build, publish, then ISO on a main push
+
+Until 2026-11-20 a main push started two runs on this label, `iso` and
+`packages`, and nothing ordered them. Two things went wrong (read-only
+`tea api --login subcult-agent` checks, 2026-11-20):
+
+- **Publishing stalled.** `packages.yml` has a `build` job and a `publish`
+  job. When `build` finished, the slot went to a waiting ISO job, so
+  `publish` waited while its run kept the `packages-refs/heads/main` group.
+  Run 23285 built from 18:26 to 18:33 UTC; its publish job 44751 was still
+  queued at 20:16 while ISO jobs 44769 and 44955 ran. Each newer packages
+  run (23292, 23295, 23319, 23347, 23364) was cancelled without starting.
+  The last package published was `subarchy-0.0.0-641`, by run 23253 at
+  17:19 UTC. Why Gitea gave the slot to the newer ISO job 44955 ahead of
+  44751 was not established.
+- **ISO before packages.** `build-iso.sh` downloads every pin at its exact
+  source version from stable, which has it only after `publish`. The ISO
+  job was created first and usually ran first, so a commit that bumped or
+  added a pin failed its ISO with `target not found` (ISO run 22442, job
+  42871, in #264).
+
+Now a main push starts one run on this label: `packages.yml` runs `build`,
+then `publish`, then `iso-net`, which has the same steps as `iso.yml`'s
+`net` job (`tools/test/test_ci_workflows.py` checks that they match).
+`iso.yml` runs only on tags and by hand. If `publish` fails, `iso-net` is
+skipped. A merge burst still skips the commits in between, in one group
+instead of two. A run started by hand can still take the slot between
+jobs. Not yet observed on a main run as of 2026-11-20.
 
 ## Host limits and incidents
 

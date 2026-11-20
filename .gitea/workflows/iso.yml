@@ -5,12 +5,14 @@ name: iso
 # from one profile (#329): `net`, which installs from the network, and
 # `full`, which carries every package and installs offline (ADR 0049).
 #
-# `net` runs on every push to main; `full` runs on release tags and on
-# demand. Both on every push did not fit: one run of the full image took
-# 47 to 53 minutes on 2026-11-16 (docs/ci-runner.md), so two would hold the
-# runner's single slot for about 100 minutes per main push, against a
-# 120-minute job limit and the packages workflow waiting for the same slot.
-# A run started by hand builds and tests both, each as its own job.
+# This workflow runs on release tags and by hand; a run builds and tests
+# both images, each as its own job. On a push to main, `net` runs in
+# packages.yml instead, as the `iso-net` job after `publish` (2026-11-20):
+# here it was scheduled before the commit's packages were published and
+# could not find a new pin (#264), and its jobs took the single slot between
+# packages' build and publish, which stalled publishing. `full` stays off
+# main pushes: one run took 47 to 53 minutes on 2026-11-16
+# (docs/ci-runner.md), too long to add to every push on the single slot.
 #
 # Pull requests are turned off on Gitea and are verified on GitHub
 # (.github/workflows/mirror-ci.yml), which has no ISO or VM job. Every branch
@@ -18,7 +20,6 @@ name: iso
 # start this workflow by hand (workflow_dispatch) on its branch.
 on:
   push:
-    branches: [main]
     tags: ['v*']
   workflow_dispatch:
 

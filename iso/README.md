@@ -76,9 +76,11 @@ The image was 1.6 GB then.
 
 CI builds and boots the images in `.gitea/workflows/iso.yml` on the
 `subarchy-kvm` runner, whose job containers are privileged and have
-`/dev/kvm` ([KVM CI runner](../docs/ci-runner.md)). The `net` job runs on
-every push to `main`; the `full` job runs on release tags (`v*`) and on
-demand (`workflow_dispatch`), which also runs `net`. Running both on every
+`/dev/kvm` ([KVM CI runner](../docs/ci-runner.md)). On every push to
+`main`, `net` runs as the `iso-net` job of `.gitea/workflows/packages.yml`,
+after that commit's packages are published (since 2026-11-20). `iso.yml`
+runs `net` and `full` on release tags (`v*`) and on demand
+(`workflow_dispatch`). Running both on every
 push would hold the runner's one slot for about 100 minutes: one full run
 took 47 to 53 minutes on 2026-11-16. Pull requests are turned off on Gitea and
 are verified on GitHub (`.github/workflows/mirror-ci.yml`), which has no ISO
